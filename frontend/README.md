@@ -1,85 +1,106 @@
-# 🎨 Relm Care+ Frontend (Flutter Web)
+# Relm Care+ Frontend (React + Vite)
 
-## Quick Start
+Frontend moderno em React para o sistema Relm Care+.
 
-### Pré-requisitos
-- Flutter SDK 3.x
-- Chrome (para desenvolvimento)
+## 🚀 Tecnologias
 
-### Instalação
+- **React 18** - UI Library
+- **Vite** - Build Tool
+- **React Router** - Roteamento
+- **TanStack Query** - Data Fetching
+- **Zustand** - State Management
+- **Tailwind CSS** - Styling
+- **Axios** - HTTP Client
 
-```bash
-flutter pub get
-```
-
-### Desenvolvimento
-
-```bash
-# Rodar no Chrome (dev local)
-flutter run -d chrome --dart-define=API_URL=http://localhost:3003
-
-# Rodar com hot reload
-flutter run -d chrome --dart-define=API_URL=http://localhost:3003 --web-renderer html
-```
-
-### Build para Produção
+## 📦 Instalação
 
 ```bash
-# Produção
-flutter build web --release --web-renderer html \
-  --dart-define=API_URL=https://api-careplus.relmbikes.com.br
-
-# Staging
-flutter build web --release --web-renderer html \
-  --dart-define=API_URL=https://staging-api-careplus.relmbikes.com.br
+npm install
 ```
 
-Build será gerado em: `build/web/`
+## 🔧 Desenvolvimento
 
-## Estrutura
-
-```
-lib/
-├── main.dart                 # Entry point + routing
-├── screens/                  # Todas as telas
-│   ├── home/
-│   ├── warranty/             # Formulário de garantia
-│   ├── benefits/             # Clube de vantagens
-│   ├── events/               # Eventos
-│   ├── newsletter/           # Newsletter
-│   ├── insurance/            # Cotação seguro
-│   ├── auth/                 # Login
-│   └── admin/                # Dashboard admin
-├── services/                 # API e Auth
-├── models/                   # Modelos de dados
-└── widgets/                  # Componentes reutilizáveis
+```bash
+npm run dev
 ```
 
-## Paleta de Cores (Relm)
+Acesse: http://localhost:3003
 
-- **Primária (Teal):** `0xFF00BCD4`
-- **Secundária (Verde):** `0xFF4CAF50`
-- **Background:** `0xFFFFFFFF`
-- **Bordas:** `0xFFE0E0E0`
+## 🏗️ Build de Produção
 
-## Rotas
+```bash
+npm run build
+```
 
-- `/` - Home
-- `/garantia` - Formulário garantia
-- `/vantagens` - Clube de vantagens
-- `/eventos` - Eventos
-- `/seguro` - Cotação seguro
-- `/newsletter` - Newsletter
-- `/login` - Login admin
-- `/admin` - Dashboard
+Os arquivos serão gerados em `dist/`
 
-## TODO (V2)
+## 🌐 Variáveis de Ambiente
 
-- [ ] Expandir formulário de garantia completo
-- [ ] Implementar autenticação completa
-- [ ] Dashboard admin com tabelas
-- [ ] Portal cliente autenticado
-- [ ] Portal loja
-- [ ] Portal distribuidor
-- [ ] Responsividade mobile
-- [ ] Testes
+Crie um arquivo `.env`:
+
+```
+VITE_API_URL=http://191.252.217.190:3005
+```
+
+## 📁 Estrutura
+
+```
+src/
+├── components/     # Componentes reutilizáveis
+├── pages/          # Páginas da aplicação
+├── services/       # API e serviços
+├── store/          # Zustand stores
+├── App.jsx         # Componente raiz
+└── main.jsx        # Entry point
+```
+
+## 🎨 Cores do Tema
+
+- Primary (Teal): #00BCD4
+- Secondary (Verde): #4CAF50
+
+## 🔐 Autenticação
+
+O sistema usa JWT com access e refresh tokens armazenados no localStorage.
+
+## 📱 Páginas Implementadas
+
+- ✅ Home
+- ✅ Login
+- ✅ Garantia (formulário público)
+- ✅ Vantagens
+- ✅ Eventos
+- ✅ Seguro
+- ✅ Newsletter
+- ✅ Dashboard Admin
+
+## 🚀 Deploy
+
+### Opção 1: Build local e envio via SCP
+
+```bash
+npm run build
+scp -r dist/* root@191.252.217.190:/var/www/relm-careplus-prod-web/
+```
+
+### Opção 2: Build direto no VPS
+
+```bash
+cd /var/www/relm-careplus-prod/frontend
+npm install
+npm run build
+cp -r dist/* /var/www/relm-careplus-prod-web/
+chown -R www-data:www-data /var/www/relm-careplus-prod-web
+```
+
+## 📝 Credenciais de Teste
+
+- **Admin**: admin@relmbikes.com.br / Admin@2024
+- **Gerente**: gerente@relmbikes.com.br / Gerente@2024
+- **Suporte**: suporte@relmbikes.com.br / Suporte@2024
+- **Loja**: loja@bikeshopsp.com.br / Loja@2024
+
+## 🔗 Links
+
+- API: http://191.252.217.190:3005
+- Swagger: http://191.252.217.190:3005/docs
