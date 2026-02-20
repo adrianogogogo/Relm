@@ -14,7 +14,7 @@ module.exports = {
       exec_mode: 'cluster',
       env: {
         NODE_ENV: 'production',
-        PORT: 3001,
+        PORT: 3005,
       },
       error_file: '/var/www/relm-careplus-prod/backend/logs/error.log',
       out_file: '/var/www/relm-careplus-prod/backend/logs/out.log',
