@@ -222,6 +222,50 @@ export class CustomersService {
     return { message: 'Cliente desativado com sucesso' };
   }
 
+  // Método para criar ou atualizar cliente pelo email (usado em warranty)
+  async upsertByEmail(customerData: {
+    email: string;
+    fullName: string;
+    phone?: string;
+    cpf?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+  }) {
+    // Normalizar CPF se fornecido
+    let cpfNormalized = customerData.cpf;
+    if (cpfNormalized) {
+      cpfNormalized = cpfNormalized.replace(/\D/g, '');
+    }
+
+    const customer = await this.prisma.customer.upsert({
+      where: { email: customerData.email },
+      update: {
+        fullName: customerData.fullName,
+        phone: customerData.phone,
+        cpf: cpfNormalized,
+        address: customerData.address,
+        city: customerData.city,
+        state: customerData.state,
+        zipCode: customerData.zipCode,
+      },
+      create: {
+        email: customerData.email,
+        fullName: customerData.fullName,
+        phone: customerData.phone,
+        cpf: cpfNormalized,
+        address: customerData.address,
+        city: customerData.city,
+        state: customerData.state,
+        zipCode: customerData.zipCode,
+        marketingConsent: false,
+      },
+    });
+
+    return customer;
+  }
+
   // Método auxiliar para formatar dados do cliente
   private formatCustomer(customer: any) {
     return {
