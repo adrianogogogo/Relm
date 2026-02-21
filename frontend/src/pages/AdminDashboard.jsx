@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
 export default function AdminDashboard() {
@@ -38,11 +39,14 @@ export default function AdminDashboard() {
             <div className="card">
               <h2 className="text-2xl font-bold mb-4">Ações Rápidas</h2>
               <div className="space-y-3">
+                <Link
+                  to="/admin/customers"
+                  className="btn btn-outline w-full text-left flex items-center"
+                >
+                  👥 Gerenciar Clientes
+                </Link>
                 <button className="btn btn-outline w-full text-left">
                   📋 Ver Garantias Pendentes
-                </button>
-                <button className="btn btn-outline w-full text-left">
-                  👥 Gerenciar Clientes
                 </button>
                 <button className="btn btn-outline w-full text-left">
                   🏪 Gerenciar Lojas

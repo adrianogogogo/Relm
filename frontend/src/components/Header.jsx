@@ -21,11 +21,12 @@ export default function Header() {
       <nav className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="text-white">
-              <h1 className="text-2xl font-bold">Relm Care+</h1>
-              <p className="text-xs text-primary-100">Sistema de Garantias</p>
-            </div>
+          <Link to="/" className="flex items-center space-x-3">
+            <img 
+              src="/logo-relm.png" 
+              alt="Relm Bikes" 
+              className="h-12 w-auto"
+            />
           </Link>
 
           {/* Navigation */}

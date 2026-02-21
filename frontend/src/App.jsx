@@ -11,6 +11,8 @@ import EventsPage from './pages/EventsPage';
 import InsurancePage from './pages/InsurancePage';
 import NewsletterPage from './pages/NewsletterPage';
 import AdminDashboard from './pages/AdminDashboard';
+import CustomersPage from './pages/CustomersPage';
+import CustomerDetailPage from './pages/CustomerDetailPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,6 +52,38 @@ export default function App() {
                     ]}
                   >
                     <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/customers"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      'ADMIN_RELM',
+                      'GERENTE_RELM',
+                      'SUPORTE_RELM',
+                      'LOJA',
+                      'DISTRIBUIDOR',
+                    ]}
+                  >
+                    <CustomersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/customers/:id"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      'ADMIN_RELM',
+                      'GERENTE_RELM',
+                      'SUPORTE_RELM',
+                      'LOJA',
+                      'DISTRIBUIDOR',
+                    ]}
+                  >
+                    <CustomerDetailPage />
                   </ProtectedRoute>
                 }
               />
