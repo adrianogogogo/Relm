@@ -13,6 +13,7 @@ import NewsletterPage from './pages/NewsletterPage';
 import AdminDashboard from './pages/AdminDashboard';
 import CustomersPage from './pages/CustomersPage';
 import CustomerDetailPage from './pages/CustomerDetailPage';
+import CustomerFormPage from './pages/CustomerFormPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,6 +85,38 @@ export default function App() {
                     ]}
                   >
                     <CustomerDetailPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/customers/new"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      'ADMIN_RELM',
+                      'GERENTE_RELM',
+                      'SUPORTE_RELM',
+                      'LOJA',
+                      'DISTRIBUIDOR',
+                    ]}
+                  >
+                    <CustomerFormPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/customers/:id/edit"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      'ADMIN_RELM',
+                      'GERENTE_RELM',
+                      'SUPORTE_RELM',
+                      'LOJA',
+                      'DISTRIBUIDOR',
+                    ]}
+                  >
+                    <CustomerFormPage />
                   </ProtectedRoute>
                 }
               />

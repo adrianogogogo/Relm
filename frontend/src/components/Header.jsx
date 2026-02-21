@@ -22,11 +22,15 @@ export default function Header() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3">
-            <img 
-              src="/logo-relm.png" 
-              alt="Relm Bikes" 
-              className="h-12 w-auto"
-            />
+            <div className="flex items-center space-x-2">
+              <div className="bg-white rounded-full p-2">
+                <span className="text-primary text-2xl font-bold">R</span>
+              </div>
+              <div className="text-white">
+                <h1 className="text-xl font-bold tracking-tight">RELM BIKES</h1>
+                <p className="text-xs text-primary-100">Care+ Garantias</p>
+              </div>
+            </div>
           </Link>
 
           {/* Navigation */}
