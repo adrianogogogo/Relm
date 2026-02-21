@@ -28,6 +28,15 @@ model Customer {
   country  String?   @default("Brasil")
   zipCode  String?   @map("zip_code")
   
+  // Loja de compra
+  storeId  String?   @map("store_id")
+  
+  // Observações internas
+  notes    String?   @db.Text
+  
+  // Status
+  active   Boolean   @default(true)
+  
   // Marketing
   marketingConsent Boolean @default(false) @map("marketing_consent")
   
@@ -36,15 +45,18 @@ model Customer {
   updatedAt DateTime @updatedAt @map("updated_at")
   
   // Relations
-  warrantyClaims       WarrantyClaim[]
-  benefitMemberships   BenefitMembership[]
-  eventRegistrations   EventRegistration[]
+  store                  Store?                  @relation(fields: [storeId], references: [id])
+  warrantyClaims         WarrantyClaim[]
+  benefitMemberships     BenefitMembership[]
+  eventRegistrations     EventRegistration[]
   newsletterSubscription NewsletterSubscription?
-  insuranceQuotes      InsuranceQuote[]
-  privacyConsents      PrivacyConsent[]
+  insuranceQuotes        InsuranceQuote[]
+  privacyConsents        PrivacyConsent[]
   
   @@index([email])
   @@index([cpf])
+  @@index([storeId])
+  @@index([active])
   @@map("customers")
 }
 
@@ -92,6 +104,7 @@ model Store {
   // Relations
   products        Product[]
   users           User[]
+  customers       Customer[]
   warrantyClaims  WarrantyClaim[]
   
   @@index([city, state])
