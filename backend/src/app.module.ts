@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { CustomersModule } from './customers/customers.module';
+import { StoresModule } from './stores/stores.module';
 import { ProductsModule } from './products/products.module';
 import { WarrantyModule } from './warranty/warranty.module';
 import { BenefitsModule } from './benefits/benefits.module';
@@ -22,6 +23,7 @@ import { HealthController } from './health.controller';
     PrismaModule,
     AuthModule,
     CustomersModule,
+    StoresModule,
     ProductsModule,
     WarrantyModule,
     BenefitsModule,

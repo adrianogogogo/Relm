@@ -96,6 +96,9 @@ model Store {
   address    String?
   city       String
   state      String
+  zipCode    String?  @map("zip_code")
+  latitude   String?  // Coordenada geográfica
+  longitude  String?  // Coordenada geográfica
   active     Boolean  @default(true)
   
   createdAt  DateTime @default(now()) @map("created_at")
