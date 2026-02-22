@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { healthAPI } from '../services/api';
+import StoreLocator from '../components/StoreLocator';
 
 export default function HomePage() {
   const { data: health } = useQuery({
@@ -101,6 +102,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Store Locator */}
+      <StoreLocator />
 
       {/* CTA Section */}
       <section className="py-16 bg-white">
