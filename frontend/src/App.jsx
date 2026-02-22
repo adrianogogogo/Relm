@@ -16,6 +16,8 @@ import CustomerDetailPage from './pages/CustomerDetailPage';
 import CustomerFormPage from './pages/CustomerFormPage';
 import StoresPage from './pages/StoresPage';
 import StoreFormPage from './pages/StoreFormPage';
+import WarrantiesPage from './pages/WarrantiesPage';
+import ValidateWarrantyPage from './pages/ValidateWarrantyPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +44,7 @@ export default function App() {
               <Route path="/eventos" element={<EventsPage />} />
               <Route path="/seguro" element={<InsurancePage />} />
               <Route path="/newsletter" element={<NewsletterPage />} />
+              <Route path="/validar-garantia/:token" element={<ValidateWarrantyPage />} />
               <Route
                 path="/admin"
                 element={
@@ -55,6 +58,14 @@ export default function App() {
                     ]}
                   >
                     <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/warranties"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM']}>
+                    <WarrantiesPage />
                   </ProtectedRoute>
                 }
               />

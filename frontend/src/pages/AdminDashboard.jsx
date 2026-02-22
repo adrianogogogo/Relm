@@ -40,6 +40,12 @@ export default function AdminDashboard() {
               <h2 className="text-2xl font-bold mb-4">Ações Rápidas</h2>
               <div className="space-y-3">
                 <Link
+                  to="/admin/warranties"
+                  className="btn btn-outline w-full text-left flex items-center"
+                >
+                  📋 Gerenciar Garantias
+                </Link>
+                <Link
                   to="/admin/customers"
                   className="btn btn-outline w-full text-left flex items-center"
                 >
@@ -51,9 +57,6 @@ export default function AdminDashboard() {
                 >
                   🏪 Gerenciar Lojas
                 </Link>
-                <button className="btn btn-outline w-full text-left">
-                  📋 Ver Garantias Pendentes
-                </button>
                 <button className="btn btn-outline w-full text-left">
                   📊 Relatórios
                 </button>

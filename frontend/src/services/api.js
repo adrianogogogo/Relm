@@ -66,9 +66,12 @@ export const authAPI = {
 
 export const warrantyAPI = {
   createPublic: (data) => api.post('/public/warranty', data),
-  getAll: (params) => api.get('/warranty/claims', { params }),
-  getById: (id) => api.get(`/warranty/claims/${id}`),
-  updateStatus: (id, data) => api.patch(`/warranty/claims/${id}/status`, data),
+  getAll: (params) => api.get('/warranty/claims', { params }).then((res) => res.data),
+  getById: (id) => api.get(`/warranty/claims/${id}`).then((res) => res.data),
+  updateStatus: (id, data) => api.patch(`/warranty/claims/${id}/status`, data).then((res) => res.data),
+  approve: (id, data) => api.post(`/warranty/claims/${id}/approve`, data).then((res) => res.data),
+  reject: (id, data) => api.post(`/warranty/claims/${id}/reject`, data).then((res) => res.data),
+  validateToken: (token) => api.get(`/public/warranty/validate/${token}`).then((res) => res.data),
 };
 
 export const benefitsAPI = {
