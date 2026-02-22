@@ -14,6 +14,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import CustomersPage from './pages/CustomersPage';
 import CustomerDetailPage from './pages/CustomerDetailPage';
 import CustomerFormPage from './pages/CustomerFormPage';
+import StoresPage from './pages/StoresPage';
+import StoreFormPage from './pages/StoreFormPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -117,6 +119,32 @@ export default function App() {
                     ]}
                   >
                     <CustomerFormPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/stores"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'DISTRIBUIDOR']}
+                  >
+                    <StoresPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/stores/new"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                    <StoreFormPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/stores/:id/edit"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                    <StoreFormPage />
                   </ProtectedRoute>
                 }
               />

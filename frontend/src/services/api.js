@@ -90,3 +90,21 @@ export const newsletterAPI = {
 export const healthAPI = {
   check: () => api.get('/health'),
 };
+
+export const customersAPI = {
+  getAll: (params) => api.get('/customers', { params }).then((res) => res.data),
+  getById: (id) => api.get(`/customers/${id}`).then((res) => res.data),
+  create: (data) => api.post('/customers', data).then((res) => res.data),
+  update: (id, data) => api.patch(`/customers/${id}`, data).then((res) => res.data),
+  delete: (id) => api.delete(`/customers/${id}`).then((res) => res.data),
+};
+
+export const storesAPI = {
+  getAll: (params) => api.get('/stores', { params }).then((res) => res.data),
+  getById: (id) => api.get(`/stores/${id}`).then((res) => res.data),
+  create: (data) => api.post('/stores', data).then((res) => res.data),
+  update: (id, data) => api.patch(`/stores/${id}`, data).then((res) => res.data),
+  delete: (id) => api.delete(`/stores/${id}`).then((res) => res.data),
+  // Busca pública (sem autenticação)
+  getPublicStores: (params) => api.get('/public/stores', { params }).then((res) => res.data),
+};
