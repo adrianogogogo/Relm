@@ -45,11 +45,14 @@ export default function AdminDashboard() {
                 >
                   👥 Gerenciar Clientes
                 </Link>
+                <Link
+                  to="/admin/stores"
+                  className="btn btn-outline w-full text-left flex items-center"
+                >
+                  🏪 Gerenciar Lojas
+                </Link>
                 <button className="btn btn-outline w-full text-left">
                   📋 Ver Garantias Pendentes
-                </button>
-                <button className="btn btn-outline w-full text-left">
-                  🏪 Gerenciar Lojas
                 </button>
                 <button className="btn btn-outline w-full text-left">
                   📊 Relatórios
