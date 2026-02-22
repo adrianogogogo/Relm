@@ -51,4 +51,45 @@ export class WarrantyController {
       body,
     );
   }
+
+  @Post('warranty/claims/:id/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Aprovar garantia e enviar email com token' })
+  async approve(
+    @Param('id') id: string,
+    @Body() body: { adminNotes?: string },
+    @Request() req: any,
+  ) {
+    return this.warrantyService.approveWarranty(
+      id,
+      req.user.userId,
+      body.adminNotes,
+    );
+  }
+
+  @Post('warranty/claims/:id/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Rejeitar garantia e enviar email' })
+  async reject(
+    @Param('id') id: string,
+    @Body() body: { rejectionReason: string; adminNotes?: string },
+    @Request() req: any,
+  ) {
+    return this.warrantyService.rejectWarranty(
+      id,
+      req.user.userId,
+      body.rejectionReason,
+      body.adminNotes,
+    );
+  }
+
+  @Get('public/warranty/validate/:token')
+  @ApiOperation({ summary: 'Validar token de garantia (público)' })
+  async validateToken(@Param('token') token: string) {
+    return this.warrantyService.validateWarrantyToken(token);
+  }
 }
