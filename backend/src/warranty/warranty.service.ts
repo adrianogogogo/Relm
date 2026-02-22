@@ -274,25 +274,31 @@ export class WarrantyService {
       },
     });
 
-    // Enviar email
+    // Enviar email (não bloqueia a aprovação se falhar)
     try {
-      await this.emailService.sendWarrantyApprovalEmail({
-        to: updated.customer.email,
-        customerName: updated.customer.fullName,
-        protocolNumber: updated.protocolNumber,
-        validationToken,
-        productModel: updated.product.model,
-        serialNumber: updated.product.serialNumber,
-        approvedAt: now,
-      });
+      if (this.emailService) {
+        await this.emailService.sendWarrantyApprovalEmail({
+          to: updated.customer.email,
+          customerName: updated.customer.fullName,
+          protocolNumber: updated.protocolNumber,
+          validationToken,
+          productModel: updated.product.model,
+          serialNumber: updated.product.serialNumber,
+          approvedAt: now,
+        });
 
-      // Registrar envio do email
-      await this.prisma.warrantyClaim.update({
-        where: { id },
-        data: { approvalEmailSentAt: now },
-      });
+        // Registrar envio do email
+        await this.prisma.warrantyClaim.update({
+          where: { id },
+          data: { approvalEmailSentAt: now },
+        });
+
+        console.log(`✅ Email de aprovação enviado para ${updated.customer.email}`);
+      } else {
+        console.warn('⚠️ EmailService não disponível - email não enviado');
+      }
     } catch (error) {
-      console.error('Erro ao enviar email de aprovação:', error);
+      console.error('❌ Erro ao enviar email de aprovação:', error.message);
       // Não falha a aprovação se o email não for enviado
     }
 
@@ -354,17 +360,22 @@ export class WarrantyService {
       },
     });
 
-    // Enviar email
+    // Enviar email (não bloqueia a rejeição se falhar)
     try {
-      await this.emailService.sendWarrantyRejectionEmail({
-        to: updated.customer.email,
-        customerName: updated.customer.fullName,
-        protocolNumber: updated.protocolNumber,
-        rejectionReason,
-        productModel: updated.product.model,
-      });
+      if (this.emailService) {
+        await this.emailService.sendWarrantyRejectionEmail({
+          to: updated.customer.email,
+          customerName: updated.customer.fullName,
+          protocolNumber: updated.protocolNumber,
+          rejectionReason,
+          productModel: updated.product.model,
+        });
+        console.log(`✅ Email de rejeição enviado para ${updated.customer.email}`);
+      } else {
+        console.warn('⚠️ EmailService não disponível - email não enviado');
+      }
     } catch (error) {
-      console.error('Erro ao enviar email de rejeição:', error);
+      console.error('❌ Erro ao enviar email de rejeição:', error.message);
       // Não falha a rejeição se o email não for enviado
     }
 

@@ -5,17 +5,35 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class EmailService {
   private transporter: nodemailer.Transporter;
+  private isConfigured: boolean = false;
 
   constructor(private configService: ConfigService) {
-    this.transporter = nodemailer.createTransport({
-      host: this.configService.get('SMTP_HOST') || 'smtp.gmail.com',
-      port: this.configService.get('SMTP_PORT') || 587,
-      secure: false, // true for 465, false for other ports
-      auth: {
-        user: this.configService.get('SMTP_USER'),
-        pass: this.configService.get('SMTP_PASS'),
-      },
-    });
+    const smtpUser = this.configService.get('SMTP_USER');
+    const smtpPass = this.configService.get('SMTP_PASS');
+
+    if (!smtpUser || !smtpPass) {
+      console.warn('⚠️ SMTP não configurado - emails não serão enviados');
+      console.warn('Configure SMTP_USER e SMTP_PASS no .env.production');
+      this.isConfigured = false;
+      return;
+    }
+
+    try {
+      this.transporter = nodemailer.createTransport({
+        host: this.configService.get('SMTP_HOST') || 'smtp.gmail.com',
+        port: this.configService.get('SMTP_PORT') || 587,
+        secure: false, // true for 465, false for other ports
+        auth: {
+          user: smtpUser,
+          pass: smtpPass,
+        },
+      });
+      this.isConfigured = true;
+      console.log('✅ SMTP configurado:', smtpUser);
+    } catch (error) {
+      console.error('❌ Erro ao configurar SMTP:', error.message);
+      this.isConfigured = false;
+    }
   }
 
   async sendWarrantyApprovalEmail(data: {
@@ -27,6 +45,11 @@ export class EmailService {
     serialNumber: string;
     approvedAt: Date;
   }) {
+    if (!this.isConfigured || !this.transporter) {
+      console.warn('⚠️ SMTP não configurado - email de aprovação não enviado');
+      return { success: false, error: 'SMTP não configurado' };
+    }
+
     const validationUrl = `${this.configService.get('APP_URL')}/validar-garantia/${data.validationToken}`;
 
     const mailOptions = {
@@ -53,6 +76,11 @@ export class EmailService {
     rejectionReason: string;
     productModel: string;
   }) {
+    if (!this.isConfigured || !this.transporter) {
+      console.warn('⚠️ SMTP não configurado - email de rejeição não enviado');
+      return { success: false, error: 'SMTP não configurado' };
+    }
+
     const mailOptions = {
       from: `"Relm Care+" <${this.configService.get('SMTP_USER')}>`,
       to: data.to,
