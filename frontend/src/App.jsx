@@ -20,6 +20,7 @@ import WarrantiesPage from './pages/WarrantiesPage';
 import ValidateWarrantyPage from './pages/ValidateWarrantyPage';
 import StoreLoginPage from './pages/StoreLoginPage';
 import StoreDashboard from './pages/StoreDashboard';
+import BannersPage from './pages/BannersPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -163,6 +164,14 @@ export default function App() {
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
                     <StoreFormPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/banners"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                    <BannersPage />
                   </ProtectedRoute>
                 }
               />

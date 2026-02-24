@@ -117,3 +117,15 @@ export const storesAPI = {
   // Busca pública (sem autenticação)
   getPublicStores: (params) => api.get('/public/stores', { params }).then((res) => res.data),
 };
+
+export const bannersAPI = {
+  // Public endpoints
+  getActive: () => api.get('/public/banners').then((res) => res.data),
+  
+  // Admin endpoints
+  getAll: () => api.get('/banners').then((res) => res.data),
+  getById: (id) => api.get(`/banners/${id}`).then((res) => res.data),
+  create: (data) => api.post('/banners', data).then((res) => res.data),
+  update: (id, data) => api.patch(`/banners/${id}`, data).then((res) => res.data),
+  delete: (id) => api.delete(`/banners/${id}`).then((res) => res.data),
+};

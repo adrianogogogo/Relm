@@ -13,6 +13,7 @@ import { EventsModule } from './events/events.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
 import { ContentModule } from './content/content.module';
 import { ReportsModule } from './reports/reports.module';
+import { BannersModule } from './banners/banners.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -34,6 +35,7 @@ import { HealthController } from './health.controller';
     NewsletterModule,
     ContentModule,
     ReportsModule,
+    BannersModule,
   ],
   controllers: [HealthController],
 })

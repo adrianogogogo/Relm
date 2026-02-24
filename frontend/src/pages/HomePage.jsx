@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { healthAPI } from '../services/api';
 import StoreLocator from '../components/StoreLocator';
+import BannerCarousel from '../components/BannerCarousel';
 
 export default function HomePage() {
   const { data: health } = useQuery({
@@ -52,34 +53,8 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary to-secondary text-white py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            Bem-vindo ao Relm Care+
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 text-primary-50">
-            Sistema de CRM e Garantias para Relm Bikes
-          </p>
-          
-          {health && (
-            <div className="inline-block bg-white/20 backdrop-blur-sm px-6 py-3 rounded-full mb-8">
-              <span className="text-white font-semibold">
-                ✅ API Online | Database: {health.database} | Uptime: {Math.floor(health.uptime)}s
-              </span>
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-4 justify-center">
-            <Link to="/garantia" className="btn bg-white text-primary hover:bg-primary-50">
-              Solicitar Garantia
-            </Link>
-            <Link to="/vantagens" className="btn border-2 border-white text-white hover:bg-white hover:text-primary">
-              Ver Vantagens
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* Banner Carousel */}
+      <BannerCarousel />
 
       {/* Features Grid */}
       <section className="py-16 bg-gray-50">
