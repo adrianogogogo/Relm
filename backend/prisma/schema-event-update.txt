@@ -1,0 +1,33 @@
+model Event {
+  id                 String   @id @default(uuid())
+  title              String
+  description        String   @db.Text
+  location           String
+  startAt            DateTime @map("start_at")
+  endAt              DateTime @map("end_at")
+  maxParticipants    Int?     @map("max_participants")
+  active             Boolean  @default(true)
+  
+  // Novos campos
+  isPublic           Boolean  @default(true) @map("is_public")
+  requiresMembership Boolean  @default(false) @map("requires_membership")
+  imageUrl           String?  @map("image_url")
+  category           String?
+  createdByUserId    String?  @map("created_by_user_id")
+  storeId            String?  @map("store_id")
+
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  registrations EventRegistration[]
+  createdBy     User?   @relation("EventCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  store         Store?  @relation(fields: [storeId], references: [id], onDelete: SetNull)
+
+  @@index([startAt])
+  @@index([isPublic])
+  @@index([requiresMembership])
+  @@index([createdByUserId])
+  @@index([storeId])
+  @@map("events")
+}

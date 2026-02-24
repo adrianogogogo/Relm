@@ -12,6 +12,7 @@ import { EventsModule } from './events/events.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
 import { ContentModule } from './content/content.module';
 import { ReportsModule } from './reports/reports.module';
+import { MembershipModule } from './membership/membership.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -21,6 +22,7 @@ import { HealthController } from './health.controller';
       envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
     }),
     PrismaModule,
+    MembershipModule,
     AuthModule,
     CustomersModule,
     StoresModule,

@@ -79,7 +79,19 @@ export const benefitsAPI = {
 };
 
 export const eventsAPI = {
-  getAll: () => api.get('/public/events'),
+  // Public endpoints
+  getPublic: (params) => api.get('/public/events', { params }),
+  getPublicById: (id) => api.get(`/public/events/${id}`),
+  register: (id, customerId) => api.post(`/public/events/${id}/register`, { customerId }),
+  unregister: (id, customerId) => api.delete(`/public/events/${id}/unregister`, { data: { customerId } }),
+  
+  // Admin endpoints (require authentication)
+  getAll: (params) => api.get('/events', { params }),
+  getById: (id) => api.get(`/events/${id}`),
+  create: (data) => api.post('/events', data),
+  update: (id, data) => api.patch(`/events/${id}`, data),
+  delete: (id) => api.delete(`/events/${id}`),
+  getCustomerRegistrations: (customerId) => api.get(`/events/customer/${customerId}/registrations`),
 };
 
 export const insuranceAPI = {
@@ -110,4 +122,12 @@ export const storesAPI = {
   delete: (id) => api.delete(`/stores/${id}`).then((res) => res.data),
   // Busca pública (sem autenticação)
   getPublicStores: (params) => api.get('/public/stores', { params }).then((res) => res.data),
+};
+
+export const membershipAPI = {
+  getAll: (params) => api.get('/membership', { params }),
+  getByCustomerId: (customerId) => api.get(`/membership/customer/${customerId}`),
+  addPoints: (customerId, data) => api.post(`/membership/customer/${customerId}/points`, data),
+  getTiers: () => api.get('/membership/tiers'),
+  getTierBenefits: (tier) => api.get(`/membership/tiers/${tier}/benefits`),
 };

@@ -11,7 +11,7 @@ export default function CustomerFormPage() {
   const [stores, setStores] = useState([]);
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',  // ✅ CORRIGIDO: era 'name'
     cpf: '',
     email: '',
     phone: '',
@@ -43,7 +43,11 @@ export default function CustomerFormPage() {
     try {
       setLoading(true);
       const response = await api.get(`/customers/${id}`);
-      setFormData(response.data);
+      // ✅ Mapear fullName para o estado
+      setFormData({
+        ...response.data,
+        fullName: response.data.fullName || response.data.name || '',
+      });
     } catch (error) {
       console.error('Erro ao carregar cliente:', error);
       alert('Erro ao carregar dados do cliente');
@@ -55,7 +59,6 @@ export default function CustomerFormPage() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Limpar erro do campo quando usuário digitar
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
@@ -64,8 +67,8 @@ export default function CustomerFormPage() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Nome é obrigatório';
+    if (!formData.fullName.trim()) {  // ✅ CORRIGIDO
+      newErrors.fullName = 'Nome é obrigatório';
     }
 
     if (!formData.email.trim()) {
@@ -141,18 +144,43 @@ export default function CustomerFormPage() {
     try {
       setLoading(true);
 
+      // ✅ CORRIGIDO: Preparar payload removendo campos vazios
+      const payload = {
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        cpf: formData.cpf,
+      };
+
+      // Adicionar campos opcionais apenas se tiverem valor
+      if (formData.address) payload.address = formData.address;
+      if (formData.city) payload.city = formData.city;
+      if (formData.state) payload.state = formData.state;
+      if (formData.zipCode) payload.zipCode = formData.zipCode;
+      if (formData.notes) payload.notes = formData.notes;
+      
+      // ✅ CORRIGIDO: Só enviar storeId se for um UUID válido (não vazio e não "direct")
+      if (formData.storeId && formData.storeId !== '' && formData.storeId !== 'direct') {
+        payload.storeId = formData.storeId;
+      }
+
       if (isEditMode) {
-        await api.patch(`/customers/${id}`, formData);
+        await api.patch(`/customers/${id}`, payload);
         alert('Cliente atualizado com sucesso!');
       } else {
-        await api.post('/customers', formData);
+        await api.post('/customers', payload);
         alert('Cliente cadastrado com sucesso!');
       }
 
       navigate('/admin/customers');
     } catch (error) {
       console.error('Erro ao salvar cliente:', error);
-      alert(error.response?.data?.message || 'Erro ao salvar cliente');
+      const errorMessage = error.response?.data?.message;
+      if (Array.isArray(errorMessage)) {
+        alert('Erros:\n' + errorMessage.join('\n'));
+      } else {
+        alert(errorMessage || 'Erro ao salvar cliente');
+      }
     } finally {
       setLoading(false);
     }
@@ -173,7 +201,6 @@ export default function CustomerFormPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto">
-          {/* Header */}
           <div className="mb-8">
             <Link
               to="/admin/customers"
@@ -191,9 +218,7 @@ export default function CustomerFormPage() {
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
-            {/* Dados Pessoais */}
             <div>
               <h2 className="text-xl font-semibold mb-4 text-gray-900">Dados Pessoais</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -203,15 +228,15 @@ export default function CustomerFormPage() {
                   </label>
                   <input
                     type="text"
-                    name="name"
-                    value={formData.name}
+                    name="fullName"
+                    value={formData.fullName}
                     onChange={handleChange}
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                      errors.name ? 'border-red-500' : 'border-gray-300'
+                      errors.fullName ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="João da Silva"
                   />
-                  {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+                  {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
                 </div>
 
                 <div>
@@ -269,7 +294,6 @@ export default function CustomerFormPage() {
               </div>
             </div>
 
-            {/* Endereço */}
             <div>
               <h2 className="text-xl font-semibold mb-4 text-gray-900">Endereço</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -353,7 +377,6 @@ export default function CustomerFormPage() {
               </div>
             </div>
 
-            {/* Loja de Compra */}
             <div>
               <h2 className="text-xl font-semibold mb-4 text-gray-900">Informações de Compra</h2>
               <div>
@@ -380,7 +403,6 @@ export default function CustomerFormPage() {
               </div>
             </div>
 
-            {/* Observações */}
             <div>
               <h2 className="text-xl font-semibold mb-4 text-gray-900">Observações</h2>
               <div>
@@ -398,7 +420,6 @@ export default function CustomerFormPage() {
               </div>
             </div>
 
-            {/* Buttons */}
             <div className="flex gap-4 pt-4">
               <button
                 type="submit"
