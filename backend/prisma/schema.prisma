@@ -379,6 +379,31 @@ model InsuranceQuote {
   @@map("insurance_quotes")
 }
 
+model InsurancePolicy {
+  id                  String   @id @default(uuid())
+  policyNumber        String   @unique @map("policy_number")
+  quoteId             String?  @map("quote_id")
+  customerId          String   @map("customer_id")
+  productId           String?  @map("product_id")
+  insuranceCompany    String   @map("insurance_company")
+  policyValue         Decimal  @map("policy_value") @db.Decimal(10, 2)
+  coverageAmount      Decimal  @map("coverage_amount") @db.Decimal(10, 2)
+  deductible          Decimal? @db.Decimal(10, 2)
+  startDate           DateTime @map("start_date") @db.Date
+  endDate             DateTime @map("end_date") @db.Date
+  status              String   @default("ACTIVE")
+  monthlyPayment      Decimal? @map("monthly_payment") @db.Decimal(10, 2)
+  paymentDay          Int?     @map("payment_day")
+  policyDocumentUrl   String?  @map("policy_document_url")
+  notes               String?  @db.Text
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@index([customerId])
+  @@index([status])
+  @@map("insurance_policies")
+}
+
 // ============================================
 // EVENTS MODULE
 // ============================================
