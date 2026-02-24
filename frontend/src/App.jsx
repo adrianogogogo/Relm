@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tantml:parameter>
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import PublicLayout from './components/PublicLayout';
 import AdminLayout from './components/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
