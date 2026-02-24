@@ -43,18 +43,32 @@ else
     ERRORS=$((ERRORS + 1))
 fi
 
-# 5. Verificar rota de banners
-if grep -q "/admin/banners" frontend/src/App.jsx; then
+# 5. Verificar rota de banners (corrigido)
+if grep -q 'path="banners"' frontend/src/App.jsx || grep -q "path='banners'" frontend/src/App.jsx; then
     echo "✅ Rota /admin/banners configurada"
 else
     echo "❌ Rota /admin/banners não encontrada!"
     ERRORS=$((ERRORS + 1))
 fi
 
+# 6. Verificar se BannersPage está importado
+if grep -q "import.*BannersPage" frontend/src/App.jsx; then
+    echo "✅ BannersPage importado no App.jsx"
+else
+    echo "❌ BannersPage não importado!"
+    ERRORS=$((ERRORS + 1))
+fi
+
 echo ""
 if [ $ERRORS -eq 0 ]; then
-    echo "✅ ESTRUTURA OK - Tudo funcionando!"
+    echo "✅ ESTRUTURA 100% OK - Tudo funcionando!"
+    echo ""
+    echo "🎯 Sistema pronto:"
+    echo "  • Logo: ✅"
+    echo "  • Menu Admin: ✅"
+    echo "  • Rota Banners: ✅"
+    echo "  • Componentes: ✅"
 else
-    echo "❌ ENCONTRADOS $ERRORS PROBLEMAS!"
+    echo "❌ ENCONTRADOS $ERRORS PROBLEMA(S)!"
 fi
 echo ""
