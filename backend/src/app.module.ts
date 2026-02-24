@@ -9,6 +9,7 @@ import { ProductsModule } from './products/products.module';
 import { WarrantyModule } from './warranty/warranty.module';
 import { BenefitsModule } from './benefits/benefits.module';
 import { InsuranceModule } from './insurance/insurance.module';
+import { InsurancePoliciesModule } from './insurance-policies/insurance-policies.module';
 import { EventsModule } from './events/events.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
 import { ContentModule } from './content/content.module';
@@ -31,6 +32,7 @@ import { HealthController } from './health.controller';
     WarrantyModule,
     BenefitsModule,
     InsuranceModule,
+    InsurancePoliciesModule,
     EventsModule,
     NewsletterModule,
     ContentModule,
