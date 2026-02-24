@@ -1,0 +1,142 @@
+========================================
+INSURANCE MODULE - QUICK START GUIDE
+========================================
+
+📦 WHAT HAS BEEN CREATED:
+
+Backend Scripts (Ready to deploy on production server):
+  ✅ fix-insurance-prisma.sh          - Fixes Prisma schema relations
+  ✅ create-insurance-dtos.sh         - Creates all DTOs
+  ✅ update-insurance-service.sh      - Updates service with full CRUD
+  ✅ update-insurance-controller.sh   - Updates controller with all endpoints
+  ✅ deploy-insurance-module.sh       - Master deployment script (runs all above)
+
+Documentation:
+  ✅ INSURANCE-MODULE-DEPLOYMENT.md   - Complete deployment guide
+
+========================================
+🚀 QUICK DEPLOYMENT STEPS:
+========================================
+
+STEP 1: On Your Production Server (177.153.62.248)
+--------------------------------------------------
+# SSH into your server
+ssh root@177.153.62.248
+
+# Create scripts directory
+mkdir -p /home/user/webapp
+
+# Copy all .sh scripts to the server
+# (Use scp, rsync, or paste content directly)
+
+STEP 2: Run Backend Deployment
+--------------------------------
+cd /home/user/webapp
+bash deploy-insurance-module.sh
+
+This will:
+  - Fix Prisma schema
+  - Create DTOs
+  - Update Service & Controller
+  - Build backend
+  - Restart PM2
+  - Verify routes
+
+STEP 3: Test Backend APIs
+--------------------------
+# Get JWT token
+TOKEN=$(curl -s -X POST http://localhost:3005/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@relmbikes.com.br","password":"Admin@2024"}' | \
+  grep -o '"access_token":"[^"]*' | cut -d'"' -f4)
+
+# Test quotes endpoint
+curl -s -X GET "http://localhost:3005/api/insurance/quotes" \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+
+# Test policies endpoint
+curl -s -X GET "http://localhost:3005/api/insurance/policies" \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+
+========================================
+📋 API ENDPOINTS SUMMARY:
+========================================
+
+PUBLIC:
+  POST   /api/public/insurance-quote
+
+ADMIN - QUOTES:
+  GET    /api/insurance/quotes
+  GET    /api/insurance/quotes/:id
+  PATCH  /api/insurance/quotes/:id
+  POST   /api/insurance/quotes/:id/approve
+  POST   /api/insurance/quotes/:id/reject
+  POST   /api/insurance/quotes/:id/convert-to-policy
+
+ADMIN - POLICIES:
+  GET    /api/insurance/policies
+  GET    /api/insurance/policies/:id
+  POST   /api/insurance/policies
+  PATCH  /api/insurance/policies/:id
+  POST   /api/insurance/policies/:id/cancel
+  POST   /api/insurance/policies/:id/renew
+
+========================================
+🎨 FRONTEND PAGES TO CREATE:
+========================================
+
+1. InsurancePage.jsx        - Main page with Quotes/Policies tabs
+2. QuoteDetailPage.jsx       - Quote details and approval
+3. PolicyDetailPage.jsx      - Policy details and management
+4. PolicyFormPage.jsx        - Create new policy form
+
+Route in App.jsx:
+  /admin/seguros                    → InsurancePage
+  /admin/seguros/cotacoes/:id       → QuoteDetailPage
+  /admin/seguros/apolices/:id       → PolicyDetailPage
+  /admin/seguros/apolices/nova      → PolicyFormPage
+
+Update insuranceAPI in src/services/api.js with new endpoints.
+
+========================================
+✅ CHECKLIST:
+========================================
+
+Backend:
+  [ ] Copy scripts to server
+  [ ] Run deploy-insurance-module.sh
+  [ ] Test all API endpoints
+  [ ] Verify PM2 is running
+
+Frontend:
+  [ ] Create 4 pages (Insurance, QuoteDetail, PolicyDetail, PolicyForm)
+  [ ] Update insuranceAPI in api.js
+  [ ] Add routes to App.jsx
+  [ ] Update AdminLayout sidebar
+  [ ] Build and deploy frontend
+
+Testing:
+  [ ] Login as admin
+  [ ] View quotes and policies
+  [ ] Approve a quote
+  [ ] Create policy from quote
+  [ ] Cancel/renew policies
+
+========================================
+📞 NEED HELP?
+========================================
+
+Check logs:
+  pm2 logs relm-careplus-backend
+  tail -f /var/log/nginx/error.log
+
+Troubleshooting:
+  See INSURANCE-MODULE-DEPLOYMENT.md
+
+========================================
+
+Created by: GenSpark AI Developer
+Date: 2024-02-24
+Version: 1.0.0
+
+========================================
