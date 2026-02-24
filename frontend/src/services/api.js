@@ -64,6 +64,12 @@ export const authAPI = {
   refresh: (refreshToken) => api.post('/auth/refresh', { refreshToken }),
 };
 
+export const storeAuthAPI = {
+  login: (email, password) => api.post('/store-auth/login', { email, password }),
+  register: (data) => api.post('/store-auth/register', data),
+  getUsers: () => api.get('/store-auth/users').then((res) => res.data),
+};
+
 export const warrantyAPI = {
   createPublic: (data) => api.post('/public/warranty', data),
   getAll: (params) => api.get('/warranty/claims', { params }).then((res) => res.data),

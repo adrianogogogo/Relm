@@ -18,6 +18,8 @@ import StoresPage from './pages/StoresPage';
 import StoreFormPage from './pages/StoreFormPage';
 import WarrantiesPage from './pages/WarrantiesPage';
 import ValidateWarrantyPage from './pages/ValidateWarrantyPage';
+import StoreLoginPage from './pages/StoreLoginPage';
+import StoreDashboard from './pages/StoreDashboard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +47,11 @@ export default function App() {
               <Route path="/seguro" element={<InsurancePage />} />
               <Route path="/newsletter" element={<NewsletterPage />} />
               <Route path="/validar-garantia/:token" element={<ValidateWarrantyPage />} />
+              
+              {/* Store Portal Routes */}
+              <Route path="/loja/login" element={<StoreLoginPage />} />
+              <Route path="/loja/dashboard" element={<StoreDashboard />} />
+              
               <Route
                 path="/admin"
                 element={

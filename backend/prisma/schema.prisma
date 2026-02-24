@@ -109,9 +109,30 @@ model Store {
   users           User[]
   customers       Customer[]
   warrantyClaims  WarrantyClaim[]
+  storeUsers      StoreUser[]
   
   @@index([city, state])
   @@map("stores")
+}
+
+model StoreUser {
+  id           String   @id @default(uuid())
+  storeId      String   @map("store_id")
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  role         String   @default("STORE_ADMIN")
+  isActive     Boolean  @default(true) @map("is_active")
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  store Store @relation(fields: [storeId], references: [id])
+  
+  @@index([storeId])
+  @@index([email])
+  @@map("store_users")
 }
 
 enum UserRole {
