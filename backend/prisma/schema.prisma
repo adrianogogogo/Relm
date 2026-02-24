@@ -51,6 +51,7 @@ model Customer {
   eventRegistrations     EventRegistration[]
   newsletterSubscription NewsletterSubscription?
   insuranceQuotes        InsuranceQuote[]
+  insurancePolicies      InsurancePolicy[]
   privacyConsents        PrivacyConsent[]
   
   @@index([email])
@@ -469,45 +470,6 @@ model InsurancePolicy {
   @@index([status])
   @@index([endDate])
   @@map("insurance_policies")
-}
-
-model Customer {
-  id       String    @id @default(uuid())
-  email    String    @unique
-  passwordHash String? @map("password_hash")
-  fullName String    @map("full_name")
-  phone    String
-  cpf      String?
-  birthDate DateTime? @map("birth_date")
-  address  String?
-  city     String?
-  state    String?
-  country  String?   @default("Brasil")
-  zipCode  String?   @map("zip_code")
-  
-  storeId  String?   @map("store_id")
-  notes    String?   @db.Text
-  active   Boolean   @default(true)
-  marketingConsent Boolean @default(false) @map("marketing_consent")
-  
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  
-  // Relations
-  store                  Store?                  @relation(fields: [storeId], references: [id])
-  warrantyClaims         WarrantyClaim[]
-  benefitMemberships     BenefitMembership[]
-  eventRegistrations     EventRegistration[]
-  newsletterSubscription NewsletterSubscription?
-  insuranceQuotes        InsuranceQuote[]
-  insurancePolicies      InsurancePolicy[]
-  privacyConsents        PrivacyConsent[]
-  
-  @@index([email])
-  @@index([cpf])
-  @@index([storeId])
-  @@index([active])
-  @@map("customers")
 }
 
 // ============================================
