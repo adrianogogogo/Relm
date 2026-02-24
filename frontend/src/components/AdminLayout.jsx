@@ -1,5 +1,4 @@
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
 import { 
   LayoutDashboard, 
   Shield, 
@@ -7,21 +6,28 @@ import {
   Store, 
   Calendar,
   FileText,
-  Settings,
+  ImageIcon,
   LogOut
 } from 'lucide-react';
 
 export default function AdminLayout() {
   const location = useLocation();
-  const { user, logout } = useAuthStore();
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  };
 
   const menuItems = [
     { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/admin/warranties', label: 'Garantias', icon: Shield },
     { path: '/admin/customers', label: 'Clientes', icon: Users },
     { path: '/admin/stores', label: 'Lojas', icon: Store },
+    { path: '/admin/banners', label: 'Banners', icon: ImageIcon },
     { path: '/admin/events', label: 'Eventos', icon: Calendar },
-    { path: '/admin/seguros', label: 'Seguros', icon: FileText },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -39,8 +45,8 @@ export default function AdminLayout() {
 
         {/* User Info */}
         <div className="p-4 border-b border-primary-600">
-          <p className="font-semibold text-sm">{user?.name}</p>
-          <p className="text-xs text-primary-200">{user?.role}</p>
+          <p className="font-semibold text-sm">{user?.name || 'Admin'}</p>
+          <p className="text-xs text-primary-200">{user?.role || 'ADMIN_RELM'}</p>
         </div>
 
         {/* Menu */}
@@ -67,7 +73,7 @@ export default function AdminLayout() {
         {/* Logout */}
         <div className="p-4 border-t border-primary-600">
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="flex items-center space-x-3 w-full px-4 py-2 rounded-lg text-white hover:bg-primary-600 transition-colors"
           >
             <LogOut size={20} />
