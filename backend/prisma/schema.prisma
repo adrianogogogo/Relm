@@ -555,3 +555,58 @@ model Banner {
   @@index([displayOrder])
   @@map("banners")
 }
+
+// ============================================
+// INSURANCE POLICIES MODULE (NEW)
+// ============================================
+
+model InsurancePolicy {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  policyNumber      String   @unique @map("policy_number")
+  customerId        String   @map("customer_id") @db.Uuid
+  productId         String?  @map("product_id") @db.Uuid
+  insuranceCompany  String   @map("insurance_company")
+  policyValue       Decimal  @map("policy_value") @db.Decimal(10, 2)
+  coverageAmount    Decimal  @map("coverage_amount") @db.Decimal(10, 2)
+  startDate         DateTime @map("start_date") @db.Date
+  endDate           DateTime @map("end_date") @db.Date
+  status            String   @default("ACTIVE")
+  monthlyPayment    Decimal? @map("monthly_payment") @db.Decimal(10, 2)
+  paymentDay        Int?     @map("payment_day")
+  notes             String?  @db.Text
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([customerId])
+  @@index([status])
+  @@map("insurance_policies")
+}
+
+// ============================================
+// ENHANCED BENEFITS MODULE (NEW)
+// ============================================
+
+model BenefitItem {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title                String
+  description          String   @db.Text
+  category             String
+  discountPercentage   Decimal? @map("discount_percentage") @db.Decimal(5, 2)
+  partnerName          String?  @map("partner_name")
+  terms                String?  @db.Text
+  redemptionCode       String?  @map("redemption_code")
+  maxRedemptions       Int?     @map("max_redemptions")
+  currentRedemptions   Int      @default(0) @map("current_redemptions")
+  validFrom            DateTime? @map("valid_from") @db.Date
+  validUntil           DateTime? @map("valid_until") @db.Date
+  active               Boolean  @default(true)
+  featured             Boolean  @default(false)
+  imageUrl             String?  @map("image_url")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@index([active])
+  @@index([featured])
+  @@map("benefits")
+}
