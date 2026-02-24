@@ -6,8 +6,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import WarrantyPage from './pages/WarrantyPage';
-import BenefitsPage from './pages/BenefitsPage';
-import EventsPage from './pages/EventsPage';
+import PublicBenefitsPage from './pages/PublicBenefitsPage';
+import PublicEventsPage from './pages/PublicEventsPage';
 import InsurancePage from './pages/InsurancePage';
 import NewsletterPage from './pages/NewsletterPage';
 import AdminDashboard from './pages/AdminDashboard';
@@ -21,6 +21,9 @@ import ValidateWarrantyPage from './pages/ValidateWarrantyPage';
 import StoreLoginPage from './pages/StoreLoginPage';
 import StoreDashboard from './pages/StoreDashboard';
 import BannersPage from './pages/BannersPage';
+import EventsPage from './pages/EventsPage';
+import InsurancePoliciesPage from './pages/InsurancePoliciesPage';
+import BenefitsPage from './pages/BenefitsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,8 +45,8 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/garantia" element={<WarrantyPage />} />
-            <Route path="/vantagens" element={<BenefitsPage />} />
-            <Route path="/eventos" element={<EventsPage />} />
+            <Route path="/vantagens" element={<PublicBenefitsPage />} />
+            <Route path="/eventos" element={<PublicEventsPage />} />
             <Route path="/seguro" element={<InsurancePage />} />
             <Route path="/newsletter" element={<NewsletterPage />} />
             <Route path="/validar-garantia/:token" element={<ValidateWarrantyPage />} />
@@ -80,6 +83,9 @@ export default function App() {
             <Route path="stores/new" element={<StoreFormPage />} />
             <Route path="stores/:id/edit" element={<StoreFormPage />} />
             <Route path="banners" element={<BannersPage />} />
+            <Route path="events" element={<EventsPage />} />
+            <Route path="insurance" element={<InsurancePoliciesPage />} />
+            <Route path="benefits" element={<BenefitsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

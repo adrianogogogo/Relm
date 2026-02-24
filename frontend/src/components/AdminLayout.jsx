@@ -8,6 +8,7 @@ import {
   Calendar,
   Newspaper,
   Shield,
+  Gift,
   LogOut,
   ImageIcon,
 } from 'lucide-react';
@@ -30,6 +31,7 @@ export default function AdminLayout() {
     { path: '/admin/banners', label: 'Banners', icon: ImageIcon },
     { path: '/admin/events', label: 'Eventos', icon: Calendar },
     { path: '/admin/insurance', label: 'Seguros', icon: Shield },
+    { path: '/admin/benefits', label: 'RELM Club', icon: Gift },
     { path: '/newsletter', label: 'Newsletter', icon: Newspaper },
   ];
 
