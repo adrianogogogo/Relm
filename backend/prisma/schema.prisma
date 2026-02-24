@@ -399,7 +399,7 @@ model TierBenefit {
   id          String   @id @default(uuid())
   tier        String
   benefitType String   @map("benefit_type")
-  value       String
+  value       String?  // Tornar opcional
   description String?
   active      Boolean  @default(true)
   createdAt   DateTime @default(now()) @map("created_at")
