@@ -22,7 +22,17 @@ export default function Header() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2">
+            <img 
+              src="/logo-relm.png" 
+              alt="RELM Bikes Care+" 
+              className="h-12 w-auto"
+              onError={(e) => {
+                // Fallback to text logo if image doesn't load
+                e.target.style.display = 'none';
+                e.target.nextElementSibling.style.display = 'flex';
+              }}
+            />
+            <div className="flex items-center space-x-2" style={{ display: 'none' }}>
               <div className="bg-white rounded-full p-2">
                 <span className="text-primary text-2xl font-bold">R</span>
               </div>
