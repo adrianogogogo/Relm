@@ -219,7 +219,7 @@ const BannersPage = () => {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors shadow-lg"
+          className="flex items-center space-x-2 bg-[#00BCD4] hover:bg-[#2FC0D3] text-white px-6 py-3 rounded-lg font-semibold transition-colors shadow-lg"
         >
           <Plus className="w-5 h-5" />
           <span>Novo Banner</span>
@@ -263,7 +263,7 @@ const BannersPage = () => {
                         setImagePreview(null);
                         setFormData({ ...formData, imageUrl: '' });
                       }}
-                      className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                      className="absolute top-2 right-2 bg-[#FF4043] text-white p-2 rounded-full hover:bg-[#FF4043]/90 transition-colors"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -272,10 +272,10 @@ const BannersPage = () => {
 
                 {/* Upload Button */}
                 <label className="block">
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors cursor-pointer bg-gray-50">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#00BCD4] transition-colors cursor-pointer bg-gray-50">
                     {uploading ? (
                       <div className="flex flex-col items-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-2"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00BCD4] mb-2"></div>
                         <span className="text-sm text-gray-600">Enviando imagem...</span>
                       </div>
                     ) : (
@@ -320,7 +320,7 @@ const BannersPage = () => {
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00BCD4] focus:border-transparent text-black"
                   placeholder="Ex: RELM Care+ Garantias"
                   required
                 />
@@ -335,7 +335,7 @@ const BannersPage = () => {
                   type="text"
                   value={formData.subtitle}
                   onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00BCD4] focus:border-transparent text-black"
                   placeholder="Ex: Proteção completa para sua bike"
                 />
               </div>
@@ -349,7 +349,7 @@ const BannersPage = () => {
                   type="url"
                   value={formData.linkUrl}
                   onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00BCD4] focus:border-transparent text-black"
                   placeholder="https://exemplo.com"
                 />
               </div>
@@ -363,7 +363,7 @@ const BannersPage = () => {
                   type="text"
                   value={formData.linkText}
                   onChange={(e) => setFormData({ ...formData, linkText: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00BCD4] focus:border-transparent text-black"
                   placeholder="Ex: Saiba Mais"
                 />
               </div>
@@ -379,7 +379,7 @@ const BannersPage = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 0 })
                   }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00BCD4] focus:border-transparent text-black"
                   min="0"
                 />
                 <p className="text-xs text-gray-500 mt-1">
@@ -394,9 +394,9 @@ const BannersPage = () => {
                   id="active"
                   checked={formData.active}
                   onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
-                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="w-5 h-5 text-[#00BCD4] border-gray-300 rounded focus:ring-[#00BCD4]"
                 />
-                <label htmlFor="active" className="text-sm font-medium text-gray-700">
+                <label htmlFor="active" className="text-sm font-medium text-black">
                   Banner Ativo (visível na homepage)
                 </label>
               </div>
@@ -413,7 +413,7 @@ const BannersPage = () => {
                 <button
                   type="submit"
                   disabled={uploading}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-[#00BCD4] hover:bg-[#2FC0D3] text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {editingBanner ? 'Atualizar' : 'Criar'} Banner
                 </button>
@@ -517,14 +517,14 @@ const BannersPage = () => {
                       <div className="flex items-center justify-end space-x-2">
                         <button
                           onClick={() => handleEdit(banner)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-2 text-[#00BCD4] hover:bg-[#00BCD4]/10 rounded-lg transition-colors"
                           title="Editar"
                         >
                           <Edit2 className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => handleDelete(banner.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-[#FF4043] hover:bg-[#FF4043]/10 rounded-lg transition-colors"
                           title="Excluir"
                         >
                           <Trash2 className="w-5 h-5" />
