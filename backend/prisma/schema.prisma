@@ -381,12 +381,15 @@ model BenefitRedemption {
 
 // Tabelas existentes em produção
 model MembershipTransaction {
-  id           String   @id @default(uuid())
-  membershipId String   @map("membership_id")
-  type         String   // EARN, REDEEM, EXPIRE
-  points       Int
-  description  String?
-  createdAt    DateTime @default(now()) @map("created_at")
+  id            String   @id @default(uuid())
+  membershipId  String   @map("membership_id")
+  type          String   // EARN, REDEEM, EXPIRE
+  points        Int
+  description   String?
+  reason        String?  // Campo existente em produção
+  referenceType String?  @map("reference_type") // Campo existente
+  referenceId   String?  @map("reference_id")   // Campo existente
+  createdAt     DateTime @default(now()) @map("created_at")
   
   // Relations
   membership BenefitMembership @relation(fields: [membershipId], references: [id])
@@ -396,14 +399,15 @@ model MembershipTransaction {
 }
 
 model TierBenefit {
-  id          String   @id @default(uuid())
-  tier        String
-  benefitType String   @map("benefit_type")
-  value       String?  // Tornar opcional
-  description String?
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(uuid())
+  tier         String
+  benefitType  String   @map("benefit_type")
+  value        String?  // Campo opcional
+  benefitValue String?  @map("benefit_value") // Campo existente em produção
+  description  String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
   
   @@index([tier])
   @@map("tier_benefits")
@@ -413,13 +417,14 @@ model TierBenefit {
 // INSURANCE MODULE
 // ============================================
 
-enum InsuranceQuoteStatus {
-  PENDING
-  APPROVED
-  CONVERTED
-  REJECTED
-  EXPIRED
-}
+// Status como String para compatibilidade com dados existentes
+// enum InsuranceQuoteStatus {
+//   PENDING
+//   APPROVED
+//   CONVERTED
+//   REJECTED
+//   EXPIRED
+// }
 
 enum InsurancePolicyStatus {
   ACTIVE
@@ -442,7 +447,7 @@ model InsuranceQuote {
   // V2: campos de integração
   quoteValue        Decimal?            @map("quote_value") @db.Decimal(10, 2)
   insuranceCompany  String?             @map("insurance_company")
-  status            InsuranceQuoteStatus @default(PENDING)
+  status            String              @default("PENDING") // String para compatibilidade
   
   // Notas e observações
   notes             String?             @db.Text
@@ -671,7 +676,7 @@ model AuditLog {
 // ============================================
 
 model Banner {
-  id           String   @id @default(uuid())
+  id           Int      @id @default(autoincrement()) // Manter Int para compatibilidade
   title        String
   subtitle     String?
   imageUrl     String   @map("image_url")
