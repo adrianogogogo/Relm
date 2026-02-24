@@ -10,18 +10,28 @@ const BannerCarousel = () => {
 
   useEffect(() => {
     loadBanners();
+  }, []);
+
+  useEffect(() => {
+    if (banners.length === 0) return;
+    
     const interval = setInterval(() => {
-      nextBanner();
+      setCurrentIndex((prev) => (prev + 1) % banners.length);
     }, 5000); // Auto-advance every 5 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [banners.length]);
 
   const loadBanners = async () => {
     try {
       setLoading(true);
       const data = await bannersAPI.getActive();
-      setBanners(data);
+      if (data && data.length > 0) {
+        setBanners(data);
+        setCurrentIndex(0);
+      } else {
+        setError('Nenhum banner disponível');
+      }
     } catch (err) {
       setError('Erro ao carregar banners');
       console.error('Erro ao carregar banners:', err);
@@ -31,10 +41,12 @@ const BannerCarousel = () => {
   };
 
   const nextBanner = () => {
+    if (banners.length === 0) return;
     setCurrentIndex((prev) => (prev + 1) % banners.length);
   };
 
   const prevBanner = () => {
+    if (banners.length === 0) return;
     setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
   };
 
@@ -55,6 +67,11 @@ const BannerCarousel = () => {
   }
 
   const currentBanner = banners[currentIndex];
+
+  // Proteção adicional
+  if (!currentBanner) {
+    return null;
+  }
 
   return (
     <div className="relative w-full h-96 overflow-hidden bg-gray-900">

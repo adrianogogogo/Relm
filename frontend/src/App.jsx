@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tantml:parameter>
 import PublicLayout from './components/PublicLayout';
 import AdminLayout from './components/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -55,6 +55,7 @@ export default function App() {
 
           {/* Admin Routes with AdminLayout */}
           <Route
+            path="/admin"
             element={
               <ProtectedRoute
                 allowedRoles={[
@@ -69,74 +70,16 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/admin" element={<AdminDashboard />} />
-            
-            <Route
-              path="/admin/warranties"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM']}>
-                  <WarrantiesPage />
-                </ProtectedRoute>
-              }
-            />
-            
-            <Route
-              path="/admin/customers"
-              element={<CustomersPage />}
-            />
-            
-            <Route
-              path="/admin/customers/:id"
-              element={<CustomerDetailPage />}
-            />
-            
-            <Route
-              path="/admin/customers/new"
-              element={<CustomerFormPage />}
-            />
-            
-            <Route
-              path="/admin/customers/:id/edit"
-              element={<CustomerFormPage />}
-            />
-            
-            <Route
-              path="/admin/stores"
-              element={
-                <ProtectedRoute
-                  allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'DISTRIBUIDOR']}
-                >
-                  <StoresPage />
-                </ProtectedRoute>
-              }
-            />
-            
-            <Route
-              path="/admin/stores/new"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
-                  <StoreFormPage />
-                </ProtectedRoute>
-              }
-            />
-            
-            <Route
-              path="/admin/stores/:id/edit"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
-                  <StoreFormPage />
-                </ProtectedRoute>
-              }
-            />
-            
-            <Route
-              path="/admin/banners"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
-                  <BannersPage />
-                </ProtectedRoute>
-              }
-            />
+            <Route index element={<AdminDashboard />} />
+            <Route path="warranties" element={<WarrantiesPage />} />
+            <Route path="customers" element={<CustomersPage />} />
+            <Route path="customers/:id" element={<CustomerDetailPage />} />
+            <Route path="customers/new" element={<CustomerFormPage />} />
+            <Route path="customers/:id/edit" element={<CustomerFormPage />} />
+            <Route path="stores" element={<StoresPage />} />
+            <Route path="stores/new" element={<StoreFormPage />} />
+            <Route path="stores/:id/edit" element={<StoreFormPage />} />
+            <Route path="banners" element={<BannersPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
