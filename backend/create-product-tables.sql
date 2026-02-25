@@ -2,6 +2,10 @@
 -- NOVA ARQUITETURA DE PRODUTOS - RELM CARE
 -- Criação das 4 tabelas principais
 -- ============================================
+-- IMPORTANTE: customers.id é TEXT (não UUID), então as FKs para 
+-- customers foram removidas temporariamente. A validação será 
+-- feita no nível da aplicação até que o tipo seja migrado.
+-- ============================================
 
 -- ============================================
 -- 1. PRODUCT_CATALOG (Catálogo de Produtos)
@@ -44,7 +48,7 @@ CREATE INDEX IF NOT EXISTS idx_product_catalog_brand ON product_catalog(brand);
 -- ============================================
 CREATE TABLE IF NOT EXISTS customer_products (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    customer_id UUID NOT NULL, -- Remove FK por enquanto devido incompatibilidade de tipo
     product_catalog_id UUID REFERENCES product_catalog(id) ON DELETE SET NULL,
     
     -- Informações do produto
@@ -71,7 +75,7 @@ CREATE TABLE IF NOT EXISTS customer_products (
     registration_date TIMESTAMP DEFAULT NOW(),
     
     -- Transferência
-    transferred_to_customer_id UUID REFERENCES customers(id),
+    transferred_to_customer_id UUID, -- Remove FK por enquanto
     transferred_at TIMESTAMP,
     transfer_notes TEXT,
     
@@ -105,7 +109,7 @@ CREATE INDEX IF NOT EXISTS idx_customer_products_store ON customer_products(stor
 CREATE TABLE IF NOT EXISTS extended_warranties (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     customer_product_id UUID NOT NULL REFERENCES customer_products(id) ON DELETE CASCADE,
-    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    customer_id UUID NOT NULL, -- Remove FK por enquanto
     
     -- Tipo
     type VARCHAR(50) NOT NULL, -- 'PURCHASED', 'GRANTED', 'PROMOTIONAL', 'CLUB_REDEMPTION'
@@ -165,12 +169,12 @@ CREATE TABLE IF NOT EXISTS product_history (
     description TEXT, -- Descrição legível do evento
     
     -- Transferência
-    from_customer_id UUID REFERENCES customers(id),
-    to_customer_id UUID REFERENCES customers(id),
+    from_customer_id UUID, -- Remove FK por enquanto
+    to_customer_id UUID, -- Remove FK por enquanto
     
     -- Quem fez
     performed_by_user_id UUID REFERENCES users(id), -- Admin que fez ação
-    performed_by_customer_id UUID REFERENCES customers(id), -- Cliente que fez ação
+    performed_by_customer_id UUID, -- Cliente que fez ação (sem FK)
     
     -- Metadata
     notes TEXT,
