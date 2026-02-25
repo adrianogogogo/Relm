@@ -3,9 +3,10 @@
 -- Criação das 4 tabelas principais
 -- ============================================
 -- IMPORTANTE: 
--- - customers.id e stores.id são TEXT (não UUID)
--- - FKs para customers e stores foram removidas temporariamente
+-- - customers.id, stores.id e users.id são TEXT (não UUID)
+-- - Todas as FKs para estas tabelas foram removidas temporariamente
 -- - A validação será feita no nível da aplicação (NestJS)
+-- - Apenas product_catalog.id é UUID e tem FKs funcionando
 -- ============================================
 
 -- ============================================
@@ -68,7 +69,7 @@ CREATE TABLE IF NOT EXISTS customer_products (
     -- Aprovação
     verification_status VARCHAR(50) DEFAULT 'PENDING', -- PENDING, APPROVED, REJECTED, AUTO_APPROVED
     verified_at TIMESTAMP,
-    verified_by_user_id UUID REFERENCES users(id),
+    verified_by_user_id UUID, -- Remove FK (users.id é TEXT)
     rejection_reason TEXT,
     
     -- Status
@@ -139,9 +140,9 @@ CREATE TABLE IF NOT EXISTS extended_warranties (
     
     -- Metadata
     notes TEXT,
-    granted_by_user_id UUID REFERENCES users(id), -- Se foi concedida por admin
+    granted_by_user_id UUID, -- Admin que concedeu (sem FK - users.id é TEXT)
     cancelled_at TIMESTAMP,
-    cancelled_by_user_id UUID REFERENCES users(id),
+    cancelled_by_user_id UUID, -- Admin que cancelou (sem FK)
     cancellation_reason TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -174,8 +175,8 @@ CREATE TABLE IF NOT EXISTS product_history (
     to_customer_id UUID, -- Remove FK por enquanto
     
     -- Quem fez
-    performed_by_user_id UUID REFERENCES users(id), -- Admin que fez ação
-    performed_by_customer_id UUID, -- Cliente que fez ação (sem FK)
+    performed_by_user_id UUID, -- Admin que fez ação (sem FK - users.id é TEXT)
+    performed_by_customer_id UUID, -- Cliente que fez ação (sem FK - customers.id é TEXT)
     
     -- Metadata
     notes TEXT,
