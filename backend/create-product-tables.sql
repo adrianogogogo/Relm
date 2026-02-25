@@ -2,9 +2,10 @@
 -- NOVA ARQUITETURA DE PRODUTOS - RELM CARE
 -- Criação das 4 tabelas principais
 -- ============================================
--- IMPORTANTE: customers.id é TEXT (não UUID), então as FKs para 
--- customers foram removidas temporariamente. A validação será 
--- feita no nível da aplicação até que o tipo seja migrado.
+-- IMPORTANTE: 
+-- - customers.id e stores.id são TEXT (não UUID)
+-- - FKs para customers e stores foram removidas temporariamente
+-- - A validação será feita no nível da aplicação (NestJS)
 -- ============================================
 
 -- ============================================
@@ -60,7 +61,7 @@ CREATE TABLE IF NOT EXISTS customer_products (
     invoice_number VARCHAR(255),
     invoice_url VARCHAR(500), -- Upload da nota fiscal
     store_name VARCHAR(255),
-    store_id UUID REFERENCES stores(id) ON DELETE SET NULL,
+    store_id UUID, -- Remove FK (stores.id é TEXT)
     purchase_price DECIMAL(10,2),
     product_value DECIMAL(10,2), -- Valor declarado do produto
     
