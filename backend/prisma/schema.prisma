@@ -215,6 +215,7 @@ model WarrantyClaim {
   customerId           String         @map("customer_id")
   productId            String         @map("product_id")
   storeId              String?        @map("store_id")
+  customerProductId    String?        @map("customer_product_id") // Novo: link para produtos registrados
   
   // Dados da nota fiscal
   invoiceNumber        String         @map("invoice_number")
@@ -252,6 +253,7 @@ model WarrantyClaim {
   customer Customer @relation(fields: [customerId], references: [id])
   product  Product  @relation(fields: [productId], references: [id])
   store    Store?   @relation(fields: [storeId], references: [id])
+  customerProduct CustomerProduct? @relation(fields: [customerProductId], references: [id])
   events   WarrantyEvent[]
   
   @@index([protocolNumber])
@@ -579,4 +581,194 @@ model Banner {
   @@index([active])
   @@index([displayOrder])
   @@map("banners")
+}
+
+// ============================================
+// NOVA ARQUITETURA DE PRODUTOS - RELM CARE
+// ============================================
+
+model ProductCatalog {
+  id                      String   @id @default(uuid())
+  name                    String
+  category                String   // BICYCLE, ACCESSORY
+  type                    String?
+  brand                   String   @default("Relm Bikes")
+  model                   String?
+  description             String?  @db.Text
+  requiresSerial          Boolean  @default(true) @map("requires_serial")
+  imageUrl                String?  @map("image_url")
+  active                  Boolean  @default(true)
+  
+  // Garantia padrão
+  hasStandardWarranty     Boolean? @default(false) @map("has_standard_warranty")
+  standardWarrantyMonths  Int?     @map("standard_warranty_months")
+  
+  // Garantia estendida
+  canExtendWarranty       Boolean? @default(false) @map("can_extend_warranty")
+  extendedWarrantyMonths  Int?     @map("extended_warranty_months")
+  extendedWarrantyPrice   Decimal? @map("extended_warranty_price") @db.Decimal(10, 2)
+  
+  // Clube
+  clubPointsBase          Int?     @default(0) @map("club_points_base")
+  
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  customerProducts        CustomerProduct[]
+  
+  @@map("product_catalog")
+  @@index([category])
+  @@index([active])
+  @@index([brand])
+}
+
+model CustomerProduct {
+  id                         String    @id @default(uuid())
+  customerId                 String    @map("customer_id")
+  productCatalogId           String?   @map("product_catalog_id")
+  
+  // Produto
+  customName                 String?   @map("custom_name")
+  serialNumber               String?   @map("serial_number")
+  
+  // Compra
+  purchaseDate               DateTime? @map("purchase_date") @db.Date
+  invoiceNumber              String?   @map("invoice_number")
+  invoiceUrl                 String?   @map("invoice_url")
+  storeName                  String?   @map("store_name")
+  storeId                    String?   @map("store_id")
+  purchasePrice              Decimal?  @map("purchase_price") @db.Decimal(10, 2)
+  productValue               Decimal?  @map("product_value") @db.Decimal(10, 2)
+  
+  // Aprovação
+  verificationStatus         String    @default("PENDING") @map("verification_status")
+  verifiedAt                 DateTime? @map("verified_at")
+  verifiedByUserId           String?   @map("verified_by_user_id")
+  rejectionReason            String?   @map("rejection_reason") @db.Text
+  
+  // Status
+  status                     String    @default("ACTIVE")
+  registrationDate           DateTime  @default(now()) @map("registration_date")
+  
+  // Transferência
+  transferredToCustomerId    String?   @map("transferred_to_customer_id")
+  transferredAt              DateTime? @map("transferred_at")
+  transferNotes              String?   @map("transfer_notes") @db.Text
+  
+  // Garantia padrão
+  standardWarrantyActivated   Boolean   @default(false) @map("standard_warranty_activated")
+  standardWarrantyActivatedAt DateTime? @map("standard_warranty_activated_at")
+  standardWarrantyExpiresAt   DateTime? @map("standard_warranty_expires_at")
+  
+  // Clube
+  clubMemberSince            DateTime? @map("club_member_since")
+  clubPoints                 Int       @default(0) @map("club_points")
+  
+  // Metadata
+  notes                      String?   @db.Text
+  adminNotes                 String?   @map("admin_notes") @db.Text
+  createdAt                  DateTime  @default(now()) @map("created_at")
+  updatedAt                  DateTime  @updatedAt @map("updated_at")
+  
+  // Relations
+  productCatalog             ProductCatalog?      @relation(fields: [productCatalogId], references: [id], onDelete: SetNull)
+  extendedWarranties         ExtendedWarranty[]
+  productHistory             ProductHistory[]
+  warrantyClaims             WarrantyClaim[]
+  
+  @@map("customer_products")
+  @@index([customerId])
+  @@index([productCatalogId])
+  @@index([serialNumber])
+  @@index([status])
+  @@index([verificationStatus])
+  @@index([storeId])
+}
+
+model ExtendedWarranty {
+  id                   String    @id @default(uuid())
+  customerProductId    String    @map("customer_product_id")
+  customerId           String    @map("customer_id")
+  
+  // Tipo
+  type                 String    // PURCHASED, GRANTED, PROMOTIONAL, CLUB_REDEMPTION
+  
+  // Período
+  startDate            DateTime  @map("start_date") @db.Date
+  endDate              DateTime  @map("end_date") @db.Date
+  durationMonths       Int       @map("duration_months")
+  
+  // Pagamento
+  pricePaid            Decimal?  @default(0) @map("price_paid") @db.Decimal(10, 2)
+  paymentStatus        String?   @default("FREE") @map("payment_status")
+  paymentDate          DateTime? @map("payment_date")
+  paymentMethod        String?   @map("payment_method")
+  paymentReference     String?   @map("payment_reference")
+  
+  // Clube
+  clubPointsUsed       Int?      @default(0) @map("club_points_used")
+  
+  // Status
+  status               String    @default("ACTIVE")
+  
+  // Uso
+  claimsAllowed        Int       @default(1) @map("claims_allowed")
+  claimsUsed           Int       @default(0) @map("claims_used")
+  
+  // Metadata
+  notes                String?   @db.Text
+  grantedByUserId      String?   @map("granted_by_user_id")
+  cancelledAt          DateTime? @map("cancelled_at")
+  cancelledByUserId    String?   @map("cancelled_by_user_id")
+  cancellationReason   String?   @map("cancellation_reason") @db.Text
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  
+  // Relations
+  customerProduct      CustomerProduct @relation(fields: [customerProductId], references: [id], onDelete: Cascade)
+  
+  @@map("extended_warranties")
+  @@index([customerId])
+  @@index([customerProductId])
+  @@index([status])
+  @@index([type])
+  @@index([startDate, endDate])
+}
+
+model ProductHistory {
+  id                     String    @id @default(uuid())
+  customerProductId      String    @map("customer_product_id")
+  
+  // Evento
+  eventType              String    @map("event_type")
+  
+  // Detalhes
+  fromValue              String?   @map("from_value") @db.Text
+  toValue                String?   @map("to_value") @db.Text
+  description            String?   @db.Text
+  
+  // Transferência
+  fromCustomerId         String?   @map("from_customer_id")
+  toCustomerId           String?   @map("to_customer_id")
+  
+  // Quem fez
+  performedByUserId      String?   @map("performed_by_user_id")
+  performedByCustomerId  String?   @map("performed_by_customer_id")
+  
+  // Metadata
+  notes                  String?   @db.Text
+  ipAddress              String?   @map("ip_address")
+  userAgent              String?   @map("user_agent") @db.Text
+  createdAt              DateTime  @default(now()) @map("created_at")
+  
+  // Relations
+  customerProduct        CustomerProduct @relation(fields: [customerProductId], references: [id], onDelete: Cascade)
+  
+  @@map("product_history")
+  @@index([customerProductId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([fromCustomerId])
+  @@index([toCustomerId])
 }
