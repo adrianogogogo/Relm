@@ -15,6 +15,9 @@ import { NewsletterModule } from './newsletter/newsletter.module';
 import { ContentModule } from './content/content.module';
 import { ReportsModule } from './reports/reports.module';
 import { BannersModule } from './banners/banners.module';
+import { ProductCatalogModule } from './product-catalog/product-catalog.module';
+import { CustomerProductsModule } from './customer-products/customer-products.module';
+import { ExtendedWarrantiesModule } from './extended-warranties/extended-warranties.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -38,6 +41,9 @@ import { HealthController } from './health.controller';
     ContentModule,
     ReportsModule,
     BannersModule,
+    ProductCatalogModule,
+    CustomerProductsModule,
+    ExtendedWarrantiesModule,
   ],
   controllers: [HealthController],
 })
