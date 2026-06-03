@@ -2,7 +2,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gray-800 text-white mt-auto">
+    <footer className="bg-primary text-white mt-auto">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* About */}
@@ -19,14 +19,14 @@ export default function Footer() {
             <h4 className="font-semibold mb-4">Links Rápidos</h4>
             <ul className="space-y-2 text-sm text-gray-400">
               <li>
-                <a href="/" className="hover:text-primary transition-colors">
+                <a href="/" className="hover:text-secondary transition-colors">
                   Início
                 </a>
               </li>
               <li>
                 <a
                   href="/garantia"
-                  className="hover:text-primary transition-colors"
+                  className="hover:text-secondary transition-colors"
                 >
                   Garantia
                 </a>
@@ -34,7 +34,7 @@ export default function Footer() {
               <li>
                 <a
                   href="/vantagens"
-                  className="hover:text-primary transition-colors"
+                  className="hover:text-secondary transition-colors"
                 >
                   Vantagens
                 </a>
@@ -42,7 +42,7 @@ export default function Footer() {
               <li>
                 <a
                   href="/eventos"
-                  className="hover:text-primary transition-colors"
+                  className="hover:text-secondary transition-colors"
                 >
                   Eventos
                 </a>
@@ -59,7 +59,7 @@ export default function Footer() {
                   href="http://191.252.217.190:3005/docs"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-primary transition-colors"
+                  className="hover:text-secondary transition-colors"
                 >
                   Documentação da API
                 </a>
@@ -67,13 +67,13 @@ export default function Footer() {
               <li>
                 <a
                   href="/newsletter"
-                  className="hover:text-primary transition-colors"
+                  className="hover:text-secondary transition-colors"
                 >
                   Newsletter
                 </a>
               </li>
               <li>
-                <a href="/login" className="hover:text-primary transition-colors">
+                <a href="/login" className="hover:text-secondary transition-colors">
                   Portal do Cliente
                 </a>
               </li>
