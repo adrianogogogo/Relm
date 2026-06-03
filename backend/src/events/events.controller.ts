@@ -72,7 +72,7 @@ export class EventsController {
 
   @Delete('events/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @Roles('ADMIN_RELM')
   @ApiBearerAuth()
   remove(@Param('id') id: string) {
     return this.eventsService.remove(id);

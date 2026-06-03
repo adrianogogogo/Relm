@@ -4,6 +4,8 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import AdminLayout from './components/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
+import CustomerLayout from './components/CustomerLayout';
+import CustomerProtectedRoute from './components/CustomerProtectedRoute';
 
 // Public pages
 import HomePage from './pages/HomePage';
@@ -14,6 +16,16 @@ import EventsPage from './pages/EventsPage';
 import InsurancePage from './pages/InsurancePage';
 import NewsletterPage from './pages/NewsletterPage';
 import ValidateWarrantyPage from './pages/ValidateWarrantyPage';
+
+// Customer portal pages
+import CustomerLoginPage from './pages/CustomerLoginPage';
+import CustomerRegisterPage from './pages/CustomerRegisterPage';
+import CustomerDashboard from './pages/CustomerDashboard';
+import CustomerWarrantiesPage from './pages/CustomerWarrantiesPage';
+import CustomerEventsPage from './pages/CustomerEventsPage';
+import CustomerBenefitsPage from './pages/CustomerBenefitsPage';
+import CustomerInsurancePage from './pages/CustomerInsurancePage';
+import CustomerProfilePage from './pages/CustomerProfilePage';
 
 // Store portal pages
 import StoreLoginPage from './pages/StoreLoginPage';
@@ -35,6 +47,8 @@ import BannersPage from './pages/BannersPage';
 import AdminEventsPage from './pages/AdminEventsPage';
 import AdminBenefitsPage from './pages/AdminBenefitsPage';
 import AdminInsurancesPage from './pages/AdminInsurancesPage';
+import AdminUsersPage from './pages/AdminUsersPage';
+import AuditLogsPage from './pages/AuditLogsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,6 +87,25 @@ export default function App() {
             <Route path="/seguro" element={<InsurancePage />} />
             <Route path="/newsletter" element={<NewsletterPage />} />
             <Route path="/validar-garantia/:token" element={<ValidateWarrantyPage />} />
+          </Route>
+
+          {/* ── Customer portal ──────────────────────────────────────────── */}
+          <Route path="/cliente/login" element={<CustomerLoginPage />} />
+          <Route path="/cliente/cadastro" element={<CustomerRegisterPage />} />
+          <Route
+            path="/cliente"
+            element={
+              <CustomerProtectedRoute>
+                <CustomerLayout />
+              </CustomerProtectedRoute>
+            }
+          >
+            <Route path="dashboard" element={<CustomerDashboard />} />
+            <Route path="garantias" element={<CustomerWarrantiesPage />} />
+            <Route path="eventos" element={<CustomerEventsPage />} />
+            <Route path="vantagens" element={<CustomerBenefitsPage />} />
+            <Route path="seguros" element={<CustomerInsurancePage />} />
+            <Route path="perfil" element={<CustomerProfilePage />} />
           </Route>
 
           {/* ── Store portal (own layout, no Header/Footer) ───────────────── */}
@@ -144,6 +177,16 @@ export default function App() {
             <Route path="insurances" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA']}>
                 <AdminInsurancesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="users" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM']}>
+                <AdminUsersPage />
+              </ProtectedRoute>
+            } />
+            <Route path="audit-logs" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM']}>
+                <AuditLogsPage />
               </ProtectedRoute>
             } />
           </Route>

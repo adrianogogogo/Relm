@@ -63,7 +63,7 @@ export class BenefitsController {
 
   @Delete('benefits/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @Roles('ADMIN_RELM')
   @ApiBearerAuth()
   remove(@Param('id') id: string) {
     return this.benefitsService.remove(id);

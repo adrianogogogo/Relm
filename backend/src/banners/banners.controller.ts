@@ -42,6 +42,7 @@ export class BannersController {
   }
 
   @Delete(':id')
+  @Roles('ADMIN_RELM')
   remove(@Param('id') id: string) {
     return this.bannersService.remove(id);
   }

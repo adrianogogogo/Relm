@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { bannersAPI } from '../services/api';
 import { Plus, Edit2, Trash2, Eye, EyeOff, ChevronUp, ChevronDown } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
 
 const BannersPage = () => {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN_RELM';
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -332,13 +335,15 @@ const BannersPage = () => {
                     </button>
 
                     {/* Delete */}
-                    <button
-                      onClick={() => handleDelete(banner.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded"
-                      title="Excluir"
-                    >
-                      <Trash2 size={20} />
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleDelete(banner.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded"
+                        title="Excluir"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

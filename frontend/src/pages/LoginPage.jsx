@@ -97,11 +97,8 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <a
-              href="/"
-              className="text-sm text-primary hover:text-primary-700"
-            >
+          <div className="mt-6 text-center space-y-2">
+            <a href="/" className="block text-sm text-primary hover:text-primary-700">
               ← Voltar para o início
             </a>
           </div>

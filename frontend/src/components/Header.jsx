@@ -1,9 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { useCustomerAuthStore } from '../store/customerAuthStore';
 
 export default function Header() {
   const location = useLocation();
   const { isAuthenticated, user, logout } = useAuthStore();
+  const { isAuthenticated: isCustomerAuth, customer } = useCustomerAuthStore();
 
   const navItems = [
     { path: '/', label: 'Início' },
@@ -71,13 +73,28 @@ export default function Header() {
                   <p className="text-xs text-primary-100">{user?.role}</p>
                 </div>
               </>
-            ) : (
+            ) : isCustomerAuth ? (
               <Link
-                to="/login"
+                to="/cliente/dashboard"
                 className="px-6 py-2 rounded-lg bg-white text-primary font-semibold hover:bg-primary-50 transition-all"
               >
-                Entrar
+                Minha Conta
               </Link>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/cliente/login"
+                  className="px-4 py-2 rounded-lg bg-white text-primary font-semibold hover:bg-primary-50 transition-all text-sm"
+                >
+                  Sou Cliente
+                </Link>
+                <Link
+                  to="/login"
+                  className="px-4 py-2 rounded-lg border-2 border-white text-white font-semibold hover:bg-white hover:text-primary transition-all text-sm"
+                >
+                  Equipe Relm
+                </Link>
+              </div>
             )}
           </div>
         </div>

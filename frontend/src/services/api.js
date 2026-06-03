@@ -136,11 +136,65 @@ export const storesAPI = {
 export const bannersAPI = {
   // Public endpoints
   getActive: () => api.get('/public/banners').then((res) => res.data),
-  
+
   // Admin endpoints
   getAll: () => api.get('/banners').then((res) => res.data),
   getById: (id) => api.get(`/banners/${id}`).then((res) => res.data),
   create: (data) => api.post('/banners', data).then((res) => res.data),
   update: (id, data) => api.patch(`/banners/${id}`, data).then((res) => res.data),
   delete: (id) => api.delete(`/banners/${id}`).then((res) => res.data),
+};
+
+// ── Customer portal (token separado) ────────────────────────────────────────
+
+const customerApi = axios.create({
+  baseURL: `${API_URL}/api`,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+customerApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem('customer_access_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+customerApi.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        const refreshToken = localStorage.getItem('customer_refresh_token');
+        const res = await axios.post(`${API_URL}/api/customer-auth/refresh`, {
+          refresh_token: refreshToken,
+        });
+        const { access_token } = res.data;
+        localStorage.setItem('customer_access_token', access_token);
+        originalRequest.headers.Authorization = `Bearer ${access_token}`;
+        return customerApi(originalRequest);
+      } catch {
+        localStorage.removeItem('customer_access_token');
+        localStorage.removeItem('customer_refresh_token');
+        localStorage.removeItem('customer_user');
+        window.location.href = '/cliente/login';
+        return Promise.reject(error);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const customerAuthAPI = {
+  register: (data) => customerApi.post('/customer-auth/register', data),
+  login: (email, password) => customerApi.post('/customer-auth/login', { email, password }),
+  refresh: (refresh_token) => customerApi.post('/customer-auth/refresh', { refresh_token }),
+};
+
+export const customerPortalAPI = {
+  getMe: () => customerApi.get('/customer-portal/me').then((res) => res.data),
+  getWarranties: () => customerApi.get('/customer-portal/warranties').then((res) => res.data),
+  getInsuranceQuotes: () => customerApi.get('/customer-portal/insurance-quotes').then((res) => res.data),
+  getEvents: () => customerApi.get('/customer-portal/events').then((res) => res.data),
+  getBenefits: () => customerApi.get('/customer-portal/benefits').then((res) => res.data),
 };

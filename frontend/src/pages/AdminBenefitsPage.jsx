@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { ArrowLeft, Gift, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
 
 const EMPTY_FORM = {
   title: '',
@@ -155,6 +156,8 @@ function BenefitModal({ benefit, onClose }) {
 
 export default function AdminBenefitsPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN_RELM';
   const [modalBenefit, setModalBenefit] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
@@ -225,12 +228,14 @@ export default function AdminBenefitsPage() {
                     <button onClick={() => handleEdit(b)} className="p-1.5 text-gray-400 hover:text-primary rounded">
                       <Pencil className="w-4 h-4" />
                     </button>
-                    <button
-                      onClick={() => { if (confirm('Desativar este benefício?')) removeMutation.mutate(b.id); }}
-                      className="p-1.5 text-gray-400 hover:text-red-500 rounded"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => { if (confirm('Desativar este benefício?')) removeMutation.mutate(b.id); }}
+                        className="p-1.5 text-gray-400 hover:text-red-500 rounded"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
                 <p className="text-gray-600 text-sm mb-3 line-clamp-2">{b.description}</p>

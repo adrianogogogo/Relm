@@ -10,6 +10,8 @@ import {
   FileText,
   Image,
   LogOut,
+  UserCog,
+  ClipboardList,
 } from 'lucide-react';
 
 const MENU_ITEMS = [
@@ -61,6 +63,18 @@ const MENU_ITEMS = [
     label: 'Banners',
     icon: Image,
     roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
+  },
+  {
+    path: '/admin/users',
+    label: 'Usuários do Sistema',
+    icon: UserCog,
+    roles: ['ADMIN_RELM'],
+  },
+  {
+    path: '/admin/audit-logs',
+    label: 'Logs de Auditoria',
+    icon: ClipboardList,
+    roles: ['ADMIN_RELM'],
   },
 ];
 
