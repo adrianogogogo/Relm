@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Trash2 } from 'lucide-react';
 import api from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 export default function CustomersPage() {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN_RELM';
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -32,6 +36,16 @@ export default function CustomersPage() {
       setStores(response.data);
     } catch (error) {
       console.error('Erro ao carregar lojas:', error);
+    }
+  };
+
+  const handleDelete = async (customer) => {
+    if (!confirm(`Excluir permanentemente o cliente "${customer.name}"? Esta ação não pode ser desfeita.`)) return;
+    try {
+      await api.delete(`/customers/${customer.id}`);
+      setCustomers((prev) => prev.filter((c) => c.id !== customer.id));
+    } catch (error) {
+      alert(error.response?.data?.message || 'Erro ao excluir cliente.');
     }
   };
 
@@ -213,18 +227,29 @@ export default function CustomersPage() {
                       {new Date(customer.createdAt).toLocaleDateString('pt-BR')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Link
-                        to={`/admin/customers/${customer.id}`}
-                        className="text-primary hover:text-primary-600 mr-4"
-                      >
-                        Ver Detalhes
-                      </Link>
-                      <Link
-                        to={`/admin/customers/${customer.id}/edit`}
-                        className="text-gray-600 hover:text-gray-900"
-                      >
-                        Editar
-                      </Link>
+                      <div className="flex items-center justify-end gap-4">
+                        <Link
+                          to={`/admin/customers/${customer.id}`}
+                          className="text-primary hover:text-primary-600"
+                        >
+                          Ver Detalhes
+                        </Link>
+                        <Link
+                          to={`/admin/customers/${customer.id}/edit`}
+                          className="text-gray-600 hover:text-gray-900"
+                        >
+                          Editar
+                        </Link>
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleDelete(customer)}
+                            className="text-gray-400 hover:text-red-600 transition-colors"
+                            title="Excluir cliente"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

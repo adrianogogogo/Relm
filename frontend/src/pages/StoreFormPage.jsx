@@ -446,20 +446,26 @@ export default function StoreFormPage() {
           {/* Status */}
           {isEditMode && (
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Status</h2>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="active"
-                  name="active"
-                  checked={formData.active}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="active" className="ml-2 block text-sm text-gray-900">
-                  Loja ativa (visível para clientes)
-                </label>
-              </div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Status da Loja</h2>
+              <label className="flex items-center gap-3 cursor-pointer w-fit">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    name="active"
+                    checked={formData.active}
+                    onChange={handleChange}
+                    className="sr-only"
+                  />
+                  <div className={`w-11 h-6 rounded-full transition-colors ${formData.active ? 'bg-green-500' : 'bg-gray-300'}`} />
+                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${formData.active ? 'translate-x-5' : 'translate-x-0'}`} />
+                </div>
+                <span className="text-sm font-medium text-gray-700">
+                  {formData.active ? 'Loja ativa' : 'Loja inativa'}
+                </span>
+              </label>
+              <p className="text-xs text-gray-400 mt-1 ml-14">
+                Lojas inativas ficam ocultas no localizador e bloqueiam o acesso dos logistas.
+              </p>
             </div>
           )}
 

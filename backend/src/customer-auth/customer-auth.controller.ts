@@ -24,8 +24,21 @@ export class CustomerAuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Renovar token do cliente' })
   async refresh(@Body() body: { refresh_token: string }) {
     return this.customerAuthService.refresh(body.refresh_token);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Solicitar redefinição de senha' })
+  async forgotPassword(@Body() body: { email: string }) {
+    return this.customerAuthService.forgotPassword(body.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Redefinir senha com token' })
+  async resetPassword(@Body() body: { token: string; password: string }) {
+    return this.customerAuthService.resetPassword(body.token, body.password);
   }
 }

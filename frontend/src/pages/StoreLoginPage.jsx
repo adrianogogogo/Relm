@@ -97,8 +97,11 @@ const StoreLoginPage = () => {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <a href="/" className="text-sm text-blue-600 hover:text-blue-800">
+        <div className="mt-6 text-center space-y-2">
+          <a href="/loja/esqueci-senha" className="block text-sm text-blue-600 hover:text-blue-800 font-medium">
+            Esqueci minha senha
+          </a>
+          <a href="/" className="block text-sm text-gray-500 hover:text-gray-700">
             ← Voltar para o site
           </a>
         </div>

@@ -248,6 +248,93 @@ export class EmailService {
     `;
   }
 
+  async sendPasswordResetEmail(data: {
+    to: string;
+    name: string;
+    resetUrl: string;
+    portalName: 'Cliente' | 'Loja';
+  }) {
+    if (!this.isConfigured || !this.transporter) {
+      console.warn('⚠️ SMTP não configurado - email de redefinição não enviado para:', data.to);
+      console.warn('Link de reset (dev):', data.resetUrl);
+      return { success: false, error: 'SMTP não configurado', devUrl: data.resetUrl };
+    }
+
+    const mailOptions = {
+      from: `"Relm Care+" <${this.configService.get('SMTP_USER')}>`,
+      to: data.to,
+      subject: `🔐 Redefinição de senha - Relm Care+ ${data.portalName}`,
+      html: this.getPasswordResetTemplate(data),
+    };
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+      return { success: true, messageId: info.messageId };
+    } catch (error) {
+      console.error('Erro ao enviar email de reset:', error);
+      throw error;
+    }
+  }
+
+  private getPasswordResetTemplate(data: {
+    name: string;
+    resetUrl: string;
+    portalName: string;
+  }): string {
+    return `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#f4f4f4;">
+  <table role="presentation" style="width:100%;border-collapse:collapse;">
+    <tr><td align="center" style="padding:40px 0;">
+      <table role="presentation" style="width:600px;border-collapse:collapse;background:#fff;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+        <tr>
+          <td style="background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);padding:40px 30px;text-align:center;">
+            <h1 style="margin:0;color:#fff;font-size:28px;font-weight:bold;">RELM BIKES</h1>
+            <p style="margin:10px 0 0;color:#e0e7ff;font-size:14px;">Care+ | Portal ${data.portalName}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:40px 30px;">
+            <h2 style="margin:0 0 20px;color:#1f2937;font-size:22px;">Redefinição de senha</h2>
+            <p style="margin:0 0 16px;color:#374151;font-size:16px;line-height:1.6;">
+              Olá, <strong>${data.name}</strong>!
+            </p>
+            <p style="margin:0 0 24px;color:#374151;font-size:16px;line-height:1.6;">
+              Recebemos uma solicitação para redefinir a senha da sua conta. Clique no botão abaixo para criar uma nova senha:
+            </p>
+            <div style="text-align:center;margin:30px 0;">
+              <a href="${data.resetUrl}" style="display:inline-block;background-color:#2563eb;color:#fff;text-decoration:none;padding:14px 40px;border-radius:8px;font-weight:600;font-size:16px;">
+                Redefinir minha senha
+              </a>
+            </div>
+            <p style="margin:20px 0 0;color:#6b7280;font-size:14px;line-height:1.6;">
+              Este link é válido por <strong>1 hora</strong>. Após esse prazo, você precisará fazer uma nova solicitação.
+            </p>
+            <p style="margin:16px 0 0;color:#6b7280;font-size:14px;line-height:1.6;">
+              Se você não solicitou a redefinição, ignore este email. Sua senha permanece a mesma.
+            </p>
+            <hr style="margin:30px 0;border:none;border-top:1px solid #e5e7eb;">
+            <p style="margin:0;color:#9ca3af;font-size:12px;">
+              Ou copie e cole este link: <span style="color:#2563eb;word-break:break-all;">${data.resetUrl}</span>
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background-color:#f9fafb;padding:20px 30px;text-align:center;border-top:1px solid #e5e7eb;">
+            <p style="margin:0;color:#9ca3af;font-size:11px;">
+              © ${new Date().getFullYear()} Relm Bikes. Este é um email automático, não responda.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+  }
+
   private getWarrantyRejectionTemplate(data: {
     customerName: string;
     protocolNumber: string;

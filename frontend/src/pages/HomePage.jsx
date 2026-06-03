@@ -47,7 +47,7 @@ export default function HomePage() {
       icon: '👥',
       title: 'Portais',
       description: 'Acesso dedicado para clientes, lojas e distribuidores.',
-      link: '/login',
+      link: '/portais',
     },
   ];
 

@@ -1,9 +1,14 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { Trash2 } from 'lucide-react';
 import { storesAPI } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 export default function StoresPage() {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN_RELM';
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [stateFilter, setStateFilter] = useState('');
   const [activeFilter, setActiveFilter] = useState('true');
@@ -23,6 +28,16 @@ export default function StoresPage() {
     'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
     'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
   ];
+
+  const handleDelete = async (store) => {
+    if (!confirm(`Excluir permanentemente a loja "${store.tradeName}"? Esta ação não pode ser desfeita.`)) return;
+    try {
+      await storesAPI.delete(store.id);
+      queryClient.invalidateQueries(['stores']);
+    } catch (error) {
+      alert(error.response?.data?.message || 'Erro ao excluir loja.');
+    }
+  };
 
   const stats = stores
     ? {
@@ -244,15 +259,26 @@ export default function StoresPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Link
-                          to={`/admin/stores/${store.id}/edit`}
-                          className="text-blue-600 hover:text-blue-900 mr-4"
-                        >
-                          Editar
-                        </Link>
-                        <Link to={`/admin/stores/${store.id}`} className="text-gray-600 hover:text-gray-900">
-                          Ver Detalhes
-                        </Link>
+                        <div className="flex items-center justify-end gap-4">
+                          <Link
+                            to={`/admin/stores/${store.id}/edit`}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            Editar
+                          </Link>
+                          <Link to={`/admin/stores/${store.id}`} className="text-gray-600 hover:text-gray-900">
+                            Ver Detalhes
+                          </Link>
+                          {isAdmin && (
+                            <button
+                              onClick={() => handleDelete(store)}
+                              className="text-gray-400 hover:text-red-600 transition-colors"
+                              title="Excluir loja"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

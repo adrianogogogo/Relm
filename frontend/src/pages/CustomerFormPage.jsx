@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 export default function CustomerFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = !!id;
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN_RELM';
 
   const [loading, setLoading] = useState(false);
   const [stores, setStores] = useState([]);
@@ -21,6 +24,7 @@ export default function CustomerFormPage() {
     zipCode: '',
     storeId: '',
     notes: '',
+    active: true,
   });
 
   useEffect(() => {
@@ -53,9 +57,8 @@ export default function CustomerFormPage() {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    // Limpar erro do campo quando usuário digitar
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
@@ -397,6 +400,32 @@ export default function CustomerFormPage() {
                 />
               </div>
             </div>
+
+            {/* Status — apenas ADMIN em modo edição */}
+            {isEditMode && isAdmin && (
+              <div>
+                <h2 className="text-xl font-semibold mb-4 text-gray-900">Status da Conta</h2>
+                <label className="flex items-center gap-3 cursor-pointer w-fit">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      name="active"
+                      checked={formData.active}
+                      onChange={handleChange}
+                      className="sr-only"
+                    />
+                    <div className={`w-11 h-6 rounded-full transition-colors ${formData.active ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${formData.active ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    {formData.active ? 'Cliente ativo' : 'Cliente inativo'}
+                  </span>
+                </label>
+                <p className="text-xs text-gray-400 mt-1 ml-14">
+                  Clientes inativos não conseguem fazer login no portal.
+                </p>
+              </div>
+            )}
 
             {/* Buttons */}
             <div className="flex gap-4 pt-4">

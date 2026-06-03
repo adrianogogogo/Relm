@@ -27,14 +27,6 @@ export default function LoginPage() {
     });
   };
 
-  // Credenciais de exemplo
-  const exampleCredentials = [
-    { email: 'admin@relmbikes.com.br', password: 'Admin@2024', role: 'ADMIN_RELM' },
-    { email: 'gerente@relmbikes.com.br', password: 'Gerente@2024', role: 'GERENTE_RELM' },
-    { email: 'suporte@relmbikes.com.br', password: 'Suporte@2024', role: 'SUPORTE_RELM' },
-    { email: 'loja@bikeshopsp.com.br', password: 'Loja@2024', role: 'LOJA' },
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary to-secondary flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full">
@@ -104,18 +96,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Example Credentials */}
-        <div className="mt-6 bg-white/10 backdrop-blur-sm rounded-lg p-6 text-white">
-          <h3 className="font-semibold mb-3">🔑 Credenciais de Teste:</h3>
-          <div className="space-y-2 text-sm">
-            {exampleCredentials.map((cred, index) => (
-              <div key={index} className="bg-white/10 rounded p-2">
-                <p className="font-semibold">{cred.role}</p>
-                <p className="text-xs opacity-90">{cred.email} / {cred.password}</p>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

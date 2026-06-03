@@ -68,6 +68,8 @@ export const storeAuthAPI = {
   login: (email, password) => api.post('/store-auth/login', { email, password }),
   register: (data) => api.post('/store-auth/register', data),
   getUsers: () => api.get('/store-auth/users').then((res) => res.data),
+  forgotPassword: (email) => api.post('/store-auth/forgot-password', { email }),
+  resetPassword: (token, password) => api.post('/store-auth/reset-password', { token, password }),
 };
 
 export const warrantyAPI = {
@@ -189,6 +191,8 @@ export const customerAuthAPI = {
   register: (data) => customerApi.post('/customer-auth/register', data),
   login: (email, password) => customerApi.post('/customer-auth/login', { email, password }),
   refresh: (refresh_token) => customerApi.post('/customer-auth/refresh', { refresh_token }),
+  forgotPassword: (email) => customerApi.post('/customer-auth/forgot-password', { email }),
+  resetPassword: (token, password) => customerApi.post('/customer-auth/reset-password', { token, password }),
 };
 
 export const customerPortalAPI = {

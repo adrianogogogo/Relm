@@ -67,6 +67,9 @@ export default function CustomerLoginPage() {
           </form>
 
           <div className="mt-6 text-center space-y-2">
+            <Link to="/cliente/esqueci-senha" className="block text-sm text-primary hover:underline font-medium">
+              Esqueci minha senha
+            </Link>
             <p className="text-sm text-gray-600">
               Ainda não tem conta?{' '}
               <Link to="/cliente/cadastro" className="text-primary font-semibold hover:underline">

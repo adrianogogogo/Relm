@@ -6,10 +6,12 @@ import { CustomerAuthService } from './customer-auth.service';
 import { CustomerAuthController } from './customer-auth.controller';
 import { CustomerJwtStrategy } from './customer-jwt.strategy';
 import { CustomerJwtGuard } from './customer-jwt.guard';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
     PassportModule,
+    EmailModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

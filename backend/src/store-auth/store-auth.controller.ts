@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
 import { StoreAuthService } from './store-auth.service';
 import { StoreLoginDto } from './dto/store-login.dto';
 import { CreateStoreUserDto } from './dto/create-store-user.dto';
@@ -26,13 +26,21 @@ export class StoreAuthController {
   @UseGuards(JwtAuthGuard)
   async getStoreUsers(@Request() req) {
     const user = req.user;
-    
-    // If it's a store user, return only users from their store
     if (user.type === 'STORE') {
       return this.storeAuthService.getStoreUsersByStore(user.storeId);
     }
-    
-    // Admin can view all (implement later if needed)
     throw new Error('Not implemented for admin users');
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() body: { email: string }) {
+    return this.storeAuthService.forgotPassword(body.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() body: { token: string; password: string }) {
+    return this.storeAuthService.resetPassword(body.token, body.password);
   }
 }

@@ -3,11 +3,14 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { CustomerRegisterDto } from './dto/customer-register.dto';
 import { CustomerLoginDto } from './dto/customer-login.dto';
 
@@ -17,6 +20,7 @@ export class CustomerAuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private config: ConfigService,
+    private emailService: EmailService,
   ) {}
 
   async register(dto: CustomerRegisterDto) {
@@ -125,6 +129,58 @@ export class CustomerAuthService {
         type: 'CUSTOMER',
       },
     };
+  }
+
+  async forgotPassword(email: string) {
+    const customer = await this.prisma.customer.findUnique({ where: { email } });
+
+    // Sempre retorna sucesso para não revelar se o e-mail existe
+    if (!customer || !customer.active || !customer.passwordHash) {
+      return { message: 'Se o e-mail estiver cadastrado, você receberá as instruções em breve.' };
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+    await this.prisma.customer.update({
+      where: { id: customer.id },
+      data: { resetPasswordToken: token, resetPasswordExpires: expires },
+    });
+
+    const appUrl = this.config.get('APP_URL') || 'http://localhost:5173';
+    const resetUrl = `${appUrl}/cliente/redefinir-senha?token=${token}`;
+
+    await this.emailService.sendPasswordResetEmail({
+      to: customer.email,
+      name: customer.fullName,
+      resetUrl,
+      portalName: 'Cliente',
+    });
+
+    return { message: 'Se o e-mail estiver cadastrado, você receberá as instruções em breve.' };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { resetPasswordToken: token },
+    });
+
+    if (!customer || !customer.resetPasswordExpires || customer.resetPasswordExpires < new Date()) {
+      throw new BadRequestException('Token inválido ou expirado.');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.customer.update({
+      where: { id: customer.id },
+      data: {
+        passwordHash,
+        resetPasswordToken: null,
+        resetPasswordExpires: null,
+      },
+    });
+
+    return { message: 'Senha redefinida com sucesso.' };
   }
 
   async refresh(refreshToken: string) {
