@@ -10,7 +10,7 @@ const EMPTY_FORM = {
   terms: '',
   validFrom: '',
   validUntil: '',
-  targetRole: '',
+  targetRoles: [],
 };
 
 function BenefitModal({ benefit, onClose }) {
@@ -24,7 +24,7 @@ function BenefitModal({ benefit, onClose }) {
           terms: benefit.terms || '',
           validFrom: benefit.validFrom?.slice(0, 10) || '',
           validUntil: benefit.validUntil?.slice(0, 10) || '',
-          targetRole: benefit.targetRole || '',
+          targetRoles: benefit.targetRoles || [],
         }
       : { ...EMPTY_FORM }
   );
@@ -117,16 +117,29 @@ function BenefitModal({ benefit, onClose }) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Público-alvo</label>
-            <select
-              value={form.targetRole}
-              onChange={(e) => setForm({ ...form, targetRole: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">Todos</option>
-              <option value="CLIENTE">Clientes</option>
-              <option value="LOJA">Lojas</option>
-              <option value="DISTRIBUIDOR">Distribuidores</option>
-            </select>
+            <div className="flex flex-wrap gap-4 mt-2">
+              {[
+                { id: 'CLIENTE', label: 'Clientes' },
+                { id: 'LOJA', label: 'Lojas' },
+                { id: 'DISTRIBUIDOR', label: 'Distribuidores' }
+              ].map((role) => (
+                <label key={role.id} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.targetRoles.includes(role.id)}
+                    onChange={(e) => {
+                      const newRoles = e.target.checked
+                        ? [...form.targetRoles, role.id]
+                        : form.targetRoles.filter((r) => r !== role.id);
+                      setForm({ ...form, targetRoles: newRoles });
+                    }}
+                    className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+                  />
+                  {role.label}
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Se nenhum público for selecionado, o benefício ficará disponível para todos.</p>
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="btn btn-outline flex-1">Cancelar</button>
@@ -194,9 +207,17 @@ export default function AdminBenefitsPage() {
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1">
                     <h3 className="font-bold text-gray-900 text-lg">{b.title}</h3>
-                    {b.targetRole && (
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full mt-1 inline-block">
-                        {b.targetRole}
+                    {b.targetRoles && b.targetRoles.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {b.targetRoles.map((role) => (
+                          <span key={role} className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full inline-block">
+                            {role}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full mt-1 inline-block">
+                        Todos
                       </span>
                     )}
                   </div>

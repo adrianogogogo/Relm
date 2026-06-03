@@ -327,7 +327,7 @@ model Benefit {
   active      Boolean  @default(true)
   
   // Segmentação
-  targetRole  String?  @map("target_role") // CLIENTE, LOJA, DISTRIBUIDOR, null = todos
+  targetRoles String[] @default([]) @map("target_roles") // CLIENTE, LOJA, DISTRIBUIDOR, vazio = todos
   
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")

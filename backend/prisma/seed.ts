@@ -344,7 +344,7 @@ dpo@relmbikes.com.br`,
       validFrom: new Date('2024-01-01'),
       validUntil: new Date('2028-12-31'),
       active: true,
-      targetRole: 'CLIENTE',
+      targetRoles: ['CLIENTE'],
     },
   });
 
@@ -356,7 +356,7 @@ dpo@relmbikes.com.br`,
       validFrom: new Date('2024-01-01'),
       validUntil: new Date('2028-12-31'),
       active: true,
-      targetRole: 'CLIENTE',
+      targetRoles: ['CLIENTE'],
     },
   });
 
@@ -368,7 +368,7 @@ dpo@relmbikes.com.br`,
       validFrom: new Date('2024-01-01'),
       validUntil: new Date('2028-12-31'),
       active: true,
-      targetRole: 'LOJA',
+      targetRoles: ['LOJA'],
     },
   });
 

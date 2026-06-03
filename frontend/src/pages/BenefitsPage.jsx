@@ -40,7 +40,10 @@ export default function BenefitsPage() {
                       {new Date(benefit.validUntil).toLocaleDateString()}
                     </p>
                     <p>
-                      <strong>Perfil:</strong> {benefit.targetRole}
+                      <strong>Perfil:</strong>{' '}
+                      {benefit.targetRoles && benefit.targetRoles.length > 0
+                        ? benefit.targetRoles.join(', ')
+                        : 'Todos'}
                     </p>
                     {benefit.terms && (
                       <p className="text-xs italic mt-2">{benefit.terms}</p>

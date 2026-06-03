@@ -28,7 +28,7 @@ export class BenefitsService {
     terms?: string;
     validFrom: string;
     validUntil: string;
-    targetRole?: string;
+    targetRoles?: string[];
   }) {
     return this.prisma.benefit.create({
       data: {
@@ -37,7 +37,7 @@ export class BenefitsService {
         terms: data.terms,
         validFrom: new Date(data.validFrom),
         validUntil: new Date(data.validUntil),
-        targetRole: data.targetRole ?? null,
+        targetRoles: data.targetRoles ?? [],
       },
     });
   }
@@ -50,7 +50,7 @@ export class BenefitsService {
       terms?: string;
       validFrom?: string;
       validUntil?: string;
-      targetRole?: string;
+      targetRoles?: string[];
       active?: boolean;
     },
   ) {
