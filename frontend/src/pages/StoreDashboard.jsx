@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { customersAPI, warrantyAPI, insuranceAPI } from '../services/api';
@@ -39,6 +39,12 @@ const StoreDashboard = () => {
     enabled: !!storeId,
   });
 
+  const { data: insurances } = useQuery({
+    queryKey: ['store-insurances', storeId],
+    queryFn: () => insuranceAPI.getAll({ storeId }),
+    enabled: !!storeId,
+  });
+
   const handleLogout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
@@ -66,7 +72,7 @@ const StoreDashboard = () => {
     },
     {
       label: 'Seguros',
-      value: 0,
+      value: insurances?.length || 0,
       icon: FileText,
       color: 'bg-purple-500',
       link: '/loja/seguros',

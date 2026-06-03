@@ -14,7 +14,7 @@ export default function CustomerFormPage() {
   const [stores, setStores] = useState([]);
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',
     cpf: '',
     email: '',
     phone: '',
@@ -47,7 +47,20 @@ export default function CustomerFormPage() {
     try {
       setLoading(true);
       const response = await api.get(`/customers/${id}`);
-      setFormData(response.data);
+      const data = response.data;
+      setFormData({
+        fullName: data.fullName || '',
+        cpf: data.cpf || '',
+        email: data.email || '',
+        phone: data.phone || '',
+        address: data.address || '',
+        city: data.city || '',
+        state: data.state || '',
+        zipCode: data.zipCode || '',
+        storeId: data.storeId || '',
+        notes: data.notes || '',
+        active: data.active ?? true,
+      });
     } catch (error) {
       console.error('Erro ao carregar cliente:', error);
       alert('Erro ao carregar dados do cliente');
@@ -67,8 +80,8 @@ export default function CustomerFormPage() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Nome é obrigatório';
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Nome é obrigatório';
     }
 
     if (!formData.email.trim()) {
@@ -144,11 +157,17 @@ export default function CustomerFormPage() {
     try {
       setLoading(true);
 
+      const payload = {
+        ...formData,
+        storeId: formData.storeId && formData.storeId !== 'direct' ? formData.storeId : undefined,
+      };
+      if (!isEditMode) delete payload.active;
+
       if (isEditMode) {
-        await api.patch(`/customers/${id}`, formData);
+        await api.patch(`/customers/${id}`, payload);
         alert('Cliente atualizado com sucesso!');
       } else {
-        await api.post('/customers', formData);
+        await api.post('/customers', payload);
         alert('Cliente cadastrado com sucesso!');
       }
 
@@ -206,15 +225,15 @@ export default function CustomerFormPage() {
                   </label>
                   <input
                     type="text"
-                    name="name"
-                    value={formData.name}
+                    name="fullName"
+                    value={formData.fullName}
                     onChange={handleChange}
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                      errors.name ? 'border-red-500' : 'border-gray-300'
+                      errors.fullName ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="João da Silva"
                   />
-                  {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+                  {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
                 </div>
 
                 <div>
@@ -373,7 +392,7 @@ export default function CustomerFormPage() {
                   <option value="direct">Compra Direta Relm</option>
                   {stores.map((store) => (
                     <option key={store.id} value={store.id}>
-                      {store.name} - {store.city}/{store.state}
+                      {store.tradeName} — {store.city}/{store.state}
                     </option>
                   ))}
                 </select>

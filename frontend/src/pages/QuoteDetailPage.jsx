@@ -172,7 +172,7 @@ const QuoteDetailPage = () => {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-sm text-gray-600">Nome</label>
-            <p className="font-medium">{quote.customer?.full_name || quote.customer?.name}</p>
+            <p className="font-medium">{quote.customer?.fullName}</p>
           </div>
           <div>
             <label className="text-sm text-gray-600 flex items-center gap-1">

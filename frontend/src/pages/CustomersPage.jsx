@@ -40,7 +40,7 @@ export default function CustomersPage() {
   };
 
   const handleDelete = async (customer) => {
-    if (!confirm(`Excluir permanentemente o cliente "${customer.name}"? Esta ação não pode ser desfeita.`)) return;
+    if (!confirm(`Excluir permanentemente o cliente "${customer.fullName}"? Esta ação não pode ser desfeita.`)) return;
     try {
       await api.delete(`/customers/${customer.id}`);
       setCustomers((prev) => prev.filter((c) => c.id !== customer.id));
@@ -50,8 +50,8 @@ export default function CustomersPage() {
   };
 
   const filteredCustomers = customers.filter((customer) => {
-    const matchesSearch = 
-      customer.name?.toLowerCase().includes(search.toLowerCase()) ||
+    const matchesSearch =
+      customer.fullName?.toLowerCase().includes(search.toLowerCase()) ||
       customer.email?.toLowerCase().includes(search.toLowerCase()) ||
       customer.cpf?.includes(search) ||
       customer.phone?.includes(search);
@@ -105,7 +105,7 @@ export default function CustomersPage() {
                 <option value="">Todas as lojas</option>
                 {stores.map((store) => (
                   <option key={store.id} value={store.id}>
-                    {store.name}
+                    {store.tradeName}
                   </option>
                 ))}
               </select>
@@ -196,7 +196,7 @@ export default function CustomersPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {customer.name}
+                          {customer.fullName}
                         </div>
                         <div className="text-sm text-gray-500">{customer.cpf}</div>
                       </div>
@@ -209,7 +209,7 @@ export default function CustomersPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {stores.find((s) => s.id === customer.storeId)?.name || 'Não informado'}
+                        {customer.store?.tradeName || stores.find((s) => s.id === customer.storeId)?.tradeName || 'Não informado'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

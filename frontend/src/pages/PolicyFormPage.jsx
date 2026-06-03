@@ -202,7 +202,7 @@ const PolicyFormPage = () => {
               <option value="">Selecione um cliente</option>
               {customers.map(customer => (
                 <option key={customer.id} value={customer.id}>
-                  {customer.full_name || customer.name} - {customer.email}
+                  {customer.fullName} - {customer.email}
                 </option>
               ))}
             </select>

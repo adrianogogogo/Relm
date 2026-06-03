@@ -85,7 +85,7 @@ export default function CustomerDetailPage() {
             >
               ← Voltar para clientes
             </Link>
-            <h1 className="text-3xl font-bold text-gray-900">{customer.name}</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{customer.fullName}</h1>
             <p className="text-gray-600 mt-1">{customer.email}</p>
           </div>
           <Link
@@ -303,7 +303,7 @@ export default function CustomerDetailPage() {
                       <div key={store.id} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex justify-between items-start">
                           <div>
-                            <h4 className="font-semibold">{store.name}</h4>
+                            <h4 className="font-semibold">{store.tradeName}</h4>
                             <p className="text-sm text-gray-600 mt-1">{store.address}</p>
                             <p className="text-sm text-gray-600">{store.phone}</p>
                           </div>
