@@ -1,0 +1,154 @@
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import Header from './components/Header';
+import Footer from './components/Footer';
+import AdminLayout from './components/AdminLayout';
+import ProtectedRoute from './components/ProtectedRoute';
+
+// Public pages
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
+import WarrantyPage from './pages/WarrantyPage';
+import BenefitsPage from './pages/BenefitsPage';
+import EventsPage from './pages/EventsPage';
+import InsurancePage from './pages/InsurancePage';
+import NewsletterPage from './pages/NewsletterPage';
+import ValidateWarrantyPage from './pages/ValidateWarrantyPage';
+
+// Store portal pages
+import StoreLoginPage from './pages/StoreLoginPage';
+import StoreDashboard from './pages/StoreDashboard';
+import StoreCustomersPage from './pages/StoreCustomersPage';
+import StoreWarrantiesPage from './pages/StoreWarrantiesPage';
+import StoreInsurancesPage from './pages/StoreInsurancesPage';
+import StoreProductsPage from './pages/StoreProductsPage';
+
+// Admin pages
+import AdminDashboard from './pages/AdminDashboard';
+import WarrantiesPage from './pages/WarrantiesPage';
+import CustomersPage from './pages/CustomersPage';
+import CustomerDetailPage from './pages/CustomerDetailPage';
+import CustomerFormPage from './pages/CustomerFormPage';
+import StoresPage from './pages/StoresPage';
+import StoreFormPage from './pages/StoreFormPage';
+import BannersPage from './pages/BannersPage';
+import AdminEventsPage from './pages/AdminEventsPage';
+import AdminBenefitsPage from './pages/AdminBenefitsPage';
+import AdminInsurancesPage from './pages/AdminInsurancesPage';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000,
+    },
+  },
+});
+
+function PublicLayout() {
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-1">
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          {/* ── Public routes (with Header + Footer) ─────────────────────── */}
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/garantia" element={<WarrantyPage />} />
+            <Route path="/vantagens" element={<BenefitsPage />} />
+            <Route path="/eventos" element={<EventsPage />} />
+            <Route path="/seguro" element={<InsurancePage />} />
+            <Route path="/newsletter" element={<NewsletterPage />} />
+            <Route path="/validar-garantia/:token" element={<ValidateWarrantyPage />} />
+          </Route>
+
+          {/* ── Store portal (own layout, no Header/Footer) ───────────────── */}
+          <Route path="/loja/login" element={<StoreLoginPage />} />
+          <Route path="/loja/dashboard" element={<StoreDashboard />} />
+          <Route path="/loja/clientes" element={<StoreCustomersPage />} />
+          <Route path="/loja/garantias" element={<StoreWarrantiesPage />} />
+          <Route path="/loja/seguros" element={<StoreInsurancesPage />} />
+          <Route path="/loja/produtos" element={<StoreProductsPage />} />
+
+          {/* ── Admin routes (AdminLayout sidebar, no Header/Footer) ──────── */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute
+                allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR']}
+              >
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
+            {/* Acessível por todos os roles do admin */}
+            <Route index element={<AdminDashboard />} />
+            <Route path="customers" element={<CustomersPage />} />
+            <Route path="customers/:id" element={<CustomerDetailPage />} />
+            <Route path="stores" element={<StoresPage />} />
+
+            {/* Apenas Relm (não Distribuidor) */}
+            <Route path="warranties" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA']}>
+                <WarrantiesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="customers/new" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM']}>
+                <CustomerFormPage />
+              </ProtectedRoute>
+            } />
+            <Route path="customers/:id/edit" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM']}>
+                <CustomerFormPage />
+              </ProtectedRoute>
+            } />
+            <Route path="stores/new" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                <StoreFormPage />
+              </ProtectedRoute>
+            } />
+            <Route path="stores/:id/edit" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                <StoreFormPage />
+              </ProtectedRoute>
+            } />
+            <Route path="banners" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM']}>
+                <BannersPage />
+              </ProtectedRoute>
+            } />
+            <Route path="events" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM']}>
+                <AdminEventsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="benefits" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM']}>
+                <AdminBenefitsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="insurances" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA']}>
+                <AdminInsurancesPage />
+              </ProtectedRoute>
+            } />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
+}

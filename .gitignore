@@ -1,0 +1,95 @@
+# ============================================
+# Node.js / Backend
+# ============================================
+node_modules/
+dist/
+build/
+*.log
+logs/
+*.pid
+*.seed
+*.pid.lock
+.npm
+.eslintcache
+.node_repl_history
+*.tgz
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+.env.development
+
+# PM2
+.pm2/
+
+# ============================================
+# Prisma
+# ============================================
+prisma/*.db
+prisma/*.db-journal
+.env
+
+# ============================================
+# Flutter / Frontend
+# ============================================
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter/
+.fvm/
+
+# Coverage
+coverage/
+*.lcov
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ============================================
+# Database
+# ============================================
+*.sql
+*.sqlite
+*.db
+
+# ============================================
+# Secrets (NUNCA commitar)
+# ============================================
+*.pem
+*.key
+*.crt
+secrets/
+credentials/
+
+# ============================================
+# Backups
+# ============================================
+*.backup
+*.bak
+backups/
+
+# ============================================
+# OS
+# ============================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================================
+# Terraform / Infra (se usar)
+# ============================================
+.terraform/
+*.tfstate
+*.tfstate.backup

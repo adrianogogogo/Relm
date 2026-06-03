@@ -1,0 +1,566 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// CORE MODELS
+// ============================================
+
+model Customer {
+  id       String    @id @default(uuid())
+  email    String    @unique
+  passwordHash String? @map("password_hash") // Null para cadastros via garantia
+  fullName String    @map("full_name")
+  phone    String
+  cpf      String?   // Opcional, normalizado (11 dígitos)
+  birthDate DateTime? @map("birth_date")
+  address  String?
+  city     String?
+  state    String?
+  country  String?   @default("Brasil")
+  zipCode  String?   @map("zip_code")
+  
+  // Loja de compra
+  storeId  String?   @map("store_id")
+  
+  // Observações internas
+  notes    String?   @db.Text
+  
+  // Status
+  active   Boolean   @default(true)
+  
+  // Marketing
+  marketingConsent Boolean @default(false) @map("marketing_consent")
+  
+  // HelmDesk integration
+  helmdeskUserId String?   @map("helmdesk_user_id")
+  
+  // Metadata
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  store                  Store?                  @relation(fields: [storeId], references: [id])
+  warrantyClaims         WarrantyClaim[]
+  benefitMemberships     BenefitMembership[]
+  eventRegistrations     EventRegistration[]
+  newsletterSubscription NewsletterSubscription?
+  insuranceQuotes        InsuranceQuote[]
+  privacyConsents        PrivacyConsent[]
+  
+  @@index([email])
+  @@index([cpf])
+  @@index([storeId])
+  @@index([active])
+  @@map("customers")
+}
+
+model Product {
+  id                    String    @id @default(uuid())
+  serialNumber          String    @unique @map("serial_number")
+  brand                 String    @default("Relm Bikes")
+  productType           String    @map("product_type") // Road, MTB, Gravel, E-bike, Acessórios
+  model                 String
+  purchaseDate          DateTime? @map("purchase_date")
+  purchaseInvoiceNumber String?   @map("purchase_invoice_number")
+  purchaseStoreName     String?   @map("purchase_store_name")
+  storeId               String?   @map("store_id")
+  
+  // Metadata
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  store           Store?          @relation(fields: [storeId], references: [id])
+  warrantyClaims  WarrantyClaim[]
+  insuranceQuotes InsuranceQuote[]
+  
+  @@index([serialNumber])
+  @@index([storeId])
+  @@map("products")
+}
+
+model Store {
+  id         String   @id @default(uuid())
+  tradeName  String   @map("trade_name")
+  legalName  String   @map("legal_name")
+  cnpj       String?  @unique
+  aliases    String[] // Variações do nome
+  email      String?
+  phone      String?
+  address    String?
+  city       String
+  state      String
+  zipCode    String?  @map("zip_code")
+  latitude   String?  // Coordenada geográfica
+  longitude  String?  // Coordenada geográfica
+  active     Boolean  @default(true)
+  
+  // HelmDesk integration
+  helmdeskStoreId String? @map("helmdesk_store_id")
+  
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  products        Product[]
+  users           User[]
+  customers       Customer[]
+  warrantyClaims  WarrantyClaim[]
+  storeUsers      StoreUser[]
+  
+  @@index([city, state])
+  @@map("stores")
+}
+
+model StoreUser {
+  id           String   @id @default(uuid())
+  storeId      String   @map("store_id")
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  role         String   @default("STORE_ADMIN")
+  isActive     Boolean  @default(true) @map("is_active")
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  store Store @relation(fields: [storeId], references: [id])
+  
+  @@index([storeId])
+  @@index([email])
+  @@map("store_users")
+}
+
+enum UserRole {
+  ADMIN_RELM
+  GERENTE_RELM
+  SUPORTE_RELM
+  LOJA
+  DISTRIBUIDOR
+  CLIENTE
+}
+
+model User {
+  id             String    @id @default(uuid())
+  name           String
+  email          String    @unique
+  passwordHash   String    @map("password_hash")
+  role           UserRole
+  storeId        String?   @map("store_id")
+  distributorId  String?   @map("distributor_id")
+  active         Boolean   @default(true)
+  
+  // Tokens
+  refreshToken   String?   @map("refresh_token") @db.Text
+  
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  
+  // Relations
+  store          Store?       @relation(fields: [storeId], references: [id])
+  distributor    Distributor? @relation(fields: [distributorId], references: [id])
+  warrantyEvents WarrantyEvent[]
+  auditLogs      AuditLog[]
+  
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Distributor {
+  id         String   @id @default(uuid())
+  tradeName  String   @map("trade_name")
+  legalName  String   @map("legal_name")
+  cnpj       String?  @unique
+  active     Boolean  @default(true)
+  
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  users User[]
+  
+  @@map("distributors")
+}
+
+// ============================================
+// WARRANTY MODULE
+// ============================================
+
+enum WarrantyStatus {
+  RECEBIDO
+  EM_ANALISE
+  AGUARDANDO_CLIENTE
+  APROVADO
+  REPROVADO
+  FINALIZADO
+  CANCELADO
+}
+
+enum LinkStatus {
+  PENDING_REVIEW
+  CONFIRMED
+  NOT_FOUND
+}
+
+model WarrantyClaim {
+  id                   String         @id @default(uuid())
+  protocolNumber       String         @unique @map("protocol_number")
+  
+  // Relacionamentos
+  customerId           String         @map("customer_id")
+  productId            String         @map("product_id")
+  storeId              String?        @map("store_id")
+  
+  // Dados da nota fiscal
+  invoiceNumber        String         @map("invoice_number")
+  invoiceAttachmentUrl String?        @map("invoice_attachment_url") // V2
+  
+  // Dados da loja (informados pelo cliente)
+  purchaseStoreName    String         @map("purchase_store_name")
+  purchaseStoreCity    String?        @map("purchase_store_city")
+  purchaseStoreState   String?        @map("purchase_store_state")
+  
+  // Status
+  linkStatus           LinkStatus     @default(PENDING_REVIEW) @map("link_status")
+  status               WarrantyStatus @default(RECEBIDO)
+  
+  // Observações
+  customerNotes        String?        @map("customer_notes") @db.Text
+  adminNotes           String?        @map("admin_notes") @db.Text
+  rejectionReason      String?        @map("rejection_reason") @db.Text
+  resolution           String?        @db.Text
+  
+  // Token de validação
+  validationToken      String?        @unique @map("validation_token")
+  tokenGeneratedAt     DateTime?      @map("token_generated_at")
+  validatedAt          DateTime?      @map("validated_at")
+  
+  // Email de aprovação
+  approvalEmailSentAt  DateTime?      @map("approval_email_sent_at")
+  approvedByUserId     String?        @map("approved_by_user_id")
+  approvedAt           DateTime?      @map("approved_at")
+  
+  // HelmDesk integration
+  helmdeskTicketId     String?        @map("helmdesk_ticket_id")
+  
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+  
+  // Relations
+  customer Customer @relation(fields: [customerId], references: [id])
+  product  Product  @relation(fields: [productId], references: [id])
+  store    Store?   @relation(fields: [storeId], references: [id])
+  events   WarrantyEvent[]
+  
+  @@index([protocolNumber])
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("warranty_claims")
+}
+
+model WarrantyEvent {
+  id              String   @id @default(uuid())
+  claimId         String   @map("claim_id")
+  eventType       String   @map("event_type")
+  fromStatus      String?  @map("from_status")
+  toStatus        String?  @map("to_status")
+  comment         String?  @db.Text
+  createdByUserId String?  @map("created_by_user_id")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  claim      WarrantyClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  createdBy  User?         @relation(fields: [createdByUserId], references: [id])
+  
+  @@index([claimId])
+  @@index([createdAt])
+  @@map("warranty_events")
+}
+
+// ============================================
+// BENEFITS MODULE
+// ============================================
+
+enum MembershipStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model BenefitMembership {
+  id         String           @id @default(uuid())
+  customerId String           @map("customer_id")
+  status     MembershipStatus @default(ACTIVE)
+  tier       String?          // V2: PRIME, VIP, etc.
+  joinedAt   DateTime         @default(now()) @map("joined_at")
+  
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+  
+  // Relations
+  customer    Customer @relation(fields: [customerId], references: [id])
+  redemptions BenefitRedemption[]
+  
+  @@unique([customerId])
+  @@map("benefit_memberships")
+}
+
+model Benefit {
+  id          String   @id @default(uuid())
+  title       String
+  description String   @db.Text
+  terms       String?  @db.Text
+  validFrom   DateTime @map("valid_from")
+  validUntil  DateTime @map("valid_until")
+  active      Boolean  @default(true)
+  
+  // Segmentação
+  targetRole  String?  @map("target_role") // CLIENTE, LOJA, DISTRIBUIDOR, null = todos
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  redemptions BenefitRedemption[]
+  
+  @@index([active, validFrom, validUntil])
+  @@map("benefits")
+}
+
+model BenefitRedemption {
+  id           String   @id @default(uuid())
+  benefitId    String   @map("benefit_id")
+  customerId   String?  @map("customer_id")
+  storeId      String?  @map("store_id")
+  membershipId String   @map("membership_id")
+  
+  redeemedAt   DateTime @default(now()) @map("redeemed_at")
+  
+  // Relations
+  benefit    Benefit           @relation(fields: [benefitId], references: [id])
+  membership BenefitMembership @relation(fields: [membershipId], references: [id])
+  
+  @@index([redeemedAt])
+  @@map("benefit_redemptions")
+}
+
+// ============================================
+// INSURANCE MODULE
+// ============================================
+
+model InsuranceQuote {
+  id              String   @id @default(uuid())
+  protocolNumber  String   @unique @map("protocol_number")
+  customerId      String   @map("customer_id")
+  productId       String?  @map("product_id")
+  
+  // Dados do seguro
+  bikeValue       Decimal? @map("bike_value") @db.Decimal(10, 2)
+  city            String?
+  state           String?
+  
+  // V2: campos de integração
+  quoteValue        Decimal? @map("quote_value") @db.Decimal(10, 2)
+  insuranceCompany  String?  @map("insurance_company")
+  status            String   @default("PENDING")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  customer Customer @relation(fields: [customerId], references: [id])
+  product  Product? @relation(fields: [productId], references: [id])
+  
+  @@index([protocolNumber])
+  @@index([customerId])
+  @@map("insurance_quotes")
+}
+
+// ============================================
+// EVENTS MODULE
+// ============================================
+
+model Event {
+  id              String   @id @default(uuid())
+  title           String
+  description     String   @db.Text
+  location        String
+  startAt         DateTime @map("start_at")
+  endAt           DateTime @map("end_at")
+  maxParticipants Int?     @map("max_participants")
+  active          Boolean  @default(true)
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  registrations EventRegistration[]
+  
+  @@index([startAt])
+  @@map("events")
+}
+
+model EventRegistration {
+  id         String   @id @default(uuid())
+  eventId    String   @map("event_id")
+  customerId String   @map("customer_id")
+  
+  createdAt  DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id])
+  
+  @@unique([eventId, customerId])
+  @@index([eventId])
+  @@map("event_registrations")
+}
+
+// ============================================
+// NEWSLETTER MODULE
+// ============================================
+
+enum SubscriptionStatus {
+  ACTIVE
+  UNSUBSCRIBED
+}
+
+model NewsletterSubscription {
+  id         String             @id @default(uuid())
+  email      String             @unique
+  customerId String?            @unique @map("customer_id")
+  status     SubscriptionStatus @default(ACTIVE)
+  
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+  
+  // Relations
+  customer Customer? @relation(fields: [customerId], references: [id])
+  
+  @@index([email])
+  @@index([status])
+  @@map("newsletter_subscriptions")
+}
+
+// ============================================
+// CONTENT MODULE
+// ============================================
+
+model ContentItem {
+  id          String    @id @default(uuid())
+  title       String
+  body        String    @db.Text // Markdown
+  category    String?
+  targetRole  String?   @map("target_role") // LOJA, DISTRIBUIDOR, null = todos
+  publishedAt DateTime? @map("published_at")
+  active      Boolean   @default(true)
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  @@index([active, publishedAt])
+  @@index([targetRole])
+  @@map("content_items")
+}
+
+model Announcement {
+  id          String   @id @default(uuid())
+  title       String
+  message     String   @db.Text
+  targetRole  String?  @map("target_role") // LOJA, DISTRIBUIDOR, null = todos
+  publishedAt DateTime @default(now()) @map("published_at")
+  active      Boolean  @default(true)
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@index([active, publishedAt])
+  @@map("announcements")
+}
+
+// ============================================
+// LGPD & AUDIT
+// ============================================
+
+model PrivacyPolicyVersion {
+  id      String   @id @default(uuid())
+  version String   @unique
+  content String   @db.Text // Markdown
+  active  Boolean  @default(false)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  consents PrivacyConsent[]
+  
+  @@map("privacy_policy_versions")
+}
+
+model PrivacyConsent {
+  id              String   @id @default(uuid())
+  customerId      String   @map("customer_id")
+  policyVersionId String   @map("policy_version_id")
+  acceptedAt      DateTime @default(now()) @map("accepted_at")
+  ipAddress       String?  @map("ip_address")
+  userAgent       String?  @map("user_agent") @db.Text
+  
+  // Relations
+  policyVersion PrivacyPolicyVersion @relation(fields: [policyVersionId], references: [id])
+  customer      Customer             @relation(fields: [customerId], references: [id])
+  
+  @@index([customerId])
+  @@map("privacy_consents")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String   // EXPORT_DATA, VIEW_SENSITIVE, etc.
+  entity    String   // customers, warranty_claims, etc.
+  entityId  String?  @map("entity_id")
+  metadata  Json?
+  ipAddress String?  @map("ip_address")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  user User? @relation(fields: [userId], references: [id])
+  
+  @@index([userId, createdAt])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+// ============================================
+// BANNERS MODULE
+// ============================================
+
+model Banner {
+  id           String   @id @default(uuid())
+  title        String
+  subtitle     String?
+  imageUrl     String   @map("image_url")
+  linkUrl      String?  @map("link_url")
+  linkText     String?  @map("link_text")
+  displayOrder Int      @default(0) @map("display_order")
+  active       Boolean  @default(true)
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  
+  @@index([active])
+  @@index([displayOrder])
+  @@map("banners")
+}

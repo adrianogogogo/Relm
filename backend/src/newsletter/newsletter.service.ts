@@ -1,0 +1,15 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class NewsletterService {
+  constructor(private prisma: PrismaService) {}
+
+  async subscribe(email: string) {
+    return this.prisma.newsletterSubscription.upsert({
+      where: { email },
+      update: { status: 'ACTIVE' },
+      create: { email, status: 'ACTIVE' },
+    });
+  }
+}
