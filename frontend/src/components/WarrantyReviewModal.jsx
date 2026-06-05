@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { X } from 'lucide-react';
+import { X, User, Bike, Store, FileText, XCircle, Check } from 'lucide-react';
 import { warrantyAPI } from '../services/api';
 
 export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
@@ -81,7 +81,9 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
         <div className="p-6 space-y-6">
           {/* Cliente */}
           <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">👤 Dados do Cliente</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <User size={18} className="text-gray-500" /> Dados do Cliente
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="text-gray-500">Nome:</span>
@@ -104,7 +106,9 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
 
           {/* Produto */}
           <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">🚴 Dados do Produto</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <Bike size={18} className="text-gray-500" /> Dados do Produto
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="text-gray-500">Modelo:</span>
@@ -127,7 +131,9 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
 
           {/* Loja de Compra */}
           <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">🏪 Loja de Compra</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <Store size={18} className="text-gray-500" /> Loja de Compra
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="text-gray-500">Nome:</span>
@@ -158,7 +164,9 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
 
           {/* Status Atual */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-blue-900 mb-3">📊 Status e Observações</h3>
+            <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center gap-2">
+              <FileText size={18} className="text-blue-500" /> Status e Observações
+            </h3>
             <div className="space-y-2 text-sm">
               <div>
                 <span className="text-blue-700">Status:</span>
@@ -199,7 +207,9 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
           {/* Formulário de Rejeição */}
           {showRejectForm && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-4">
-              <h3 className="text-lg font-semibold text-red-900">❌ Rejeitar Garantia</h3>
+              <h3 className="text-lg font-semibold text-red-900 flex items-center gap-2">
+                <XCircle size={18} className="text-red-500" /> Rejeitar Garantia
+              </h3>
               <div>
                 <label htmlFor="rejectionReason" className="block text-sm font-medium text-red-700 mb-2">
                   Motivo da Rejeição *
@@ -286,7 +296,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                 {approveMutation.isPending && (
                   <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                 )}
-                ✓ Aprovar Garantia
+                <span className="flex items-center gap-1"><Check size={16} /> Aprovar Garantia</span>
               </button>
             )}
           </div>

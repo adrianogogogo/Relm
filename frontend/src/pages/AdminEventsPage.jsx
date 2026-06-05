@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsAPI } from '../services/api';
-import { ArrowLeft, CalendarDays, Plus, Pencil, Trash2, X, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Plus, Pencil, Trash2, X, Users, MapPin } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 const EMPTY_FORM = {
@@ -274,10 +274,10 @@ export default function AdminEventsPage() {
                   </div>
                   <p className="text-gray-600 text-sm mb-3 line-clamp-2">{e.description}</p>
                   <div className="text-sm text-gray-500 space-y-1">
-                    <p>📍 {e.location}</p>
-                    <p>📅 {new Date(e.startAt).toLocaleDateString('pt-BR')} às {new Date(e.startAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
-                    <p>
-                      👥 {registrationCount} inscrito{registrationCount !== 1 ? 's' : ''}
+                    <p className="flex items-center gap-1.5"><MapPin size={16} className="text-gray-400" /> {e.location}</p>
+                    <p className="flex items-center gap-1.5"><CalendarDays size={16} className="text-gray-400" /> {new Date(e.startAt).toLocaleDateString('pt-BR')} às {new Date(e.startAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                    <p className="flex items-center gap-1.5">
+                      <Users size={16} className="text-gray-400" /> {registrationCount} inscrito{registrationCount !== 1 ? 's' : ''}
                       {e.maxParticipants ? ` / ${e.maxParticipants} vagas` : ' (ilimitado)'}
                     </p>
                   </div>

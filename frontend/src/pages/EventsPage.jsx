@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { PartyPopper, Calendar, MapPin, Users } from 'lucide-react';
 import { eventsAPI } from '../services/api';
 
 function RegisterModal({ event, onClose }) {
@@ -34,13 +35,13 @@ function RegisterModal({ event, onClose }) {
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
         {success ? (
           <div className="text-center py-6">
-            <div className="text-5xl mb-4">🎉</div>
+            <div className="text-primary mb-4 flex justify-center"><PartyPopper size={48} className="text-yellow-500" /></div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Inscrição realizada!</h3>
             <p className="text-gray-600 mb-2">
               Você está inscrito em <strong>{event.title}</strong>.
             </p>
-            <p className="text-sm text-gray-500 mb-6">
-              📅 {new Date(event.startAt).toLocaleDateString('pt-BR')} às{' '}
+            <p className="text-sm text-gray-500 mb-6 flex items-center justify-center gap-1.5">
+              <Calendar size={16} /> {new Date(event.startAt).toLocaleDateString('pt-BR')} às{' '}
               {new Date(event.startAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
             </p>
             <button onClick={onClose} className="btn btn-primary w-full">
@@ -167,17 +168,17 @@ export default function EventsPage() {
                     </div>
                     <p className="text-gray-700 mb-4">{event.description}</p>
                     <div className="space-y-2 text-sm text-gray-600">
-                      <p><strong>📍 Local:</strong> {event.location}</p>
-                      <p>
-                        <strong>📅 Data:</strong>{' '}
+                      <p className="flex items-center gap-1.5"><strong><MapPin size={16} className="text-gray-400 inline" /> Local:</strong> {event.location}</p>
+                      <p className="flex items-center gap-1.5">
+                        <strong><Calendar size={16} className="text-gray-400 inline" /> Data:</strong>{' '}
                         {new Date(event.startAt).toLocaleDateString('pt-BR')} às{' '}
                         {new Date(event.startAt).toLocaleTimeString('pt-BR', {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
                       </p>
-                      <p>
-                        <strong>👥 Vagas:</strong>{' '}
+                      <p className="flex items-center gap-1.5">
+                        <strong><Users size={16} className="text-gray-400 inline" /> Vagas:</strong>{' '}
                         {event.maxParticipants
                           ? isFull
                             ? 'Esgotado'

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { MapPin, Calendar } from 'lucide-react';
 import api, { insuranceAPI } from '../services/api';
 
 export default function CustomerDetailPage() {
@@ -272,11 +273,11 @@ export default function CustomerDetailPage() {
                       <div key={event.id} className="border border-gray-200 rounded-lg p-4">
                         <h4 className="font-semibold mb-2">{event.title}</h4>
                         <p className="text-sm text-gray-600 mb-2">{event.description}</p>
-                        <p className="text-sm text-gray-600 mb-2">
-                          📍 {event.location}
+                        <p className="text-sm text-gray-600 mb-2 flex items-center gap-1.5">
+                          <MapPin size={16} className="text-gray-400" /> {event.location}
                         </p>
-                        <p className="text-sm text-gray-600 mb-4">
-                          📅 {new Date(event.startDate).toLocaleDateString('pt-BR')}
+                        <p className="text-sm text-gray-600 mb-4 flex items-center gap-1.5">
+                          <Calendar size={16} className="text-gray-400" /> {new Date(event.startDate).toLocaleDateString('pt-BR')}
                         </p>
                         <button className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-600 text-sm">
                           Inscrever Cliente

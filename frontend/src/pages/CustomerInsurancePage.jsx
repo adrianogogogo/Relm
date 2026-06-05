@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Shield } from 'lucide-react';
 import { customerPortalAPI } from '../services/api';
 
 const STATUS_COLOR = {
@@ -30,8 +31,8 @@ export default function CustomerInsurancePage() {
         {isLoading ? (
           <div className="text-center py-12 text-gray-400">Carregando...</div>
         ) : quotes.length === 0 ? (
-          <div className="bg-white rounded-xl shadow p-12 text-center">
-            <p className="text-5xl mb-4">🛡️</p>
+          <div className="bg-white rounded-xl shadow p-12 text-center flex flex-col items-center">
+            <Shield className="h-12 w-12 text-gray-300 mb-4" />
             <p className="text-gray-500 mb-4">Você ainda não tem cotações de seguro.</p>
             <Link to="/seguro" className="btn btn-primary">Solicitar cotação</Link>
           </div>

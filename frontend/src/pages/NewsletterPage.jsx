@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { Mail } from 'lucide-react';
 import { newsletterAPI } from '../services/api';
 
 export default function NewsletterPage() {
@@ -34,7 +35,7 @@ export default function NewsletterPage() {
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
-            <div className="text-6xl mb-4">📧</div>
+            <div className="text-primary mb-4 flex justify-center"><Mail size={64} className="stroke-[1.5]" /></div>
             <h2 className="text-3xl font-bold text-green-600 mb-4">
               Inscrição Confirmada!
             </h2>

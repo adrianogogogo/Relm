@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Bike } from 'lucide-react';
 import { useCustomerAuthStore } from '../store/customerAuthStore';
 
 export default function CustomerLoginPage() {
@@ -24,7 +25,7 @@ export default function CustomerLoginPage() {
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-              <span className="text-3xl">🚴</span>
+              <Bike className="w-8 h-8 text-primary" />
             </div>
             <h1 className="text-3xl font-bold text-gray-800 mb-1">Área do Cliente</h1>
             <p className="text-gray-500 text-sm">Acesse suas garantias, eventos e vantagens</p>

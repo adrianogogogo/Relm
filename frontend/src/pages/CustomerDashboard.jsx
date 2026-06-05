@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { Shield, FileText, Calendar, User, MapPin, Gift } from 'lucide-react';
 import { useCustomerAuthStore } from '../store/customerAuthStore';
 import { customerPortalAPI } from '../services/api';
 
@@ -123,8 +124,8 @@ export default function CustomerDashboard() {
                 {events.slice(0, 3).map((reg) => (
                   <div key={reg.id} className="border-b pb-3 last:border-b-0">
                     <p className="font-semibold text-sm text-gray-800">{reg.event.title}</p>
-                    <p className="text-xs text-gray-500">
-                      📍 {reg.event.location} •{' '}
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      <MapPin size={12} className="text-gray-400" /> {reg.event.location} •{' '}
                       {new Date(reg.event.startAt).toLocaleDateString('pt-BR')}
                     </p>
                   </div>
@@ -147,7 +148,9 @@ export default function CustomerDashboard() {
               <div className="space-y-3">
                 {benefits.slice(0, 3).map((b) => (
                   <div key={b.id} className="border-b pb-3 last:border-b-0">
-                    <p className="font-semibold text-sm text-gray-800">🎁 {b.title}</p>
+                    <p className="font-semibold text-sm text-gray-800 flex items-center gap-1.5">
+                      <Gift size={16} className="text-purple-500" /> {b.title}
+                    </p>
                     <p className="text-xs text-gray-500 line-clamp-1">{b.description}</p>
                   </div>
                 ))}
@@ -160,16 +163,16 @@ export default function CustomerDashboard() {
             <h2 className="text-lg font-bold text-gray-800 mb-4">Ações Rápidas</h2>
             <div className="space-y-3">
               <Link to="/garantia" className="btn btn-outline w-full text-left flex items-center gap-2">
-                🛡️ Registrar nova garantia
+                <Shield size={18} /> Registrar nova garantia
               </Link>
               <Link to="/seguro" className="btn btn-outline w-full text-left flex items-center gap-2">
-                📋 Solicitar cotação de seguro
+                <FileText size={18} /> Solicitar cotação de seguro
               </Link>
               <Link to="/eventos" className="btn btn-outline w-full text-left flex items-center gap-2">
-                📅 Ver eventos disponíveis
+                <Calendar size={18} /> Ver eventos disponíveis
               </Link>
               <Link to="/cliente/perfil" className="btn btn-outline w-full text-left flex items-center gap-2">
-                👤 Editar meu perfil
+                <User size={18} /> Editar meu perfil
               </Link>
             </div>
           </div>

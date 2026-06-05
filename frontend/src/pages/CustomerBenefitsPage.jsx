@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { Gift } from 'lucide-react';
 import { customerPortalAPI } from '../services/api';
 
 export default function CustomerBenefitsPage() {
@@ -18,8 +19,8 @@ export default function CustomerBenefitsPage() {
         {isLoading ? (
           <div className="text-center py-12 text-gray-400">Carregando...</div>
         ) : benefits.length === 0 ? (
-          <div className="bg-white rounded-xl shadow p-12 text-center">
-            <p className="text-5xl mb-4">🎁</p>
+          <div className="bg-white rounded-xl shadow p-12 text-center flex flex-col items-center">
+            <Gift className="h-12 w-12 text-gray-300 mb-4" />
             <p className="text-gray-500">Nenhuma vantagem disponível no momento.</p>
           </div>
         ) : (
@@ -27,7 +28,7 @@ export default function CustomerBenefitsPage() {
             {benefits.map((b) => (
               <div key={b.id} className="bg-white rounded-xl shadow p-6">
                 <div className="flex items-start gap-3">
-                  <div className="text-3xl shrink-0">🎁</div>
+                  <Gift className="text-purple-500 w-8 h-8 shrink-0" />
                   <div>
                     <h3 className="font-bold text-gray-800 mb-1">{b.title}</h3>
                     <p className="text-sm text-gray-600 mb-3">{b.description}</p>

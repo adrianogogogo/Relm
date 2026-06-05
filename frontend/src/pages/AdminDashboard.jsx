@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { ClipboardList, Users, Store, Calendar, Gift, Shield } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
 
@@ -91,26 +92,26 @@ export default function AdminDashboard() {
               <h2 className="text-2xl font-bold mb-4">Ações Rápidas</h2>
               <div className="space-y-3">
                 {isRelm && (
-                  <Link to="/admin/warranties" className="btn btn-outline w-full text-left flex items-center">
-                    📋 Gerenciar Garantias
+                  <Link to="/admin/warranties" className="btn btn-outline w-full text-left flex items-center gap-2">
+                    <ClipboardList size={18} /> Gerenciar Garantias
                   </Link>
                 )}
-                <Link to="/admin/customers" className="btn btn-outline w-full text-left flex items-center">
-                  👥 Gerenciar Clientes
+                <Link to="/admin/customers" className="btn btn-outline w-full text-left flex items-center gap-2">
+                  <Users size={18} /> Gerenciar Clientes
                 </Link>
-                <Link to="/admin/stores" className="btn btn-outline w-full text-left flex items-center">
-                  🏪 Gerenciar Lojas
+                <Link to="/admin/stores" className="btn btn-outline w-full text-left flex items-center gap-2">
+                  <Store size={18} /> Gerenciar Lojas
                 </Link>
                 {isRelm && (
                   <>
-                    <Link to="/admin/events" className="btn btn-outline w-full text-left flex items-center">
-                      📅 Gerenciar Eventos
+                    <Link to="/admin/events" className="btn btn-outline w-full text-left flex items-center gap-2">
+                      <Calendar size={18} /> Gerenciar Eventos
                     </Link>
-                    <Link to="/admin/benefits" className="btn btn-outline w-full text-left flex items-center">
-                      🎁 Gerenciar Benefícios
+                    <Link to="/admin/benefits" className="btn btn-outline w-full text-left flex items-center gap-2">
+                      <Gift size={18} /> Gerenciar Benefícios
                     </Link>
-                    <Link to="/admin/insurances" className="btn btn-outline w-full text-left flex items-center">
-                      🛡️ Cotações de Seguro
+                    <Link to="/admin/insurances" className="btn btn-outline w-full text-left flex items-center gap-2">
+                      <Shield size={18} /> Cotações de Seguro
                     </Link>
                   </>
                 )}

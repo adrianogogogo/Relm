@@ -105,8 +105,21 @@ export const eventsAPI = {
 };
 
 export const insuranceAPI = {
+  // Público
   createQuote: (data) => api.post('/public/insurance-quote', data),
+  // Admin — cotações
   getAll: (params) => api.get('/insurance/quotes', { params }).then((res) => res.data),
+  createAdminQuote: (data) => api.post('/insurance/quotes', data).then((res) => res.data),
+  getQuoteById: (id) => api.get(`/insurance/quotes/${id}`).then((res) => res.data),
+  approveQuote: (id, data) => api.patch(`/insurance/quotes/${id}/approve`, data).then((res) => res.data),
+  rejectQuote: (id) => api.patch(`/insurance/quotes/${id}/reject`).then((res) => res.data),
+  convertToPolicy: (id) => api.post(`/insurance/quotes/${id}/convert`).then((res) => res.data),
+  // Apólices (V1: cotações aprovadas servem como apólice)
+  getPolicies: (params) => api.get('/insurance/quotes', { params: { ...params, status: 'APPROVED' } }).then((res) => res.data),
+  getPolicyById: (id) => api.get(`/insurance/quotes/${id}`).then((res) => res.data),
+  cancelPolicy: (id) => api.patch(`/insurance/quotes/${id}/reject`).then((res) => res.data),
+  renewPolicy: (id) => api.patch(`/insurance/quotes/${id}/renew`).then((res) => res.data),
+  createPolicy: (data) => api.post('/insurance/quotes', data).then((res) => res.data),
 };
 
 export const newsletterAPI = {
