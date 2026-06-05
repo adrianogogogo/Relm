@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
 import { storesAPI } from '../services/api';
 
 export default function StoreFormPage() {
@@ -198,9 +199,7 @@ export default function StoreFormPage() {
         {/* Header */}
         <div className="mb-8">
           <Link to="/admin/stores" className="text-blue-600 hover:text-blue-800 flex items-center mb-4">
-            <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <ArrowLeft className="h-5 w-5 mr-2" />
             Voltar para Lojas
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">
