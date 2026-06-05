@@ -89,6 +89,20 @@ cd "$BACKEND_DIR"
 # Copiar .env.production como .env para o PM2 ler
 cp .env.production .env
 
+# Remover processos PM2 com nomes diferentes do esperado que usem a mesma porta
+for old_app in $(pm2 jlist 2>/dev/null | python3 -c "
+import sys, json
+procs = json.load(sys.stdin)
+for p in procs:
+    if p.get('name') != '$PM2_APP':
+        port = str(p.get('pm2_env', {}).get('PORT', ''))
+        if port == '3005':
+            print(p['name'])
+" 2>/dev/null); do
+    warn "Removendo processo PM2 obsoleto: $old_app"
+    pm2 delete "$old_app"
+done
+
 if pm2 describe "$PM2_APP" > /dev/null 2>&1; then
     pm2 reload "$PM2_APP"
     log "Backend recarregado (zero-downtime)"
