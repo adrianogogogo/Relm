@@ -61,6 +61,7 @@ coverage/
 # Database
 # ============================================
 *.sql
+!**/prisma/migrations/**/*.sql
 *.sqlite
 *.db
 
