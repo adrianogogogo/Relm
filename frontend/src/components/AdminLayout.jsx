@@ -97,8 +97,8 @@ export default function AdminLayout() {
       <aside className="w-64 bg-primary text-white flex flex-col shadow-xl shrink-0">
         {/* Logo */}
         <div className="p-6 border-b border-primary-600">
-          <Link to="/">
-            <img src="/logo-relm.png" alt="Relm Care+" className="h-9 brightness-0 invert" />
+          <Link to="/" className="bg-white rounded-xl px-3 py-1.5 block">
+            <img src="/logo-relm.png" alt="Relm Care+" className="h-8 w-auto" />
           </Link>
         </div>
 
