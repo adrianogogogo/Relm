@@ -97,14 +97,8 @@ export default function AdminLayout() {
       <aside className="w-64 bg-primary text-white flex flex-col shadow-xl shrink-0">
         {/* Logo */}
         <div className="p-6 border-b border-primary-600">
-          <Link to="/" className="flex items-center space-x-3">
-            <div className="bg-white rounded-full p-2">
-              <span className="text-primary text-xl font-bold leading-none">R</span>
-            </div>
-            <div>
-              <p className="font-bold text-white text-base leading-tight">RELM BIKES</p>
-              <p className="text-xs text-primary-200">Care+ Admin</p>
-            </div>
+          <Link to="/">
+            <img src="/logo-relm.png" alt="Relm Care+" className="h-9 brightness-0 invert" />
           </Link>
         </div>
 

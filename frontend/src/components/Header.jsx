@@ -5,7 +5,7 @@ import { useCustomerAuthStore } from '../store/customerAuthStore';
 export default function Header() {
   const location = useLocation();
   const { isAuthenticated, user, logout } = useAuthStore();
-  const { isAuthenticated: isCustomerAuth, customer } = useCustomerAuthStore();
+  const { isAuthenticated: isCustomerAuth } = useCustomerAuthStore();
 
   const navItems = [
     { path: '/', label: 'Início' },
@@ -23,16 +23,8 @@ export default function Header() {
       <nav className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2">
-              <div className="bg-white rounded-full p-2">
-                <span className="text-primary text-2xl font-bold">R</span>
-              </div>
-              <div className="text-white">
-                <h1 className="text-xl font-bold tracking-tight">RELM BIKES</h1>
-                <p className="text-xs text-primary-100">Care+ Garantias</p>
-              </div>
-            </div>
+          <Link to="/" className="flex items-center">
+            <img src="/logo-relm.png" alt="Relm Care+" className="h-10 brightness-0 invert" />
           </Link>
 
           {/* Navigation */}
