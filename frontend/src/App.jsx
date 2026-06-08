@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Header from './components/Header';
@@ -6,6 +7,7 @@ import AdminLayout from './components/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import CustomerLayout from './components/CustomerLayout';
 import CustomerProtectedRoute from './components/CustomerProtectedRoute';
+import { useThemeStore } from './store/themeStore';
 
 // Public pages
 import HomePage from './pages/HomePage';
@@ -82,6 +84,12 @@ function PublicLayout() {
 }
 
 export default function App() {
+  const initTheme = useThemeStore((state) => state.initTheme);
+
+  useEffect(() => {
+    initTheme();
+  }, [initTheme]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
