@@ -26,65 +26,83 @@ export default function AdminDashboard() {
   };
 
   const statusColor = {
-    RECEBIDO: 'bg-blue-100 text-blue-800',
-    EM_ANALISE: 'bg-yellow-100 text-yellow-800',
-    AGUARDANDO_CLIENTE: 'bg-orange-100 text-orange-800',
-    APROVADO: 'bg-green-100 text-green-800',
-    REPROVADO: 'bg-red-100 text-red-800',
-    FINALIZADO: 'bg-gray-100 text-gray-800',
-    CANCELADO: 'bg-gray-100 text-gray-600',
+    RECEBIDO: 'bg-blue-50 text-blue-700 dark:bg-blue-900/35 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/40',
+    EM_ANALISE: 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/35 dark:text-yellow-400 border border-yellow-200/50 dark:border-yellow-800/40',
+    AGUARDANDO_CLIENTE: 'bg-orange-50 text-orange-700 dark:bg-orange-900/35 dark:text-orange-400 border border-orange-200/50 dark:border-orange-800/40',
+    APROVADO: 'bg-green-50 text-green-700 dark:bg-green-900/35 dark:text-green-400 border border-green-200/50 dark:border-green-800/40',
+    REPROVADO: 'bg-red-50 text-red-700 dark:bg-red-900/35 dark:text-red-400 border border-red-200/50 dark:border-red-800/40',
+    FINALIZADO: 'bg-gray-50 text-gray-700 dark:bg-slate-800 dark:text-slate-300 border border-gray-200/50 dark:border-slate-700/40',
+    CANCELADO: 'bg-gray-50 text-gray-500 dark:bg-slate-800 dark:text-slate-400 border border-gray-200/50 dark:border-slate-700/40',
   };
 
   const metricCards = [
     {
       label: 'Garantias Ativas',
       value: stats?.warranties?.pending ?? '—',
-      color: 'bg-primary',
+      icon: Shield,
+      color: 'text-primary dark:text-secondary',
+      bgColor: 'bg-primary/10 dark:bg-secondary/15',
       link: '/admin/warranties',
     },
     {
       label: 'Clientes',
       value: stats?.totalCustomers ?? '—',
-      color: 'bg-secondary',
+      icon: Users,
+      color: 'text-secondary',
+      bgColor: 'bg-secondary/10 dark:bg-secondary/15',
       link: '/admin/customers',
     },
     {
       label: 'Lojas Parceiras',
       value: stats?.totalActiveStores ?? '—',
-      color: 'bg-purple-500',
+      icon: Store,
+      color: 'text-purple-500',
+      bgColor: 'bg-purple-50/50 dark:bg-purple-500/15',
       link: '/admin/stores',
     },
     {
       label: 'Eventos Ativos',
       value: stats?.totalActiveEvents ?? '—',
-      color: 'bg-orange-500',
+      icon: Calendar,
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-50/50 dark:bg-orange-500/15',
       link: '/admin/events',
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-            <h1 className="text-4xl font-bold mb-2">Dashboard Administrativo</h1>
-            <p className="text-gray-600">
-              Bem-vindo, <span className="font-semibold">{user?.name}</span>!
-            </p>
-            <p className="text-sm text-gray-500">Perfil: {user?.role}</p>
-          </div>
+    <div className="py-8 px-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-gray-100 dark:border-slate-800/60 rounded-2xl p-6 mb-6 shadow-sm">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-slate-100 mb-1">
+            Dashboard Administrativo
+          </h1>
+          <p className="text-gray-500 dark:text-slate-400 text-sm">
+            Bem-vindo, <span className="font-semibold text-gray-800 dark:text-slate-200">{user?.name}</span>! • Perfil: {user?.role}
+          </p>
+        </div>
 
-          {/* Metric Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {metricCards.map((card) => (
-              <Link key={card.label} to={card.link} className={`card ${card.color} text-white hover:opacity-90 transition-opacity`}>
-                <h3 className="text-3xl font-bold mb-2">
+        {/* Metric Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {metricCards.map((card) => (
+            <Link
+              key={card.label}
+              to={card.link}
+              className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800/60 rounded-2xl p-5 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-300 flex items-center justify-between group"
+            >
+              <div>
+                <p className="text-3xl font-extrabold text-gray-800 dark:text-slate-100">
                   {isLoading ? '...' : card.value}
-                </h3>
-                <p className="opacity-90">{card.label}</p>
-              </Link>
-            ))}
-          </div>
+                </p>
+                <p className="text-sm font-medium text-gray-500 dark:text-slate-400 mt-1">{card.label}</p>
+              </div>
+              <div className={`p-3 rounded-xl ${card.bgColor} ${card.color} shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+                <card.icon size={22} />
+              </div>
+            </Link>
+          ))}
+        </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             {/* Quick Actions */}
@@ -173,6 +191,5 @@ export default function AdminDashboard() {
           </div>}
         </div>
       </div>
-    </div>
   );
 }

@@ -55,68 +55,60 @@ export default function WarrantiesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="py-8 px-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Garantias</h1>
-              <p className="mt-2 text-gray-600">Gerencie as solicitações de garantia</p>
+              <h1 className="text-3xl font-bold text-gray-800 dark:text-slate-100">Garantias</h1>
+              <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">Gerencie as solicitações de garantia</p>
             </div>
-            <Link to="/admin" className="text-blue-600 hover:text-blue-800">
+            <Link to="/admin" className="text-primary dark:text-secondary hover:underline text-sm font-semibold flex items-center gap-1">
               ← Voltar ao Dashboard
             </Link>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-blue-100 rounded-md p-3">
-                <FileText className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-5">
-                <dt className="text-sm font-medium text-gray-500">Total</dt>
-                <dd className="text-2xl font-semibold text-gray-900">{stats.total}</dd>
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800/60 rounded-2xl p-6 shadow-sm flex items-center">
+            <div className="flex-shrink-0 bg-blue-50 dark:bg-blue-900/30 rounded-xl p-3 text-blue-600 dark:text-blue-400">
+              <FileText className="h-6 w-6" />
+            </div>
+            <div className="ml-5">
+              <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Total</dt>
+              <dd className="text-2xl font-extrabold text-gray-800 dark:text-slate-100 mt-0.5">{stats.total}</dd>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-yellow-100 rounded-md p-3">
-                <Clock className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div className="ml-5">
-                <dt className="text-sm font-medium text-gray-500">Pendentes</dt>
-                <dd className="text-2xl font-semibold text-gray-900">{stats.pending}</dd>
-              </div>
+          <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800/60 rounded-2xl p-6 shadow-sm flex items-center">
+            <div className="flex-shrink-0 bg-yellow-50 dark:bg-yellow-900/30 rounded-xl p-3 text-yellow-600 dark:text-yellow-400">
+              <Clock className="h-6 w-6" />
+            </div>
+            <div className="ml-5">
+              <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Pendentes</dt>
+              <dd className="text-2xl font-extrabold text-gray-800 dark:text-slate-100 mt-0.5">{stats.pending}</dd>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-green-100 rounded-md p-3">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-5">
-                <dt className="text-sm font-medium text-gray-500">Aprovadas</dt>
-                <dd className="text-2xl font-semibold text-gray-900">{stats.approved}</dd>
-              </div>
+          <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800/60 rounded-2xl p-6 shadow-sm flex items-center">
+            <div className="flex-shrink-0 bg-green-50 dark:bg-green-900/30 rounded-xl p-3 text-green-600 dark:text-green-400">
+              <CheckCircle className="h-6 w-6" />
+            </div>
+            <div className="ml-5">
+              <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Aprovadas</dt>
+              <dd className="text-2xl font-extrabold text-gray-800 dark:text-slate-100 mt-0.5">{stats.approved}</dd>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-red-100 rounded-md p-3">
-                <XCircle className="h-6 w-6 text-red-600" />
-              </div>
-              <div className="ml-5">
-                <dt className="text-sm font-medium text-gray-500">Reprovadas</dt>
-                <dd className="text-2xl font-semibold text-gray-900">{stats.rejected}</dd>
-              </div>
+          <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800/60 rounded-2xl p-6 shadow-sm flex items-center">
+            <div className="flex-shrink-0 bg-red-50 dark:bg-red-900/30 rounded-xl p-3 text-red-600 dark:text-red-400">
+              <XCircle className="h-6 w-6" />
+            </div>
+            <div className="ml-5">
+              <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Reprovadas</dt>
+              <dd className="text-2xl font-extrabold text-gray-800 dark:text-slate-100 mt-0.5">{stats.rejected}</dd>
             </div>
           </div>
         </div>

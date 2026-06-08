@@ -41,3 +41,46 @@
     @apply block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2;
   }
 }
+
+@layer utilities {
+  /* Dark mode global overrides for hardcoded light theme classes */
+  .dark .bg-gray-50 {
+    background-color: #020617 !important;
+  }
+  .dark .bg-white {
+    background-color: #0f172a !important;
+  }
+  .dark .text-gray-900 {
+    color: #f8fafc !important;
+  }
+  .dark .text-gray-800 {
+    color: #f1f5f9 !important;
+  }
+  .dark .text-gray-700 {
+    color: #e2e8f0 !important;
+  }
+  .dark .text-gray-600 {
+    color: #cbd5e1 !important;
+  }
+  .dark .text-gray-500 {
+    color: #94a3b8 !important;
+  }
+  .dark .text-gray-400 {
+    color: #64748b !important;
+  }
+  .dark .border-gray-100 {
+    border-color: rgba(30, 41, 59, 0.6) !important;
+  }
+  .dark .border-gray-200 {
+    border-color: #1e293b !important;
+  }
+  .dark .border-gray-300 {
+    border-color: #334155 !important;
+  }
+  .dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #1e293b !important;
+  }
+  .dark .hover\:bg-gray-50:hover {
+    background-color: rgba(30, 41, 59, 0.4) !important;
+  }
+}
