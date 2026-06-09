@@ -47,8 +47,11 @@
   .dark .bg-gray-50 {
     background-color: #020617 !important;
   }
-  .dark .bg-white {
+  .dark .bg-white:not(.bg-white-always) {
     background-color: #0f172a !important;
+  }
+  .bg-white-always {
+    background-color: #ffffff !important;
   }
   .dark .text-gray-900 {
     color: #f8fafc !important;
@@ -82,5 +85,13 @@
   }
   .dark .hover\:bg-gray-50:hover {
     background-color: rgba(30, 41, 59, 0.4) !important;
+  }
+  .bg-header-active {
+    background-color: #ffffff !important;
+    color: #0E1F40 !important;
+  }
+  .dark .bg-header-active {
+    background-color: #00ADEF !important;
+    color: #0E1F40 !important;
   }
 }

@@ -70,7 +70,7 @@ export default function HomePage() {
                 to={feature.link}
                 className="card hover:scale-105 transition-transform"
               >
-                <div className="text-primary mb-4 flex justify-center">
+                <div className="text-primary dark:text-white mb-4 flex justify-center">
                   <feature.icon size={48} className="stroke-[1.5]" />
                 </div>
                 <h3 className="text-2xl font-bold mb-3">{feature.title}</h3>

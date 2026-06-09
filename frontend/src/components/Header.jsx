@@ -23,7 +23,7 @@ export default function Header() {
       <nav className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="bg-white rounded-xl px-3 py-1.5 block">
+          <Link to="/" className="bg-white bg-white-always rounded-xl px-3 py-1.5 block shrink-0">
             <img src="/logo-relm.png" alt="Relm Care+" className="h-9 w-auto" />
           </Link>
 
@@ -35,7 +35,7 @@ export default function Header() {
                 to={item.path}
                 className={`px-4 py-2 rounded-lg transition-all ${
                   isActive(item.path)
-                    ? 'bg-white text-primary font-semibold'
+                    ? 'bg-header-active font-semibold'
                     : 'text-white hover:bg-primary-600'
                 }`}
               >
@@ -50,7 +50,7 @@ export default function Header() {
               <>
                 <Link
                   to="/admin"
-                  className="hidden md:block px-4 py-2 rounded-lg bg-white text-primary font-semibold hover:bg-primary-50 transition-all"
+                  className="hidden md:block px-4 py-2 rounded-lg bg-header-active font-semibold hover:bg-primary-50 dark:hover:bg-secondary-600 transition-all"
                 >
                   Dashboard
                 </Link>
@@ -68,7 +68,7 @@ export default function Header() {
             ) : isCustomerAuth ? (
               <Link
                 to="/cliente/dashboard"
-                className="px-6 py-2 rounded-lg bg-white text-primary font-semibold hover:bg-primary-50 transition-all"
+                className="px-6 py-2 rounded-lg bg-header-active font-semibold hover:bg-primary-50 dark:hover:bg-secondary-600 transition-all"
               >
                 Minha Conta
               </Link>
@@ -76,13 +76,13 @@ export default function Header() {
               <div className="flex items-center gap-2">
                 <Link
                   to="/cliente/login"
-                  className="px-4 py-2 rounded-lg bg-white text-primary font-semibold hover:bg-primary-50 transition-all text-sm"
+                  className="px-4 py-2 rounded-lg bg-header-active font-semibold hover:bg-primary-50 dark:hover:bg-secondary-600 transition-all text-sm"
                 >
                   Sou Cliente
                 </Link>
                 <Link
                   to="/login"
-                  className="px-4 py-2 rounded-lg border-2 border-white text-white font-semibold hover:bg-white hover:text-primary transition-all text-sm"
+                  className="px-4 py-2 rounded-lg border-2 border-white text-white font-semibold hover:bg-header-active transition-all text-sm"
                 >
                   Equipe Relm
                 </Link>
@@ -99,7 +99,7 @@ export default function Header() {
               to={item.path}
               className={`px-3 py-1 rounded-lg text-sm transition-all ${
                 isActive(item.path)
-                  ? 'bg-white text-primary font-semibold'
+                  ? 'bg-header-active font-semibold'
                   : 'text-white hover:bg-primary-600'
               }`}
             >

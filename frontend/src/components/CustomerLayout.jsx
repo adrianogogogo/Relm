@@ -22,7 +22,7 @@ export default function CustomerLayout() {
       {/* Sidebar */}
       <aside className="w-64 bg-primary dark:bg-slate-900 text-white flex flex-col shadow-xl shrink-0 border-r dark:border-slate-800/50">
         <div className="p-6 border-b border-primary-600 dark:border-slate-800">
-          <Link to="/" className="bg-white rounded-xl px-3 py-1.5 block">
+          <Link to="/" className="bg-white bg-white-always rounded-xl px-3 py-1.5 block">
             <img src="/logo-relm.png" alt="Relm Care+" className="h-8 w-auto" />
           </Link>
         </div>
