@@ -4,7 +4,7 @@ export default function Footer() {
   return (
     <footer className="bg-primary text-white mt-auto">
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* About */}
           <div>
             <h3 className="text-xl font-bold mb-4">Relm Care+</h3>
@@ -56,16 +56,6 @@ export default function Footer() {
             <ul className="space-y-2 text-sm text-gray-400">
               <li>
                 <a
-                  href="http://191.252.217.190:3005/docs"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-secondary transition-colors"
-                >
-                  Documentação da API
-                </a>
-              </li>
-              <li>
-                <a
                   href="/newsletter"
                   className="hover:text-secondary transition-colors"
                 >
@@ -79,18 +69,6 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-
-          {/* Tech */}
-          <div>
-            <h4 className="font-semibold mb-4">Tecnologia</h4>
-            <p className="text-sm text-gray-400 mb-2">
-              Backend: NestJS + PostgreSQL
-            </p>
-            <p className="text-sm text-gray-400 mb-2">
-              Frontend: React + Vite
-            </p>
-            <p className="text-sm text-gray-400">Auth: JWT + RBAC</p>
-          </div>
         </div>
 
         <div className="border-t border-gray-700 mt-8 pt-6 text-center text-sm text-gray-400">
@@ -98,6 +76,7 @@ export default function Footer() {
             &copy; {currentYear} Relm Bikes. Todos os direitos reservados. |
             Versão 1.0.0
           </p>
+          <p className="mt-1">Desenvolvido por GogoLab</p>
         </div>
       </div>
     </footer>
