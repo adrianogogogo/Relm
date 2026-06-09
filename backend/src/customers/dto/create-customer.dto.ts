@@ -35,7 +35,7 @@ export class CreateCustomerDto {
 
   @IsOptional()
   @IsUUID('4', { message: 'ID da loja inválido' })
-  storeId?: string;
+  storeId?: string | null;
 
   @IsOptional()
   @IsString()

@@ -57,7 +57,7 @@ export default function CustomerFormPage() {
         city: data.city || '',
         state: data.state || '',
         zipCode: data.zipCode || '',
-        storeId: data.storeId || '',
+        storeId: data.storeId ?? 'direct',
         notes: data.notes || '',
         active: data.active ?? true,
       });
@@ -159,7 +159,7 @@ export default function CustomerFormPage() {
 
       const payload = {
         ...formData,
-        storeId: formData.storeId && formData.storeId !== 'direct' ? formData.storeId : undefined,
+        storeId: formData.storeId && formData.storeId !== 'direct' ? formData.storeId : null,
       };
       if (!isEditMode) delete payload.active;
 
