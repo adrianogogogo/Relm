@@ -1,11 +1,26 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CustomersService } from '../customers/customers.service';
+import { CreateInsurancePublicDto } from './dto/create-insurance-public.dto';
 
 @Injectable()
 export class InsuranceService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private customersService: CustomersService,
+  ) {}
 
-  async create(data: any) {
+  async create(data: CreateInsurancePublicDto) {
+    // Resolve/cria o cliente pelo email a partir dos dados públicos.
+    // Não confiamos no body para customerId/status/quoteValue/protocolNumber.
+    const customer = await this.customersService.upsertByEmail({
+      email: data.email,
+      fullName: data.fullName,
+      phone: data.phone,
+      city: data.city,
+      state: data.state,
+    });
+
     const lastProtocol = await this.prisma.insuranceQuote.findFirst({
       orderBy: { createdAt: 'desc' },
       select: { protocolNumber: true },
@@ -13,8 +28,16 @@ export class InsuranceService {
     const lastNumber = lastProtocol ? parseInt(lastProtocol.protocolNumber.split('-').pop()) : 0;
     const protocolNumber = `SEG-2024-${String(lastNumber + 1).padStart(5, '0')}`;
 
+    // Campos definidos explicitamente pelo servidor (sem spread do body).
     return this.prisma.insuranceQuote.create({
-      data: { ...data, protocolNumber },
+      data: {
+        protocolNumber,
+        customerId: customer.id,
+        bikeValue: data.bikeValue,
+        city: data.city,
+        state: data.state,
+        status: 'PENDING',
+      },
     });
   }
 

@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { InsuranceService } from './insurance.service';
+import { CreateInsurancePublicDto } from './dto/create-insurance-public.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -12,7 +13,7 @@ export class InsuranceController {
 
   // ── Público ──────────────────────────────────────────────────────────────
   @Post('public/insurance-quote')
-  create(@Body() body: any) {
+  create(@Body() body: CreateInsurancePublicDto) {
     return this.insuranceService.create(body);
   }
 
