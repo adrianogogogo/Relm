@@ -5,6 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { RegisterEventDto } from './dto/register-event.dto';
 
 @Injectable()
 export class EventsService {
@@ -82,7 +83,7 @@ export class EventsService {
     return this.prisma.event.update({ where: { id }, data: { active: false } });
   }
 
-  async register(eventId: string, body: { email: string; fullName: string; phone?: string }) {
+  async register(eventId: string, body: RegisterEventDto) {
     const event = await this.prisma.event.findUnique({
       where: { id: eventId },
       include: { _count: { select: { registrations: true } } },
@@ -95,7 +96,10 @@ export class EventsService {
       throw new BadRequestException('Evento sem vagas disponíveis');
     }
 
-    // Upsert customer by email
+    // Upsert customer by email.
+    // SEGURANÇA: dados públicos não são confiáveis. O update é vazio de
+    // propósito, para nunca sobrescrever nome/telefone de um cliente já
+    // existente caso o atacante informe o email de outra pessoa.
     const customer = await this.prisma.customer.upsert({
       where: { email: body.email },
       create: {

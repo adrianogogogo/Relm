@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { EventsService } from './events.service';
+import { RegisterEventDto } from './dto/register-event.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -29,10 +30,7 @@ export class EventsController {
 
   @Post('public/events/:id/register')
   @HttpCode(HttpStatus.CREATED)
-  register(
-    @Param('id') id: string,
-    @Body() body: { email: string; fullName: string; phone?: string },
-  ) {
+  register(@Param('id') id: string, @Body() body: RegisterEventDto) {
     return this.eventsService.register(id, body);
   }
 
