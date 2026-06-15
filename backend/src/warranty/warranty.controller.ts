@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { WarrantyService } from './warranty.service';
+import { CreateWarrantyPublicDto } from './dto/create-warranty-public.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -12,7 +13,7 @@ export class WarrantyController {
 
   @Post('public/warranty')
   @ApiOperation({ summary: 'Criar garantia (público)' })
-  async createPublic(@Body() body: any) {
+  async createPublic(@Body() body: CreateWarrantyPublicDto) {
     return this.warrantyService.createFromPublic(body);
   }
 

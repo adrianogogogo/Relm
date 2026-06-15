@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { WarrantyStatus } from '@prisma/client';
 import { CustomersService } from '../customers/customers.service';
+import { CreateWarrantyPublicDto } from './dto/create-warranty-public.dto';
 import { ProductsService } from '../products/products.service';
 import { EmailService } from '../email/email.service';
 import * as crypto from 'crypto';
@@ -25,7 +26,7 @@ export class WarrantyService {
     private emailService: EmailService,
   ) {}
 
-  async createFromPublic(data: any) {
+  async createFromPublic(data: CreateWarrantyPublicDto) {
     // Upsert customer
     const customerData = {
       email: data.email,

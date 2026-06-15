@@ -274,7 +274,14 @@ export class CustomersService {
     return { message: 'Cliente desativado com sucesso' };
   }
 
-  // Método para criar ou atualizar cliente pelo email (usado em warranty)
+  // Método para criar ou atualizar cliente pelo email (usado em fluxos públicos
+  // de garantia/seguro/eventos).
+  //
+  // SEGURANÇA: dados vindos de formulários públicos NÃO são confiáveis. Se um
+  // cliente JÁ EXISTE (match por email), não sobrescrevemos campos já
+  // preenchidos com dados não confiáveis do request — apenas preenchemos campos
+  // que estão vazios. Isso impede que um atacante altere nome/telefone/etc. de
+  // outra pessoa informando o email dela.
   async upsertByEmail(customerData: {
     email: string;
     fullName: string;
@@ -291,18 +298,31 @@ export class CustomersService {
       cpfNormalized = cpfNormalized.replace(/\D/g, '');
     }
 
-    const customer = await this.prisma.customer.upsert({
+    const existing = await this.prisma.customer.findUnique({
       where: { email: customerData.email },
-      update: {
-        fullName: customerData.fullName,
-        phone: customerData.phone,
-        cpf: cpfNormalized,
-        address: customerData.address,
-        city: customerData.city,
-        state: customerData.state,
-        zipCode: customerData.zipCode,
-      },
-      create: {
+    });
+
+    if (existing) {
+      // Só preenche campos atualmente vazios; nunca sobrescreve dados existentes.
+      const fillIfEmpty = (current: string | null, incoming?: string) =>
+        current && current.trim() !== '' ? current : incoming;
+
+      return this.prisma.customer.update({
+        where: { id: existing.id },
+        data: {
+          fullName: fillIfEmpty(existing.fullName, customerData.fullName),
+          phone: fillIfEmpty(existing.phone, customerData.phone),
+          cpf: fillIfEmpty(existing.cpf, cpfNormalized),
+          address: fillIfEmpty(existing.address, customerData.address),
+          city: fillIfEmpty(existing.city, customerData.city),
+          state: fillIfEmpty(existing.state, customerData.state),
+          zipCode: fillIfEmpty(existing.zipCode, customerData.zipCode),
+        },
+      });
+    }
+
+    return this.prisma.customer.create({
+      data: {
         email: customerData.email,
         fullName: customerData.fullName,
         phone: customerData.phone,
@@ -314,8 +334,6 @@ export class CustomersService {
         marketingConsent: false,
       },
     });
-
-    return customer;
   }
 
   // Método auxiliar para formatar dados do cliente
