@@ -84,15 +84,11 @@ export default function ValidateWarrantyPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-gray-500">Nome</p>
-                  <p className="font-medium text-gray-900">{warranty.customer.fullName}</p>
+                  <p className="font-medium text-gray-900">{warranty.customer.firstName || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Email</p>
-                  <p className="font-medium text-gray-900">{warranty.customer.email}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Telefone</p>
-                  <p className="font-medium text-gray-900">{warranty.customer.phone || 'N/A'}</p>
+                  <p className="font-medium text-gray-900">{warranty.customer.email || 'N/A'}</p>
                 </div>
               </div>
             </div>

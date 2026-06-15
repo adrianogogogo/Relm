@@ -423,6 +423,15 @@ export class WarrantyService {
     return updated;
   }
 
+  // Mascara um email: joao.silva@dominio.com -> j***@dominio.com
+  private maskEmail(email?: string | null): string | null {
+    if (!email) return null;
+    const [local, domain] = email.split('@');
+    if (!domain) return null;
+    const visible = local.slice(0, 1);
+    return `${visible}***@${domain}`;
+  }
+
   // Validar token de garantia (endpoint público)
   async validateWarrantyToken(token: string) {
     const claim = await this.prisma.warrantyClaim.findUnique({
@@ -432,7 +441,6 @@ export class WarrantyService {
           select: {
             fullName: true,
             email: true,
-            phone: true,
           },
         },
         product: {
@@ -469,6 +477,10 @@ export class WarrantyService {
       });
     }
 
+    // Endpoint público sem autenticação: expor o mínimo do cliente.
+    // Apenas o primeiro nome e o email mascarado; telefone não é exposto.
+    const firstName = claim.customer.fullName?.split(' ')[0] ?? null;
+
     return {
       valid: true,
       warranty: {
@@ -476,7 +488,10 @@ export class WarrantyService {
         status: claim.status,
         approvedAt: claim.approvedAt,
         validatedAt: claim.validatedAt || new Date(),
-        customer: claim.customer,
+        customer: {
+          firstName,
+          email: this.maskEmail(claim.customer.email),
+        },
         product: claim.product,
         store: claim.store,
       },
