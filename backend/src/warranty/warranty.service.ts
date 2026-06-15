@@ -142,7 +142,15 @@ export class WarrantyService {
     return this.prisma.warrantyClaim.findUnique({
       where: { id },
       include: {
-        customer: true,
+        customer: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            cpf: true,
+          },
+        },
         product: true,
         store: true,
         events: {
@@ -227,7 +235,15 @@ export class WarrantyService {
     const claim = await this.prisma.warrantyClaim.findUnique({
       where: { id },
       include: {
-        customer: true,
+        customer: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            cpf: true,
+          },
+        },
         product: true,
       },
     });
@@ -258,7 +274,15 @@ export class WarrantyService {
         adminNotes: adminNotes || claim.adminNotes,
       },
       include: {
-        customer: true,
+        customer: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            cpf: true,
+          },
+        },
         product: true,
       },
     });
@@ -316,7 +340,15 @@ export class WarrantyService {
     const claim = await this.prisma.warrantyClaim.findUnique({
       where: { id },
       include: {
-        customer: true,
+        customer: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            cpf: true,
+          },
+        },
         product: true,
       },
     });
@@ -344,7 +376,15 @@ export class WarrantyService {
         adminNotes: adminNotes || claim.adminNotes,
       },
       include: {
-        customer: true,
+        customer: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            cpf: true,
+          },
+        },
         product: true,
       },
     });
