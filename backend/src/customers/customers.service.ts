@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
@@ -52,7 +57,13 @@ export class CustomersService {
     return this.formatCustomer(customer);
   }
 
-  async findAll(filters?: { search?: string; storeId?: string; active?: boolean }) {
+  async findAll(filters?: {
+    search?: string;
+    storeId?: string;
+    active?: boolean;
+    requesterUserId?: string;
+    requesterRole?: string;
+  }) {
     const where: any = {};
 
     if (filters?.search) {
@@ -64,7 +75,18 @@ export class CustomersService {
       ];
     }
 
-    if (filters?.storeId) {
+    // Usuários de LOJA só podem ver clientes da própria loja.
+    // O storeId é forçado a partir do token (ignorando o query param).
+    if (filters?.requesterRole === 'LOJA') {
+      const requesterStoreId = await this.getRequesterStoreId(
+        filters.requesterUserId,
+      );
+      // Loja sem storeId vinculado não pode ver nenhum cliente.
+      if (!requesterStoreId) {
+        return [];
+      }
+      where.storeId = requesterStoreId;
+    } else if (filters?.storeId) {
       where.storeId = filters.storeId;
     }
 
@@ -94,7 +116,10 @@ export class CustomersService {
     return customers.map((customer) => this.formatCustomer(customer));
   }
 
-  async findOne(id: string) {
+  async findOne(
+    id: string,
+    requester?: { requesterUserId?: string; requesterRole?: string },
+  ) {
     const customer = await this.prisma.customer.findUnique({
       where: { id },
       include: {
@@ -154,7 +179,34 @@ export class CustomersService {
       throw new NotFoundException('Cliente não encontrado');
     }
 
+    // Usuários de LOJA só podem acessar clientes da própria loja.
+    if (requester?.requesterRole === 'LOJA') {
+      const requesterStoreId = await this.getRequesterStoreId(
+        requester.requesterUserId,
+      );
+      if (!requesterStoreId || customer.storeId !== requesterStoreId) {
+        throw new ForbiddenException(
+          'Você não tem permissão para acessar este cliente',
+        );
+      }
+    }
+
     return this.formatCustomer(customer);
+  }
+
+  // Busca o storeId vinculado ao usuário (token de LOJA) a partir do banco,
+  // já que o storeId não está presente no payload do JWT.
+  private async getRequesterStoreId(
+    userId?: string,
+  ): Promise<string | null> {
+    if (!userId) {
+      return null;
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { storeId: true },
+    });
+    return user?.storeId ?? null;
   }
 
   async update(id: string, updateCustomerDto: UpdateCustomerDto) {

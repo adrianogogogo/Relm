@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
+  Request,
 } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
@@ -30,6 +31,7 @@ export class CustomersController {
   @Get()
   @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR')
   findAll(
+    @Request() req: any,
     @Query('search') search?: string,
     @Query('storeId') storeId?: string,
     @Query('active') active?: string,
@@ -38,13 +40,18 @@ export class CustomersController {
       search,
       storeId,
       active: active === 'true' ? true : active === 'false' ? false : undefined,
+      requesterUserId: req.user?.userId,
+      requesterRole: req.user?.role,
     });
   }
 
   @Get(':id')
   @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR')
-  findOne(@Param('id') id: string) {
-    return this.customersService.findOne(id);
+  findOne(@Request() req: any, @Param('id') id: string) {
+    return this.customersService.findOne(id, {
+      requesterUserId: req.user?.userId,
+      requesterRole: req.user?.role,
+    });
   }
 
   @Patch(':id')
