@@ -1,4 +1,8 @@
-import { IsString, IsOptional, IsBoolean, IsInt, IsUrl } from 'class-validator';
+// NOTA (ORG-03): NÃO aplicamos @IsUrl em imageUrl/linkUrl. O frontend
+// (BannersPage) usa caminhos RELATIVOS (ex: '/uploads/banners/banner1.png' e
+// '/garantia'), que @IsUrl rejeitaria, quebrando a criação de banners em
+// produção. Mantemos @IsString e removemos o import órfão de IsUrl.
+import { IsString, IsOptional, IsBoolean, IsInt } from 'class-validator';
 
 export class CreateBannerDto {
   @IsString()
