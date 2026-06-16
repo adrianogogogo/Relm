@@ -3,9 +3,9 @@ import { Throttle } from '@nestjs/throttler';
 import { StoreAuthService } from './store-auth.service';
 import { StoreLoginDto } from './dto/store-login.dto';
 import { CreateStoreUserDto } from './dto/create-store-user.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { Roles } from '../auth/roles.decorator';
-import { RolesGuard } from '../auth/roles.guard';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { RolesGuard } from '../common/guards/roles.guard';
 
 @Controller('store-auth')
 export class StoreAuthController {
