@@ -24,36 +24,41 @@ async function bootstrap() {
     }),
   );
 
-  // Swagger
-  const config = new DocumentBuilder()
-    .setTitle('Relm Care+ API')
-    .setDescription('API do Centro de Serviços ao Cliente Relm Bikes')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .addTag('auth', 'Autenticação')
-    .addTag('public', 'Rotas públicas')
-    .addTag('customers', 'Clientes')
-    .addTag('products', 'Produtos')
-    .addTag('warranty', 'Garantias')
-    .addTag('benefits', 'Benefícios')
-    .addTag('insurance', 'Seguro')
-    .addTag('events', 'Eventos')
-    .addTag('newsletter', 'Newsletter')
-    .addTag('content', 'Conteúdo')
-    .addTag('reports', 'Relatórios')
-    .addTag('client', 'Portal do Cliente')
-    .addTag('store', 'Portal Loja')
-    .addTag('distributor', 'Portal Distribuidor')
-    .build();
-  
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  // Swagger — exposto apenas fora de produção (A-05).
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (!isProduction) {
+    const config = new DocumentBuilder()
+      .setTitle('Relm Care+ API')
+      .setDescription('API do Centro de Serviços ao Cliente Relm Bikes')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addTag('auth', 'Autenticação')
+      .addTag('public', 'Rotas públicas')
+      .addTag('customers', 'Clientes')
+      .addTag('products', 'Produtos')
+      .addTag('warranty', 'Garantias')
+      .addTag('benefits', 'Benefícios')
+      .addTag('insurance', 'Seguro')
+      .addTag('events', 'Eventos')
+      .addTag('newsletter', 'Newsletter')
+      .addTag('content', 'Conteúdo')
+      .addTag('reports', 'Relatórios')
+      .addTag('client', 'Portal do Cliente')
+      .addTag('store', 'Portal Loja')
+      .addTag('distributor', 'Portal Distribuidor')
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document);
+  }
 
   const port = process.env.PORT || 3001;
   await app.listen(port, '0.0.0.0');
-  
+
   console.log(`🚀 Relm Care+ API rodando em http://0.0.0.0:${port}`);
-  console.log(`📚 Documentação Swagger: http://0.0.0.0:${port}/docs`);
+  if (!isProduction) {
+    console.log(`📚 Documentação Swagger: http://0.0.0.0:${port}/docs`);
+  }
   console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
 }
 
