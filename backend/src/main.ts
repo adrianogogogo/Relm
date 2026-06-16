@@ -1,10 +1,17 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Cabeçalhos de segurança HTTP (C-02).
+  // A API serve apenas JSON, não HTML, então o CSP padrão do Helmet é
+  // desnecessário e poderia bloquear o Swagger UI quando habilitado fora de
+  // produção. Desabilitamos só o CSP e mantemos os demais headers.
+  app.use(helmet({ contentSecurityPolicy: false }));
 
   // Global prefix
   app.setGlobalPrefix('api');
