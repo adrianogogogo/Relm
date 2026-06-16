@@ -1,4 +1,5 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CustomerAuthService } from './customer-auth.service';
 import { CustomerRegisterDto } from './dto/customer-register.dto';
@@ -16,6 +17,7 @@ export class CustomerAuthController {
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login de cliente' })
   async login(@Body() dto: CustomerLoginDto) {

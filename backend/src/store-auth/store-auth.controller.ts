@@ -1,4 +1,5 @@
 import { Controller, Post, Body, Get, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { StoreAuthService } from './store-auth.service';
 import { StoreLoginDto } from './dto/store-login.dto';
 import { CreateStoreUserDto } from './dto/create-store-user.dto';
@@ -11,6 +12,7 @@ export class StoreAuthController {
   constructor(private readonly storeAuthService: StoreAuthService) {}
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async login(@Body() dto: StoreLoginDto) {
     return this.storeAuthService.login(dto);
   }
