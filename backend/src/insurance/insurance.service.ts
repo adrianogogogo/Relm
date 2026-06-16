@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CustomersService } from '../customers/customers.service';
 import { CreateInsurancePublicDto } from './dto/create-insurance-public.dto';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class InsuranceService {
@@ -9,6 +10,20 @@ export class InsuranceService {
     private prisma: PrismaService,
     private customersService: CustomersService,
   ) {}
+
+  // Gera número de protocolo único e resistente a concorrência.
+  //
+  // DECISÃO (SEC-01/BUG-01/ORG-02): a estratégia anterior "último + 1" estava
+  // duplicada em create() e createAdminQuote() e sofria de race condition
+  // (protocolos duplicados em requests concorrentes, violando o @unique) e de
+  // NaN no parseInt. Trocada por sufixo aleatório via crypto.randomBytes, com
+  // ano dinâmico (não mais 2024 hardcoded). Lógica única extraída para este
+  // método privado e reusada nos dois pontos de criação.
+  private generateProtocolNumber(): string {
+    const year = new Date().getFullYear();
+    const suffix = crypto.randomBytes(4).toString('hex').toUpperCase();
+    return `SEG-${year}-${suffix}`;
+  }
 
   async create(data: CreateInsurancePublicDto) {
     // Resolve/cria o cliente pelo email a partir dos dados públicos.
@@ -21,12 +36,7 @@ export class InsuranceService {
       state: data.state,
     });
 
-    const lastProtocol = await this.prisma.insuranceQuote.findFirst({
-      orderBy: { createdAt: 'desc' },
-      select: { protocolNumber: true },
-    });
-    const lastNumber = lastProtocol ? parseInt(lastProtocol.protocolNumber.split('-').pop()) : 0;
-    const protocolNumber = `SEG-2024-${String(lastNumber + 1).padStart(5, '0')}`;
+    const protocolNumber = this.generateProtocolNumber();
 
     // Campos definidos explicitamente pelo servidor (sem spread do body).
     return this.prisma.insuranceQuote.create({
@@ -138,12 +148,7 @@ export class InsuranceService {
     city?: string;
     state?: string;
   }) {
-    const lastProtocol = await this.prisma.insuranceQuote.findFirst({
-      orderBy: { createdAt: 'desc' },
-      select: { protocolNumber: true },
-    });
-    const lastNumber = lastProtocol ? parseInt(lastProtocol.protocolNumber.split('-').pop()) : 0;
-    const protocolNumber = `SEG-2024-${String(lastNumber + 1).padStart(5, '0')}`;
+    const protocolNumber = this.generateProtocolNumber();
 
     return this.prisma.insuranceQuote.create({
       data: { ...data, protocolNumber, status: 'PENDING' },
