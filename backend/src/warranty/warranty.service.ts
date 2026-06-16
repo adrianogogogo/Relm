@@ -482,8 +482,19 @@ export class WarrantyService {
       throw new BadRequestException('Esta garantia não está aprovada');
     }
 
-    // Registrar validação (primeira vez)
-    if (!claim.validatedAt) {
+    // BUG-04 — Validação única (idempotente).
+    //
+    // DECISÃO: NÃO apagamos o validationToken após o uso. A tela pública
+    // (ValidateWarrantyPage.jsx) reconsulta o token a cada carregamento/recarga
+    // e o cliente é instruído por e-mail a guardar o link como comprovante de
+    // garantia. Apagar o token quebraria reimpressões e novas visitas legítimas.
+    //
+    // O que evitamos é a RE-VALIDAÇÃO: o carimbo `validatedAt` é gravado uma
+    // única vez (na primeira validação bem-sucedida) e nunca é sobrescrito nas
+    // consultas seguintes. Assim a "primeira validação" é imutável e o token
+    // continua servindo apenas como consulta read-only do comprovante.
+    const alreadyValidated = !!claim.validatedAt;
+    if (!alreadyValidated) {
       await this.prisma.warrantyClaim.update({
         where: { id: claim.id },
         data: { validatedAt: new Date() },
@@ -496,6 +507,7 @@ export class WarrantyService {
 
     return {
       valid: true,
+      alreadyValidated,
       warranty: {
         protocolNumber: claim.protocolNumber,
         status: claim.status,
