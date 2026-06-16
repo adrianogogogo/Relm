@@ -101,13 +101,26 @@ export class WarrantyService {
   }
 
   async findAll(filters: any) {
+    const where: any = {
+      ...(filters.status && { status: filters.status }),
+      ...(filters.protocol_number && {
+        protocolNumber: { contains: filters.protocol_number },
+      }),
+    };
+
+    // Busca textual livre: protocolo, nome/email do cliente ou serial do produto.
+    if (filters.search && String(filters.search).trim() !== '') {
+      const search = String(filters.search).trim();
+      where.OR = [
+        { protocolNumber: { contains: search, mode: 'insensitive' } },
+        { customer: { fullName: { contains: search, mode: 'insensitive' } } },
+        { customer: { email: { contains: search, mode: 'insensitive' } } },
+        { product: { serialNumber: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
     return this.prisma.warrantyClaim.findMany({
-      where: {
-        ...(filters.status && { status: filters.status }),
-        ...(filters.protocol_number && {
-          protocolNumber: { contains: filters.protocol_number },
-        }),
-      },
+      where,
       include: {
         customer: {
           select: {
