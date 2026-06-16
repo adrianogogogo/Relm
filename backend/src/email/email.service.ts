@@ -36,6 +36,21 @@ export class EmailService {
     }
   }
 
+  // Escapa caracteres especiais de HTML para prevenir injeção de markup/XSS
+  // ao interpolar dados de origem não confiável (nomes, motivos, etc.) nos
+  // templates de e-mail. NÃO use em URLs que vão em href (quebraria a URL).
+  private escapeHtml(text: unknown): string {
+    if (text === null || text === undefined) {
+      return '';
+    }
+    return String(text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   async sendWarrantyApprovalEmail(data: {
     to: string;
     customerName: string;
@@ -148,7 +163,7 @@ export class EmailService {
                             </h2>
                             
                             <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
-                                Olá, <strong>${data.customerName}</strong>!
+                                Olá, <strong>${this.escapeHtml(data.customerName)}</strong>!
                             </p>
                             
                             <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
@@ -162,19 +177,19 @@ export class EmailService {
                                     <tr>
                                         <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Protocolo:</td>
                                         <td style="padding: 8px 0; color: #1f2937; font-size: 14px; font-weight: 600; text-align: right;">
-                                            ${data.protocolNumber}
+                                            ${this.escapeHtml(data.protocolNumber)}
                                         </td>
                                     </tr>
                                     <tr>
                                         <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Produto:</td>
                                         <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">
-                                            ${data.productModel}
+                                            ${this.escapeHtml(data.productModel)}
                                         </td>
                                     </tr>
                                     <tr>
                                         <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Número de Série:</td>
                                         <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">
-                                            ${data.serialNumber}
+                                            ${this.escapeHtml(data.serialNumber)}
                                         </td>
                                     </tr>
                                     <tr>
@@ -299,7 +314,7 @@ export class EmailService {
           <td style="padding:40px 30px;">
             <h2 style="margin:0 0 20px;color:#1f2937;font-size:22px;">Redefinição de senha</h2>
             <p style="margin:0 0 16px;color:#374151;font-size:16px;line-height:1.6;">
-              Olá, <strong>${data.name}</strong>!
+              Olá, <strong>${this.escapeHtml(data.name)}</strong>!
             </p>
             <p style="margin:0 0 24px;color:#374151;font-size:16px;line-height:1.6;">
               Recebemos uma solicitação para redefinir a senha da sua conta. Clique no botão abaixo para criar uma nova senha:
@@ -381,7 +396,7 @@ export class EmailService {
                             </h2>
                             
                             <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
-                                Olá, <strong>${data.customerName}</strong>,
+                                Olá, <strong>${this.escapeHtml(data.customerName)}</strong>,
                             </p>
                             
                             <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
@@ -395,13 +410,13 @@ export class EmailService {
                                     <tr>
                                         <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Protocolo:</td>
                                         <td style="padding: 8px 0; color: #1f2937; font-size: 14px; font-weight: 600; text-align: right;">
-                                            ${data.protocolNumber}
+                                            ${this.escapeHtml(data.protocolNumber)}
                                         </td>
                                     </tr>
                                     <tr>
                                         <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Produto:</td>
                                         <td style="padding: 8px 0; color: #1f2937; font-size: 14px; text-align: right;">
-                                            ${data.productModel}
+                                            ${this.escapeHtml(data.productModel)}
                                         </td>
                                     </tr>
                                 </table>
@@ -411,7 +426,7 @@ export class EmailService {
                             <div style="background-color: #fffbeb; border: 1px solid #fbbf24; padding: 20px; margin: 20px 0; border-radius: 8px;">
                                 <h3 style="margin: 0 0 15px; color: #92400e; font-size: 16px;">⚠️ Motivo da Negativa</h3>
                                 <p style="margin: 0; color: #78350f; font-size: 14px; line-height: 1.6;">
-                                    ${data.rejectionReason}
+                                    ${this.escapeHtml(data.rejectionReason)}
                                 </p>
                             </div>
 
