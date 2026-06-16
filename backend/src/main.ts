@@ -16,9 +16,24 @@ async function bootstrap() {
   // Global prefix
   app.setGlobalPrefix('api');
 
-  // CORS
+  // CORS (C-01) — sem fallback inseguro para '*'.
+  // CORS_ORIGIN pode ser uma lista separada por vírgula. Se não estiver
+  // definido, a allowlist fica vazia (nenhuma origem cross-site é aceita)
+  // em vez de liberar tudo com credenciais. Em produção, CORS_ORIGIN PRECISA
+  // ser definido com o domínio real do frontend.
+  const corsOrigins = (process.env.CORS_ORIGIN ?? '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter((o) => o.length > 0);
+
+  if (corsOrigins.length === 0) {
+    console.warn(
+      '⚠️ CORS_ORIGIN não definido — nenhuma origem cross-site será aceita. Defina CORS_ORIGIN em produção.',
+    );
+  }
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: corsOrigins,
     credentials: true,
   });
 
