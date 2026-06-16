@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request, HttpCode, HttpStatus, ForbiddenException } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { StoreAuthService } from './store-auth.service';
 import { StoreLoginDto } from './dto/store-login.dto';
@@ -31,7 +31,7 @@ export class StoreAuthController {
     if (user.type === 'STORE') {
       return this.storeAuthService.getStoreUsersByStore(user.storeId);
     }
-    throw new Error('Not implemented for admin users');
+    throw new ForbiddenException('Este endpoint é exclusivo para usuários de loja');
   }
 
   @Post('forgot-password')
