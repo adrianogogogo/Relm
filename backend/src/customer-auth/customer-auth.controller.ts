@@ -1,7 +1,16 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CustomerAuthService } from './customer-auth.service';
+import { CustomerJwtGuard } from './customer-jwt.guard';
 import { CustomerRegisterDto } from './dto/customer-register.dto';
 import { CustomerLoginDto } from './dto/customer-login.dto';
 
@@ -28,6 +37,16 @@ export class CustomerAuthController {
   @HttpCode(HttpStatus.OK)
   async refresh(@Body() body: { refresh_token: string }) {
     return this.customerAuthService.refresh(body.refresh_token);
+  }
+
+  @Post('logout')
+  @UseGuards(CustomerJwtGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Logout de cliente' })
+  async logout(@Request() req) {
+    await this.customerAuthService.logout(req.user.customerId);
+    return { message: 'Logout realizado com sucesso' };
   }
 
   @Post('forgot-password')

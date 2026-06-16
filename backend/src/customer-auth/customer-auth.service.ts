@@ -106,7 +106,7 @@ export class CustomerAuthService {
     return this.generateTokens(customer);
   }
 
-  private generateTokens(customer: { id: string; email: string; fullName: string }) {
+  private async generateTokens(customer: { id: string; email: string; fullName: string }) {
     const payload = {
       sub: customer.id,
       email: customer.email,
@@ -117,6 +117,13 @@ export class CustomerAuthService {
     const refreshToken = this.jwtService.sign(payload, {
       secret: this.config.get('JWT_REFRESH_SECRET'),
       expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN') || '7d',
+    });
+
+    // Persiste o refresh token (mesmo padrao do fluxo admin em auth.service.ts:
+    // texto puro, para manter consistencia entre os dois fluxos).
+    await this.prisma.customer.update({
+      where: { id: customer.id },
+      data: { refreshToken },
     });
 
     return {
@@ -197,7 +204,7 @@ export class CustomerAuthService {
         where: { id: payload.sub },
       });
 
-      if (!customer || !customer.active) {
+      if (!customer || !customer.active || customer.refreshToken !== refreshToken) {
         throw new UnauthorizedException();
       }
 
@@ -211,5 +218,12 @@ export class CustomerAuthService {
     } catch {
       throw new UnauthorizedException('Token inválido');
     }
+  }
+
+  async logout(customerId: string) {
+    await this.prisma.customer.update({
+      where: { id: customerId },
+      data: { refreshToken: null },
+    });
   }
 }
