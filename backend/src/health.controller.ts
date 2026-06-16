@@ -1,4 +1,10 @@
-import { Controller, Get } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { PrismaService } from './prisma/prisma.service';
 
@@ -8,23 +14,16 @@ export class HealthController {
   constructor(private prisma: PrismaService) {}
 
   @Get()
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Health check' })
   async check() {
+    // B-02 — Endpoint público: não vaza uptime, detalhes de conexão nem
+    // mensagens de erro do banco. Apenas status ok/error.
     try {
       await this.prisma.$queryRaw`SELECT 1`;
-      return {
-        status: 'ok',
-        database: 'connected',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-      };
-    } catch (error) {
-      return {
-        status: 'error',
-        database: 'disconnected',
-        timestamp: new Date().toISOString(),
-        error: error.message,
-      };
+      return { status: 'ok' };
+    } catch {
+      throw new ServiceUnavailableException({ status: 'error' });
     }
   }
 }
