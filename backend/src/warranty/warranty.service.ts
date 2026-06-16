@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { WarrantyStatus } from '@prisma/client';
 import { CustomersService } from '../customers/customers.service';
@@ -19,6 +19,8 @@ const FSM_TRANSITIONS = {
 
 @Injectable()
 export class WarrantyService {
+  private readonly logger = new Logger(WarrantyService.name);
+
   constructor(
     private prisma: PrismaService,
     private customersService: CustomersService,
@@ -331,12 +333,16 @@ export class WarrantyService {
           data: { approvalEmailSentAt: now },
         });
 
-        console.log(`✅ Email de aprovação enviado para ${updated.customer.email}`);
+        this.logger.log(
+          `Email de aprovação enviado para garantia ${updated.protocolNumber}`,
+        );
       } else {
-        console.warn('⚠️ EmailService não disponível - email não enviado');
+        this.logger.warn('EmailService não disponível - email não enviado');
       }
     } catch (error) {
-      console.error('❌ Erro ao enviar email de aprovação:', error.message);
+      this.logger.error(
+        `Erro ao enviar email de aprovação da garantia ${updated.protocolNumber}: ${error.message}`,
+      );
       // Não falha a aprovação se o email não for enviado
     }
 
@@ -424,12 +430,16 @@ export class WarrantyService {
           rejectionReason,
           productModel: updated.product.model,
         });
-        console.log(`✅ Email de rejeição enviado para ${updated.customer.email}`);
+        this.logger.log(
+          `Email de rejeição enviado para garantia ${updated.protocolNumber}`,
+        );
       } else {
-        console.warn('⚠️ EmailService não disponível - email não enviado');
+        this.logger.warn('EmailService não disponível - email não enviado');
       }
     } catch (error) {
-      console.error('❌ Erro ao enviar email de rejeição:', error.message);
+      this.logger.error(
+        `Erro ao enviar email de rejeição da garantia ${updated.protocolNumber}: ${error.message}`,
+      );
       // Não falha a rejeição se o email não for enviado
     }
 

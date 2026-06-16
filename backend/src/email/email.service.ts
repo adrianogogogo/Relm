@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class EmailService {
+  private readonly logger = new Logger(EmailService.name);
   private transporter: nodemailer.Transporter;
   private isConfigured: boolean = false;
 
@@ -12,8 +13,9 @@ export class EmailService {
     const smtpPass = this.configService.get('SMTP_PASS');
 
     if (!smtpUser || !smtpPass) {
-      console.warn('⚠️ SMTP não configurado - emails não serão enviados');
-      console.warn('Configure SMTP_USER e SMTP_PASS no .env.production');
+      this.logger.warn(
+        'SMTP não configurado (SMTP_USER/SMTP_PASS ausentes) - emails não serão enviados',
+      );
       this.isConfigured = false;
       return;
     }
@@ -29,9 +31,9 @@ export class EmailService {
         },
       });
       this.isConfigured = true;
-      console.log('✅ SMTP configurado:', smtpUser);
+      this.logger.log('SMTP configurado');
     } catch (error) {
-      console.error('❌ Erro ao configurar SMTP:', error.message);
+      this.logger.error(`Erro ao configurar SMTP: ${error.message}`);
       this.isConfigured = false;
     }
   }
@@ -61,7 +63,7 @@ export class EmailService {
     approvedAt: Date;
   }) {
     if (!this.isConfigured || !this.transporter) {
-      console.warn('⚠️ SMTP não configurado - email de aprovação não enviado');
+      this.logger.warn('SMTP não configurado - email de aprovação não enviado');
       return { success: false, error: 'SMTP não configurado' };
     }
 
@@ -76,10 +78,10 @@ export class EmailService {
 
     try {
       const info = await this.transporter.sendMail(mailOptions);
-      console.log('Email enviado:', info.messageId);
+      this.logger.log(`Email enviado (messageId: ${info.messageId})`);
       return { success: true, messageId: info.messageId };
     } catch (error) {
-      console.error('Erro ao enviar email:', error);
+      this.logger.error(`Erro ao enviar email: ${error.message}`);
       throw error;
     }
   }
@@ -92,7 +94,7 @@ export class EmailService {
     productModel: string;
   }) {
     if (!this.isConfigured || !this.transporter) {
-      console.warn('⚠️ SMTP não configurado - email de rejeição não enviado');
+      this.logger.warn('SMTP não configurado - email de rejeição não enviado');
       return { success: false, error: 'SMTP não configurado' };
     }
 
@@ -105,10 +107,10 @@ export class EmailService {
 
     try {
       const info = await this.transporter.sendMail(mailOptions);
-      console.log('Email enviado:', info.messageId);
+      this.logger.log(`Email enviado (messageId: ${info.messageId})`);
       return { success: true, messageId: info.messageId };
     } catch (error) {
-      console.error('Erro ao enviar email:', error);
+      this.logger.error(`Erro ao enviar email: ${error.message}`);
       throw error;
     }
   }
@@ -270,8 +272,9 @@ export class EmailService {
     portalName: 'Cliente' | 'Loja';
   }) {
     if (!this.isConfigured || !this.transporter) {
-      console.warn('⚠️ SMTP não configurado - email de redefinição não enviado para:', data.to);
-      console.warn('Link de reset (dev):', data.resetUrl);
+      this.logger.warn(
+        'SMTP não configurado - email de redefinição de senha não enviado',
+      );
       return { success: false, error: 'SMTP não configurado', devUrl: data.resetUrl };
     }
 
@@ -286,7 +289,7 @@ export class EmailService {
       const info = await this.transporter.sendMail(mailOptions);
       return { success: true, messageId: info.messageId };
     } catch (error) {
-      console.error('Erro ao enviar email de reset:', error);
+      this.logger.error(`Erro ao enviar email de reset: ${error.message}`);
       throw error;
     }
   }
