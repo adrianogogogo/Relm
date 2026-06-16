@@ -274,9 +274,13 @@ export class WarrantyService {
       throw new NotFoundException('Garantia não encontrada');
     }
 
-    if (claim.status !== 'EM_ANALISE' && claim.status !== 'RECEBIDO') {
+    // BUG-02 — FSM como fonte única de verdade. A checagem manual anterior
+    // permitia aprovar direto de RECEBIDO, contornando a FSM (que só permite
+    // RECEBIDO -> EM_ANALISE). Validamos a transição pela FSM_TRANSITIONS.
+    const validTransitions = FSM_TRANSITIONS[claim.status] || [];
+    if (!validTransitions.includes(WarrantyStatus.APROVADO)) {
       throw new BadRequestException(
-        `Não é possível aprovar garantia com status ${claim.status}`,
+        `Transição inválida de ${claim.status} para APROVADO`,
       );
     }
 
@@ -383,9 +387,13 @@ export class WarrantyService {
       throw new NotFoundException('Garantia não encontrada');
     }
 
-    if (claim.status !== 'EM_ANALISE' && claim.status !== 'RECEBIDO') {
+    // BUG-02 — FSM como fonte única de verdade. A checagem manual anterior
+    // permitia reprovar direto de RECEBIDO, contornando a FSM (que só permite
+    // RECEBIDO -> EM_ANALISE). Validamos a transição pela FSM_TRANSITIONS.
+    const validTransitions = FSM_TRANSITIONS[claim.status] || [];
+    if (!validTransitions.includes(WarrantyStatus.REPROVADO)) {
       throw new BadRequestException(
-        `Não é possível rejeitar garantia com status ${claim.status}`,
+        `Transição inválida de ${claim.status} para REPROVADO`,
       );
     }
 
