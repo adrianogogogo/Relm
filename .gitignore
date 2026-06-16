@@ -52,6 +52,7 @@ coverage/
 # IDE
 .idea/
 .vscode/
+.claude/
 *.swp
 *.swo
 *~
@@ -94,3 +95,10 @@ desktop.ini
 .terraform/
 *.tfstate
 *.tfstate.backup
+
+# ============================================
+# Python / Temporarios de Deploy
+# ============================================
+__pycache__/
+*.pyc
+.deploy_ts
