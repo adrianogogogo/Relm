@@ -15,7 +15,7 @@ import { EmailModule } from '../email/email.module';
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get('JWT_SECRET'),
+        secret: config.get('CUSTOMER_JWT_SECRET'),
         signOptions: { expiresIn: config.get('JWT_EXPIRES_IN') || '1d' },
       }),
     }),
