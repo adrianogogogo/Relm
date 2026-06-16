@@ -1,25 +1,16 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { insuranceAPI } from '../services/api';
 import { ArrowLeft, FileText } from 'lucide-react';
+import { useStoreAuthStore } from '../store/storeAuthStore';
 
 export default function StoreInsurancesPage() {
-  const navigate = useNavigate();
-  const [storeData, setStoreData] = useState(null);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/loja/login'); return; }
-    const user = JSON.parse(stored);
-    if (user.type !== 'STORE') { navigate('/loja/login'); return; }
-    setStoreData(user);
-  }, [navigate]);
+  const storeId = useStoreAuthStore((state) => state.user?.storeId);
 
   const { data: quotes, isLoading } = useQuery({
-    queryKey: ['store-insurances', storeData?.storeId],
-    queryFn: () => insuranceAPI.getAll({ storeId: storeData.storeId }),
-    enabled: !!storeData?.storeId,
+    queryKey: ['store-insurances', storeId],
+    queryFn: () => insuranceAPI.getAll({ storeId }),
+    enabled: !!storeId,
   });
 
   return (

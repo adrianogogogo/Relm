@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { storeAuthAPI } from '../services/api';
+import { useStoreAuthStore } from '../store/storeAuthStore';
 
 const StoreLoginPage = () => {
   const navigate = useNavigate();
+  const login = useStoreAuthStore((state) => state.login);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -24,21 +25,14 @@ const StoreLoginPage = () => {
     setError('');
     setLoading(true);
 
-    try {
-      const response = await storeAuthAPI.login(formData.email, formData.password);
-      
-      // Store tokens and user data
-      localStorage.setItem('access_token', response.data.access_token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      
+    const result = await login(formData.email, formData.password);
+    if (result.success) {
       // Redirect to store dashboard
       navigate('/loja/dashboard');
-    } catch (err) {
-      console.error('Login error:', err);
-      setError(err.response?.data?.message || 'Erro ao fazer login. Verifique suas credenciais.');
-    } finally {
-      setLoading(false);
+    } else {
+      setError(result.error);
     }
+    setLoading(false);
   };
 
   return (

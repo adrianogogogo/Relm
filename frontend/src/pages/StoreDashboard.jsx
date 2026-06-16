@@ -1,30 +1,14 @@
-import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { customersAPI, warrantyAPI, insuranceAPI } from '../services/api';
 import { Store, Users, Shield, FileText, LogOut, ShoppingBag } from 'lucide-react';
+import { useStoreAuthStore } from '../store/storeAuthStore';
 
 const StoreDashboard = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [storeId, setStoreId] = useState(null);
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) {
-      navigate('/loja/login');
-      return;
-    }
-
-    const userData = JSON.parse(storedUser);
-    if (userData.type !== 'STORE') {
-      navigate('/loja/login');
-      return;
-    }
-
-    setUser(userData);
-    setStoreId(userData.storeId);
-  }, [navigate]);
+  const user = useStoreAuthStore((state) => state.user);
+  const logout = useStoreAuthStore((state) => state.logout);
+  const storeId = user?.storeId;
 
   // Fetch store-specific data
   const { data: customersResponse, isLoading: loadingCustomers } = useQuery({
@@ -54,8 +38,7 @@ const StoreDashboard = () => {
   });
 
   const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user');
+    logout();
     navigate('/loja/login');
   };
 

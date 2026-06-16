@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { warrantyAPI } from '../services/api';
 import { ArrowLeft, Shield, Search } from 'lucide-react';
+import { useStoreAuthStore } from '../store/storeAuthStore';
 
 const STATUS_LABEL = {
   RECEBIDO: 'Recebido',
@@ -25,18 +26,9 @@ const STATUS_COLOR = {
 };
 
 export default function StoreWarrantiesPage() {
-  const navigate = useNavigate();
-  const [storeId, setStoreId] = useState(null);
+  const storeId = useStoreAuthStore((state) => state.user?.storeId);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-
-  useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/loja/login'); return; }
-    const user = JSON.parse(stored);
-    if (user.type !== 'STORE') { navigate('/loja/login'); return; }
-    setStoreId(user.storeId);
-  }, [navigate]);
 
   const { data: warranties, isLoading } = useQuery({
     queryKey: ['store-warranties', storeId],

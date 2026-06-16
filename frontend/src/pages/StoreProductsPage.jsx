@@ -1,21 +1,13 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { ArrowLeft, ShoppingBag, Search } from 'lucide-react';
+import { useStoreAuthStore } from '../store/storeAuthStore';
 
 export default function StoreProductsPage() {
-  const navigate = useNavigate();
-  const [storeId, setStoreId] = useState(null);
+  const storeId = useStoreAuthStore((state) => state.user?.storeId);
   const [search, setSearch] = useState('');
-
-  useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) { navigate('/loja/login'); return; }
-    const user = JSON.parse(stored);
-    if (user.type !== 'STORE') { navigate('/loja/login'); return; }
-    setStoreId(user.storeId);
-  }, [navigate]);
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['store-products', storeId],

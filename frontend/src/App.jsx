@@ -7,6 +7,7 @@ import AdminLayout from './components/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import CustomerLayout from './components/CustomerLayout';
 import CustomerProtectedRoute from './components/CustomerProtectedRoute';
+import StoreProtectedRoute from './components/StoreProtectedRoute';
 import { useThemeStore } from './store/themeStore';
 
 // Public pages
@@ -135,11 +136,11 @@ export default function App() {
           <Route path="/loja/login" element={<StoreLoginPage />} />
           <Route path="/loja/esqueci-senha" element={<StoreForgotPasswordPage />} />
           <Route path="/loja/redefinir-senha" element={<StoreResetPasswordPage />} />
-          <Route path="/loja/dashboard" element={<StoreDashboard />} />
-          <Route path="/loja/clientes" element={<StoreCustomersPage />} />
-          <Route path="/loja/garantias" element={<StoreWarrantiesPage />} />
-          <Route path="/loja/seguros" element={<StoreInsurancesPage />} />
-          <Route path="/loja/produtos" element={<StoreProductsPage />} />
+          <Route path="/loja/dashboard" element={<StoreProtectedRoute><StoreDashboard /></StoreProtectedRoute>} />
+          <Route path="/loja/clientes" element={<StoreProtectedRoute><StoreCustomersPage /></StoreProtectedRoute>} />
+          <Route path="/loja/garantias" element={<StoreProtectedRoute><StoreWarrantiesPage /></StoreProtectedRoute>} />
+          <Route path="/loja/seguros" element={<StoreProtectedRoute><StoreInsurancesPage /></StoreProtectedRoute>} />
+          <Route path="/loja/produtos" element={<StoreProtectedRoute><StoreProductsPage /></StoreProtectedRoute>} />
 
           {/* ── Admin routes (AdminLayout sidebar, no Header/Footer) ──────── */}
           <Route
