@@ -147,11 +147,12 @@ export class CustomerAuthService {
     }
 
     const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
 
     await this.prisma.customer.update({
       where: { id: customer.id },
-      data: { resetPasswordToken: token, resetPasswordExpires: expires },
+      data: { resetPasswordToken: tokenHash, resetPasswordExpires: expires },
     });
 
     const appUrl = this.config.get('APP_URL') || 'http://localhost:5173';
@@ -168,8 +169,9 @@ export class CustomerAuthService {
   }
 
   async resetPassword(token: string, newPassword: string) {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const customer = await this.prisma.customer.findUnique({
-      where: { resetPasswordToken: token },
+      where: { resetPasswordToken: tokenHash },
     });
 
     if (!customer || !customer.resetPasswordExpires || customer.resetPasswordExpires < new Date()) {

@@ -126,11 +126,12 @@ export class StoreAuthService {
     }
 
     const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
 
     await this.prisma.storeUser.update({
       where: { id: storeUser.id },
-      data: { resetPasswordToken: token, resetPasswordExpires: expires },
+      data: { resetPasswordToken: tokenHash, resetPasswordExpires: expires },
     });
 
     const appUrl = this.config.get('APP_URL') || 'http://localhost:5173';
@@ -147,8 +148,9 @@ export class StoreAuthService {
   }
 
   async resetPassword(token: string, newPassword: string) {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const storeUser = await this.prisma.storeUser.findUnique({
-      where: { resetPasswordToken: token },
+      where: { resetPasswordToken: tokenHash },
     });
 
     if (!storeUser || !storeUser.resetPasswordExpires || storeUser.resetPasswordExpires < new Date()) {
