@@ -13,6 +13,12 @@ async function bootstrap() {
   // produção. Desabilitamos só o CSP e mantemos os demais headers.
   app.use(helmet({ contentSecurityPolicy: false }));
 
+  // Trust proxy — a API roda atrás de 1 proxy reverso (nginx).
+  // Sem isso, o @nestjs/throttler enxerga o IP do nginx e todos os clientes
+  // compartilham o mesmo balde de rate limit. Confiar no primeiro proxy faz
+  // o Express usar o IP real do cliente vindo do X-Forwarded-For.
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   // Global prefix
   app.setGlobalPrefix('api');
 
