@@ -35,12 +35,14 @@ export class StoreAuthController {
   }
 
   @Post('forgot-password')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body() body: { email: string }) {
     return this.storeAuthService.forgotPassword(body.email);
   }
 
   @Post('reset-password')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() body: { token: string; password: string }) {
     return this.storeAuthService.resetPassword(body.token, body.password);

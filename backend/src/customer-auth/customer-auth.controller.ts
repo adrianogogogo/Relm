@@ -31,6 +31,7 @@ export class CustomerAuthController {
   }
 
   @Post('forgot-password')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Solicitar redefinição de senha' })
   async forgotPassword(@Body() body: { email: string }) {
@@ -38,6 +39,7 @@ export class CustomerAuthController {
   }
 
   @Post('reset-password')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Redefinir senha com token' })
   async resetPassword(@Body() body: { token: string; password: string }) {
