@@ -58,16 +58,8 @@ export class WarrantyService {
 
     const product = await this.productsService.upsertBySerial(productData);
 
-    // Generate protocol
-    const lastProtocol = await this.prisma.warrantyClaim.findFirst({
-      orderBy: { createdAt: 'desc' },
-      select: { protocolNumber: true },
-    });
-
-    const lastNumber = lastProtocol
-      ? parseInt(lastProtocol.protocolNumber.split('-').pop())
-      : 0;
-    const protocolNumber = `GRT-2024-${String(lastNumber + 1).padStart(5, '0')}`;
+    // Gera protocolo único.
+    const protocolNumber = this.generateProtocolNumber();
 
     // Create warranty claim
     const claim = await this.prisma.warrantyClaim.create({
@@ -238,6 +230,21 @@ export class WarrantyService {
     });
 
     return updated;
+  }
+
+  // Gera número de protocolo único e resistente a concorrência.
+  //
+  // DECISÃO (SEC-01/BUG-01): trocamos a estratégia "último + 1" por um sufixo
+  // aleatório via crypto.randomBytes. A abordagem sequencial sofria de race
+  // condition (dois requests concorrentes liam o mesmo "último" e geravam
+  // protocolos duplicados, violando o @unique) e de NaN (quando o parseInt do
+  // sufixo falhava). Não há requisito de numeração sequencial legível, então o
+  // random é mais simples e seguro. O ano é dinâmico (não mais hardcoded 2024)
+  // e o campo protocolNumber é @unique no schema, garantindo a unicidade.
+  private generateProtocolNumber(): string {
+    const year = new Date().getFullYear();
+    const suffix = crypto.randomBytes(4).toString('hex').toUpperCase();
+    return `GRT-${year}-${suffix}`;
   }
 
   // Gerar token único para validação de garantia
