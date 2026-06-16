@@ -27,11 +27,19 @@ const StoreDashboard = () => {
   }, [navigate]);
 
   // Fetch store-specific data
-  const { data: customers, isLoading: loadingCustomers } = useQuery({
+  const { data: customersResponse, isLoading: loadingCustomers } = useQuery({
     queryKey: ['store-customers', storeId],
     queryFn: () => customersAPI.getAll({ storeId }),
     enabled: !!storeId,
   });
+
+  // O endpoint agora retorna { data, total, page, pageSize } (paginado).
+  const customers = Array.isArray(customersResponse)
+    ? customersResponse
+    : customersResponse?.data ?? [];
+  const customersTotal = Array.isArray(customersResponse)
+    ? customersResponse.length
+    : customersResponse?.total ?? 0;
 
   const { data: warranties, isLoading: loadingWarranties } = useQuery({
     queryKey: ['store-warranties', storeId],
@@ -58,7 +66,7 @@ const StoreDashboard = () => {
   const stats = [
     {
       label: 'Clientes',
-      value: customers?.length || 0,
+      value: customersTotal,
       icon: Users,
       color: 'bg-blue-500',
       link: '/loja/clientes',

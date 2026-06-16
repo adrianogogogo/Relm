@@ -17,11 +17,16 @@ export default function StoreCustomersPage() {
     setStoreId(user.storeId);
   }, [navigate]);
 
-  const { data: customers, isLoading } = useQuery({
+  const { data: customersResponse, isLoading } = useQuery({
     queryKey: ['store-customers', storeId],
-    queryFn: () => customersAPI.getAll({ storeId }),
+    queryFn: () => customersAPI.getAll({ storeId, pageSize: 200 }),
     enabled: !!storeId,
   });
+
+  // O endpoint agora retorna { data, total, page, pageSize } (paginado).
+  const customers = Array.isArray(customersResponse)
+    ? customersResponse
+    : customersResponse?.data ?? [];
 
   const filtered = (customers || []).filter((c) => {
     if (!search) return true;

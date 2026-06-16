@@ -35,6 +35,8 @@ export class CustomersController {
     @Query('search') search?: string,
     @Query('storeId') storeId?: string,
     @Query('active') active?: string,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
   ) {
     return this.customersService.findAll({
       search,
@@ -42,6 +44,8 @@ export class CustomersController {
       active: active === 'true' ? true : active === 'false' ? false : undefined,
       requesterUserId: req.user?.userId,
       requesterRole: req.user?.role,
+      page: page ? parseInt(page, 10) : undefined,
+      pageSize: pageSize ? parseInt(pageSize, 10) : undefined,
     });
   }
 

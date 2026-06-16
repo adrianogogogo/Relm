@@ -63,8 +63,20 @@ export class CustomersService {
     active?: boolean;
     requesterUserId?: string;
     requesterRole?: string;
+    page?: number;
+    pageSize?: number;
   }) {
     const where: any = {};
+
+    // Paginação obrigatória: limita o volume retornado (M-01).
+    // page >= 1, pageSize entre 1 e 200 (default 50).
+    const MAX_PAGE_SIZE = 200;
+    const page = Math.max(1, Math.floor(filters?.page ?? 1) || 1);
+    const pageSize = Math.min(
+      MAX_PAGE_SIZE,
+      Math.max(1, Math.floor(filters?.pageSize ?? 50) || 50),
+    );
+    const skip = (page - 1) * pageSize;
 
     if (filters?.search) {
       where.OR = [
@@ -83,7 +95,7 @@ export class CustomersService {
       );
       // Loja sem storeId vinculado não pode ver nenhum cliente.
       if (!requesterStoreId) {
-        return [];
+        return { data: [], total: 0, page, pageSize };
       }
       where.storeId = requesterStoreId;
     } else if (filters?.storeId) {
@@ -94,26 +106,36 @@ export class CustomersService {
       where.active = filters.active;
     }
 
-    const customers = await this.prisma.customer.findMany({
-      where,
-      include: {
-        store: {
-          select: {
-            id: true,
-            tradeName: true,
-            city: true,
-            state: true,
+    const [customers, total] = await this.prisma.$transaction([
+      this.prisma.customer.findMany({
+        where,
+        include: {
+          store: {
+            select: {
+              id: true,
+              tradeName: true,
+              city: true,
+              state: true,
+            },
+          },
+          warrantyClaims: {
+            where: { status: { in: ['APROVADO', 'FINALIZADO'] } },
+            select: { id: true, status: true },
           },
         },
-        warrantyClaims: {
-          where: { status: { in: ['APROVADO', 'FINALIZADO'] } },
-          select: { id: true, status: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+      this.prisma.customer.count({ where }),
+    ]);
 
-    return customers.map((customer) => this.formatCustomer(customer));
+    return {
+      data: customers.map((customer) => this.formatCustomer(customer)),
+      total,
+      page,
+      pageSize,
+    };
   }
 
   async findOne(

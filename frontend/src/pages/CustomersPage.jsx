@@ -21,8 +21,10 @@ export default function CustomersPage() {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/customers');
-      setCustomers(response.data);
+      const response = await api.get('/customers', { params: { pageSize: 200 } });
+      // O endpoint agora retorna { data, total, page, pageSize } (paginado).
+      const payload = response.data;
+      setCustomers(Array.isArray(payload) ? payload : payload?.data ?? []);
     } catch (error) {
       console.error('Erro ao carregar clientes:', error);
     } finally {
