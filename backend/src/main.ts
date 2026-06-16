@@ -80,6 +80,11 @@ async function bootstrap() {
     SwaggerModule.setup('docs', app, document);
   }
 
+  // DEAD-03 — Habilita os shutdown hooks do Nest para que o onModuleDestroy
+  // do PrismaService (e demais providers) seja executado em SIGINT/SIGTERM,
+  // garantindo desconexão limpa do banco antes do processo encerrar.
+  app.enableShutdownHooks();
+
   const port = process.env.PORT || 3001;
   await app.listen(port, '0.0.0.0');
 
