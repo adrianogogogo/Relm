@@ -1,18 +1,32 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { X, User, Bike, Store, FileText, XCircle, Check } from 'lucide-react';
+import { X, User, Bike, Store, FileText, XCircle, Check, Play } from 'lucide-react';
 import { warrantyAPI } from '../services/api';
 
 export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
+  const [currentWarranty, setCurrentWarranty] = useState(warranty);
   const [adminNotes, setAdminNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
 
+  const startAnalysisMutation = useMutation({
+    mutationFn: () => warrantyAPI.updateStatus(currentWarranty.id, { to_status: 'EM_ANALISE' }),
+    onSuccess: (data) => {
+      alert('✅ Análise iniciada com sucesso!');
+      setCurrentWarranty(data);
+      onSuccess();
+    },
+    onError: (error) => {
+      alert(`❌ Erro ao iniciar análise: ${error.response?.data?.message || error.message}`);
+    },
+  });
+
   const approveMutation = useMutation({
-    mutationFn: () => warrantyAPI.approve(warranty.id, { adminNotes }),
+    mutationFn: () => warrantyAPI.approve(currentWarranty.id, { adminNotes }),
     onSuccess: () => {
       alert('✅ Garantia aprovada! Email enviado ao cliente.');
       onSuccess();
+      onClose();
     },
     onError: (error) => {
       alert(`❌ Erro ao aprovar: ${error.response?.data?.message || error.message}`);
@@ -20,20 +34,32 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: () => warrantyAPI.reject(warranty.id, { rejectionReason, adminNotes }),
+    mutationFn: () => warrantyAPI.reject(currentWarranty.id, { rejectionReason, adminNotes }),
     onSuccess: () => {
       alert('✅ Garantia rejeitada. Email enviado ao cliente.');
       onSuccess();
+      onClose();
     },
     onError: (error) => {
       alert(`❌ Erro ao rejeitar: ${error.response?.data?.message || error.message}`);
     },
   });
 
+  const handleStartAnalysis = () => {
+    if (
+      !window.confirm(
+        `Deseja iniciar a análise da garantia ${currentWarranty.protocolNumber}?`
+      )
+    ) {
+      return;
+    }
+    startAnalysisMutation.mutate();
+  };
+
   const handleApprove = () => {
     if (
       !window.confirm(
-        `Confirma a APROVAÇÃO da garantia ${warranty.protocolNumber}?\n\nUm email será enviado ao cliente com o token de validação.`,
+        `Confirma a APROVAÇÃO da garantia ${currentWarranty.protocolNumber}?\n\nUm email será enviado ao cliente com o token de validação.`,
       )
     ) {
       return;
@@ -48,7 +74,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
     }
     if (
       !window.confirm(
-        `Confirma a REJEIÇÃO da garantia ${warranty.protocolNumber}?\n\nMotivo: ${rejectionReason}\n\nUm email será enviado ao cliente.`,
+        `Confirma a REJEIÇÃO da garantia ${currentWarranty.protocolNumber}?\n\nMotivo: ${rejectionReason}\n\nUm email será enviado ao cliente.`,
       )
     ) {
       return;
@@ -56,8 +82,9 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
     rejectMutation.mutate();
   };
 
-  const canApprove = warranty.status === 'RECEBIDO' || warranty.status === 'EM_ANALISE';
-  const canReject = warranty.status === 'RECEBIDO' || warranty.status === 'EM_ANALISE';
+  const canApprove = currentWarranty.status === 'EM_ANALISE';
+  const canReject = currentWarranty.status === 'EM_ANALISE';
+  const canStartAnalysis = currentWarranty.status === 'RECEBIDO';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -66,12 +93,12 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
         <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold">Revisão de Garantia</h2>
-            <p className="text-blue-100 text-sm">Protocolo: {warranty.protocolNumber}</p>
+            <p className="text-blue-100 text-sm">Protocolo: {currentWarranty.protocolNumber}</p>
           </div>
           <button
             onClick={onClose}
             className="text-white hover:text-gray-200 p-2"
-            disabled={approveMutation.isPending || rejectMutation.isPending}
+            disabled={approveMutation.isPending || rejectMutation.isPending || startAnalysisMutation.isPending}
           >
             <X className="h-6 w-6" />
           </button>
@@ -87,19 +114,19 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="text-gray-500">Nome:</span>
-                <p className="font-medium text-gray-900">{warranty.customer?.fullName || 'N/A'}</p>
+                <p className="font-medium text-gray-900">{currentWarranty.customer?.fullName || 'N/A'}</p>
               </div>
               <div>
                 <span className="text-gray-500">Email:</span>
-                <p className="font-medium text-gray-900">{warranty.customer?.email || 'N/A'}</p>
+                <p className="font-medium text-gray-900">{currentWarranty.customer?.email || 'N/A'}</p>
               </div>
               <div>
                 <span className="text-gray-500">Telefone:</span>
-                <p className="font-medium text-gray-900">{warranty.customer?.phone || 'N/A'}</p>
+                <p className="font-medium text-gray-900">{currentWarranty.customer?.phone || 'N/A'}</p>
               </div>
               <div>
                 <span className="text-gray-500">CPF:</span>
-                <p className="font-medium text-gray-900">{warranty.customer?.cpf || 'N/A'}</p>
+                <p className="font-medium text-gray-900">{currentWarranty.customer?.cpf || 'N/A'}</p>
               </div>
             </div>
           </div>
@@ -112,19 +139,19 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="text-gray-500">Modelo:</span>
-                <p className="font-medium text-gray-900">{warranty.product?.model || 'N/A'}</p>
+                <p className="font-medium text-gray-900">{currentWarranty.product?.model || 'N/A'}</p>
               </div>
               <div>
                 <span className="text-gray-500">Número de Série:</span>
-                <p className="font-medium text-gray-900">{warranty.product?.serialNumber || 'N/A'}</p>
+                <p className="font-medium text-gray-900">{currentWarranty.product?.serialNumber || 'N/A'}</p>
               </div>
               <div>
                 <span className="text-gray-500">Marca:</span>
-                <p className="font-medium text-gray-900">{warranty.product?.brand || 'Relm Bikes'}</p>
+                <p className="font-medium text-gray-900">{currentWarranty.product?.brand || 'Relm Bikes'}</p>
               </div>
               <div>
                 <span className="text-gray-500">Tipo:</span>
-                <p className="font-medium text-gray-900">{warranty.product?.productType || 'N/A'}</p>
+                <p className="font-medium text-gray-900">{currentWarranty.product?.productType || 'N/A'}</p>
               </div>
             </div>
           </div>
@@ -137,25 +164,25 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="text-gray-500">Nome:</span>
-                <p className="font-medium text-gray-900">{warranty.purchaseStoreName || 'N/A'}</p>
+                <p className="font-medium text-gray-900">{currentWarranty.purchaseStoreName || 'N/A'}</p>
               </div>
               <div>
                 <span className="text-gray-500">Localização:</span>
                 <p className="font-medium text-gray-900">
-                  {warranty.purchaseStoreCity && warranty.purchaseStoreState
-                    ? `${warranty.purchaseStoreCity}, ${warranty.purchaseStoreState}`
+                  {currentWarranty.purchaseStoreCity && currentWarranty.purchaseStoreState
+                    ? `${currentWarranty.purchaseStoreCity}, ${currentWarranty.purchaseStoreState}`
                     : 'N/A'}
                 </p>
               </div>
               <div>
                 <span className="text-gray-500">Nota Fiscal:</span>
-                <p className="font-medium text-gray-900">{warranty.invoiceNumber || 'N/A'}</p>
+                <p className="font-medium text-gray-900">{currentWarranty.invoiceNumber || 'N/A'}</p>
               </div>
               <div>
                 <span className="text-gray-500">Data da Compra:</span>
                 <p className="font-medium text-gray-900">
-                  {warranty.product?.purchaseDate
-                    ? new Date(warranty.product.purchaseDate).toLocaleDateString('pt-BR')
+                  {currentWarranty.product?.purchaseDate
+                    ? new Date(currentWarranty.product.purchaseDate).toLocaleDateString('pt-BR')
                     : 'N/A'}
                 </p>
               </div>
@@ -170,18 +197,27 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
             <div className="space-y-2 text-sm">
               <div>
                 <span className="text-blue-700">Status:</span>
-                <p className="font-medium text-blue-900">{warranty.status}</p>
+                <span className={`inline-block ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                  currentWarranty.status === 'RECEBIDO' ? 'bg-blue-100 text-blue-800' :
+                  currentWarranty.status === 'EM_ANALISE' ? 'bg-yellow-100 text-yellow-800' :
+                  currentWarranty.status === 'AGUARDANDO_CLIENTE' ? 'bg-orange-100 text-orange-800' :
+                  currentWarranty.status === 'APROVADO' ? 'bg-green-100 text-green-800' :
+                  currentWarranty.status === 'REPROVADO' ? 'bg-red-100 text-red-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {currentWarranty.status}
+                </span>
               </div>
-              {warranty.customerNotes && (
+              {currentWarranty.customerNotes && (
                 <div>
                   <span className="text-blue-700">Observações do Cliente:</span>
-                  <p className="font-medium text-blue-900 whitespace-pre-wrap">{warranty.customerNotes}</p>
+                  <p className="font-medium text-blue-900 whitespace-pre-wrap">{currentWarranty.customerNotes}</p>
                 </div>
               )}
-              {warranty.adminNotes && (
+              {currentWarranty.adminNotes && (
                 <div>
                   <span className="text-blue-700">Notas Internas:</span>
-                  <p className="font-medium text-blue-900 whitespace-pre-wrap">{warranty.adminNotes}</p>
+                  <p className="font-medium text-blue-900 whitespace-pre-wrap">{currentWarranty.adminNotes}</p>
                 </div>
               )}
             </div>
@@ -246,12 +282,25 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
           <button
             onClick={onClose}
             className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-            disabled={approveMutation.isPending || rejectMutation.isPending}
+            disabled={approveMutation.isPending || rejectMutation.isPending || startAnalysisMutation.isPending}
           >
             Fechar
           </button>
 
           <div className="flex space-x-3">
+            {canStartAnalysis && (
+              <button
+                onClick={handleStartAnalysis}
+                disabled={startAnalysisMutation.isPending}
+                className="px-6 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+              >
+                {startAnalysisMutation.isPending && (
+                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                )}
+                <Play size={16} /> Iniciar Análise
+              </button>
+            )}
+
             {canReject && !showRejectForm && (
               <button
                 onClick={() => setShowRejectForm(true)}
