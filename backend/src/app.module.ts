@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { StoreAuthModule } from './store-auth/store-auth.module';
@@ -25,6 +27,15 @@ import { HealthController } from './health.controller';
       isGlobal: true,
       envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
     }),
+    // Rate limiting global: teto moderado de 100 req/min por IP (A-03).
+    // Endpoints sensíveis (login/recuperação de senha) têm limites mais
+    // rígidos definidos via @Throttle nos controllers.
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     PrismaModule,
     AuthModule,
     StoreAuthModule,
@@ -45,5 +56,14 @@ import { HealthController } from './health.controller';
     BannersModule,
   ],
   controllers: [HealthController],
+  providers: [
+    // ThrottlerGuard global: apenas limita taxa por IP, não autentica.
+    // Coexiste com os JwtAuthGuard/RolesGuard aplicados por @UseGuards nos
+    // controllers (não há outro APP_GUARD global registrado).
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
