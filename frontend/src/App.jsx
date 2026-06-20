@@ -8,6 +8,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import CustomerLayout from './components/CustomerLayout';
 import CustomerProtectedRoute from './components/CustomerProtectedRoute';
 import StoreProtectedRoute from './components/StoreProtectedRoute';
+import StoreLayout from './components/StoreLayout';
 import { useThemeStore } from './store/themeStore';
 
 // Public pages
@@ -132,15 +133,24 @@ export default function App() {
             <Route path="perfil" element={<CustomerProfilePage />} />
           </Route>
 
-          {/* ── Store portal (own layout, no Header/Footer) ───────────────── */}
+          {/* ── Store portal (StoreLayout sidebar, no Header/Footer) ──────── */}
           <Route path="/loja/login" element={<StoreLoginPage />} />
           <Route path="/loja/esqueci-senha" element={<StoreForgotPasswordPage />} />
           <Route path="/loja/redefinir-senha" element={<StoreResetPasswordPage />} />
-          <Route path="/loja/dashboard" element={<StoreProtectedRoute><StoreDashboard /></StoreProtectedRoute>} />
-          <Route path="/loja/clientes" element={<StoreProtectedRoute><StoreCustomersPage /></StoreProtectedRoute>} />
-          <Route path="/loja/garantias" element={<StoreProtectedRoute><StoreWarrantiesPage /></StoreProtectedRoute>} />
-          <Route path="/loja/seguros" element={<StoreProtectedRoute><StoreInsurancesPage /></StoreProtectedRoute>} />
-          <Route path="/loja/produtos" element={<StoreProtectedRoute><StoreProductsPage /></StoreProtectedRoute>} />
+          <Route
+            path="/loja"
+            element={
+              <StoreProtectedRoute>
+                <StoreLayout />
+              </StoreProtectedRoute>
+            }
+          >
+            <Route path="dashboard" element={<StoreDashboard />} />
+            <Route path="clientes" element={<StoreCustomersPage />} />
+            <Route path="garantias" element={<StoreWarrantiesPage />} />
+            <Route path="seguros" element={<StoreInsurancesPage />} />
+            <Route path="produtos" element={<StoreProductsPage />} />
+          </Route>
 
           {/* ── Admin routes (AdminLayout sidebar, no Header/Footer) ──────── */}
           <Route
