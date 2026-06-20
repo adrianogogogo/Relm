@@ -1,13 +1,32 @@
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { customersAPI, warrantyAPI, insuranceAPI } from '../services/api';
-import { Store, Users, Shield, FileText, LogOut, ShoppingBag } from 'lucide-react';
+import { Users, Shield, FileText, ShoppingBag } from 'lucide-react';
 import { useStoreAuthStore } from '../store/storeAuthStore';
+import { Card, PageHeader, StatusChip, StatCard } from '../components/ui';
+
+const STATUS_LABEL = {
+  RECEBIDO: 'Recebido',
+  EM_ANALISE: 'Em Análise',
+  AGUARDANDO_CLIENTE: 'Aguardando Cliente',
+  APROVADO: 'Aprovado',
+  REPROVADO: 'Reprovado',
+  FINALIZADO: 'Finalizado',
+  CANCELADO: 'Cancelado',
+};
+
+const STATUS_VARIANT = {
+  RECEBIDO: 'info',
+  EM_ANALISE: 'warning',
+  AGUARDANDO_CLIENTE: 'warning',
+  APROVADO: 'success',
+  REPROVADO: 'error',
+  FINALIZADO: 'neutral',
+  CANCELADO: 'neutral',
+};
 
 const StoreDashboard = () => {
-  const navigate = useNavigate();
   const user = useStoreAuthStore((state) => state.user);
-  const logout = useStoreAuthStore((state) => state.logout);
   const storeId = user?.storeId;
 
   // Fetch store-specific data
@@ -18,9 +37,6 @@ const StoreDashboard = () => {
   });
 
   // O endpoint agora retorna { data, total, page, pageSize } (paginado).
-  const customers = Array.isArray(customersResponse)
-    ? customersResponse
-    : customersResponse?.data ?? [];
   const customersTotal = Array.isArray(customersResponse)
     ? customersResponse.length
     : customersResponse?.total ?? 0;
@@ -37,11 +53,6 @@ const StoreDashboard = () => {
     enabled: !!storeId,
   });
 
-  const handleLogout = () => {
-    logout();
-    navigate('/loja/login');
-  };
-
   if (!user) {
     return null;
   }
@@ -51,144 +62,125 @@ const StoreDashboard = () => {
       label: 'Clientes',
       value: customersTotal,
       icon: Users,
-      color: 'bg-blue-500',
+      color: '#1565C0',
       link: '/loja/clientes',
     },
     {
       label: 'Garantias',
       value: warranties?.length || 0,
       icon: Shield,
-      color: 'bg-green-500',
+      color: '#4CAF50',
       link: '/loja/garantias',
     },
     {
       label: 'Seguros',
       value: insurances?.length || 0,
       icon: FileText,
-      color: 'bg-purple-500',
+      color: '#9C27B0',
       link: '/loja/seguros',
     },
   ];
 
-  return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Store className="w-8 h-8 text-blue-600" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Portal da Loja</h1>
-                <p className="text-sm text-gray-600">{user.store?.tradeName}</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                <p className="text-xs text-gray-600">{user.email}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Sair</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+  const quickActions = [
+    { to: '/loja/clientes/novo', label: 'Novo Cliente', icon: Users, color: '#1565C0' },
+    { to: '/loja/garantias', label: 'Ver Garantias', icon: Shield, color: '#4CAF50' },
+    { to: '/loja/seguros', label: 'Ver Seguros', icon: FileText, color: '#9C27B0' },
+    { to: '/loja/produtos', label: 'Produtos', icon: ShoppingBag, color: '#FF9800' },
+  ];
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <Link
-              key={index}
-              to={stat.link}
-              className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">
-                    {loadingCustomers || loadingWarranties ? '...' : stat.value}
-                  </p>
-                </div>
-                <div className={`${stat.color} p-3 rounded-lg`}>
-                  <stat.icon className="w-6 h-6 text-white" />
-                </div>
-              </div>
+  return (
+    <div className="py-8 px-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <PageHeader
+          title="Portal da Loja"
+          subtitle={
+            <>
+              Bem-vindo,{' '}
+              <span className="font-semibold text-gray-800 dark:text-slate-200">{user.name}</span>
+              {user.store?.tradeName ? ` • ${user.store.tradeName}` : ''}
+            </>
+          }
+        />
+
+        {/* KPIs */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+          {stats.map((stat) => (
+            <Link key={stat.label} to={stat.link} className="block group">
+              <StatCard
+                title={stat.label}
+                value={loadingCustomers || loadingWarranties ? '...' : stat.value}
+                icon={stat.icon}
+                color={stat.color}
+                className="h-full group-hover:shadow-md transition-shadow"
+              />
             </Link>
           ))}
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Ações Rápidas</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Link
-              to="/loja/clientes/novo"
-              className="flex items-center space-x-3 px-4 py-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
-            >
-              <Users className="w-5 h-5" />
-              <span className="font-medium">Novo Cliente</span>
-            </Link>
-            <Link
-              to="/loja/garantias"
-              className="flex items-center space-x-3 px-4 py-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors"
-            >
-              <Shield className="w-5 h-5" />
-              <span className="font-medium">Ver Garantias</span>
-            </Link>
-            <Link
-              to="/loja/seguros"
-              className="flex items-center space-x-3 px-4 py-3 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors"
-            >
-              <FileText className="w-5 h-5" />
-              <span className="font-medium">Ver Seguros</span>
-            </Link>
-            <Link
-              to="/loja/produtos"
-              className="flex items-center space-x-3 px-4 py-3 bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition-colors"
-            >
-              <ShoppingBag className="w-5 h-5" />
-              <span className="font-medium">Produtos</span>
-            </Link>
+        <Card className="mb-8">
+          <h2 className="font-title text-xl font-bold mb-4 text-gray-900 dark:text-slate-100">
+            Ações Rápidas
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            {quickActions.map((action) => (
+              <Link
+                key={action.to}
+                to={action.to}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg border border-gray-200 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors"
+              >
+                <span
+                  className="shrink-0 rounded-lg p-2"
+                  style={{ backgroundColor: `${action.color}26`, color: action.color }}
+                >
+                  <action.icon size={18} />
+                </span>
+                <span className="font-medium text-gray-800 dark:text-slate-200">{action.label}</span>
+              </Link>
+            ))}
           </div>
-        </div>
+        </Card>
 
         {/* Recent Activity */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Atividade Recente</h2>
+        <Card>
+          <h2 className="font-title text-xl font-bold mb-4 text-gray-900 dark:text-slate-100">
+            Atividade Recente
+          </h2>
           {loadingWarranties ? (
-            <p className="text-gray-600">Carregando...</p>
+            <p className="text-gray-500 dark:text-slate-400">Carregando...</p>
           ) : warranties && warranties.length > 0 ? (
             <div className="space-y-3">
               {warranties.slice(0, 5).map((warranty) => (
-                <div key={warranty.id} className="flex items-center justify-between py-3 border-b last:border-b-0">
+                <div
+                  key={warranty.id}
+                  className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-3 last:border-b-0"
+                >
                   <div>
-                    <p className="font-medium text-gray-900">Garantia #{warranty.protocolNumber}</p>
-                    <p className="text-sm text-gray-600">
-                      Status: <span className="font-medium">{warranty.status}</span>
+                    <p className="font-semibold text-gray-800 dark:text-slate-100">
+                      Garantia #{warranty.protocolNumber}
                     </p>
                   </div>
-                  <Link
-                    to={`/loja/garantias/${warranty.id}`}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    Ver detalhes →
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    <StatusChip
+                      label={STATUS_LABEL[warranty.status] || warranty.status}
+                      variant={STATUS_VARIANT[warranty.status] || 'neutral'}
+                    />
+                    <Link
+                      to={`/loja/garantias/${warranty.id}`}
+                      className="text-primary dark:text-primary-400 text-xs hover:underline"
+                    >
+                      Ver detalhes →
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-600">Nenhuma atividade recente</p>
+            <p className="text-gray-500 dark:text-slate-400">Nenhuma atividade recente</p>
           )}
-        </div>
-      </main>
+        </Card>
+      </div>
     </div>
   );
 };
