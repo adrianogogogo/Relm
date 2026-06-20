@@ -88,12 +88,12 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-surface-dark rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-auth-gradient text-white px-6 py-4 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold">Revisão de Garantia</h2>
-            <p className="text-blue-100 text-sm">Protocolo: {currentWarranty.protocolNumber}</p>
+            <h2 className="font-title text-2xl font-bold">Revisão de Garantia</h2>
+            <p className="text-white/80 text-sm">Protocolo: {currentWarranty.protocolNumber}</p>
           </div>
           <button
             onClick={onClose}
@@ -107,80 +107,80 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Cliente */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <User size={18} className="text-gray-500" /> Dados do Cliente
+          <div className="bg-gray-50 dark:bg-slate-900/40 rounded-lg p-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center gap-2">
+              <User size={18} className="text-gray-500 dark:text-slate-400" /> Dados do Cliente
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="text-gray-500">Nome:</span>
-                <p className="font-medium text-gray-900">{currentWarranty.customer?.fullName || 'N/A'}</p>
+                <span className="text-gray-500 dark:text-slate-400">Nome:</span>
+                <p className="font-medium text-gray-900 dark:text-slate-100">{currentWarranty.customer?.fullName || 'N/A'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Email:</span>
-                <p className="font-medium text-gray-900">{currentWarranty.customer?.email || 'N/A'}</p>
+                <span className="text-gray-500 dark:text-slate-400">Email:</span>
+                <p className="font-medium text-gray-900 dark:text-slate-100">{currentWarranty.customer?.email || 'N/A'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Telefone:</span>
-                <p className="font-medium text-gray-900">{currentWarranty.customer?.phone || 'N/A'}</p>
+                <span className="text-gray-500 dark:text-slate-400">Telefone:</span>
+                <p className="font-medium text-gray-900 dark:text-slate-100">{currentWarranty.customer?.phone || 'N/A'}</p>
               </div>
               <div>
-                <span className="text-gray-500">CPF:</span>
-                <p className="font-medium text-gray-900">{currentWarranty.customer?.cpf || 'N/A'}</p>
+                <span className="text-gray-500 dark:text-slate-400">CPF:</span>
+                <p className="font-medium text-gray-900 dark:text-slate-100">{currentWarranty.customer?.cpf || 'N/A'}</p>
               </div>
             </div>
           </div>
 
           {/* Produto */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <Bike size={18} className="text-gray-500" /> Dados do Produto
+          <div className="bg-gray-50 dark:bg-slate-900/40 rounded-lg p-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center gap-2">
+              <Bike size={18} className="text-gray-500 dark:text-slate-400" /> Dados do Produto
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="text-gray-500">Modelo:</span>
-                <p className="font-medium text-gray-900">{currentWarranty.product?.model || 'N/A'}</p>
+                <span className="text-gray-500 dark:text-slate-400">Modelo:</span>
+                <p className="font-medium text-gray-900 dark:text-slate-100">{currentWarranty.product?.model || 'N/A'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Número de Série:</span>
-                <p className="font-medium text-gray-900">{currentWarranty.product?.serialNumber || 'N/A'}</p>
+                <span className="text-gray-500 dark:text-slate-400">Número de Série:</span>
+                <p className="font-medium text-gray-900 dark:text-slate-100">{currentWarranty.product?.serialNumber || 'N/A'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Marca:</span>
-                <p className="font-medium text-gray-900">{currentWarranty.product?.brand || 'Relm Bikes'}</p>
+                <span className="text-gray-500 dark:text-slate-400">Marca:</span>
+                <p className="font-medium text-gray-900 dark:text-slate-100">{currentWarranty.product?.brand || 'Relm Bikes'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Tipo:</span>
-                <p className="font-medium text-gray-900">{currentWarranty.product?.productType || 'N/A'}</p>
+                <span className="text-gray-500 dark:text-slate-400">Tipo:</span>
+                <p className="font-medium text-gray-900 dark:text-slate-100">{currentWarranty.product?.productType || 'N/A'}</p>
               </div>
             </div>
           </div>
 
           {/* Loja de Compra */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <Store size={18} className="text-gray-500" /> Loja de Compra
+          <div className="bg-gray-50 dark:bg-slate-900/40 rounded-lg p-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center gap-2">
+              <Store size={18} className="text-gray-500 dark:text-slate-400" /> Loja de Compra
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="text-gray-500">Nome:</span>
-                <p className="font-medium text-gray-900">{currentWarranty.purchaseStoreName || 'N/A'}</p>
+                <span className="text-gray-500 dark:text-slate-400">Nome:</span>
+                <p className="font-medium text-gray-900 dark:text-slate-100">{currentWarranty.purchaseStoreName || 'N/A'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Localização:</span>
-                <p className="font-medium text-gray-900">
+                <span className="text-gray-500 dark:text-slate-400">Localização:</span>
+                <p className="font-medium text-gray-900 dark:text-slate-100">
                   {currentWarranty.purchaseStoreCity && currentWarranty.purchaseStoreState
                     ? `${currentWarranty.purchaseStoreCity}, ${currentWarranty.purchaseStoreState}`
                     : 'N/A'}
                 </p>
               </div>
               <div>
-                <span className="text-gray-500">Nota Fiscal:</span>
-                <p className="font-medium text-gray-900">{currentWarranty.invoiceNumber || 'N/A'}</p>
+                <span className="text-gray-500 dark:text-slate-400">Nota Fiscal:</span>
+                <p className="font-medium text-gray-900 dark:text-slate-100">{currentWarranty.invoiceNumber || 'N/A'}</p>
               </div>
               <div>
-                <span className="text-gray-500">Data da Compra:</span>
-                <p className="font-medium text-gray-900">
+                <span className="text-gray-500 dark:text-slate-400">Data da Compra:</span>
+                <p className="font-medium text-gray-900 dark:text-slate-100">
                   {currentWarranty.product?.purchaseDate
                     ? new Date(currentWarranty.product.purchaseDate).toLocaleDateString('pt-BR')
                     : 'N/A'}
@@ -190,34 +190,34 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
           </div>
 
           {/* Status Atual */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center gap-2">
-              <FileText size={18} className="text-blue-500" /> Status e Observações
+          <div className="bg-primary/5 dark:bg-primary-400/10 border border-primary/20 dark:border-primary-400/20 rounded-lg p-4">
+            <h3 className="text-lg font-semibold text-primary dark:text-primary-300 mb-3 flex items-center gap-2">
+              <FileText size={18} className="text-primary dark:text-primary-400" /> Status e Observações
             </h3>
             <div className="space-y-2 text-sm">
               <div>
-                <span className="text-blue-700">Status:</span>
+                <span className="text-primary-700 dark:text-primary-300">Status:</span>
                 <span className={`inline-block ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                  currentWarranty.status === 'RECEBIDO' ? 'bg-blue-100 text-blue-800' :
-                  currentWarranty.status === 'EM_ANALISE' ? 'bg-yellow-100 text-yellow-800' :
-                  currentWarranty.status === 'AGUARDANDO_CLIENTE' ? 'bg-orange-100 text-orange-800' :
-                  currentWarranty.status === 'APROVADO' ? 'bg-green-100 text-green-800' :
-                  currentWarranty.status === 'REPROVADO' ? 'bg-red-100 text-red-800' :
-                  'bg-gray-100 text-gray-800'
+                  currentWarranty.status === 'RECEBIDO' ? 'bg-info/15 text-info' :
+                  currentWarranty.status === 'EM_ANALISE' ? 'bg-warning/15 text-warning' :
+                  currentWarranty.status === 'AGUARDANDO_CLIENTE' ? 'bg-warning/15 text-warning' :
+                  currentWarranty.status === 'APROVADO' ? 'bg-success/15 text-success' :
+                  currentWarranty.status === 'REPROVADO' ? 'bg-error/15 text-error' :
+                  'bg-gray-100 text-gray-800 dark:bg-slate-800 dark:text-slate-300'
                 }`}>
                   {currentWarranty.status}
                 </span>
               </div>
               {currentWarranty.customerNotes && (
                 <div>
-                  <span className="text-blue-700">Observações do Cliente:</span>
-                  <p className="font-medium text-blue-900 whitespace-pre-wrap">{currentWarranty.customerNotes}</p>
+                  <span className="text-primary-700 dark:text-primary-300">Observações do Cliente:</span>
+                  <p className="font-medium text-gray-900 dark:text-slate-100 whitespace-pre-wrap">{currentWarranty.customerNotes}</p>
                 </div>
               )}
               {currentWarranty.adminNotes && (
                 <div>
-                  <span className="text-blue-700">Notas Internas:</span>
-                  <p className="font-medium text-blue-900 whitespace-pre-wrap">{currentWarranty.adminNotes}</p>
+                  <span className="text-primary-700 dark:text-primary-300">Notas Internas:</span>
+                  <p className="font-medium text-gray-900 dark:text-slate-100 whitespace-pre-wrap">{currentWarranty.adminNotes}</p>
                 </div>
               )}
             </div>
@@ -226,7 +226,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
           {/* Notas Admin */}
           {canApprove && !showRejectForm && (
             <div>
-              <label htmlFor="adminNotes" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="adminNotes" className="label">
                 Notas Internas (opcional)
               </label>
               <textarea
@@ -234,7 +234,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="input"
                 placeholder="Adicione observações internas sobre esta garantia..."
               />
             </div>
@@ -242,12 +242,12 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
 
           {/* Formulário de Rejeição */}
           {showRejectForm && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-4">
-              <h3 className="text-lg font-semibold text-red-900 flex items-center gap-2">
-                <XCircle size={18} className="text-red-500" /> Rejeitar Garantia
+            <div className="bg-error/5 dark:bg-error/10 border border-error/20 rounded-lg p-4 space-y-4">
+              <h3 className="text-lg font-semibold text-error flex items-center gap-2">
+                <XCircle size={18} className="text-error" /> Rejeitar Garantia
               </h3>
               <div>
-                <label htmlFor="rejectionReason" className="block text-sm font-medium text-red-700 mb-2">
+                <label htmlFor="rejectionReason" className="block text-sm font-medium text-error mb-2">
                   Motivo da Rejeição *
                 </label>
                 <textarea
@@ -255,13 +255,13 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   rows={4}
-                  className="w-full px-4 py-2 border border-red-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-error/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-error focus:border-transparent dark:text-slate-100"
                   placeholder="Explique ao cliente o motivo da rejeição..."
                   required
                 />
               </div>
               <div>
-                <label htmlFor="adminNotesReject" className="block text-sm font-medium text-red-700 mb-2">
+                <label htmlFor="adminNotesReject" className="block text-sm font-medium text-error mb-2">
                   Notas Internas (opcional)
                 </label>
                 <textarea
@@ -269,7 +269,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                   value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}
                   rows={2}
-                  className="w-full px-4 py-2 border border-red-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-error/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-error focus:border-transparent dark:text-slate-100"
                   placeholder="Observações internas..."
                 />
               </div>
@@ -278,24 +278,24 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
         </div>
 
         {/* Footer Actions */}
-        <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+        <div className="sticky bottom-0 bg-gray-50 dark:bg-slate-900/60 px-6 py-4 border-t border-gray-200 dark:border-slate-800 flex items-center justify-between">
           <button
             onClick={onClose}
-            className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+            className="px-6 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800 disabled:opacity-50"
             disabled={approveMutation.isPending || rejectMutation.isPending || startAnalysisMutation.isPending}
           >
             Fechar
           </button>
 
-          <div className="flex space-x-3">
+          <div className="flex gap-3">
             {canStartAnalysis && (
               <button
                 onClick={handleStartAnalysis}
                 disabled={startAnalysisMutation.isPending}
-                className="px-6 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                className="px-6 py-2.5 bg-warning hover:bg-warning-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 {startAnalysisMutation.isPending && (
-                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 )}
                 <Play size={16} /> Iniciar Análise
               </button>
@@ -304,7 +304,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
             {canReject && !showRejectForm && (
               <button
                 onClick={() => setShowRejectForm(true)}
-                className="px-6 py-2 border border-red-600 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50"
+                className="px-6 py-2.5 border-2 border-error text-error rounded-lg text-sm font-semibold hover:bg-error hover:text-white transition-colors disabled:opacity-50"
                 disabled={approveMutation.isPending || rejectMutation.isPending}
               >
                 Rejeitar
@@ -318,7 +318,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                     setShowRejectForm(false);
                     setRejectionReason('');
                   }}
-                  className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
+                  className="px-6 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800"
                   disabled={rejectMutation.isPending}
                 >
                   Cancelar Rejeição
@@ -326,10 +326,10 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                 <button
                   onClick={handleReject}
                   disabled={rejectMutation.isPending || !rejectionReason.trim()}
-                  className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  className="px-6 py-2.5 bg-error hover:bg-error-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {rejectMutation.isPending && (
-                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   )}
                   Confirmar Rejeição
                 </button>
@@ -340,12 +340,12 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
               <button
                 onClick={handleApprove}
                 disabled={approveMutation.isPending}
-                className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                className="px-6 py-2.5 bg-success hover:bg-success-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
                 {approveMutation.isPending && (
-                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 )}
-                <span className="flex items-center gap-1"><Check size={16} /> Aprovar Garantia</span>
+                <Check size={16} /> Aprovar Garantia
               </button>
             )}
           </div>
