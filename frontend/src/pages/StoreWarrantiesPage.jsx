@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { warrantyAPI } from '../services/api';
 import { Search } from 'lucide-react';
-import { useStoreAuthStore } from '../store/storeAuthStore';
+import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader, StatusChip } from '../components/ui';
 
 const STATUS_LABEL = {
@@ -26,7 +26,7 @@ const STATUS_VARIANT = {
 };
 
 export default function StoreWarrantiesPage() {
-  const storeId = useStoreAuthStore((state) => state.user?.storeId);
+  const storeId = useAuthStore((state) => state.user?.storeId);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 

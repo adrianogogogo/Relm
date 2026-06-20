@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { useCustomerAuthStore } from '../store/customerAuthStore';
+import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
 import { Shield, CalendarDays, Gift, FileText, User, LogOut, LayoutDashboard, Sun, Moon } from 'lucide-react';
 
@@ -14,7 +14,7 @@ const MENU = [
 
 export default function CustomerLayout() {
   const location = useLocation();
-  const { customer, logout } = useCustomerAuthStore();
+  const { user, logout } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
 
   return (
@@ -32,11 +32,11 @@ export default function CustomerLayout() {
         <div className="px-6 py-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm shrink-0">
-              {customer?.fullName?.charAt(0)?.toUpperCase() || 'C'}
+              {user?.name?.charAt(0)?.toUpperCase() || 'C'}
             </div>
             <div className="min-w-0">
-              <p className="font-semibold text-sm text-white truncate">{customer?.fullName}</p>
-              <p className="text-xs text-white/60 truncate">{customer?.email}</p>
+              <p className="font-semibold text-sm text-white truncate">{user?.name}</p>
+              <p className="text-xs text-white/60 truncate">{user?.email}</p>
             </div>
           </div>
         </div>

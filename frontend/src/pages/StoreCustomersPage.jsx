@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { customersAPI } from '../services/api';
 import { Search } from 'lucide-react';
-import { useStoreAuthStore } from '../store/storeAuthStore';
+import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader } from '../components/ui';
 
 export default function StoreCustomersPage() {
-  const storeId = useStoreAuthStore((state) => state.user?.storeId);
+  const storeId = useAuthStore((state) => state.user?.storeId);
   const [search, setSearch] = useState('');
 
   const { data: customersResponse, isLoading } = useQuery({

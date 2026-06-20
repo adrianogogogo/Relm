@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Shield, FileText, Calendar, User, MapPin, Gift } from 'lucide-react';
-import { useCustomerAuthStore } from '../store/customerAuthStore';
+import { useAuthStore } from '../store/authStore';
 import { customerPortalAPI } from '../services/api';
 import { Card, PageHeader, StatCard, StatusChip } from '../components/ui';
 
@@ -27,7 +27,7 @@ const WARRANTY_STATUS_VARIANT = {
 };
 
 export default function CustomerDashboard() {
-  const { customer } = useCustomerAuthStore();
+  const { user } = useAuthStore();
 
   const { data: warranties = [] } = useQuery({
     queryKey: ['customer-warranties'],
@@ -61,7 +61,7 @@ export default function CustomerDashboard() {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <PageHeader
-          title={`Olá, ${customer?.fullName?.split(' ')[0] || 'cliente'}! 👋`}
+          title={`Olá, ${user?.name?.split(' ')[0] || 'cliente'}! 👋`}
           subtitle="Bem-vindo ao seu portal Relm Care+"
         />
 

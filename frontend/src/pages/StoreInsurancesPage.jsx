@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { insuranceAPI } from '../services/api';
 import { FileText } from 'lucide-react';
-import { useStoreAuthStore } from '../store/storeAuthStore';
+import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader, StatusChip } from '../components/ui';
 
 export default function StoreInsurancesPage() {
-  const storeId = useStoreAuthStore((state) => state.user?.storeId);
+  const storeId = useAuthStore((state) => state.user?.storeId);
 
   const { data: quotes, isLoading } = useQuery({
     queryKey: ['store-insurances', storeId],

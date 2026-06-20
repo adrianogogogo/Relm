@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { customersAPI, warrantyAPI, insuranceAPI } from '../services/api';
 import { Users, Shield, FileText, ShoppingBag } from 'lucide-react';
-import { useStoreAuthStore } from '../store/storeAuthStore';
+import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader, StatusChip, StatCard } from '../components/ui';
 
 const STATUS_LABEL = {
@@ -26,7 +26,7 @@ const STATUS_VARIANT = {
 };
 
 const StoreDashboard = () => {
-  const user = useStoreAuthStore((state) => state.user);
+  const user = useAuthStore((state) => state.user);
   const storeId = user?.storeId;
 
   // Fetch store-specific data

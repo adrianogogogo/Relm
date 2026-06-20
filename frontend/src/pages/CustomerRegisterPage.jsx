@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Bike } from 'lucide-react';
-import { useCustomerAuthStore } from '../store/customerAuthStore';
+import { useAuthStore } from '../store/authStore';
+import { customerAuthAPI } from '../services/api';
 
 export default function CustomerRegisterPage() {
   const navigate = useNavigate();
-  const { register, isLoading, error, clearError } = useCustomerAuthStore();
+  const login = useAuthStore((state) => state.login);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -17,33 +20,49 @@ export default function CustomerRegisterPage() {
   const [localError, setLocalError] = useState('');
 
   const handleChange = (e) => {
-    clearError();
+    setError('');
     setLocalError('');
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError('');
 
     if (form.password !== form.confirmPassword) {
       setLocalError('As senhas não coincidem.');
+      setIsLoading(false);
       return;
     }
 
     if (form.password.length < 6) {
       setLocalError('A senha deve ter no mínimo 6 caracteres.');
+      setIsLoading(false);
       return;
     }
 
-    const result = await register({
-      fullName: form.fullName,
-      email: form.email,
-      phone: form.phone,
-      password: form.password,
-      invoiceNumber: form.invoiceNumber,
-    });
+    try {
+      await customerAuthAPI.register({
+        fullName: form.fullName,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+        invoiceNumber: form.invoiceNumber,
+      });
 
-    if (result.success) navigate('/cliente/dashboard');
+      // Login automático após registro
+      const result = await login(form.email, form.password);
+      if (result.success) {
+        navigate('/cliente/dashboard');
+      } else {
+        setError(result.error || 'Conta criada com sucesso, mas erro ao fazer login automático. Acesse a página de login.');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Erro ao registrar conta. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const displayError = localError || error;
@@ -167,7 +186,7 @@ export default function CustomerRegisterPage() {
           <div className="mt-6 text-center space-y-2">
             <p className="text-sm text-gray-600">
               Já tem conta?{' '}
-              <Link to="/cliente/login" className="text-primary font-semibold hover:underline">
+              <Link to="/login" className="text-primary font-semibold hover:underline">
                 Fazer login
               </Link>
             </p>

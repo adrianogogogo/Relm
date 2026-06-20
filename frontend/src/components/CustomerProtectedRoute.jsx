@@ -1,11 +1,11 @@
 import { Navigate } from 'react-router-dom';
-import { useCustomerAuthStore } from '../store/customerAuthStore';
+import { useAuthStore } from '../store/authStore';
 
 export default function CustomerProtectedRoute({ children }) {
-  const { isAuthenticated } = useCustomerAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
-  if (!isAuthenticated) {
-    return <Navigate to="/cliente/login" replace />;
+  if (!isAuthenticated || user?.userType !== 'CUSTOMER') {
+    return <Navigate to="/login" replace />;
   }
 
   return children;

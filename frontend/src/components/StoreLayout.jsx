@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useStoreAuthStore } from '../store/storeAuthStore';
+import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
 import {
   LayoutDashboard,
@@ -23,13 +23,13 @@ const MENU = [
 export default function StoreLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const user = useStoreAuthStore((state) => state.user);
-  const logout = useStoreAuthStore((state) => state.logout);
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const { theme, toggleTheme } = useThemeStore();
 
   const handleLogout = () => {
     logout();
-    navigate('/loja/login');
+    navigate('/login');
   };
 
   const isActive = (path) => location.pathname.startsWith(path);

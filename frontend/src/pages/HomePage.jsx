@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Shield, Gift, FileText, Calendar, Mail, Users } from 'lucide-react';
+import { Shield, Gift, FileText, Calendar, Mail } from 'lucide-react';
 import { healthAPI } from '../services/api';
 import StoreLocator from '../components/StoreLocator';
 import BannerCarousel from '../components/BannerCarousel';
@@ -43,12 +43,6 @@ export default function HomePage() {
       title: 'Newsletter',
       description: 'Fique por dentro das novidades e lançamentos.',
       link: '/newsletter',
-    },
-    {
-      icon: Users,
-      title: 'Portais',
-      description: 'Acesso dedicado para clientes, lojas e distribuidores.',
-      link: '/portais',
     },
   ];
 

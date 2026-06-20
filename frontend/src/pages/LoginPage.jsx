@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, isLoading, error } = useAuthStore();
+  const { login, isLoading, error, clearError } = useAuthStore();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -16,11 +16,14 @@ export default function LoginPage() {
     const result = await login(formData.email, formData.password);
     
     if (result.success) {
-      navigate('/admin');
+      // Redireciona automaticamente baseado no tipo do usuário
+      const dashboardPath = useAuthStore.getState().getDashboardPath();
+      navigate(dashboardPath);
     }
   };
 
   const handleChange = (e) => {
+    clearError();
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -35,7 +38,7 @@ export default function LoginPage() {
           <div className="text-center mb-8">
             <img src="/logo-relm.png" alt="Relm Care+" className="h-12 w-auto mx-auto mb-6" />
             <h1 className="font-title text-3xl font-bold text-gray-800 mb-2">
-              Bem-vindo de volta
+              Bem-vindo
             </h1>
             <p className="text-gray-600">
               Faça login para acessar o sistema
@@ -91,9 +94,18 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center space-y-2">
-            <a href="/" className="block text-sm text-primary hover:text-primary-700">
+            <Link to="/esqueci-senha" className="block text-sm text-primary hover:underline font-medium">
+              Esqueci minha senha
+            </Link>
+            <p className="text-sm text-gray-600">
+              Não tem conta?{' '}
+              <Link to="/cliente/cadastro" className="text-primary font-semibold hover:underline">
+                Cadastre-se
+              </Link>
+            </p>
+            <Link to="/" className="block text-sm text-gray-400 hover:text-gray-600">
               ← Voltar para o início
-            </a>
+            </Link>
           </div>
         </div>
 

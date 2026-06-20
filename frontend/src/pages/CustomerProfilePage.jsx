@@ -1,17 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { customerPortalAPI } from '../services/api';
-import { useCustomerAuthStore } from '../store/customerAuthStore';
+import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader } from '../components/ui';
 
 export default function CustomerProfilePage() {
-  const { customer } = useCustomerAuthStore();
+  const { user } = useAuthStore();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['customer-profile'],
     queryFn: customerPortalAPI.getMe,
   });
 
-  const data = profile || customer;
+  const data = profile || { fullName: user?.name, email: user?.email };
 
   const fields = [
     { label: 'Nome completo', value: data?.fullName },

@@ -30,22 +30,10 @@ logs/
 # ============================================
 prisma/*.db
 prisma/*.db-journal
-.env
 
 # ============================================
-# Flutter / Frontend
+# Frontend (React/Vite)
 # ============================================
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-.pub-cache/
-.pub/
-build/
-.flutter/
-.fvm/
-
-# Coverage
 coverage/
 *.lcov
 

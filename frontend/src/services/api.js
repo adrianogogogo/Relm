@@ -9,10 +9,10 @@ const api = axios.create({
   },
 });
 
-// Request interceptor
+// Request interceptor — usa token unificado
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('relm_access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -21,7 +21,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor
+// Response interceptor — refresh com token unificado
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -32,20 +32,20 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
+        const refreshToken = localStorage.getItem('relm_refresh_token');
         const response = await axios.post(`${API_URL}/api/auth/refresh`, {
           refresh_token: refreshToken,
         });
 
         const { access_token } = response.data;
-        localStorage.setItem('access_token', access_token);
+        localStorage.setItem('relm_access_token', access_token);
 
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
         return api(originalRequest);
       } catch (refreshError) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
+        localStorage.removeItem('relm_access_token');
+        localStorage.removeItem('relm_refresh_token');
+        localStorage.removeItem('relm_user');
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }
@@ -57,8 +57,15 @@ api.interceptors.response.use(
 
 export default api;
 
-// API methods
+// ── Auth API (unificada + legada) ─────────────────────────────────────────────
+
 export const authAPI = {
+  // Endpoints unificados (novos)
+  unifiedLogin: (email, password) => api.post('/auth/unified-login', { email, password }),
+  forgotPassword: (email) => api.post('/auth/unified-forgot-password', { email }),
+  resetPassword: (token, password) => api.post('/auth/unified-reset-password', { token, password }),
+
+  // Endpoints legados (mantidos para retrocompatibilidade)
   login: (email, password) => api.post('/auth/login', { email, password }),
   logout: () => api.post('/auth/logout'),
   refresh: (refreshToken) => api.post('/auth/refresh', { refresh_token: refreshToken }),
@@ -160,58 +167,22 @@ export const bannersAPI = {
   delete: (id) => api.delete(`/banners/${id}`).then((res) => res.data),
 };
 
-// ── Customer portal (token separado) ────────────────────────────────────────
-
-const customerApi = axios.create({
-  baseURL: `${API_URL}/api`,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-customerApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('customer_access_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
-customerApi.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      try {
-        const refreshToken = localStorage.getItem('customer_refresh_token');
-        const res = await axios.post(`${API_URL}/api/customer-auth/refresh`, {
-          refresh_token: refreshToken,
-        });
-        const { access_token } = res.data;
-        localStorage.setItem('customer_access_token', access_token);
-        originalRequest.headers.Authorization = `Bearer ${access_token}`;
-        return customerApi(originalRequest);
-      } catch {
-        localStorage.removeItem('customer_access_token');
-        localStorage.removeItem('customer_refresh_token');
-        localStorage.removeItem('customer_user');
-        window.location.href = '/cliente/login';
-        return Promise.reject(error);
-      }
-    }
-    return Promise.reject(error);
-  }
-);
+// ── Customer Auth (registro continua funcionando) ─────────────────────────────
 
 export const customerAuthAPI = {
-  register: (data) => customerApi.post('/customer-auth/register', data),
-  login: (email, password) => customerApi.post('/customer-auth/login', { email, password }),
-  refresh: (refresh_token) => customerApi.post('/customer-auth/refresh', { refresh_token }),
-  forgotPassword: (email) => customerApi.post('/customer-auth/forgot-password', { email }),
-  resetPassword: (token, password) => customerApi.post('/customer-auth/reset-password', { token, password }),
+  register: (data) => api.post('/customer-auth/register', data),
+  login: (email, password) => api.post('/customer-auth/login', { email, password }),
+  refresh: (refresh_token) => api.post('/customer-auth/refresh', { refresh_token }),
+  forgotPassword: (email) => api.post('/customer-auth/forgot-password', { email }),
+  resetPassword: (token, password) => api.post('/customer-auth/reset-password', { token, password }),
 };
 
+// ── Customer Portal (agora usa token unificado) ───────────────────────────────
+
 export const customerPortalAPI = {
-  getMe: () => customerApi.get('/customer-portal/me').then((res) => res.data),
-  getWarranties: () => customerApi.get('/customer-portal/warranties').then((res) => res.data),
-  getInsuranceQuotes: () => customerApi.get('/customer-portal/insurance-quotes').then((res) => res.data),
-  getEvents: () => customerApi.get('/customer-portal/events').then((res) => res.data),
-  getBenefits: () => customerApi.get('/customer-portal/benefits').then((res) => res.data),
+  getMe: () => api.get('/customer-portal/me').then((res) => res.data),
+  getWarranties: () => api.get('/customer-portal/warranties').then((res) => res.data),
+  getInsuranceQuotes: () => api.get('/customer-portal/insurance-quotes').then((res) => res.data),
+  getEvents: () => api.get('/customer-portal/events').then((res) => res.data),
+  getBenefits: () => api.get('/customer-portal/benefits').then((res) => res.data),
 };

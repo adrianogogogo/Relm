@@ -1,11 +1,11 @@
 import { Navigate } from 'react-router-dom';
-import { useStoreAuthStore } from '../store/storeAuthStore';
+import { useAuthStore } from '../store/authStore';
 
 export default function StoreProtectedRoute({ children }) {
-  const { isAuthenticated } = useStoreAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
-  if (!isAuthenticated) {
-    return <Navigate to="/loja/login" replace />;
+  if (!isAuthenticated || user?.userType !== 'STORE') {
+    return <Navigate to="/login" replace />;
   }
 
   return children;

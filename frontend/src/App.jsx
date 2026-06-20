@@ -14,6 +14,8 @@ import { useThemeStore } from './store/themeStore';
 // Public pages
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import WarrantyPage from './pages/WarrantyPage';
 import BenefitsPage from './pages/BenefitsPage';
 import EventsPage from './pages/EventsPage';
@@ -22,10 +24,7 @@ import NewsletterPage from './pages/NewsletterPage';
 import ValidateWarrantyPage from './pages/ValidateWarrantyPage';
 
 // Customer portal pages
-import CustomerLoginPage from './pages/CustomerLoginPage';
 import CustomerRegisterPage from './pages/CustomerRegisterPage';
-import CustomerForgotPasswordPage from './pages/CustomerForgotPasswordPage';
-import CustomerResetPasswordPage from './pages/CustomerResetPasswordPage';
 import CustomerDashboard from './pages/CustomerDashboard';
 import CustomerWarrantiesPage from './pages/CustomerWarrantiesPage';
 import CustomerEventsPage from './pages/CustomerEventsPage';
@@ -33,14 +32,7 @@ import CustomerBenefitsPage from './pages/CustomerBenefitsPage';
 import CustomerInsurancePage from './pages/CustomerInsurancePage';
 import CustomerProfilePage from './pages/CustomerProfilePage';
 
-// Partner portals
-import PortaisPage from './pages/PortaisPage';
-import DistribuidorLoginPage from './pages/DistribuidorLoginPage';
-
 // Store portal pages
-import StoreLoginPage from './pages/StoreLoginPage';
-import StoreForgotPasswordPage from './pages/StoreForgotPasswordPage';
-import StoreResetPasswordPage from './pages/StoreResetPasswordPage';
 import StoreDashboard from './pages/StoreDashboard';
 import StoreCustomersPage from './pages/StoreCustomersPage';
 import StoreWarrantiesPage from './pages/StoreWarrantiesPage';
@@ -100,6 +92,8 @@ export default function App() {
           <Route element={<PublicLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
+            <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
             <Route path="/garantia" element={<WarrantyPage />} />
             <Route path="/vantagens" element={<BenefitsPage />} />
             <Route path="/eventos" element={<EventsPage />} />
@@ -108,15 +102,8 @@ export default function App() {
             <Route path="/validar-garantia/:token" element={<ValidateWarrantyPage />} />
           </Route>
 
-          {/* ── Partner portals ─────────────────────────────────────────── */}
-          <Route path="/portais" element={<PortaisPage />} />
-          <Route path="/distribuidor/login" element={<DistribuidorLoginPage />} />
-
           {/* ── Customer portal ──────────────────────────────────────────── */}
-          <Route path="/cliente/login" element={<CustomerLoginPage />} />
           <Route path="/cliente/cadastro" element={<CustomerRegisterPage />} />
-          <Route path="/cliente/esqueci-senha" element={<CustomerForgotPasswordPage />} />
-          <Route path="/cliente/redefinir-senha" element={<CustomerResetPasswordPage />} />
           <Route
             path="/cliente"
             element={
@@ -134,9 +121,6 @@ export default function App() {
           </Route>
 
           {/* ── Store portal (StoreLayout sidebar, no Header/Footer) ──────── */}
-          <Route path="/loja/login" element={<StoreLoginPage />} />
-          <Route path="/loja/esqueci-senha" element={<StoreForgotPasswordPage />} />
-          <Route path="/loja/redefinir-senha" element={<StoreResetPasswordPage />} />
           <Route
             path="/loja"
             element={
