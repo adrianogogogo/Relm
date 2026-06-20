@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Trash2, Plus, Store, CheckCircle, Ban, Users } from 'lucide-react';
 import { storesAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { Card, PageHeader, StatusChip, StatCard, Button } from '../components/ui';
 
 export default function StoresPage() {
   const { user } = useAuthStore();
@@ -49,110 +50,49 @@ export default function StoresPage() {
     : { total: 0, active: 0, inactive: 0, totalCustomers: 0 };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="py-8 px-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Lojas Parceiras</h1>
-              <p className="mt-2 text-gray-600">Gerencie a rede de lojas autorizadas Relm</p>
-            </div>
-            <Link
-              to="/admin/stores/new"
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Nova Loja
+        <PageHeader
+          title="Lojas Parceiras"
+          subtitle={`${stats.total} loja(s) encontrada(s)`}
+          action={
+            <Link to="/admin/stores/new">
+              <Button icon={Plus}>Nova Loja</Button>
             </Link>
-          </div>
-        </div>
+          }
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-blue-100 rounded-md p-3">
-                <Store className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Total de Lojas</dt>
-                  <dd className="text-2xl font-semibold text-gray-900">{stats.total}</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-green-100 rounded-md p-3">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Lojas Ativas</dt>
-                  <dd className="text-2xl font-semibold text-gray-900">{stats.active}</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-gray-100 rounded-md p-3">
-                <Ban className="h-6 w-6 text-gray-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Lojas Inativas</dt>
-                  <dd className="text-2xl font-semibold text-gray-900">{stats.inactive}</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 bg-purple-100 rounded-md p-3">
-                <Users className="h-6 w-6 text-purple-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Clientes Total</dt>
-                  <dd className="text-2xl font-semibold text-gray-900">{stats.totalCustomers}</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
+          <StatCard title="Total de Lojas" value={stats.total} icon={Store} color="#1565C0" />
+          <StatCard title="Lojas Ativas" value={stats.active} icon={CheckCircle} color="#4CAF50" />
+          <StatCard title="Lojas Inativas" value={stats.inactive} icon={Ban} color="#666666" />
+          <StatCard title="Clientes Total" value={stats.totalCustomers} icon={Users} color="#9C27B0" />
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <Card className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
-                Buscar
-              </label>
+              <label htmlFor="search" className="label">Buscar</label>
               <input
                 type="text"
                 id="search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Nome, cidade, CNPJ..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="input"
               />
             </div>
 
             <div>
-              <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
-                Estado
-              </label>
+              <label htmlFor="state" className="label">Estado</label>
               <select
                 id="state"
                 value={stateFilter}
                 onChange={(e) => setStateFilter(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="input"
               >
                 <option value="">Todos os estados</option>
                 {states.map((state) => (
@@ -164,14 +104,12 @@ export default function StoresPage() {
             </div>
 
             <div>
-              <label htmlFor="active" className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
+              <label htmlFor="active" className="label">Status</label>
               <select
                 id="active"
                 value={activeFilter}
                 onChange={(e) => setActiveFilter(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                className="input"
               >
                 <option value="">Todos</option>
                 <option value="true">Ativas</option>
@@ -179,90 +117,64 @@ export default function StoresPage() {
               </select>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <Card className="p-0 overflow-hidden">
           {isLoading ? (
             <div className="p-12 text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="mt-2 text-gray-500">Carregando lojas...</p>
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="mt-2 text-gray-500 dark:text-slate-400">Carregando lojas...</p>
             </div>
           ) : stores && stores.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
+                <thead className="bg-slate-50 dark:bg-slate-900/40">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Loja
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Localização
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Contato
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Clientes
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ações
-                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Loja</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Localização</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Contato</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Clientes</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
                   {stores.map((store) => (
-                    <tr key={store.id} className="hover:bg-gray-50">
+                    <tr key={store.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{store.tradeName}</div>
-                            <div className="text-sm text-gray-500">{store.cnpjFormatted || 'Sem CNPJ'}</div>
-                          </div>
-                        </div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-slate-100">{store.tradeName}</div>
+                        <div className="text-sm text-gray-500 dark:text-slate-400">{store.cnpjFormatted || 'Sem CNPJ'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {store.city}, {store.state}
-                        </div>
-                        {store.address && <div className="text-sm text-gray-500">{store.address}</div>}
+                        <div className="text-sm text-gray-900 dark:text-slate-100">{store.city}, {store.state}</div>
+                        {store.address && <div className="text-sm text-gray-500 dark:text-slate-400">{store.address}</div>}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{store.phone || '-'}</div>
-                        <div className="text-sm text-gray-500">{store.email || '-'}</div>
+                        <div className="text-sm text-gray-900 dark:text-slate-100">{store.phone || '-'}</div>
+                        <div className="text-sm text-gray-500 dark:text-slate-400">{store.email || '-'}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-slate-100">
                         {store._count?.customers || 0}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {store.active ? (
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            Ativa
-                          </span>
-                        ) : (
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                            Inativa
-                          </span>
-                        )}
+                        <StatusChip
+                          label={store.active ? 'Ativa' : 'Inativa'}
+                          variant={store.active ? 'success' : 'neutral'}
+                        />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-4">
-                          <Link
-                            to={`/admin/stores/${store.id}/edit`}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
+                          <Link to={`/admin/stores/${store.id}/edit`} className="text-primary dark:text-primary-400 hover:underline font-semibold">
                             Editar
                           </Link>
-                          <Link to={`/admin/stores/${store.id}`} className="text-gray-600 hover:text-gray-900">
+                          <Link to={`/admin/stores/${store.id}`} className="text-gray-600 dark:text-slate-300 hover:underline">
                             Ver Detalhes
                           </Link>
                           {isAdmin && (
                             <button
                               onClick={() => handleDelete(store)}
-                              className="text-gray-400 hover:text-red-600 transition-colors"
+                              className="text-gray-400 hover:text-error transition-colors"
                               title="Excluir loja"
                             >
                               <Trash2 size={16} />
@@ -277,21 +189,17 @@ export default function StoresPage() {
             </div>
           ) : (
             <div className="p-12 text-center">
-              <Store className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhuma loja encontrada</h3>
-              <p className="mt-1 text-sm text-gray-500">Comece cadastrando uma nova loja parceira.</p>
-              <div className="mt-6">
-                <Link
-                  to="/admin/stores/new"
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Nova Loja
+              <Store className="mx-auto h-12 w-12 text-gray-400 dark:text-slate-600" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-slate-100">Nenhuma loja encontrada</h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">Comece cadastrando uma nova loja parceira.</p>
+              <div className="mt-6 flex justify-center">
+                <Link to="/admin/stores/new">
+                  <Button icon={Plus}>Nova Loja</Button>
                 </Link>
               </div>
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );
