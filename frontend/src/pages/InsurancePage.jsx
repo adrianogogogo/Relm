@@ -1,19 +1,20 @@
 import { Shield, DollarSign, Zap, AlertTriangle } from 'lucide-react';
+import { PageHeader } from '../components/ui';
 
 export default function InsurancePage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-app dark:bg-app-dark py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h1 className="text-4xl font-bold mb-4">Cotação de Seguro</h1>
-            <p className="text-gray-600 mb-8">
-              Proteja sua bike com nossos planos de seguro especiais.
-            </p>
+          <div className="card p-8">
+            <PageHeader
+              title="Cotação de Seguro"
+              subtitle="Proteja sua bike com nossos planos de seguro especiais."
+            />
 
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-8 flex items-start gap-3">
-              <AlertTriangle className="text-blue-500 shrink-0 mt-0.5" size={20} />
-              <p className="text-blue-700">
+            <div className="bg-info/10 border-l-4 border-info p-4 mb-8 flex items-start gap-3 rounded">
+              <AlertTriangle className="text-info shrink-0 mt-0.5" size={20} />
+              <p className="text-info-700 dark:text-info-100 text-sm">
                 Funcionalidade em desenvolvimento. Em breve você poderá cotar seguros
                 diretamente pelo portal!
               </p>
@@ -22,17 +23,17 @@ export default function InsurancePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="card text-center">
                 <div className="text-primary mb-3 flex justify-center"><Shield size={32} /></div>
-                <h3 className="font-bold text-lg mb-2">Proteção Total</h3>
+                <h3 className="font-title font-bold text-lg mb-2">Proteção Total</h3>
                 <p className="text-sm text-gray-600">Cobertura completa contra roubo e danos</p>
               </div>
               <div className="card text-center">
                 <div className="text-primary mb-3 flex justify-center"><DollarSign size={32} /></div>
-                <h3 className="font-bold text-lg mb-2">Melhor Preço</h3>
+                <h3 className="font-title font-bold text-lg mb-2">Melhor Preço</h3>
                 <p className="text-sm text-gray-600">Condições especiais para clientes Relm</p>
               </div>
               <div className="card text-center">
                 <div className="text-primary mb-3 flex justify-center"><Zap size={32} /></div>
-                <h3 className="font-bold text-lg mb-2">Cotação Rápida</h3>
+                <h3 className="font-title font-bold text-lg mb-2">Cotação Rápida</h3>
                 <p className="text-sm text-gray-600">Receba sua cotação em minutos</p>
               </div>
             </div>

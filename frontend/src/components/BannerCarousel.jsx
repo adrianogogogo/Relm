@@ -88,7 +88,7 @@ const BannerCarousel = () => {
       {/* Banner Content */}
       <div className="relative h-full container mx-auto px-4 flex items-center">
         <div className="text-white max-w-2xl">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
+          <h2 className="font-title text-4xl md:text-5xl font-bold mb-4">
             {currentBanner.title}
           </h2>
           {currentBanner.subtitle && (
@@ -99,7 +99,7 @@ const BannerCarousel = () => {
           {currentBanner.linkUrl && currentBanner.linkText && (
             <a
               href={currentBanner.linkUrl}
-              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors duration-200"
+              className="inline-block bg-primary hover:bg-primary-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors duration-200"
             >
               {currentBanner.linkText}
             </a>

@@ -58,9 +58,9 @@ export default function HomePage() {
       <BannerCarousel />
 
       {/* Features Grid */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-app dark:bg-app-dark">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12">
+          <h2 className="font-title text-4xl font-bold text-center mb-12">
             Nossos Serviços
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -68,12 +68,12 @@ export default function HomePage() {
               <Link
                 key={index}
                 to={feature.link}
-                className="card hover:scale-105 transition-transform"
+                className="card hover:shadow-lg transition-shadow"
               >
-                <div className="text-primary dark:text-white mb-4 flex justify-center">
+                <div className="text-primary dark:text-primary-400 mb-4 flex justify-center">
                   <feature.icon size={48} className="stroke-[1.5]" />
                 </div>
-                <h3 className="text-2xl font-bold mb-3">{feature.title}</h3>
+                <h3 className="font-title text-2xl font-bold mb-3">{feature.title}</h3>
                 <p className="text-gray-600">{feature.description}</p>
               </Link>
             ))}
@@ -85,9 +85,9 @@ export default function HomePage() {
       <StoreLocator />
 
       {/* CTA Section */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-white dark:bg-surface-dark">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold mb-6">Pronto para começar?</h2>
+          <h2 className="font-title text-4xl font-bold mb-6">Pronto para começar?</h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Tenha acesso completo ao sistema de garantias, vantagens exclusivas
             e muito mais.

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { warrantyAPI } from '../services/api';
+import { PageHeader } from '../components/ui';
 
 export default function WarrantyPage() {
   const [success, setSuccess] = useState(false);
@@ -98,11 +99,11 @@ export default function WarrantyPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
+      <div className="min-h-screen bg-app dark:bg-app-dark py-12">
         <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="max-w-2xl mx-auto card p-8 text-center">
             <div className="text-6xl mb-4">✅</div>
-            <h2 className="text-3xl font-bold text-green-600 mb-4">
+            <h2 className="font-title text-3xl font-bold text-success mb-4">
               Garantia Registrada com Sucesso!
             </h2>
             <p className="text-xl text-gray-700 mb-6">
@@ -124,18 +125,18 @@ export default function WarrantyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-app dark:bg-app-dark py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h1 className="text-4xl font-bold mb-2">Solicitação de Garantia</h1>
-            <p className="text-gray-600 mb-8">
-              Preencha o formulário abaixo para registrar sua solicitação de garantia.
-            </p>
+          <div className="card p-8">
+            <PageHeader
+              title="Solicitação de Garantia"
+              subtitle="Preencha o formulário abaixo para registrar sua solicitação de garantia."
+            />
 
             {mutation.isError && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-                <p className="text-red-700">
+              <div className="bg-error/10 border-l-4 border-error p-4 mb-6 rounded">
+                <p className="text-error font-medium text-sm">
                   Erro ao enviar solicitação. Tente novamente.
                 </p>
               </div>
@@ -144,7 +145,7 @@ export default function WarrantyPage() {
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Customer Info */}
               <section>
-                <h2 className="text-2xl font-bold mb-4">Dados do Cliente</h2>
+                <h2 className="font-title text-2xl font-bold mb-4">Dados do Cliente</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <label className="label">Nome Completo *</label>
@@ -247,7 +248,7 @@ export default function WarrantyPage() {
 
               {/* Product Info */}
               <section>
-                <h2 className="text-2xl font-bold mb-4">Dados do Produto</h2>
+                <h2 className="font-title text-2xl font-bold mb-4">Dados do Produto</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="label">Marca *</label>
@@ -336,7 +337,7 @@ export default function WarrantyPage() {
 
               {/* Issue Description */}
               <section>
-                <h2 className="text-2xl font-bold mb-4">Descrição do Problema</h2>
+                <h2 className="font-title text-2xl font-bold mb-4">Descrição do Problema</h2>
                 <textarea
                   required
                   rows="6"

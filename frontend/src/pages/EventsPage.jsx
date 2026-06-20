@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PartyPopper, Calendar, MapPin, Users } from 'lucide-react';
 import { eventsAPI } from '../services/api';
+import { PageHeader, StatusChip } from '../components/ui';
 
 function RegisterModal({ event, onClose }) {
   const queryClient = useQueryClient();
@@ -59,41 +60,41 @@ function RegisterModal({ event, onClose }) {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-4 text-sm">
+              <div className="bg-error/10 border-l-4 border-error text-error rounded p-3 mb-4 text-sm font-medium">
                 {error}
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome completo *</label>
+                <label className="label">Nome completo *</label>
                 <input
                   type="text"
                   value={form.fullName}
                   onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="input"
                   placeholder="Seu nome completo"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">E-mail *</label>
+                <label className="label">E-mail *</label>
                 <input
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="input"
                   placeholder="seu@email.com"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                <label className="label">Telefone</label>
                 <input
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="input"
                   placeholder="(11) 99999-9999"
                 />
               </div>
@@ -126,13 +127,13 @@ export default function EventsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-app dark:bg-app-dark py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold mb-4">Eventos Relm</h1>
-          <p className="text-xl text-gray-600 mb-12">
-            Participe dos nossos eventos exclusivos!
-          </p>
+          <PageHeader
+            title="Eventos Relm"
+            subtitle="Participe dos nossos eventos exclusivos!"
+          />
 
           {isLoading ? (
             <div className="text-center py-12">
@@ -153,16 +154,16 @@ export default function EventsPage() {
 
                 return (
                   <div key={event.id} className="card">
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className="text-2xl font-bold">{event.title}</h3>
+                    <div className="flex items-start justify-between gap-2 mb-4">
+                      <h3 className="font-title text-2xl font-bold">{event.title}</h3>
                       {event.active && !isFull && (
-                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full whitespace-nowrap ml-2">
-                          Inscrições Abertas
+                        <span className="shrink-0 mt-1">
+                          <StatusChip label="Inscrições Abertas" variant="success" />
                         </span>
                       )}
                       {isFull && (
-                        <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full whitespace-nowrap ml-2">
-                          Esgotado
+                        <span className="shrink-0 mt-1">
+                          <StatusChip label="Esgotado" variant="error" />
                         </span>
                       )}
                     </div>

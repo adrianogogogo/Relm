@@ -31,11 +31,11 @@ export default function StoreLocator() {
   ];
 
   return (
-    <div id="localizador" className="py-16 bg-gray-50">
+    <div id="localizador" className="py-16 bg-app dark:bg-app-dark">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="font-title text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Encontre uma Loja Autorizada
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
@@ -44,11 +44,11 @@ export default function StoreLocator() {
         </div>
 
         {/* Search Form */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <div className="card p-6 mb-8">
           <form onSubmit={handleSearch} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="city" className="label">
                   Cidade
                 </label>
                 <input
@@ -57,19 +57,19 @@ export default function StoreLocator() {
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   placeholder="Digite sua cidade..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="input"
                 />
               </div>
 
               <div>
-                <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="state" className="label">
                   Estado
                 </label>
                 <select
                   id="state"
                   value={state}
                   onChange={(e) => setState(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="input"
                 >
                   <option value="">Todos</option>
                   {states.map((st) => (
@@ -85,7 +85,7 @@ export default function StoreLocator() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn btn-primary px-8 py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <>
@@ -108,7 +108,7 @@ export default function StoreLocator() {
           <div>
             {isLoading ? (
               <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 <p className="mt-2 text-gray-500">Buscando lojas...</p>
               </div>
             ) : stores && stores.length > 0 ? (
@@ -116,12 +116,12 @@ export default function StoreLocator() {
                 {stores.map((store) => (
                   <div
                     key={store.id}
-                    className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden"
+                    className="card p-0 overflow-hidden hover:shadow-lg transition-shadow duration-200"
                   >
                     {/* Store Header */}
-                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 text-white">
-                      <h3 className="text-xl font-bold mb-1">{store.tradeName}</h3>
-                      <p className="text-blue-100 text-sm">
+                    <div className="bg-gradient-to-r from-primary to-primary-700 p-4 text-white">
+                      <h3 className="font-title text-xl font-bold mb-1">{store.tradeName}</h3>
+                      <p className="text-primary-100 text-sm">
                         {store.city}, {store.state}
                       </p>
                     </div>
@@ -138,7 +138,7 @@ export default function StoreLocator() {
                       {store.phone && (
                         <div className="flex items-center">
                           <Phone className="h-5 w-5 text-gray-400 mr-2 flex-shrink-0" />
-                          <a href={`tel:${store.phone}`} className="text-sm text-blue-600 hover:text-blue-800">
+                          <a href={`tel:${store.phone}`} className="text-sm text-primary hover:text-primary-700">
                             {store.phone}
                           </a>
                         </div>
@@ -149,7 +149,7 @@ export default function StoreLocator() {
                           <Mail className="h-5 w-5 text-gray-400 mr-2 flex-shrink-0" />
                           <a
                             href={`mailto:${store.email}`}
-                            className="text-sm text-blue-600 hover:text-blue-800 truncate"
+                            className="text-sm text-primary hover:text-primary-700 truncate"
                           >
                             {store.email}
                           </a>
@@ -160,7 +160,7 @@ export default function StoreLocator() {
                         <div className="mt-4 pt-3 border-t border-gray-200">
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-gray-500">Distância aproximada:</span>
-                            <span className="text-sm font-semibold text-blue-600">
+                            <span className="text-sm font-semibold text-primary">
                               {store.distance} km
                             </span>
                           </div>
@@ -175,7 +175,7 @@ export default function StoreLocator() {
                               href={`https://www.google.com/maps/search/?api=1&query=${store.latitude},${store.longitude}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50"
+                              className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-primary text-sm font-medium rounded-lg text-primary bg-white hover:bg-primary hover:text-white transition-colors"
                             >
                               <Map className="h-4 w-4 mr-1" />
                               Ver no Mapa
@@ -184,7 +184,7 @@ export default function StoreLocator() {
                           {store.phone && (
                             <a
                               href={`tel:${store.phone}`}
-                              className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                              className="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary-600 transition-colors"
                             >
                               <Phone className="h-4 w-4 mr-1" />
                               Ligar
@@ -197,7 +197,7 @@ export default function StoreLocator() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 bg-white rounded-lg shadow">
+              <div className="text-center py-12 card">
                 <Store className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhuma loja encontrada</h3>
                 <p className="mt-1 text-sm text-gray-500">
@@ -210,14 +210,14 @@ export default function StoreLocator() {
 
         {/* Info Banner */}
         {!searchPerformed && (
-          <div className="mt-8 bg-blue-50 border-l-4 border-blue-600 p-6 rounded-r-lg">
+          <div className="mt-8 bg-info/10 border-l-4 border-info p-6 rounded-r-lg">
             <div className="flex">
               <div className="flex-shrink-0">
-                <Info className="h-6 w-6 text-blue-600" />
+                <Info className="h-6 w-6 text-info" />
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-blue-800">Encontre lojas autorizadas Relm</h3>
-                <div className="mt-2 text-sm text-blue-700">
+                <h3 className="text-sm font-semibold text-info-700 dark:text-info-100">Encontre lojas autorizadas Relm</h3>
+                <div className="mt-2 text-sm text-info-700 dark:text-info-100">
                   <p>
                     Nossas lojas parceiras oferecem produtos originais, garantia estendida e suporte técnico
                     especializado. Use os filtros acima para encontrar a loja mais próxima de você.

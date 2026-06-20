@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { benefitsAPI } from '../services/api';
+import { PageHeader, StatusChip } from '../components/ui';
 
 export default function BenefitsPage() {
   const { data: benefits, isLoading } = useQuery({
@@ -8,13 +9,13 @@ export default function BenefitsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-app dark:bg-app-dark py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold mb-4">Clube de Vantagens</h1>
-          <p className="text-xl text-gray-600 mb-12">
-            Benefícios exclusivos para você!
-          </p>
+          <PageHeader
+            title="Clube de Vantagens"
+            subtitle="Benefícios exclusivos para você!"
+          />
 
           {isLoading ? (
             <div className="text-center py-12">
@@ -25,12 +26,8 @@ export default function BenefitsPage() {
               {benefits?.map((benefit) => (
                 <div key={benefit.id} className="card">
                   <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-xl font-bold">{benefit.title}</h3>
-                    {benefit.active && (
-                      <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                        Ativo
-                      </span>
-                    )}
+                    <h3 className="font-title text-xl font-bold">{benefit.title}</h3>
+                    {benefit.active && <StatusChip label="Ativo" variant="success" />}
                   </div>
                   <p className="text-gray-600 mb-4">{benefit.description}</p>
                   <div className="text-sm text-gray-500 space-y-2">
