@@ -22,9 +22,9 @@ export default function ValidateWarrantyPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
+      <div className="min-h-screen bg-app dark:bg-app-dark flex items-center justify-center py-12 px-4">
         <div className="max-w-md w-full text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
           <p className="text-gray-600">Validando garantia...</p>
         </div>
       </div>
@@ -33,17 +33,17 @@ export default function ValidateWarrantyPage() {
 
   if (error || !data?.valid) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
+      <div className="min-h-screen bg-app dark:bg-app-dark flex items-center justify-center py-12 px-4">
         <div className="max-w-md w-full">
-          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
-              <X className="h-8 w-8 text-red-600" />
+          <div className="card p-8 text-center">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-error/15 mb-4">
+              <X className="h-8 w-8 text-error" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Token Inválido</h2>
+            <h2 className="font-title text-2xl font-bold text-gray-900 mb-2">Token Inválido</h2>
             <p className="text-gray-600 mb-6">
               {error?.response?.data?.message || 'Não foi possível validar esta garantia. Verifique o link e tente novamente.'}
             </p>
-            <Link to="/" className="inline-block px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+            <Link to="/" className="btn btn-primary inline-flex">
               Voltar para a Home
             </Link>
           </div>
@@ -55,15 +55,15 @@ export default function ValidateWarrantyPage() {
   const { warranty } = data;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 py-12 px-4">
+    <div className="min-h-screen bg-app dark:bg-app-dark py-12 px-4">
       <div className="max-w-3xl mx-auto">
         {/* Success Header */}
-        <div className="bg-white rounded-lg shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-green-600 to-green-700 px-8 py-6 text-center">
+        <div className="card p-0 overflow-hidden">
+          <div className="bg-gradient-to-r from-success-600 to-success-700 px-8 py-6 text-center">
             <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-white mb-4">
-              <Check className="h-12 w-12 text-green-600" />
+              <Check className="h-12 w-12 text-success-600" />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Garantia Validada!</h1>
+            <h1 className="font-title text-3xl font-bold text-white mb-2">Garantia Validada!</h1>
             <p className="text-green-100">Sua garantia Relm Bikes está ativa e protegida</p>
           </div>
 
@@ -76,9 +76,9 @@ export default function ValidateWarrantyPage() {
             </div>
 
             {/* Customer Info */}
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <User className="h-5 w-5 mr-2 text-blue-600" />
+            <div className="bg-gray-50 dark:bg-slate-900/40 rounded-lg p-6">
+              <h3 className="font-title text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <User className="h-5 w-5 mr-2 text-primary" />
                 Dados do Cliente
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -94,9 +94,9 @@ export default function ValidateWarrantyPage() {
             </div>
 
             {/* Product Info */}
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Package className="h-5 w-5 mr-2 text-blue-600" />
+            <div className="bg-gray-50 dark:bg-slate-900/40 rounded-lg p-6">
+              <h3 className="font-title text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <Package className="h-5 w-5 mr-2 text-primary" />
                 Produto Coberto
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -117,9 +117,9 @@ export default function ValidateWarrantyPage() {
 
             {/* Store Info */}
             {warranty.store && (
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <Store className="h-5 w-5 mr-2 text-blue-600" />
+              <div className="bg-gray-50 dark:bg-slate-900/40 rounded-lg p-6">
+                <h3 className="font-title text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Store className="h-5 w-5 mr-2 text-primary" />
                   Loja de Compra
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -144,15 +144,15 @@ export default function ValidateWarrantyPage() {
             )}
 
             {/* Dates */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
-                <Calendar className="h-5 w-5 mr-2 text-blue-600" />
+            <div className="bg-info/10 border border-info/30 rounded-lg p-6">
+              <h3 className="font-title text-lg font-semibold text-info-700 dark:text-info-100 mb-4 flex items-center">
+                <Calendar className="h-5 w-5 mr-2 text-info" />
                 Informações de Validação
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-blue-700">Data de Aprovação</p>
-                  <p className="font-medium text-blue-900">
+                  <p className="text-info-700 dark:text-info-100">Data de Aprovação</p>
+                  <p className="font-medium text-info-700 dark:text-info-100">
                     {new Date(warranty.approvedAt).toLocaleDateString('pt-BR', {
                       day: '2-digit',
                       month: 'long',
@@ -161,8 +161,8 @@ export default function ValidateWarrantyPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-blue-700">Primeira Validação</p>
-                  <p className="font-medium text-blue-900">
+                  <p className="text-info-700 dark:text-info-100">Primeira Validação</p>
+                  <p className="font-medium text-info-700 dark:text-info-100">
                     {new Date(warranty.validatedAt).toLocaleDateString('pt-BR', {
                       day: '2-digit',
                       month: 'long',
@@ -176,14 +176,14 @@ export default function ValidateWarrantyPage() {
             </div>
 
             {/* Important Info */}
-            <div className="bg-green-50 border-l-4 border-green-600 p-6 rounded-r-lg">
+            <div className="bg-success/10 border-l-4 border-success p-6 rounded-r-lg">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+                  <CheckCircle className="h-6 w-6 text-success" />
                 </div>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-green-800">Garantia Ativa e Protegida</h3>
-                  <div className="mt-2 text-sm text-green-700">
+                  <h3 className="text-sm font-semibold text-success-700 dark:text-success-100">Garantia Ativa e Protegida</h3>
+                  <div className="mt-2 text-sm text-success-700 dark:text-success-100">
                     <p>
                       Sua garantia Relm Bikes está ativa. Em caso de necessidade de assistência, apresente este
                       protocolo em qualquer loja autorizada.
@@ -197,14 +197,14 @@ export default function ValidateWarrantyPage() {
             <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
               <button
                 onClick={() => window.print()}
-                className="flex-1 inline-flex items-center justify-center px-6 py-3 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className="btn btn-outline flex-1"
               >
                 <Printer className="h-5 w-5 mr-2" />
                 Imprimir Comprovante
               </button>
               <Link
                 to="/"
-                className="flex-1 inline-flex items-center justify-center px-6 py-3 border border-transparent rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                className="btn btn-primary flex-1"
               >
                 <Home className="h-5 w-5 mr-2" />
                 Voltar para a Home
@@ -217,7 +217,7 @@ export default function ValidateWarrantyPage() {
         <div className="mt-8 text-center text-sm text-gray-600">
           <p>
             Dúvidas? Entre em contato:{' '}
-            <a href="mailto:garantias@relmbikes.com.br" className="text-blue-600 hover:text-blue-800">
+            <a href="mailto:garantias@relmbikes.com.br" className="text-primary hover:text-primary-700">
               garantias@relmbikes.com.br
             </a>
           </p>
