@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { ArrowLeft, Gift, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Gift, Plus, Pencil, Trash2, X } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { PageHeader, StatusChip, Button } from '../components/ui';
 
 const EMPTY_FORM = {
   title: '',
@@ -55,76 +56,76 @@ function BenefitModal({ benefit, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 max-h-screen overflow-y-auto">
+      <div className="bg-white dark:bg-surface-dark rounded-xl shadow-2xl max-w-lg w-full p-6 max-h-screen overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold">{isEdit ? 'Editar Benefício' : 'Novo Benefício'}</h3>
-          <button onClick={onClose}><X className="w-5 h-5 text-gray-400 hover:text-gray-600" /></button>
+          <h3 className="font-title text-lg font-bold text-gray-900 dark:text-slate-100">{isEdit ? 'Editar Benefício' : 'Novo Benefício'}</h3>
+          <button onClick={onClose}><X className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200" /></button>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-4 text-sm">{error}</div>
+          <div className="bg-error/10 border border-error/30 text-error rounded-lg p-3 mb-4 text-sm">{error}</div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+            <label className="label">Título *</label>
             <input
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="input"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descrição *</label>
+            <label className="label">Descrição *</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               rows={3}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="input"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Termos e Condições</label>
+            <label className="label">Termos e Condições</label>
             <textarea
               value={form.terms}
               onChange={(e) => setForm({ ...form, terms: e.target.value })}
               rows={2}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="input"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Válido de *</label>
+              <label className="label">Válido de *</label>
               <input
                 type="date"
                 value={form.validFrom}
                 onChange={(e) => setForm({ ...form, validFrom: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="input"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Válido até *</label>
+              <label className="label">Válido até *</label>
               <input
                 type="date"
                 value={form.validUntil}
                 onChange={(e) => setForm({ ...form, validUntil: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="input"
                 required
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Público-alvo</label>
+            <label className="label">Público-alvo</label>
             <div className="flex flex-wrap gap-4 mt-2">
               {[
                 { id: 'CLIENTE', label: 'Clientes' },
                 { id: 'LOJA', label: 'Lojas' },
                 { id: 'DISTRIBUIDOR', label: 'Distribuidores' }
               ].map((role) => (
-                <label key={role.id} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <label key={role.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={form.targetRoles.includes(role.id)}
@@ -140,7 +141,7 @@ function BenefitModal({ benefit, onClose }) {
                 </label>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-1">Se nenhum público for selecionado, o benefício ficará disponível para todos.</p>
+            <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">Se nenhum público for selecionado, o benefício ficará disponível para todos.</p>
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="btn btn-outline flex-1">Cancelar</button>
@@ -176,52 +177,41 @@ export default function AdminBenefitsPage() {
   const handleClose = () => setShowModal(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4 max-w-6xl">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Link to="/admin" className="text-gray-500 hover:text-gray-700">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Benefícios</h1>
-              <p className="text-gray-600 mt-1">Gerencie o clube de vantagens Relm</p>
-            </div>
-          </div>
-          <button onClick={handleNew} className="btn btn-primary flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Novo Benefício
-          </button>
-        </div>
+    <div className="py-8 px-6">
+      <div className="max-w-6xl mx-auto">
+        <PageHeader
+          title="Benefícios"
+          subtitle={`${benefits?.length ?? 0} benefício(s) cadastrado(s)`}
+          action={
+            <Button icon={Plus} onClick={handleNew}>Novo Benefício</Button>
+          }
+        />
 
         {isLoading ? (
-          <div className="text-center py-12 text-gray-500">Carregando benefícios...</div>
+          <div className="text-center py-12 text-gray-500 dark:text-slate-400">Carregando benefícios...</div>
         ) : benefits?.length === 0 ? (
           <div className="text-center py-12">
-            <Gift className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">Nenhum benefício cadastrado.</p>
-            <button onClick={handleNew} className="btn btn-primary mt-4">
+            <Gift className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
+            <p className="text-gray-500 dark:text-slate-400 text-lg">Nenhum benefício cadastrado.</p>
+            <button onClick={handleNew} className="btn btn-primary mt-4 mx-auto">
               Criar primeiro benefício
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {benefits.map((b) => (
-              <div key={b.id} className={`bg-white rounded-lg shadow-sm p-6 border-l-4 ${b.active ? 'border-green-500' : 'border-gray-300 opacity-60'}`}>
+              <div key={b.id} className={`card border-l-4 ${b.active ? 'border-l-success' : 'border-l-gray-300 dark:border-l-slate-600 opacity-60'}`}>
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1">
-                    <h3 className="font-bold text-gray-900 text-lg">{b.title}</h3>
+                    <h3 className="font-bold text-gray-900 dark:text-slate-100 text-lg">{b.title}</h3>
                     {b.targetRoles && b.targetRoles.length > 0 ? (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {b.targetRoles.map((role) => (
-                          <span key={role} className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full inline-block">
-                            {role}
-                          </span>
+                          <StatusChip key={role} label={role} variant="info" />
                         ))}
                       </div>
                     ) : (
-                      <span className="text-xs bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full mt-1 inline-block">
-                        Todos
-                      </span>
+                      <span className="mt-1 inline-block"><StatusChip label="Todos" variant="neutral" /></span>
                     )}
                   </div>
                   <div className="flex items-center gap-2 ml-2">
@@ -231,18 +221,18 @@ export default function AdminBenefitsPage() {
                     {isAdmin && (
                       <button
                         onClick={() => { if (confirm('Desativar este benefício?')) removeMutation.mutate(b.id); }}
-                        className="p-1.5 text-gray-400 hover:text-red-500 rounded"
+                        className="p-1.5 text-gray-400 hover:text-error rounded"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     )}
                   </div>
                 </div>
-                <p className="text-gray-600 text-sm mb-3 line-clamp-2">{b.description}</p>
-                <div className="text-xs text-gray-400">
+                <p className="text-gray-600 dark:text-slate-400 text-sm mb-3 line-clamp-2">{b.description}</p>
+                <div className="text-xs text-gray-400 dark:text-slate-500">
                   Vigência: {new Date(b.validFrom).toLocaleDateString('pt-BR')} — {new Date(b.validUntil).toLocaleDateString('pt-BR')}
                 </div>
-                {!b.active && <span className="text-xs text-gray-400 mt-1 block">Inativo</span>}
+                {!b.active && <span className="text-xs text-gray-400 dark:text-slate-500 mt-1 block">Inativo</span>}
               </div>
             ))}
           </div>
