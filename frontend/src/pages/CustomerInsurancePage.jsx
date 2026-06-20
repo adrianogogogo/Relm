@@ -1,12 +1,19 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Shield } from 'lucide-react';
+import { Shield, Plus } from 'lucide-react';
 import { customerPortalAPI } from '../services/api';
+import { Card, PageHeader, StatusChip, Button } from '../components/ui';
 
-const STATUS_COLOR = {
-  PENDING: 'bg-yellow-100 text-yellow-800',
-  ACTIVE: 'bg-green-100 text-green-800',
-  CANCELLED: 'bg-red-100 text-red-800',
+const STATUS_LABEL = {
+  PENDING: 'Aguardando',
+  ACTIVE: 'Ativa',
+  CANCELLED: 'Cancelada',
+};
+
+const STATUS_VARIANT = {
+  PENDING: 'warning',
+  ACTIVE: 'success',
+  CANCELLED: 'error',
 };
 
 export default function CustomerInsurancePage() {
@@ -16,71 +23,78 @@ export default function CustomerInsurancePage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-6">
+    <div className="py-8 px-6">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">Cotações de Seguro</h1>
-            <p className="text-gray-500 text-sm mt-1">Suas solicitações de seguro</p>
-          </div>
-          <Link to="/seguro" className="btn btn-primary text-sm">
-            + Nova cotação
-          </Link>
-        </div>
+        <PageHeader
+          title="Cotações de Seguro"
+          subtitle="Suas solicitações de seguro"
+          action={
+            <Link to="/seguro">
+              <Button icon={Plus}>Nova cotação</Button>
+            </Link>
+          }
+        />
 
         {isLoading ? (
-          <div className="text-center py-12 text-gray-400">Carregando...</div>
-        ) : quotes.length === 0 ? (
-          <div className="bg-white rounded-xl shadow p-12 text-center flex flex-col items-center">
-            <Shield className="h-12 w-12 text-gray-300 mb-4" />
-            <p className="text-gray-500 mb-4">Você ainda não tem cotações de seguro.</p>
-            <Link to="/seguro" className="btn btn-primary">Solicitar cotação</Link>
+          <div className="flex justify-center py-16">
+            <span className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           </div>
+        ) : quotes.length === 0 ? (
+          <Card className="p-12 text-center flex flex-col items-center">
+            <Shield className="h-12 w-12 text-gray-300 dark:text-slate-700 mb-4" />
+            <p className="text-gray-500 dark:text-slate-400 mb-4">Você ainda não tem cotações de seguro.</p>
+            <Link to="/seguro">
+              <Button>Solicitar cotação</Button>
+            </Link>
+          </Card>
         ) : (
           <div className="space-y-4">
             {quotes.map((q) => (
-              <div key={q.id} className="bg-white rounded-xl shadow p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="font-bold text-gray-800">{q.protocolNumber}</p>
+              <Card key={q.id}>
+                <div className="flex items-start justify-between mb-3 gap-3">
+                  <div className="min-w-0">
+                    <p className="font-bold text-gray-800 dark:text-slate-200">{q.protocolNumber}</p>
                     {q.product && (
-                      <p className="text-sm text-gray-500">{q.product.model} — {q.product.serialNumber}</p>
+                      <p className="text-sm text-gray-500 dark:text-slate-400">{q.product.model} — {q.product.serialNumber}</p>
                     )}
                   </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-semibold ${STATUS_COLOR[q.status] || 'bg-gray-100 text-gray-700'}`}>
-                    {q.status === 'PENDING' ? 'Aguardando' : q.status}
-                  </span>
+                  <div className="shrink-0">
+                    <StatusChip
+                      label={STATUS_LABEL[q.status] || q.status}
+                      variant={STATUS_VARIANT[q.status] || 'neutral'}
+                    />
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3 text-sm text-gray-600">
+                <div className="grid grid-cols-2 gap-3 text-sm text-gray-600 dark:text-slate-300">
                   {q.bikeValue && (
                     <div>
-                      <span className="text-xs text-gray-400 block">Valor da bike</span>
+                      <span className="text-xs text-gray-400 dark:text-slate-500 block">Valor da bike</span>
                       R$ {Number(q.bikeValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </div>
                   )}
                   {q.city && (
                     <div>
-                      <span className="text-xs text-gray-400 block">Localização</span>
+                      <span className="text-xs text-gray-400 dark:text-slate-500 block">Localização</span>
                       {q.city}/{q.state}
                     </div>
                   )}
                   {q.quoteValue && (
                     <div>
-                      <span className="text-xs text-gray-400 block">Valor do seguro</span>
+                      <span className="text-xs text-gray-400 dark:text-slate-500 block">Valor do seguro</span>
                       R$ {Number(q.quoteValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês
                     </div>
                   )}
                   {q.insuranceCompany && (
                     <div>
-                      <span className="text-xs text-gray-400 block">Seguradora</span>
+                      <span className="text-xs text-gray-400 dark:text-slate-500 block">Seguradora</span>
                       {q.insuranceCompany}
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-gray-400 mt-3">
+                <p className="text-xs text-gray-400 dark:text-slate-500 mt-3">
                   Solicitado em {new Date(q.createdAt).toLocaleDateString('pt-BR')}
                 </p>
-              </div>
+              </Card>
             ))}
           </div>
         )}
