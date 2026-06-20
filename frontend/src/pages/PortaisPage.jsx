@@ -3,13 +3,13 @@ import { Store, Truck, ArrowLeft } from 'lucide-react';
 
 export default function PortaisPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-auth-gradient flex flex-col items-center justify-center px-4 py-12">
       {/* Logo / header */}
       <div className="text-center mb-12">
         <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mb-5 shadow-xl">
-          <span className="text-4xl font-black text-primary leading-none">R</span>
+          <span className="font-title text-4xl font-black text-primary leading-none">R</span>
         </div>
-        <h1 className="text-4xl font-bold text-white mb-2">Portal de Parceiros</h1>
+        <h1 className="font-title text-4xl font-bold text-white mb-2">Portal de Parceiros</h1>
         <p className="text-gray-400 text-lg">Selecione seu tipo de acesso para continuar</p>
       </div>
 
@@ -18,7 +18,7 @@ export default function PortaisPage() {
         {/* Logistas */}
         <Link
           to="/loja/login"
-          className="group bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center text-center hover:bg-primary hover:scale-105 transition-all duration-200 cursor-pointer"
+          className="group bg-white rounded-3xl shadow-xl p-8 flex flex-col items-center text-center hover:bg-primary hover:scale-105 transition-all duration-200 cursor-pointer"
         >
           <div className="w-16 h-16 rounded-2xl bg-primary/10 group-hover:bg-white/20 flex items-center justify-center mb-5 transition-colors">
             <Store className="w-8 h-8 text-primary group-hover:text-white transition-colors" />
@@ -37,7 +37,7 @@ export default function PortaisPage() {
         {/* Distribuidores */}
         <Link
           to="/distribuidor/login"
-          className="group bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center text-center hover:bg-secondary hover:scale-105 transition-all duration-200 cursor-pointer"
+          className="group bg-white rounded-3xl shadow-xl p-8 flex flex-col items-center text-center hover:bg-secondary hover:scale-105 transition-all duration-200 cursor-pointer"
         >
           <div className="w-16 h-16 rounded-2xl bg-secondary/10 group-hover:bg-white/20 flex items-center justify-center mb-5 transition-colors">
             <Truck className="w-8 h-8 text-secondary group-hover:text-white transition-colors" />

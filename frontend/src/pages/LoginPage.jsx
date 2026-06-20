@@ -28,12 +28,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary to-secondary flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-auth-gradient flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full">
         {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 dark:border dark:border-slate-800">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            <img src="/logo-relm.png" alt="Relm Care+" className="h-12 w-auto mx-auto mb-6" />
+            <h1 className="font-title text-3xl font-bold text-gray-800 mb-2">
               Bem-vindo de volta
             </h1>
             <p className="text-gray-600">
@@ -42,8 +43,8 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-              <p className="text-red-700">{error}</p>
+            <div className="bg-error/10 border-l-4 border-error p-4 mb-6 rounded">
+              <p className="text-error font-medium text-sm">{error}</p>
             </div>
           )}
 
@@ -83,7 +84,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full btn btn-primary"
+              className="w-full btn btn-primary py-3 text-base font-bold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Entrando...' : 'Entrar'}
             </button>

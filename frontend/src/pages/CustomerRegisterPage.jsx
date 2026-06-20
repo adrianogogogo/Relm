@@ -49,22 +49,22 @@ export default function CustomerRegisterPage() {
   const displayError = localError || error;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary to-secondary flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-auth-gradient flex items-center justify-center px-4 py-12">
       <div className="max-w-lg w-full">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 dark:border dark:border-slate-800">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
               <Bike className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-1">Criar Conta</h1>
+            <h1 className="font-title text-3xl font-bold text-gray-800 mb-1">Criar Conta</h1>
             <p className="text-gray-500 text-sm">
               Você precisará do número da sua nota fiscal de compra
             </p>
           </div>
 
           {displayError && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
-              <p className="text-red-700 text-sm">{displayError}</p>
+            <div className="bg-error/10 border-l-4 border-error p-4 mb-6 rounded">
+              <p className="text-error text-sm font-medium">{displayError}</p>
             </div>
           )}
 
@@ -112,7 +112,7 @@ export default function CustomerRegisterPage() {
             <div>
               <label className="label">
                 Número da Nota Fiscal{' '}
-                <span className="text-red-500">*</span>
+                <span className="text-error">*</span>
               </label>
               <input
                 type="text"
@@ -158,7 +158,7 @@ export default function CustomerRegisterPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full btn btn-primary mt-2"
+              className="w-full btn btn-primary mt-2 py-3 text-base font-bold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Criando conta...' : 'Criar conta'}
             </button>
