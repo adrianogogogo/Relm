@@ -167,6 +167,17 @@ export const bannersAPI = {
   delete: (id) => api.delete(`/banners/${id}`).then((res) => res.data),
 };
 
+// ── Notificações (equipe Relm + loja) ─────────────────────────────────────────
+// Usa a instância `api` autenticada (token unificado em relm_access_token).
+// O backend resolve o recipiente (User vs StoreUser) a partir do token.
+
+export const notificationsAPI = {
+  list: () => api.get('/notifications').then((res) => res.data),
+  unreadCount: () => api.get('/notifications/unread-count').then((res) => res.data),
+  markRead: (id) => api.patch(`/notifications/${id}/read`).then((res) => res.data),
+  markAllRead: () => api.patch('/notifications/read-all').then((res) => res.data),
+};
+
 // ── Customer Auth (registro continua funcionando) ─────────────────────────────
 
 export const customerAuthAPI = {

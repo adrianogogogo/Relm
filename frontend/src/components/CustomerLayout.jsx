@@ -140,6 +140,7 @@ export default function CustomerLayout() {
             onLogout={logout}
             profilePath="/cliente/perfil"
             fallbackInitial="C"
+            enableNotifications={false}
           />
         </header>
 
