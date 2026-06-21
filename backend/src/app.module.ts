@@ -20,6 +20,7 @@ import { NewsletterModule } from './newsletter/newsletter.module';
 import { ContentModule } from './content/content.module';
 import { ReportsModule } from './reports/reports.module';
 import { BannersModule } from './banners/banners.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { HealthController } from './health.controller';
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { HealthController } from './health.controller';
     ContentModule,
     ReportsModule,
     BannersModule,
+    NotificationsModule,
   ],
   controllers: [HealthController],
   providers: [
