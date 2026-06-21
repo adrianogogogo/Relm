@@ -555,6 +555,32 @@ model AuditLog {
 }
 
 // ============================================
+// NOTIFICATIONS MODULE
+// ============================================
+
+// Recipiente polimórfico: a equipe Relm vive na tabela `users` (User) e os
+// usuários de loja vivem em `store_users` (StoreUser) — tabelas distintas, sem
+// FK única possível. Por isso usamos recipientType + recipientId.
+//   recipientType: "USER"       -> users.id       (equipe/admin/gerente/suporte)
+//   recipientType: "STORE_USER" -> store_users.id (lojistas)
+model Notification {
+  id            String    @id @default(uuid())
+  recipientType String    @map("recipient_type") // USER | STORE_USER
+  recipientId   String    @map("recipient_id")
+  type          String    // WARRANTY_NEW | INSURANCE_NEW | EVENT_REGISTRATION | CUSTOMER_NEW
+  title         String
+  message       String    @db.Text
+  link          String?
+  read          Boolean   @default(false)
+  readAt        DateTime? @map("read_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([recipientType, recipientId, read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ============================================
 // BANNERS MODULE
 // ============================================
 
