@@ -43,8 +43,8 @@ export default function CustomerLayout() {
           } py-5 border-b border-white/10 min-h-[72px] flex items-center gap-2`}
         >
           {!collapsed && (
-            <Link to="/" className="bg-white bg-white-always rounded-xl px-3 py-1.5 block">
-              <img src="/logo-relm.png" alt="Relm Care+" className="h-8 w-auto" />
+            <Link to="/" className="block">
+              <img src="/logo-white.png" alt="Relm Care+" className="h-8 w-auto" />
             </Link>
           )}
           <button

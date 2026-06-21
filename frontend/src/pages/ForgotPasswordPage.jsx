@@ -26,9 +26,12 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-auth-gradient flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full">
+        {/* Logo */}
+        <div className="text-center mb-6">
+          <img src="/logo-white.png" alt="Relm Care+" className="h-14 w-auto mx-auto" />
+        </div>
         <div className="bg-white rounded-3xl shadow-2xl p-8 dark:border dark:border-slate-800">
           <div className="text-center mb-8">
-            <img src="/logo-relm.png" alt="Relm Care+" className="h-12 w-auto mx-auto mb-6" />
             <h1 className="font-title text-3xl font-bold text-gray-800 mb-2">
               Esqueci minha senha
             </h1>
