@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CustomersService } from '../customers/customers.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateInsurancePublicDto } from './dto/create-insurance-public.dto';
 import * as crypto from 'crypto';
 
@@ -9,6 +10,7 @@ export class InsuranceService {
   constructor(
     private prisma: PrismaService,
     private customersService: CustomersService,
+    private notificationsService: NotificationsService,
   ) {}
 
   // Gera número de protocolo único e resistente a concorrência.
@@ -39,7 +41,7 @@ export class InsuranceService {
     const protocolNumber = this.generateProtocolNumber();
 
     // Campos definidos explicitamente pelo servidor (sem spread do body).
-    return this.prisma.insuranceQuote.create({
+    const quote = await this.prisma.insuranceQuote.create({
       data: {
         protocolNumber,
         customerId: customer.id,
@@ -49,6 +51,16 @@ export class InsuranceService {
         status: 'PENDING',
       },
     });
+
+    // Notificação best-effort para a equipe Relm (nunca quebra a cotação).
+    await this.notificationsService.notifyTeam({
+      type: 'INSURANCE_NEW',
+      title: 'Nova cotação de seguro',
+      message: `Protocolo ${quote.protocolNumber} — ${customer.fullName}.`,
+      link: `/admin/insurance/${quote.id}`,
+    });
+
+    return quote;
   }
 
   async findAll(filters?: { storeId?: string; customerId?: string; status?: string }) {

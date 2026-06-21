@@ -5,6 +5,7 @@ import { CustomersService } from '../customers/customers.service';
 import { CreateWarrantyPublicDto } from './dto/create-warranty-public.dto';
 import { ProductsService } from '../products/products.service';
 import { EmailService } from '../email/email.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import * as crypto from 'crypto';
 
 const FSM_TRANSITIONS = {
@@ -26,6 +27,7 @@ export class WarrantyService {
     private customersService: CustomersService,
     private productsService: ProductsService,
     private emailService: EmailService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async createFromPublic(data: CreateWarrantyPublicDto) {
@@ -86,6 +88,19 @@ export class WarrantyService {
         comment: 'Garantia criada via formulário público',
       },
     });
+
+    // Notificação best-effort: equipe Relm + loja vinculada (se houver storeId).
+    // Nunca quebra o registro da garantia (helpers nunca lançam).
+    const notifyPayload = {
+      type: 'WARRANTY_NEW',
+      title: 'Nova garantia registrada',
+      message: `Protocolo ${claim.protocolNumber} — ${customer.fullName} (${product.model}).`,
+      link: `/admin/warranties/${claim.id}`,
+    };
+    await this.notificationsService.notifyTeam(notifyPayload);
+    if (claim.storeId) {
+      await this.notificationsService.notifyStore(claim.storeId, notifyPayload);
+    }
 
     return {
       protocol_number: claim.protocolNumber,

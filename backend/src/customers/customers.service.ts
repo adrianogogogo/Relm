@@ -5,12 +5,29 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 
 @Injectable()
 export class CustomersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
+
+  // Notificação best-effort de novo cliente para a equipe Relm.
+  private async notifyNewCustomer(customer: {
+    id: string;
+    fullName: string;
+  }): Promise<void> {
+    await this.notificationsService.notifyTeam({
+      type: 'CUSTOMER_NEW',
+      title: 'Novo cliente cadastrado',
+      message: `${customer.fullName} foi cadastrado(a).`,
+      link: `/admin/customers/${customer.id}`,
+    });
+  }
 
   async create(createCustomerDto: CreateCustomerDto) {
     // Verificar se email já existe
@@ -53,6 +70,8 @@ export class CustomersService {
         },
       },
     });
+
+    await this.notifyNewCustomer(customer);
 
     return this.formatCustomer(customer);
   }
@@ -343,7 +362,7 @@ export class CustomersService {
       });
     }
 
-    return this.prisma.customer.create({
+    const created = await this.prisma.customer.create({
       data: {
         email: customerData.email,
         fullName: customerData.fullName,
@@ -356,6 +375,11 @@ export class CustomersService {
         marketingConsent: false,
       },
     });
+
+    // Só notifica quando um cliente REALMENTE novo é criado (não em updates).
+    await this.notifyNewCustomer(created);
+
+    return created;
   }
 
   // Método auxiliar para formatar dados do cliente

@@ -5,11 +5,15 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { RegisterEventDto } from './dto/register-event.dto';
 
 @Injectable()
 export class EventsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async findAll() {
     return this.prisma.event.findMany({
@@ -120,6 +124,14 @@ export class EventsService {
 
     await this.prisma.eventRegistration.create({
       data: { eventId, customerId: customer.id },
+    });
+
+    // Notificação best-effort para a equipe Relm (nunca quebra a inscrição).
+    await this.notificationsService.notifyTeam({
+      type: 'EVENT_REGISTRATION',
+      title: 'Nova inscrição em evento',
+      message: `${customer.fullName} se inscreveu em "${event.title}".`,
+      link: `/admin/events/${event.id}`,
     });
 
     return {
