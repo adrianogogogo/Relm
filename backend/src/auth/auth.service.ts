@@ -122,7 +122,9 @@ export class AuthService {
       const valid = await bcrypt.compare(password, customer.passwordHash);
       if (valid) {
         const payload = { sub: customer.id, email: customer.email, type: 'CUSTOMER', userType: 'CUSTOMER' };
-        const accessToken = this.jwtService.sign(payload);
+        const accessToken = this.jwtService.sign(payload, {
+          secret: this.config.get('CUSTOMER_JWT_SECRET'),
+        });
         const refreshToken = this.jwtService.sign(payload, {
           secret: this.config.get('JWT_REFRESH_SECRET'),
           expiresIn: this.config.get('JWT_REFRESH_EXPIRES_IN') || '7d',
