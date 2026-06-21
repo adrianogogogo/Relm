@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bike } from 'lucide-react';
+import { MdPedalBike } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import { customerAuthAPI } from '../services/api';
 
@@ -73,7 +73,7 @@ export default function CustomerRegisterPage() {
         <div className="bg-white rounded-3xl shadow-2xl p-8 dark:border dark:border-slate-800">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-              <Bike className="w-8 h-8 text-primary" />
+              <MdPedalBike className="w-8 h-8 text-primary" />
             </div>
             <h1 className="font-title text-3xl font-bold text-gray-800 mb-1">Criar Conta</h1>
             <p className="text-gray-500 text-sm">

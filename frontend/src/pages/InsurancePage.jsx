@@ -1,4 +1,4 @@
-import { Shield, DollarSign, Zap, AlertTriangle } from 'lucide-react';
+import { MdVerifiedUser, MdAttachMoney, MdBolt, MdWarning } from 'react-icons/md';
 import { PageHeader } from '../components/ui';
 
 export default function InsurancePage() {
@@ -13,7 +13,7 @@ export default function InsurancePage() {
             />
 
             <div className="bg-info/10 border-l-4 border-info p-4 mb-8 flex items-start gap-3 rounded">
-              <AlertTriangle className="text-info shrink-0 mt-0.5" size={20} />
+              <MdWarning className="text-info shrink-0 mt-0.5" size={20} />
               <p className="text-info-700 dark:text-info-100 text-sm">
                 Funcionalidade em desenvolvimento. Em breve você poderá cotar seguros
                 diretamente pelo portal!
@@ -22,17 +22,17 @@ export default function InsurancePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="card text-center">
-                <div className="text-primary mb-3 flex justify-center"><Shield size={32} /></div>
+                <div className="text-primary mb-3 flex justify-center"><MdVerifiedUser size={32} /></div>
                 <h3 className="font-title font-bold text-lg mb-2">Proteção Total</h3>
                 <p className="text-sm text-gray-600">Cobertura completa contra roubo e danos</p>
               </div>
               <div className="card text-center">
-                <div className="text-primary mb-3 flex justify-center"><DollarSign size={32} /></div>
+                <div className="text-primary mb-3 flex justify-center"><MdAttachMoney size={32} /></div>
                 <h3 className="font-title font-bold text-lg mb-2">Melhor Preço</h3>
                 <p className="text-sm text-gray-600">Condições especiais para clientes Relm</p>
               </div>
               <div className="card text-center">
-                <div className="text-primary mb-3 flex justify-center"><Zap size={32} /></div>
+                <div className="text-primary mb-3 flex justify-center"><MdBolt size={32} /></div>
                 <h3 className="font-title font-bold text-lg mb-2">Cotação Rápida</h3>
                 <p className="text-sm text-gray-600">Receba sua cotação em minutos</p>
               </div>

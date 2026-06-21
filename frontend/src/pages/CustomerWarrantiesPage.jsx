@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Shield, Plus } from 'lucide-react';
+import { MdVerifiedUser, MdAdd } from 'react-icons/md';
 import { customerPortalAPI } from '../services/api';
 import { Card, PageHeader, StatusChip, Button } from '../components/ui';
 
@@ -39,7 +39,7 @@ export default function CustomerWarrantiesPage() {
           subtitle="Acompanhe o status das suas solicitações"
           action={
             <Link to="/garantia">
-              <Button icon={Plus}>Nova garantia</Button>
+              <Button icon={MdAdd}>Nova garantia</Button>
             </Link>
           }
         />
@@ -50,7 +50,7 @@ export default function CustomerWarrantiesPage() {
           </div>
         ) : warranties.length === 0 ? (
           <Card className="p-12 text-center flex flex-col items-center">
-            <Shield className="h-12 w-12 text-gray-300 dark:text-slate-700 mb-4" />
+            <MdVerifiedUser className="h-12 w-12 text-gray-300 dark:text-slate-700 mb-4" />
             <p className="text-gray-500 dark:text-slate-400 mb-4">Você ainda não tem garantias registradas.</p>
             <Link to="/garantia">
               <Button>Registrar garantia</Button>

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Shield, FileText, Calendar, User, MapPin, Gift } from 'lucide-react';
+import { MdVerifiedUser, MdDescription, MdEvent, MdPerson, MdLocationOn, MdCardGiftcard } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import { customerPortalAPI } from '../services/api';
 import { Card, PageHeader, StatCard, StatusChip } from '../components/ui';
@@ -50,10 +50,10 @@ export default function CustomerDashboard() {
   });
 
   const metrics = [
-    { label: 'Garantias', value: warranties.length, icon: Shield, color: '#1565C0', link: '/cliente/garantias' },
-    { label: 'Eventos', value: events.length, icon: Calendar, color: '#2d3a4a', link: '/cliente/eventos' },
-    { label: 'Vantagens', value: benefits.length, icon: Gift, color: '#9C27B0', link: '/cliente/vantagens' },
-    { label: 'Cotações', value: quotes.length, icon: FileText, color: '#FF9800', link: '/cliente/seguros' },
+    { label: 'Garantias', value: warranties.length, icon: MdVerifiedUser, color: '#1565C0', link: '/cliente/garantias' },
+    { label: 'Eventos', value: events.length, icon: MdEvent, color: '#2d3a4a', link: '/cliente/eventos' },
+    { label: 'Vantagens', value: benefits.length, icon: MdCardGiftcard, color: '#9C27B0', link: '/cliente/vantagens' },
+    { label: 'Cotações', value: quotes.length, icon: MdDescription, color: '#FF9800', link: '/cliente/seguros' },
   ];
 
   return (
@@ -125,7 +125,7 @@ export default function CustomerDashboard() {
                   <div key={reg.id} className="border-b border-gray-100 dark:border-slate-800 pb-3 last:border-b-0">
                     <p className="font-semibold text-sm text-gray-800 dark:text-slate-200">{reg.event.title}</p>
                     <p className="text-xs text-gray-500 dark:text-slate-400 flex items-center gap-1 mt-1">
-                      <MapPin size={12} className="text-gray-400" /> {reg.event.location} •{' '}
+                      <MdLocationOn size={12} className="text-gray-400" /> {reg.event.location} •{' '}
                       {new Date(reg.event.startAt).toLocaleDateString('pt-BR')}
                     </p>
                   </div>
@@ -149,7 +149,7 @@ export default function CustomerDashboard() {
                 {benefits.slice(0, 3).map((b) => (
                   <div key={b.id} className="border-b border-gray-100 dark:border-slate-800 pb-3 last:border-b-0">
                     <p className="font-semibold text-sm text-gray-800 dark:text-slate-200 flex items-center gap-1.5">
-                      <Gift size={16} className="text-purple-500 shrink-0" /> {b.title}
+                      <MdCardGiftcard size={16} className="text-purple-500 shrink-0" /> {b.title}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-slate-400 line-clamp-1 mt-1">{b.description}</p>
                   </div>
@@ -163,16 +163,16 @@ export default function CustomerDashboard() {
             <h2 className="font-title text-lg font-bold text-gray-900 dark:text-slate-100 mb-4">Ações Rápidas</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Link to="/garantia" className="btn btn-outline justify-start">
-                <Shield size={18} /> Registrar garantia
+                <MdVerifiedUser size={18} /> Registrar garantia
               </Link>
               <Link to="/seguro" className="btn btn-outline justify-start">
-                <FileText size={18} /> Cotação de seguro
+                <MdDescription size={18} /> Cotação de seguro
               </Link>
               <Link to="/eventos" className="btn btn-outline justify-start">
-                <Calendar size={18} /> Ver eventos
+                <MdEvent size={18} /> Ver eventos
               </Link>
               <Link to="/cliente/perfil" className="btn btn-outline justify-start">
-                <User size={18} /> Editar meu perfil
+                <MdPerson size={18} /> Editar meu perfil
               </Link>
             </div>
           </Card>

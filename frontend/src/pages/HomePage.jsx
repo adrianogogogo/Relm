@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Shield, Gift, FileText, Calendar, Mail } from 'lucide-react';
+import { MdVerifiedUser, MdCardGiftcard, MdDescription, MdEvent, MdEmail } from 'react-icons/md';
 import { healthAPI } from '../services/api';
 import StoreLocator from '../components/StoreLocator';
 import BannerCarousel from '../components/BannerCarousel';
@@ -13,33 +13,33 @@ export default function HomePage() {
 
   const features = [
     {
-      icon: Shield,
+      icon: MdVerifiedUser,
       title: 'Garantias',
       description:
         'Gerencie solicitações de garantia com rastreamento completo de status.',
       link: '/garantia',
     },
     {
-      icon: Gift,
+      icon: MdCardGiftcard,
       title: 'Clube de Vantagens',
       description:
         'Benefícios exclusivos para clientes, lojas e distribuidores.',
       link: '/vantagens',
     },
     {
-      icon: FileText,
+      icon: MdDescription,
       title: 'Seguro',
       description: 'Cotação de seguros integrada para proteção completa.',
       link: '/seguro',
     },
     {
-      icon: Calendar,
+      icon: MdEvent,
       title: 'Eventos',
       description: 'Participe de eventos exclusivos da Relm Bikes.',
       link: '/eventos',
     },
     {
-      icon: Mail,
+      icon: MdEmail,
       title: 'Newsletter',
       description: 'Fique por dentro das novidades e lançamentos.',
       link: '/newsletter',
@@ -65,7 +65,7 @@ export default function HomePage() {
                 className="card hover:shadow-lg transition-shadow"
               >
                 <div className="text-primary dark:text-primary-400 mb-4 flex justify-center">
-                  <feature.icon size={48} className="stroke-[1.5]" />
+                  <feature.icon size={48} />
                 </div>
                 <h3 className="font-title text-2xl font-bold mb-3">{feature.title}</h3>
                 <p className="text-gray-600">{feature.description}</p>

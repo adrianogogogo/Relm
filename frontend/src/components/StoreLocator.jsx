@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, MapPin, Phone, Mail, Map, Store, Info } from 'lucide-react';
+import { MdSearch, MdLocationOn, MdPhone, MdEmail, MdMap, MdStore, MdInfo } from 'react-icons/md';
 import { storesAPI } from '../services/api';
 
 export default function StoreLocator() {
@@ -94,7 +94,7 @@ export default function StoreLocator() {
                   </>
                 ) : (
                   <>
-                    <Search className="h-5 w-5 mr-2" />
+                    <MdSearch className="h-5 w-5 mr-2" />
                     Buscar Lojas
                   </>
                 )}
@@ -130,14 +130,14 @@ export default function StoreLocator() {
                     <div className="p-4 space-y-3">
                       {store.address && (
                         <div className="flex items-start">
-                          <MapPin className="h-5 w-5 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
+                          <MdLocationOn className="h-5 w-5 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
                           <p className="text-sm text-gray-600">{store.address}</p>
                         </div>
                       )}
 
                       {store.phone && (
                         <div className="flex items-center">
-                          <Phone className="h-5 w-5 text-gray-400 mr-2 flex-shrink-0" />
+                          <MdPhone className="h-5 w-5 text-gray-400 mr-2 flex-shrink-0" />
                           <a href={`tel:${store.phone}`} className="text-sm text-primary hover:text-primary-700">
                             {store.phone}
                           </a>
@@ -146,7 +146,7 @@ export default function StoreLocator() {
 
                       {store.email && (
                         <div className="flex items-center">
-                          <Mail className="h-5 w-5 text-gray-400 mr-2 flex-shrink-0" />
+                          <MdEmail className="h-5 w-5 text-gray-400 mr-2 flex-shrink-0" />
                           <a
                             href={`mailto:${store.email}`}
                             className="text-sm text-primary hover:text-primary-700 truncate"
@@ -177,7 +177,7 @@ export default function StoreLocator() {
                               rel="noopener noreferrer"
                               className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-primary text-sm font-medium rounded-lg text-primary bg-white hover:bg-primary hover:text-white transition-colors"
                             >
-                              <Map className="h-4 w-4 mr-1" />
+                              <MdMap className="h-4 w-4 mr-1" />
                               Ver no Mapa
                             </a>
                           )}
@@ -186,7 +186,7 @@ export default function StoreLocator() {
                               href={`tel:${store.phone}`}
                               className="flex-1 inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary-600 transition-colors"
                             >
-                              <Phone className="h-4 w-4 mr-1" />
+                              <MdPhone className="h-4 w-4 mr-1" />
                               Ligar
                             </a>
                           )}
@@ -198,7 +198,7 @@ export default function StoreLocator() {
               </div>
             ) : (
               <div className="text-center py-12 card">
-                <Store className="mx-auto h-12 w-12 text-gray-400" />
+                <MdStore className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhuma loja encontrada</h3>
                 <p className="mt-1 text-sm text-gray-500">
                   Tente buscar por outra cidade ou estado.
@@ -213,7 +213,7 @@ export default function StoreLocator() {
           <div className="mt-8 bg-info/10 border-l-4 border-info p-6 rounded-r-lg">
             <div className="flex">
               <div className="flex-shrink-0">
-                <Info className="h-6 w-6 text-info" />
+                <MdInfo className="h-6 w-6 text-info" />
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-semibold text-info-700 dark:text-info-100">Encontre lojas autorizadas Relm</h3>

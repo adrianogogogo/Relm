@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { warrantyAPI } from '../services/api';
-import { Search } from 'lucide-react';
+import { MdSearch } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader, StatusChip } from '../components/ui';
 
@@ -56,7 +56,7 @@ export default function StoreWarrantiesPage() {
         <Card className="mb-6 p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Buscar por protocolo ou cliente..."

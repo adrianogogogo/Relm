@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  ArrowLeft, 
-  FileText, 
-  User, 
-  Mail, 
-  Phone, 
-  DollarSign, 
-  Calendar,
-  Building,
-  Shield,
-  AlertCircle,
-  RefreshCcw,
-  XCircle,
-  Printer
-} from 'lucide-react';
+import {
+  MdArrowBack,
+  MdDescription,
+  MdPerson,
+  MdEmail,
+  MdPhone,
+  MdAttachMoney,
+  MdEvent,
+  MdBusiness,
+  MdVerifiedUser,
+  MdError,
+  MdRefresh,
+  MdCancel,
+  MdPrint
+} from 'react-icons/md';
 import { insuranceAPI } from '../services/api';
 
 const PolicyDetailPage = () => {
@@ -105,7 +105,7 @@ const PolicyDetailPage = () => {
             onClick={() => navigate('/admin/seguros')}
             className="p-2 hover:bg-gray-100 rounded-lg"
           >
-            <ArrowLeft size={20} />
+            <MdArrowBack size={20} />
           </button>
           <div>
             <h1 className="text-2xl font-bold">Apólice {policy.policy_number}</h1>
@@ -125,7 +125,7 @@ const PolicyDetailPage = () => {
       {isExpiring() && policy.status === 'ACTIVE' && (
         <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg print:hidden">
           <div className="flex items-center gap-2">
-            <AlertCircle size={20} className="text-yellow-600" />
+            <MdError size={20} className="text-yellow-600" />
             <div>
               <p className="font-semibold text-yellow-800">Apólice próxima do vencimento</p>
               <p className="text-sm text-yellow-700">
@@ -143,21 +143,21 @@ const PolicyDetailPage = () => {
             onClick={handlePrint}
             className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
-            <Printer size={18} />
+            <MdPrint size={18} />
             Imprimir
           </button>
           <button
             onClick={() => setShowRenewModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
           >
-            <RefreshCcw size={18} />
+            <MdRefresh size={18} />
             Renovar
           </button>
           <button
             onClick={() => setShowCancelModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
           >
-            <XCircle size={18} />
+            <MdCancel size={18} />
             Cancelar
           </button>
         </div>
@@ -166,7 +166,7 @@ const PolicyDetailPage = () => {
       {/* Informações do Cliente */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <User size={20} className="text-blue-500" />
+          <MdPerson size={20} className="text-blue-500" />
           Segurado
         </h2>
         <div className="grid grid-cols-2 gap-4">
@@ -176,14 +176,14 @@ const PolicyDetailPage = () => {
           </div>
           <div>
             <label className="text-sm text-gray-600 flex items-center gap-1">
-              <Mail size={14} />
+              <MdEmail size={14} />
               Email
             </label>
             <p className="font-medium">{policy.customer?.email}</p>
           </div>
           <div>
             <label className="text-sm text-gray-600 flex items-center gap-1">
-              <Phone size={14} />
+              <MdPhone size={14} />
               Telefone
             </label>
             <p className="font-medium">{policy.customer?.phone}</p>
@@ -198,7 +198,7 @@ const PolicyDetailPage = () => {
       {/* Informações da Seguradora */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Building size={20} className="text-blue-500" />
+          <MdBusiness size={20} className="text-blue-500" />
           Seguradora
         </h2>
         <p className="font-medium text-lg">{policy.insurance_company}</p>
@@ -207,7 +207,7 @@ const PolicyDetailPage = () => {
       {/* Valores */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <DollarSign size={20} className="text-blue-500" />
+          <MdAttachMoney size={20} className="text-blue-500" />
           Valores
         </h2>
         <div className="grid grid-cols-2 gap-6">
@@ -249,7 +249,7 @@ const PolicyDetailPage = () => {
       {/* Cobertura */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Shield size={20} className="text-blue-500" />
+          <MdVerifiedUser size={20} className="text-blue-500" />
           Cobertura
         </h2>
         <div className="grid grid-cols-2 gap-4">
@@ -263,7 +263,7 @@ const PolicyDetailPage = () => {
       {/* Vigência */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Calendar size={20} className="text-blue-500" />
+          <MdEvent size={20} className="text-blue-500" />
           Vigência
         </h2>
         <div className="grid grid-cols-2 gap-4">
@@ -286,7 +286,7 @@ const PolicyDetailPage = () => {
       {policy.notes && (
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <FileText size={20} className="text-blue-500" />
+            <MdDescription size={20} className="text-blue-500" />
             Observações
           </h2>
           <p className="text-gray-700 whitespace-pre-wrap">{policy.notes}</p>

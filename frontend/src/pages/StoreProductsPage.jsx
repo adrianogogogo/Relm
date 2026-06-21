@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
-import { ShoppingBag, Search } from 'lucide-react';
+import { MdInventory2, MdSearch } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader } from '../components/ui';
 
@@ -36,7 +36,7 @@ export default function StoreProductsPage() {
         {/* Filtros */}
         <Card className="mb-6 p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               placeholder="Buscar por modelo, serial ou tipo..."
@@ -53,7 +53,7 @@ export default function StoreProductsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <Card className="text-center py-12">
-            <ShoppingBag className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
+            <MdInventory2 className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-slate-400 text-lg">Nenhum produto encontrado.</p>
             <p className="text-gray-400 dark:text-slate-500 mt-2 text-sm">
               Produtos vinculados a esta loja via garantia aparecerão aqui.

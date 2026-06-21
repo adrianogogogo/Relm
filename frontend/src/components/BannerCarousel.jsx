@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { bannersAPI } from '../services/api';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { MdChevronLeft, MdChevronRight } from 'react-icons/md';
 
 const BannerCarousel = () => {
   const [banners, setBanners] = useState([]);
@@ -115,14 +115,14 @@ const BannerCarousel = () => {
             className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors duration-200"
             aria-label="Banner anterior"
           >
-            <ChevronLeft size={24} />
+            <MdChevronLeft size={24} />
           </button>
           <button
             onClick={nextBanner}
             className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors duration-200"
             aria-label="Próximo banner"
           >
-            <ChevronRight size={24} />
+            <MdChevronRight size={24} />
           </button>
         </>
       )}

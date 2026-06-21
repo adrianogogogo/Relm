@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { customersAPI, warrantyAPI, insuranceAPI } from '../services/api';
-import { Users, Shield, FileText, ShoppingBag } from 'lucide-react';
+import { MdPeople, MdVerifiedUser, MdDescription, MdInventory2 } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader, StatusChip, StatCard } from '../components/ui';
 
@@ -61,31 +61,31 @@ const StoreDashboard = () => {
     {
       label: 'Clientes',
       value: customersTotal,
-      icon: Users,
+      icon: MdPeople,
       color: '#1565C0',
       link: '/loja/clientes',
     },
     {
       label: 'Garantias',
       value: warranties?.length || 0,
-      icon: Shield,
+      icon: MdVerifiedUser,
       color: '#4CAF50',
       link: '/loja/garantias',
     },
     {
       label: 'Seguros',
       value: insurances?.length || 0,
-      icon: FileText,
+      icon: MdDescription,
       color: '#9C27B0',
       link: '/loja/seguros',
     },
   ];
 
   const quickActions = [
-    { to: '/loja/clientes/novo', label: 'Novo Cliente', icon: Users, color: '#1565C0' },
-    { to: '/loja/garantias', label: 'Ver Garantias', icon: Shield, color: '#4CAF50' },
-    { to: '/loja/seguros', label: 'Ver Seguros', icon: FileText, color: '#9C27B0' },
-    { to: '/loja/produtos', label: 'Produtos', icon: ShoppingBag, color: '#FF9800' },
+    { to: '/loja/clientes/novo', label: 'Novo Cliente', icon: MdPeople, color: '#1565C0' },
+    { to: '/loja/garantias', label: 'Ver Garantias', icon: MdVerifiedUser, color: '#4CAF50' },
+    { to: '/loja/seguros', label: 'Ver Seguros', icon: MdDescription, color: '#9C27B0' },
+    { to: '/loja/produtos', label: 'Produtos', icon: MdInventory2, color: '#FF9800' },
   ];
 
   return (

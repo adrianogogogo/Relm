@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Gift } from 'lucide-react';
+import { MdCardGiftcard } from 'react-icons/md';
 import { customerPortalAPI } from '../services/api';
 import { Card, PageHeader } from '../components/ui';
 
@@ -23,7 +23,7 @@ export default function CustomerBenefitsPage() {
           </div>
         ) : benefits.length === 0 ? (
           <Card className="p-12 text-center flex flex-col items-center">
-            <Gift className="h-12 w-12 text-gray-300 dark:text-slate-700 mb-4" />
+            <MdCardGiftcard className="h-12 w-12 text-gray-300 dark:text-slate-700 mb-4" />
             <p className="text-gray-500 dark:text-slate-400">Nenhuma vantagem disponível no momento.</p>
           </Card>
         ) : (
@@ -32,7 +32,7 @@ export default function CustomerBenefitsPage() {
               <Card key={b.id} className="hover:shadow-md transition-shadow group">
                 <div className="flex items-start gap-4">
                   <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-500 shrink-0">
-                    <Gift className="w-6 h-6" />
+                    <MdCardGiftcard className="w-6 h-6" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-title font-bold text-gray-900 dark:text-slate-100 mb-1 text-base">{b.title}</h3>

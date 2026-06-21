@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { insuranceAPI } from '../services/api';
-import { FileText } from 'lucide-react';
+import { MdDescription } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader, StatusChip } from '../components/ui';
 
@@ -29,7 +29,7 @@ export default function StoreInsurancesPage() {
           </div>
         ) : !quotes || quotes.length === 0 ? (
           <Card className="text-center py-12">
-            <FileText className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
+            <MdDescription className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-slate-400 text-lg">
               Nenhuma cotação de seguro encontrada.
             </p>

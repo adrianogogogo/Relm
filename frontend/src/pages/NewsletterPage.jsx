@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Mail } from 'lucide-react';
+import { MdEmail } from 'react-icons/md';
 import { newsletterAPI } from '../services/api';
 import { PageHeader } from '../components/ui';
 
@@ -36,7 +36,7 @@ export default function NewsletterPage() {
       <div className="min-h-screen bg-app dark:bg-app-dark py-12">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto card p-8 text-center">
-            <div className="text-primary mb-4 flex justify-center"><Mail size={64} className="stroke-[1.5]" /></div>
+            <div className="text-primary mb-4 flex justify-center"><MdEmail size={64} /></div>
             <h2 className="font-title text-3xl font-bold text-success mb-4">
               Inscrição Confirmada!
             </h2>

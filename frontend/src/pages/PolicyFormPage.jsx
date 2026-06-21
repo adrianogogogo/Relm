@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Save, AlertCircle } from 'lucide-react';
+import { MdArrowBack, MdSave, MdError } from 'react-icons/md';
 import { insuranceAPI, customerAPI } from '../services/api';
 
 const PolicyFormPage = () => {
@@ -155,7 +155,7 @@ const PolicyFormPage = () => {
           onClick={() => navigate('/admin/seguros')}
           className="p-2 hover:bg-gray-100 rounded-lg"
         >
-          <ArrowLeft size={20} />
+          <MdArrowBack size={20} />
         </button>
         <div>
           <h1 className="text-2xl font-bold">
@@ -171,7 +171,7 @@ const PolicyFormPage = () => {
       {quoteId && quote && (
         <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-lg">
           <div className="flex items-center gap-2">
-            <AlertCircle size={20} className="text-blue-600" />
+            <MdError size={20} className="text-blue-600" />
             <div>
               <p className="font-semibold text-blue-800">
                 Convertendo cotação {quote.protocol_number}
@@ -407,7 +407,7 @@ const PolicyFormPage = () => {
             disabled={createMutation.isPending}
             className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400"
           >
-            <Save size={18} />
+            <MdSave size={18} />
             {createMutation.isPending ? 'Criando...' : 'Criar Apólice'}
           </button>
           <button

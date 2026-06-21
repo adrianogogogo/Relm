@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, MapPin, Clock } from 'lucide-react';
+import { MdEvent, MdLocationOn, MdAccessTime } from 'react-icons/md';
 import { customerPortalAPI } from '../services/api';
 import { Card, PageHeader, StatusChip, Button } from '../components/ui';
 
@@ -29,7 +29,7 @@ export default function CustomerEventsPage() {
           </div>
         ) : registrations.length === 0 ? (
           <Card className="p-12 text-center flex flex-col items-center">
-            <Calendar className="h-12 w-12 text-gray-300 dark:text-slate-700 mb-4" />
+            <MdEvent className="h-12 w-12 text-gray-300 dark:text-slate-700 mb-4" />
             <p className="text-gray-500 dark:text-slate-400 mb-4">Você não está inscrito em nenhum evento ainda.</p>
             <Link to="/eventos">
               <Button>Ver eventos</Button>
@@ -53,14 +53,14 @@ export default function CustomerEventsPage() {
                       </div>
                       <p className="text-sm text-gray-500 dark:text-slate-400 mb-2">{reg.event.description}</p>
                       <div className="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-slate-400">
-                        <span className="flex items-center gap-1.5"><MapPin size={16} className="text-gray-400" /> {reg.event.location}</span>
+                        <span className="flex items-center gap-1.5"><MdLocationOn size={16} className="text-gray-400" /> {reg.event.location}</span>
                         <span className="flex items-center gap-1.5">
-                          <Calendar size={16} className="text-gray-400" /> {new Date(reg.event.startAt).toLocaleDateString('pt-BR', {
+                          <MdEvent size={16} className="text-gray-400" /> {new Date(reg.event.startAt).toLocaleDateString('pt-BR', {
                             day: '2-digit', month: 'long', year: 'numeric',
                           })}
                         </span>
                         <span className="flex items-center gap-1.5">
-                          <Clock size={16} className="text-gray-400" /> {new Date(reg.event.startAt).toLocaleTimeString('pt-BR', {
+                          <MdAccessTime size={16} className="text-gray-400" /> {new Date(reg.event.startAt).toLocaleTimeString('pt-BR', {
                             hour: '2-digit', minute: '2-digit',
                           })}
                           {' – '}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { X, User, Bike, Store, FileText, XCircle, Check, Play } from 'lucide-react';
+import { MdClose, MdPerson, MdPedalBike, MdStore, MdDescription, MdCancel, MdCheck, MdPlayArrow } from 'react-icons/md';
 import { warrantyAPI } from '../services/api';
 
 export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
@@ -100,7 +100,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
             className="text-white hover:text-gray-200 p-2"
             disabled={approveMutation.isPending || rejectMutation.isPending || startAnalysisMutation.isPending}
           >
-            <X className="h-6 w-6" />
+            <MdClose className="h-6 w-6" />
           </button>
         </div>
 
@@ -109,7 +109,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
           {/* Cliente */}
           <div className="bg-gray-50 dark:bg-slate-900/40 rounded-lg p-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center gap-2">
-              <User size={18} className="text-gray-500 dark:text-slate-400" /> Dados do Cliente
+              <MdPerson size={18} className="text-gray-500 dark:text-slate-400" /> Dados do Cliente
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
@@ -134,7 +134,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
           {/* Produto */}
           <div className="bg-gray-50 dark:bg-slate-900/40 rounded-lg p-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center gap-2">
-              <Bike size={18} className="text-gray-500 dark:text-slate-400" /> Dados do Produto
+              <MdPedalBike size={18} className="text-gray-500 dark:text-slate-400" /> Dados do Produto
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
@@ -159,7 +159,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
           {/* Loja de Compra */}
           <div className="bg-gray-50 dark:bg-slate-900/40 rounded-lg p-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center gap-2">
-              <Store size={18} className="text-gray-500 dark:text-slate-400" /> Loja de Compra
+              <MdStore size={18} className="text-gray-500 dark:text-slate-400" /> Loja de Compra
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div>
@@ -192,7 +192,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
           {/* Status Atual */}
           <div className="bg-primary/5 dark:bg-primary-400/10 border border-primary/20 dark:border-primary-400/20 rounded-lg p-4">
             <h3 className="text-lg font-semibold text-primary dark:text-primary-300 mb-3 flex items-center gap-2">
-              <FileText size={18} className="text-primary dark:text-primary-400" /> Status e Observações
+              <MdDescription size={18} className="text-primary dark:text-primary-400" /> Status e Observações
             </h3>
             <div className="space-y-2 text-sm">
               <div>
@@ -244,7 +244,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
           {showRejectForm && (
             <div className="bg-error/5 dark:bg-error/10 border border-error/20 rounded-lg p-4 space-y-4">
               <h3 className="text-lg font-semibold text-error flex items-center gap-2">
-                <XCircle size={18} className="text-error" /> Rejeitar Garantia
+                <MdCancel size={18} className="text-error" /> Rejeitar Garantia
               </h3>
               <div>
                 <label htmlFor="rejectionReason" className="block text-sm font-medium text-error mb-2">
@@ -297,7 +297,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                 {startAnalysisMutation.isPending && (
                   <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 )}
-                <Play size={16} /> Iniciar Análise
+                <MdPlayArrow size={16} /> Iniciar Análise
               </button>
             )}
 
@@ -345,7 +345,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                 {approveMutation.isPending && (
                   <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 )}
-                <Check size={16} /> Aprovar Garantia
+                <MdCheck size={16} /> Aprovar Garantia
               </button>
             )}
           </div>

@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  ArrowLeft, 
-  CheckCircle, 
-  XCircle, 
-  FileText,
-  User,
-  Mail,
-  Phone,
-  DollarSign,
-  Building,
-  MapPin,
-  Bike
-} from 'lucide-react';
+import {
+  MdArrowBack,
+  MdCheckCircle,
+  MdCancel,
+  MdDescription,
+  MdPerson,
+  MdEmail,
+  MdPhone,
+  MdAttachMoney,
+  MdBusiness,
+  MdLocationOn,
+  MdPedalBike
+} from 'react-icons/md';
 import { insuranceAPI } from '../services/api';
 
 const QuoteDetailPage = () => {
@@ -118,7 +118,7 @@ const QuoteDetailPage = () => {
             onClick={() => navigate('/admin/seguros')}
             className="p-2 hover:bg-gray-100 rounded-lg"
           >
-            <ArrowLeft size={20} />
+            <MdArrowBack size={20} />
           </button>
           <div>
             <h1 className="text-2xl font-bold">Cotação {quote.protocol_number}</h1>
@@ -139,14 +139,14 @@ const QuoteDetailPage = () => {
             onClick={() => setShowApproveModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
           >
-            <CheckCircle size={18} />
+            <MdCheckCircle size={18} />
             Aprovar
           </button>
           <button
             onClick={() => setShowRejectModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
           >
-            <XCircle size={18} />
+            <MdCancel size={18} />
             Rejeitar
           </button>
         </div>
@@ -158,7 +158,7 @@ const QuoteDetailPage = () => {
           disabled={convertMutation.isPending}
           className="mb-6 flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400"
         >
-          <FileText size={18} />
+          <MdDescription size={18} />
           {convertMutation.isPending ? 'Convertendo...' : 'Converter em Apólice'}
         </button>
       )}
@@ -166,7 +166,7 @@ const QuoteDetailPage = () => {
       {/* Informações do Cliente */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <User size={20} className="text-blue-500" />
+          <MdPerson size={20} className="text-blue-500" />
           Dados do Cliente
         </h2>
         <div className="grid grid-cols-2 gap-4">
@@ -176,14 +176,14 @@ const QuoteDetailPage = () => {
           </div>
           <div>
             <label className="text-sm text-gray-600 flex items-center gap-1">
-              <Mail size={14} />
+              <MdEmail size={14} />
               Email
             </label>
             <p className="font-medium">{quote.customer?.email}</p>
           </div>
           <div>
             <label className="text-sm text-gray-600 flex items-center gap-1">
-              <Phone size={14} />
+              <MdPhone size={14} />
               Telefone
             </label>
             <p className="font-medium">{quote.customer?.phone}</p>
@@ -198,13 +198,13 @@ const QuoteDetailPage = () => {
       {/* Informações da Bike */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Bike size={20} className="text-blue-500" />
+          <MdPedalBike size={20} className="text-blue-500" />
           Dados da Bike
         </h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-sm text-gray-600 flex items-center gap-1">
-              <DollarSign size={14} />
+              <MdAttachMoney size={14} />
               Valor da Bike
             </label>
             <p className="font-medium text-xl">
@@ -213,7 +213,7 @@ const QuoteDetailPage = () => {
           </div>
           <div>
             <label className="text-sm text-gray-600 flex items-center gap-1">
-              <MapPin size={14} />
+              <MdLocationOn size={14} />
               Localização
             </label>
             <p className="font-medium">{quote.city} - {quote.state}</p>
@@ -225,7 +225,7 @@ const QuoteDetailPage = () => {
       {(quote.quote_value || quote.insurance_company) && (
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Building size={20} className="text-blue-500" />
+            <MdBusiness size={20} className="text-blue-500" />
             Detalhes da Cotação
           </h2>
           <div className="grid grid-cols-2 gap-4">

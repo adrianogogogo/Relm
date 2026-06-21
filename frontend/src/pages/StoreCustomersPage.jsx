@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { customersAPI } from '../services/api';
-import { Search } from 'lucide-react';
+import { MdSearch } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader } from '../components/ui';
 
@@ -42,7 +42,7 @@ export default function StoreCustomersPage() {
         {/* Filtros */}
         <Card className="mb-6 p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               placeholder="Buscar por nome, e-mail, CPF ou telefone..."
