@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Calendar, ArrowLeft } from 'lucide-react';
+import { MdLocationOn, MdEvent, MdArrowBack } from 'react-icons/md';
 import api, { insuranceAPI } from '../services/api';
 import { Card, StatusChip, StatCard } from '../components/ui';
 
@@ -85,7 +85,7 @@ export default function CustomerDetailPage() {
               to="/admin/customers"
               className="text-primary dark:text-primary-400 hover:underline mb-2 inline-flex items-center gap-1 text-sm font-semibold"
             >
-              <ArrowLeft size={16} /> Voltar para clientes
+              <MdArrowBack size={16} /> Voltar para clientes
             </Link>
             <h1 className="font-title text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100">{customer.fullName}</h1>
             <p className="text-gray-500 dark:text-slate-400 mt-1">{customer.email}</p>
@@ -270,10 +270,10 @@ export default function CustomerDetailPage() {
                         <h4 className="font-semibold mb-2 text-gray-900 dark:text-slate-100">{event.title}</h4>
                         <p className="text-sm text-gray-500 dark:text-slate-400 mb-2">{event.description}</p>
                         <p className="text-sm text-gray-500 dark:text-slate-400 mb-2 flex items-center gap-1.5">
-                          <MapPin size={16} className="text-gray-400" /> {event.location}
+                          <MdLocationOn size={16} className="text-gray-400" /> {event.location}
                         </p>
                         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4 flex items-center gap-1.5">
-                          <Calendar size={16} className="text-gray-400" /> {new Date(event.startDate).toLocaleDateString('pt-BR')}
+                          <MdEvent size={16} className="text-gray-400" /> {new Date(event.startDate).toLocaleDateString('pt-BR')}
                         </p>
                         <button className="btn btn-primary text-sm">
                           Inscrever Cliente

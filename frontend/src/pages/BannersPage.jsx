@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { bannersAPI } from '../services/api';
-import { Plus, Edit2, Trash2, Eye, EyeOff, ChevronUp, ChevronDown } from 'lucide-react';
+import { MdAdd, MdEdit, MdDelete, MdVisibility, MdVisibilityOff, MdKeyboardArrowUp, MdKeyboardArrowDown } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader, Button } from '../components/ui';
 
@@ -149,7 +149,7 @@ const BannersPage = () => {
           title="Banners do Site"
           subtitle={`${banners.length} banner(s) cadastrado(s)`}
           action={
-            <Button icon={Plus} onClick={() => setShowForm(!showForm)}>Novo Banner</Button>
+            <Button icon={MdAdd} onClick={() => setShowForm(!showForm)}>Novo Banner</Button>
           }
         />
 
@@ -292,7 +292,7 @@ const BannersPage = () => {
                           className="p-1 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded disabled:opacity-30"
                           title="Mover para cima"
                         >
-                          <ChevronUp size={16} />
+                          <MdKeyboardArrowUp size={16} />
                         </button>
                         <button
                           onClick={() => handleMoveDown(banner, index)}
@@ -300,7 +300,7 @@ const BannersPage = () => {
                           className="p-1 text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded disabled:opacity-30"
                           title="Mover para baixo"
                         >
-                          <ChevronDown size={16} />
+                          <MdKeyboardArrowDown size={16} />
                         </button>
                       </div>
 
@@ -314,7 +314,7 @@ const BannersPage = () => {
                         }`}
                         title={banner.active ? 'Desativar' : 'Ativar'}
                       >
-                        {banner.active ? <Eye size={20} /> : <EyeOff size={20} />}
+                        {banner.active ? <MdVisibility size={20} /> : <MdVisibilityOff size={20} />}
                       </button>
 
                       {/* Edit */}
@@ -323,7 +323,7 @@ const BannersPage = () => {
                         className="p-2 text-primary hover:bg-primary/10 rounded"
                         title="Editar"
                       >
-                        <Edit2 size={20} />
+                        <MdEdit size={20} />
                       </button>
 
                       {/* Delete */}
@@ -333,7 +333,7 @@ const BannersPage = () => {
                           className="p-2 text-error hover:bg-error/10 rounded"
                           title="Excluir"
                         >
-                          <Trash2 size={20} />
+                          <MdDelete size={20} />
                         </button>
                       )}
                     </div>

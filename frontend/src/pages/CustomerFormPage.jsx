@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { MdArrowBack } from 'react-icons/md';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Card } from '../components/ui';
@@ -202,7 +202,7 @@ export default function CustomerFormPage() {
             to="/admin/customers"
             className="text-primary dark:text-primary-400 hover:underline mb-4 inline-flex items-center gap-1 text-sm font-semibold"
           >
-            <ArrowLeft size={16} /> Voltar para clientes
+            <MdArrowBack size={16} /> Voltar para clientes
           </Link>
           <h1 className="font-title text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100">
             {isEditMode ? 'Editar Cliente' : 'Novo Cliente'}

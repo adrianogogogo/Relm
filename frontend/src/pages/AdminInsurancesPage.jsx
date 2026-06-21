@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { insuranceAPI } from '../services/api';
-import { FileText, Search } from 'lucide-react';
+import { MdDescription, MdSearch } from 'react-icons/md';
 import { Card, PageHeader, StatusChip } from '../components/ui';
 
 export default function AdminInsurancesPage() {
@@ -34,7 +34,7 @@ export default function AdminInsurancesPage() {
         {/* Filters */}
         <Card className="mb-6 flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               placeholder="Buscar por protocolo, cliente ou e-mail..."
@@ -58,7 +58,7 @@ export default function AdminInsurancesPage() {
           <div className="text-center py-12 text-gray-500 dark:text-slate-400">Carregando cotações...</div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12">
-            <FileText className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
+            <MdDescription className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-slate-400 text-lg">Nenhuma cotação encontrada.</p>
           </div>
         ) : (

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
+import { MdArrowBack } from 'react-icons/md';
 import { storesAPI } from '../services/api';
 import { Card } from '../components/ui';
 
@@ -200,7 +200,7 @@ export default function StoreFormPage() {
         {/* Header */}
         <div className="mb-8">
           <Link to="/admin/stores" className="text-primary dark:text-primary-400 hover:underline flex items-center mb-4 text-sm font-semibold w-fit">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <MdArrowBack className="h-4 w-4 mr-2" />
             Voltar para Lojas
           </Link>
           <h1 className="font-title text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100">

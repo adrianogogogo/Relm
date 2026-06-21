@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ClipboardList, Users, Store, Calendar, Gift, Shield } from 'lucide-react';
+import { MdAssignment, MdPeople, MdStore, MdEvent, MdCardGiftcard, MdVerifiedUser, MdDescription } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
 import { Card, PageHeader, StatusChip, StatCard, Button } from '../components/ui';
@@ -40,28 +40,28 @@ export default function AdminDashboard() {
     {
       label: 'Garantias Ativas',
       value: stats?.warranties?.pending ?? '—',
-      icon: Shield,
+      icon: MdVerifiedUser,
       color: '#1565C0',
       link: '/admin/warranties',
     },
     {
       label: 'Clientes',
       value: stats?.totalCustomers ?? '—',
-      icon: Users,
+      icon: MdPeople,
       color: '#2d3a4a',
       link: '/admin/customers',
     },
     {
       label: 'Lojas Parceiras',
       value: stats?.totalActiveStores ?? '—',
-      icon: Store,
+      icon: MdStore,
       color: '#9C27B0',
       link: '/admin/stores',
     },
     {
       label: 'Eventos Ativos',
       value: stats?.totalActiveEvents ?? '—',
-      icon: Calendar,
+      icon: MdEvent,
       color: '#FF9800',
       link: '/admin/events',
     },
@@ -103,25 +103,25 @@ export default function AdminDashboard() {
             <div className="space-y-3">
               {isRelm && (
                 <Link to="/admin/warranties" className="btn btn-outline w-full justify-start">
-                  <ClipboardList size={18} /> Gerenciar Garantias
+                  <MdAssignment size={18} /> Gerenciar Garantias
                 </Link>
               )}
               <Link to="/admin/customers" className="btn btn-outline w-full justify-start">
-                <Users size={18} /> Gerenciar Clientes
+                <MdPeople size={18} /> Gerenciar Clientes
               </Link>
               <Link to="/admin/stores" className="btn btn-outline w-full justify-start">
-                <Store size={18} /> Gerenciar Lojas
+                <MdStore size={18} /> Gerenciar Lojas
               </Link>
               {isRelm && (
                 <>
                   <Link to="/admin/events" className="btn btn-outline w-full justify-start">
-                    <Calendar size={18} /> Gerenciar Eventos
+                    <MdEvent size={18} /> Gerenciar Eventos
                   </Link>
                   <Link to="/admin/benefits" className="btn btn-outline w-full justify-start">
-                    <Gift size={18} /> Gerenciar Benefícios
+                    <MdCardGiftcard size={18} /> Gerenciar Benefícios
                   </Link>
                   <Link to="/admin/insurances" className="btn btn-outline w-full justify-start">
-                    <Shield size={18} /> Cotações de Seguro
+                    <MdDescription size={18} /> Cotações de Seguro
                   </Link>
                 </>
               )}

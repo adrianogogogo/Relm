@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { MdDescription, MdAccessTime, MdCheckCircle, MdCancel } from 'react-icons/md';
 import { warrantyAPI } from '../services/api';
 import WarrantyReviewModal from '../components/WarrantyReviewModal';
 import { Card, PageHeader, StatusChip, StatCard } from '../components/ui';
@@ -59,10 +59,10 @@ export default function WarrantiesPage() {
 
         {/* KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard title="Total" value={stats.total} icon={FileText} color="#2196F3" />
-          <StatCard title="Pendentes" value={stats.pending} icon={Clock} color="#FF9800" />
-          <StatCard title="Aprovadas" value={stats.approved} icon={CheckCircle} color="#4CAF50" />
-          <StatCard title="Reprovadas" value={stats.rejected} icon={XCircle} color="#F44336" />
+          <StatCard title="Total" value={stats.total} icon={MdDescription} color="#2196F3" />
+          <StatCard title="Pendentes" value={stats.pending} icon={MdAccessTime} color="#FF9800" />
+          <StatCard title="Aprovadas" value={stats.approved} icon={MdCheckCircle} color="#4CAF50" />
+          <StatCard title="Reprovadas" value={stats.rejected} icon={MdCancel} color="#F44336" />
         </div>
 
         {/* Filters */}
@@ -158,7 +158,7 @@ export default function WarrantiesPage() {
             </div>
           ) : (
             <div className="p-12 text-center">
-              <FileText className="mx-auto h-12 w-12 text-gray-400 dark:text-slate-600" />
+              <MdDescription className="mx-auto h-12 w-12 text-gray-400 dark:text-slate-600" />
               <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-slate-100">Nenhuma garantia encontrada</h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">Ajuste os filtros ou aguarde novas solicitações.</p>
             </div>

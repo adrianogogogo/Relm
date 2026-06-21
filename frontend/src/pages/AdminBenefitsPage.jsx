@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
-import { Gift, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { MdCardGiftcard, MdAdd, MdEdit, MdDelete, MdClose } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import { PageHeader, StatusChip, Button } from '../components/ui';
 
@@ -59,7 +59,7 @@ function BenefitModal({ benefit, onClose }) {
       <div className="bg-white dark:bg-surface-dark rounded-xl shadow-2xl max-w-lg w-full p-6 max-h-screen overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-title text-lg font-bold text-gray-900 dark:text-slate-100">{isEdit ? 'Editar Benefício' : 'Novo Benefício'}</h3>
-          <button onClick={onClose}><X className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200" /></button>
+          <button onClick={onClose}><MdClose className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200" /></button>
         </div>
 
         {error && (
@@ -183,7 +183,7 @@ export default function AdminBenefitsPage() {
           title="Benefícios"
           subtitle={`${benefits?.length ?? 0} benefício(s) cadastrado(s)`}
           action={
-            <Button icon={Plus} onClick={handleNew}>Novo Benefício</Button>
+            <Button icon={MdAdd} onClick={handleNew}>Novo Benefício</Button>
           }
         />
 
@@ -191,7 +191,7 @@ export default function AdminBenefitsPage() {
           <div className="text-center py-12 text-gray-500 dark:text-slate-400">Carregando benefícios...</div>
         ) : benefits?.length === 0 ? (
           <div className="text-center py-12">
-            <Gift className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
+            <MdCardGiftcard className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-slate-400 text-lg">Nenhum benefício cadastrado.</p>
             <button onClick={handleNew} className="btn btn-primary mt-4 mx-auto">
               Criar primeiro benefício
@@ -216,14 +216,14 @@ export default function AdminBenefitsPage() {
                   </div>
                   <div className="flex items-center gap-2 ml-2">
                     <button onClick={() => handleEdit(b)} className="p-1.5 text-gray-400 hover:text-primary rounded">
-                      <Pencil className="w-4 h-4" />
+                      <MdEdit className="w-4 h-4" />
                     </button>
                     {isAdmin && (
                       <button
                         onClick={() => { if (confirm('Desativar este benefício?')) removeMutation.mutate(b.id); }}
                         className="p-1.5 text-gray-400 hover:text-error rounded"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <MdDelete className="w-4 h-4" />
                       </button>
                     )}
                   </div>

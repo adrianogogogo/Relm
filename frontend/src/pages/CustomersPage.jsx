@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Trash2, Users, UserCheck, Shield, CalendarPlus, Plus } from 'lucide-react';
+import { MdDelete, MdPeople, MdHowToReg, MdVerifiedUser, MdEventAvailable, MdAdd } from 'react-icons/md';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader, StatusChip, StatCard, Button } from '../components/ui';
@@ -79,17 +79,17 @@ export default function CustomersPage() {
           subtitle={`${filteredCustomers.length} cliente(s) encontrado(s)`}
           action={
             <Link to="/admin/customers/new">
-              <Button icon={Plus}>Novo Cliente</Button>
+              <Button icon={MdAdd}>Novo Cliente</Button>
             </Link>
           }
         />
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <StatCard title="Total de Clientes" value={customers.length} icon={Users} color="#1565C0" />
-          <StatCard title="Clientes Ativos" value={customers.filter((c) => c.active).length} icon={UserCheck} color="#4CAF50" />
-          <StatCard title="Com Garantia Ativa" value={customers.filter((c) => c.hasActiveWarranty).length} icon={Shield} color="#2196F3" />
-          <StatCard title="Novos Este Mês" value={newThisMonth} icon={CalendarPlus} color="#9C27B0" />
+          <StatCard title="Total de Clientes" value={customers.length} icon={MdPeople} color="#1565C0" />
+          <StatCard title="Clientes Ativos" value={customers.filter((c) => c.active).length} icon={MdHowToReg} color="#4CAF50" />
+          <StatCard title="Com Garantia Ativa" value={customers.filter((c) => c.hasActiveWarranty).length} icon={MdVerifiedUser} color="#2196F3" />
+          <StatCard title="Novos Este Mês" value={newThisMonth} icon={MdEventAvailable} color="#9C27B0" />
         </div>
 
         {/* Filters */}
@@ -202,7 +202,7 @@ export default function CustomersPage() {
                               className="text-gray-400 hover:text-error transition-colors"
                               title="Excluir cliente"
                             >
-                              <Trash2 size={16} />
+                              <MdDelete size={16} />
                             </button>
                           )}
                         </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Trash2, Plus, Store, CheckCircle, Ban, Users } from 'lucide-react';
+import { MdDelete, MdAdd, MdStore, MdCheckCircle, MdBlock, MdPeople } from 'react-icons/md';
 import { storesAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader, StatusChip, StatCard, Button } from '../components/ui';
@@ -58,17 +58,17 @@ export default function StoresPage() {
           subtitle={`${stats.total} loja(s) encontrada(s)`}
           action={
             <Link to="/admin/stores/new">
-              <Button icon={Plus}>Nova Loja</Button>
+              <Button icon={MdAdd}>Nova Loja</Button>
             </Link>
           }
         />
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <StatCard title="Total de Lojas" value={stats.total} icon={Store} color="#1565C0" />
-          <StatCard title="Lojas Ativas" value={stats.active} icon={CheckCircle} color="#4CAF50" />
-          <StatCard title="Lojas Inativas" value={stats.inactive} icon={Ban} color="#666666" />
-          <StatCard title="Clientes Total" value={stats.totalCustomers} icon={Users} color="#9C27B0" />
+          <StatCard title="Total de Lojas" value={stats.total} icon={MdStore} color="#1565C0" />
+          <StatCard title="Lojas Ativas" value={stats.active} icon={MdCheckCircle} color="#4CAF50" />
+          <StatCard title="Lojas Inativas" value={stats.inactive} icon={MdBlock} color="#666666" />
+          <StatCard title="Clientes Total" value={stats.totalCustomers} icon={MdPeople} color="#9C27B0" />
         </div>
 
         {/* Filters */}
@@ -177,7 +177,7 @@ export default function StoresPage() {
                               className="text-gray-400 hover:text-error transition-colors"
                               title="Excluir loja"
                             >
-                              <Trash2 size={16} />
+                              <MdDelete size={16} />
                             </button>
                           )}
                         </div>
@@ -189,12 +189,12 @@ export default function StoresPage() {
             </div>
           ) : (
             <div className="p-12 text-center">
-              <Store className="mx-auto h-12 w-12 text-gray-400 dark:text-slate-600" />
+              <MdStore className="mx-auto h-12 w-12 text-gray-400 dark:text-slate-600" />
               <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-slate-100">Nenhuma loja encontrada</h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">Comece cadastrando uma nova loja parceira.</p>
               <div className="mt-6 flex justify-center">
                 <Link to="/admin/stores/new">
-                  <Button icon={Plus}>Nova Loja</Button>
+                  <Button icon={MdAdd}>Nova Loja</Button>
                 </Link>
               </div>
             </div>

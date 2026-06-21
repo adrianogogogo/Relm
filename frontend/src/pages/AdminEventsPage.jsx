@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsAPI } from '../services/api';
-import { CalendarDays, Plus, Pencil, Trash2, X, Users, MapPin } from 'lucide-react';
+import { MdCalendarMonth, MdAdd, MdEdit, MdDelete, MdClose, MdPeople, MdLocationOn } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import { PageHeader, Button } from '../components/ui';
 
@@ -62,7 +62,7 @@ function EventModal({ event, onClose }) {
       <div className="bg-white dark:bg-surface-dark rounded-xl shadow-2xl max-w-lg w-full p-6 max-h-screen overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-title text-lg font-bold text-gray-900 dark:text-slate-100">{isEdit ? 'Editar Evento' : 'Novo Evento'}</h3>
-          <button onClick={onClose}><X className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200" /></button>
+          <button onClick={onClose}><MdClose className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200" /></button>
         </div>
 
         {error && (
@@ -169,7 +169,7 @@ function RegistrationsModal({ event, onClose }) {
             <h3 className="font-title text-lg font-bold text-gray-900 dark:text-slate-100">Inscrições</h3>
             <p className="text-sm text-gray-600 dark:text-slate-400">{event.title}</p>
           </div>
-          <button onClick={onClose}><X className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200" /></button>
+          <button onClick={onClose}><MdClose className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200" /></button>
         </div>
         <div className="overflow-y-auto flex-1">
           {isLoading ? (
@@ -223,7 +223,7 @@ export default function AdminEventsPage() {
           title="Eventos"
           subtitle={`${events?.length ?? 0} evento(s) cadastrado(s)`}
           action={
-            <Button icon={Plus} onClick={() => { setModalEvent(null); setShowEventModal(true); }}>
+            <Button icon={MdAdd} onClick={() => { setModalEvent(null); setShowEventModal(true); }}>
               Novo Evento
             </Button>
           }
@@ -233,7 +233,7 @@ export default function AdminEventsPage() {
           <div className="text-center py-12 text-gray-500 dark:text-slate-400">Carregando eventos...</div>
         ) : events?.length === 0 ? (
           <div className="text-center py-12">
-            <CalendarDays className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
+            <MdCalendarMonth className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-slate-400 text-lg">Nenhum evento criado ainda.</p>
             <button onClick={() => { setModalEvent(null); setShowEventModal(true); }} className="btn btn-primary mt-4 mx-auto">
               Criar primeiro evento
@@ -249,27 +249,27 @@ export default function AdminEventsPage() {
                     <h3 className="font-bold text-gray-900 dark:text-slate-100 text-lg flex-1">{e.title}</h3>
                     <div className="flex items-center gap-1 ml-2">
                       <button onClick={() => setRegEvent(e)} className="p-1.5 text-gray-400 hover:text-primary rounded" title="Ver inscrições">
-                        <Users className="w-4 h-4" />
+                        <MdPeople className="w-4 h-4" />
                       </button>
                       <button onClick={() => { setModalEvent(e); setShowEventModal(true); }} className="p-1.5 text-gray-400 hover:text-primary rounded">
-                        <Pencil className="w-4 h-4" />
+                        <MdEdit className="w-4 h-4" />
                       </button>
                       {isAdmin && (
                         <button
                           onClick={() => { if (confirm('Desativar este evento?')) removeMutation.mutate(e.id); }}
                           className="p-1.5 text-gray-400 hover:text-error rounded"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <MdDelete className="w-4 h-4" />
                         </button>
                       )}
                     </div>
                   </div>
                   <p className="text-gray-600 dark:text-slate-400 text-sm mb-3 line-clamp-2">{e.description}</p>
                   <div className="text-sm text-gray-500 dark:text-slate-400 space-y-1">
-                    <p className="flex items-center gap-1.5"><MapPin size={16} className="text-gray-400" /> {e.location}</p>
-                    <p className="flex items-center gap-1.5"><CalendarDays size={16} className="text-gray-400" /> {new Date(e.startAt).toLocaleDateString('pt-BR')} às {new Date(e.startAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                    <p className="flex items-center gap-1.5"><MdLocationOn size={16} className="text-gray-400" /> {e.location}</p>
+                    <p className="flex items-center gap-1.5"><MdCalendarMonth size={16} className="text-gray-400" /> {new Date(e.startAt).toLocaleDateString('pt-BR')} às {new Date(e.startAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
                     <p className="flex items-center gap-1.5">
-                      <Users size={16} className="text-gray-400" /> {registrationCount} inscrito{registrationCount !== 1 ? 's' : ''}
+                      <MdPeople size={16} className="text-gray-400" /> {registrationCount} inscrito{registrationCount !== 1 ? 's' : ''}
                       {e.maxParticipants ? ` / ${e.maxParticipants} vagas` : ' (ilimitado)'}
                     </p>
                   </div>

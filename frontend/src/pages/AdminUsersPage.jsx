@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 import api from '../services/api';
-import { UserPlus, Pencil, Trash2, ToggleLeft, ToggleRight, X, KeyRound } from 'lucide-react';
+import { MdPersonAdd, MdEdit, MdDelete, MdToggleOff, MdToggleOn, MdClose, MdVpnKey } from 'react-icons/md';
 import { Card, PageHeader, StatusChip, Button } from '../components/ui';
 
 const ROLES = [
@@ -96,7 +96,7 @@ function NewUserModal({ onClose }) {
       <div className="bg-white dark:bg-surface-dark rounded-xl shadow-2xl max-w-md w-full p-6">
         <div className="flex justify-between items-center mb-5">
           <h3 className="font-title text-lg font-bold text-gray-900 dark:text-slate-100">Novo Usuário do Sistema</h3>
-          <button onClick={onClose}><X className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200" /></button>
+          <button onClick={onClose}><MdClose className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200" /></button>
         </div>
 
         {error && <div className="bg-error/10 border-l-4 border-error text-error p-3 rounded mb-4 text-sm">{error}</div>}
@@ -199,7 +199,7 @@ function EditUserModal({ user: target, onClose }) {
             <h3 className="font-title text-lg font-bold text-gray-900 dark:text-slate-100">Editar Usuário</h3>
             <p className="text-xs text-gray-400 dark:text-slate-500">{target.email}</p>
           </div>
-          <button onClick={onClose}><X className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200" /></button>
+          <button onClick={onClose}><MdClose className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200" /></button>
         </div>
 
         {/* Tabs */}
@@ -275,7 +275,7 @@ function EditUserModal({ user: target, onClose }) {
             <div className="flex gap-3 pt-2">
               <button type="button" onClick={onClose} className="btn btn-outline flex-1">Cancelar</button>
               <button type="submit" disabled={resetPasswordMutation.isPending} className="btn btn-primary flex-1 flex items-center justify-center gap-2">
-                <KeyRound size={14} />
+                <MdVpnKey size={14} />
                 {resetPasswordMutation.isPending ? 'Redefinindo...' : 'Redefinir senha'}
               </button>
             </div>
@@ -319,7 +319,7 @@ export default function AdminUsersPage() {
           title="Usuários do Sistema"
           subtitle={`${users.length} usuário(s) — acessos internos da equipe Relm`}
           action={
-            <Button icon={UserPlus} onClick={() => setShowNewModal(true)}>Novo Usuário</Button>
+            <Button icon={MdPersonAdd} onClick={() => setShowNewModal(true)}>Novo Usuário</Button>
           }
         />
 
@@ -372,7 +372,7 @@ export default function AdminUsersPage() {
                             className="p-1.5 text-gray-400 hover:text-primary rounded transition-colors"
                             title="Editar usuário"
                           >
-                            <Pencil size={16} />
+                            <MdEdit size={16} />
                           </button>
 
                           {/* Toggle ativo */}
@@ -384,8 +384,8 @@ export default function AdminUsersPage() {
                               className="text-gray-400 hover:text-primary transition-colors"
                             >
                               {u.active
-                                ? <ToggleRight size={22} className="text-success" />
-                                : <ToggleLeft size={22} />}
+                                ? <MdToggleOn size={22} className="text-success" />
+                                : <MdToggleOff size={22} />}
                             </button>
                           )}
 
@@ -397,7 +397,7 @@ export default function AdminUsersPage() {
                               className="p-1.5 text-gray-400 hover:text-error rounded transition-colors"
                               title="Excluir usuário"
                             >
-                              <Trash2 size={16} />
+                              <MdDelete size={16} />
                             </button>
                           )}
                         </div>

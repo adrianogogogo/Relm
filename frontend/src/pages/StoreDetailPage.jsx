@@ -3,9 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { storesAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import {
-  ArrowLeft, Pencil, MapPin, Phone, Mail, Building2,
-  Users, Shield, Package, UserCog, CheckCircle2, XCircle,
-} from 'lucide-react';
+  MdArrowBack, MdEdit, MdLocationOn, MdPhone, MdEmail, MdBusiness,
+  MdPeople, MdVerifiedUser, MdInventory2, MdManageAccounts, MdCheckCircle, MdCancel,
+} from 'react-icons/md';
 import { Card, StatusChip, StatCard } from '../components/ui';
 
 const ROLE_LABEL = {
@@ -62,7 +62,7 @@ export default function StoreDetailPage() {
         <div className="flex items-center justify-between mb-6 gap-4">
           <div className="flex items-center gap-3">
             <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200">
-              <ArrowLeft className="w-5 h-5" />
+              <MdArrowBack className="w-5 h-5" />
             </button>
             <div>
               <h1 className="font-title text-2xl font-bold text-gray-900 dark:text-slate-100">{store.tradeName}</h1>
@@ -81,7 +81,7 @@ export default function StoreDetailPage() {
               to={`/admin/stores/${id}/edit`}
               className="btn btn-primary shrink-0"
             >
-              <Pencil className="w-4 h-4" /> Editar
+              <MdEdit className="w-4 h-4" /> Editar
             </Link>
           )}
         </div>
@@ -97,7 +97,7 @@ export default function StoreDetailPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 {store.cnpjFormatted && (
                   <div className="flex items-start gap-2">
-                    <Building2 className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                    <MdBusiness className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
                     <div>
                       <p className="text-xs text-gray-400 dark:text-slate-500">CNPJ</p>
                       <p className="text-gray-800 dark:text-slate-100 font-medium">{store.cnpjFormatted}</p>
@@ -106,7 +106,7 @@ export default function StoreDetailPage() {
                 )}
                 {(store.city || store.state) && (
                   <div className="flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                    <MdLocationOn className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
                     <div>
                       <p className="text-xs text-gray-400 dark:text-slate-500">Localização</p>
                       <p className="text-gray-800 dark:text-slate-100">{[store.city, store.state].filter(Boolean).join(', ')}</p>
@@ -117,7 +117,7 @@ export default function StoreDetailPage() {
                 )}
                 {store.phone && (
                   <div className="flex items-start gap-2">
-                    <Phone className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                    <MdPhone className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
                     <div>
                       <p className="text-xs text-gray-400 dark:text-slate-500">Telefone</p>
                       <p className="text-gray-800 dark:text-slate-100">{store.phone}</p>
@@ -126,7 +126,7 @@ export default function StoreDetailPage() {
                 )}
                 {store.email && (
                   <div className="flex items-start gap-2">
-                    <Mail className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                    <MdEmail className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
                     <div>
                       <p className="text-xs text-gray-400 dark:text-slate-500">E-mail</p>
                       <p className="text-gray-800 dark:text-slate-100">{store.email}</p>
@@ -140,7 +140,7 @@ export default function StoreDetailPage() {
             {store.users && store.users.length > 0 && (
               <Card>
                 <h2 className="text-base font-semibold text-gray-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-                  <UserCog className="w-4 h-4 text-gray-400" /> Usuários do Sistema
+                  <MdManageAccounts className="w-4 h-4 text-gray-400" /> Usuários do Sistema
                 </h2>
                 <div className="space-y-2">
                   {store.users.map((u) => (
@@ -152,8 +152,8 @@ export default function StoreDetailPage() {
                       <div className="flex items-center gap-2">
                         <StatusChip label={ROLE_LABEL[u.role] || u.role} color={ROLE_HEX[u.role]} />
                         {u.active
-                          ? <CheckCircle2 className="w-4 h-4 text-success" />
-                          : <XCircle className="w-4 h-4 text-gray-300 dark:text-slate-600" />}
+                          ? <MdCheckCircle className="w-4 h-4 text-success" />
+                          : <MdCancel className="w-4 h-4 text-gray-300 dark:text-slate-600" />}
                       </div>
                     </div>
                   ))}
@@ -164,9 +164,9 @@ export default function StoreDetailPage() {
 
           {/* Coluna lateral — stats */}
           <div className="space-y-4">
-            <StatCard title="Clientes" value={store._count?.customers ?? 0} icon={Users} color="#1565C0" />
-            <StatCard title="Garantias" value={store._count?.warrantyClaims ?? 0} icon={Shield} color="#4CAF50" />
-            <StatCard title="Produtos" value={store._count?.products ?? 0} icon={Package} color="#9C27B0" />
+            <StatCard title="Clientes" value={store._count?.customers ?? 0} icon={MdPeople} color="#1565C0" />
+            <StatCard title="Garantias" value={store._count?.warrantyClaims ?? 0} icon={MdVerifiedUser} color="#4CAF50" />
+            <StatCard title="Produtos" value={store._count?.products ?? 0} icon={MdInventory2} color="#9C27B0" />
 
             <Card className="p-5">
               <p className="text-xs text-gray-400 dark:text-slate-500 mb-1">Cadastro</p>
