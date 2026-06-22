@@ -3,6 +3,59 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { Card, PageHeader } from '../components/ui';
 
+// Renderiza o metadata de um log de forma legível.
+// Para logs de garantia (com fromStatus/toStatus) mostra "DE → PARA" + motivo/protocolo.
+// Para metadata genérico, lista pares chave: valor de forma compacta.
+function MetadataDetails({ metadata }) {
+  if (metadata == null || typeof metadata !== 'object' || Object.keys(metadata).length === 0) {
+    return <span className="text-gray-400 dark:text-slate-500">—</span>;
+  }
+
+  const { fromStatus, toStatus, protocolNumber, reason, rejectionReason, comment } = metadata;
+
+  // Caminho específico: alteração de status de garantia.
+  if (fromStatus || toStatus) {
+    const note = reason || rejectionReason || comment;
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 font-mono text-xs">
+          <span className="bg-slate-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 px-1.5 py-0.5 rounded">
+            {fromStatus || '—'}
+          </span>
+          <span className="text-gray-400 dark:text-slate-500">→</span>
+          <span className="bg-primary/10 text-primary dark:text-primary-400 px-1.5 py-0.5 rounded">
+            {toStatus || '—'}
+          </span>
+        </div>
+        {protocolNumber && (
+          <p className="text-xs text-gray-400 dark:text-slate-500 font-mono">{protocolNumber}</p>
+        )}
+        {note && (
+          <p className="text-xs text-gray-500 dark:text-slate-400 italic max-w-xs truncate" title={note}>
+            {note}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // Fallback genérico: pares chave: valor.
+  return (
+    <div className="space-y-0.5">
+      {Object.entries(metadata).map(([key, value]) => (
+        <p key={key} className="text-xs text-gray-500 dark:text-slate-400">
+          <span className="font-medium text-gray-600 dark:text-slate-300">{key}:</span>{' '}
+          {value == null
+            ? '—'
+            : typeof value === 'object'
+              ? JSON.stringify(value)
+              : String(value)}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export default function AuditLogsPage() {
   const [filters, setFilters] = useState({ action: '', entity: '', page: '1' });
 
@@ -68,6 +121,7 @@ export default function AuditLogsPage() {
                     <th className="px-5 py-3 text-left">Ação</th>
                     <th className="px-5 py-3 text-left">Entidade</th>
                     <th className="px-5 py-3 text-left">ID</th>
+                    <th className="px-5 py-3 text-left">Detalhes</th>
                     <th className="px-5 py-3 text-left">IP</th>
                   </tr>
                 </thead>
@@ -95,6 +149,9 @@ export default function AuditLogsPage() {
                       <td className="px-5 py-3 text-gray-600 dark:text-slate-300 font-mono text-xs">{log.entity}</td>
                       <td className="px-5 py-3 text-gray-400 dark:text-slate-500 font-mono text-xs truncate max-w-24" title={log.entityId}>
                         {log.entityId ? log.entityId.slice(0, 8) + '…' : '—'}
+                      </td>
+                      <td className="px-5 py-3">
+                        <MetadataDetails metadata={log.metadata} />
                       </td>
                       <td className="px-5 py-3 text-gray-400 dark:text-slate-500 text-xs">{log.ipAddress || '—'}</td>
                     </tr>
