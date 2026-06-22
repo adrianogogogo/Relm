@@ -12,6 +12,24 @@ export class BenefitsService {
     });
   }
 
+  /**
+   * Feed segmentado por perfil: benefícios ativos e vigentes visíveis para o
+   * `audience` (targetRoles vazio = todos OU contém o audience). Ordenado pela
+   * validade (mais próximos de expirar primeiro).
+   */
+  async findFeed(audience: string) {
+    const now = new Date();
+    return this.prisma.benefit.findMany({
+      where: {
+        active: true,
+        validFrom: { lte: now },
+        validUntil: { gte: now },
+        OR: [{ targetRoles: { isEmpty: true } }, { targetRoles: { has: audience } }],
+      },
+      orderBy: { validUntil: 'asc' },
+    });
+  }
+
   async findAllAdmin() {
     return this.prisma.benefit.findMany({ orderBy: { createdAt: 'desc' } });
   }

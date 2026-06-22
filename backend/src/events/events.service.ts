@@ -23,6 +23,21 @@ export class EventsService {
     });
   }
 
+  /**
+   * Feed segmentado por perfil: eventos ativos visíveis para o `audience`
+   * (targetRoles vazio = todos OU contém o audience). Ordenado por data.
+   */
+  async findFeed(audience: string) {
+    return this.prisma.event.findMany({
+      where: {
+        active: true,
+        OR: [{ targetRoles: { isEmpty: true } }, { targetRoles: { has: audience } }],
+      },
+      include: { _count: { select: { registrations: true } } },
+      orderBy: { startAt: 'asc' },
+    });
+  }
+
   async findAllAdmin() {
     return this.prisma.event.findMany({
       include: { _count: { select: { registrations: true } } },
@@ -46,6 +61,7 @@ export class EventsService {
     startAt: string;
     endAt: string;
     maxParticipants?: number;
+    targetRoles?: string[];
   }) {
     return this.prisma.event.create({
       data: {
@@ -55,6 +71,7 @@ export class EventsService {
         startAt: new Date(data.startAt),
         endAt: new Date(data.endAt),
         maxParticipants: data.maxParticipants ?? null,
+        targetRoles: data.targetRoles ?? [],
       },
     });
   }
@@ -69,6 +86,7 @@ export class EventsService {
       endAt?: string;
       maxParticipants?: number;
       active?: boolean;
+      targetRoles?: string[];
     },
   ) {
     await this.findOne(id);

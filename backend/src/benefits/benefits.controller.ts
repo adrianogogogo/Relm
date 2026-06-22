@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Req,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -15,6 +16,7 @@ import { BenefitsService } from './benefits.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { FeedAudienceGuard } from '../common/guards/feed-audience.guard';
 
 @ApiTags('benefits')
 @Controller()
@@ -25,6 +27,14 @@ export class BenefitsController {
   @Get('public/benefits')
   findAllPublic() {
     return this.benefitsService.findAllPublic();
+  }
+
+  // ── Feed segmentado por perfil (autenticado: CLIENTE/LOJA/DISTRIBUIDOR) ────
+  @Get('benefits/feed')
+  @UseGuards(FeedAudienceGuard)
+  @ApiBearerAuth()
+  feed(@Req() req: any) {
+    return this.benefitsService.findFeed(req.feedAudience);
   }
 
   // ── Admin ────────────────────────────────────────────────────────────────

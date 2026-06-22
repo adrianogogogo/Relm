@@ -412,10 +412,13 @@ model Event {
   endAt           DateTime @map("end_at")
   maxParticipants Int?     @map("max_participants")
   active          Boolean  @default(true)
-  
+
+  // Segmentação
+  targetRoles     String[] @default([]) @map("target_roles") // CLIENTE, LOJA, DISTRIBUIDOR, vazio = todos
+
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
-  
+
   // Relations
   registrations EventRegistration[]
   

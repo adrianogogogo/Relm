@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Req,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -13,9 +14,12 @@ import {
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { EventsService } from './events.service';
 import { RegisterEventDto } from './dto/register-event.dto';
+import { CreateEventDto } from './dto/create-event.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { FeedAudienceGuard } from '../common/guards/feed-audience.guard';
 
 @ApiTags('events')
 @Controller()
@@ -32,6 +36,14 @@ export class EventsController {
   @HttpCode(HttpStatus.CREATED)
   register(@Param('id') id: string, @Body() body: RegisterEventDto) {
     return this.eventsService.register(id, body);
+  }
+
+  // ── Feed segmentado por perfil (autenticado: CLIENTE/LOJA/DISTRIBUIDOR) ────
+  @Get('events/feed')
+  @UseGuards(FeedAudienceGuard)
+  @ApiBearerAuth()
+  feed(@Req() req: any) {
+    return this.eventsService.findFeed(req.feedAudience);
   }
 
   // ── Admin ────────────────────────────────────────────────────────────────
@@ -56,7 +68,7 @@ export class EventsController {
   @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() body: any) {
+  create(@Body() body: CreateEventDto) {
     return this.eventsService.create(body);
   }
 
@@ -64,7 +76,7 @@ export class EventsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiBearerAuth()
-  update(@Param('id') id: string, @Body() body: any) {
+  update(@Param('id') id: string, @Body() body: UpdateEventDto) {
     return this.eventsService.update(id, body);
   }
 
