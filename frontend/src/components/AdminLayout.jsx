@@ -59,6 +59,19 @@ const MENU_ITEMS = [
     roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
   },
   {
+    // Telas view-only de feed para o Distribuidor (não dão acesso à gestão).
+    path: '/admin/meus-eventos',
+    label: 'Eventos',
+    icon: MdEvent,
+    roles: ['DISTRIBUIDOR'],
+  },
+  {
+    path: '/admin/meus-beneficios',
+    label: 'Benefícios',
+    icon: MdCardGiftcard,
+    roles: ['DISTRIBUIDOR'],
+  },
+  {
     path: '/admin/insurances',
     label: 'Cotações de Seguro',
     icon: MdDescription,

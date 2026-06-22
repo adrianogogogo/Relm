@@ -1,23 +1,27 @@
 import { useQuery } from '@tanstack/react-query';
 import { MdCardGiftcard } from 'react-icons/md';
-import { benefitsAPI } from '../services/api';
-import { Card, PageHeader } from '../components/ui';
+import { benefitsAPI } from '../../services/api';
+import { Card, PageHeader } from '../ui';
 
-export default function CustomerBenefitsPage() {
-  // Feed segmentado: o token CLIENTE resolve o audience no backend, retornando
-  // apenas benefícios direcionados a CLIENTE (ou sem direcionamento = todos).
+/**
+ * Lista view-only de benefícios direcionados ao perfil do usuário logado.
+ * Consome GET /benefits/feed (audience resolvido pelo token). Reutilizada nos
+ * portais de Loja e Distribuidor; o título/subtítulo variam por contexto.
+ */
+export default function BenefitsFeed({
+  title = 'Benefícios',
+  subtitle = 'Vantagens disponíveis para você',
+  queryKey = 'feed-benefits',
+}) {
   const { data: benefits = [], isLoading } = useQuery({
-    queryKey: ['customer-benefits'],
+    queryKey: [queryKey],
     queryFn: benefitsAPI.feed,
   });
 
   return (
     <div className="py-8 px-6">
       <div className="max-w-4xl mx-auto">
-        <PageHeader
-          title="Vantagens"
-          subtitle="Benefícios exclusivos para clientes Relm"
-        />
+        <PageHeader title={title} subtitle={subtitle} />
 
         {isLoading ? (
           <div className="flex justify-center py-16">
@@ -26,7 +30,7 @@ export default function CustomerBenefitsPage() {
         ) : benefits.length === 0 ? (
           <Card className="p-12 text-center flex flex-col items-center">
             <MdCardGiftcard className="h-12 w-12 text-gray-300 dark:text-slate-700 mb-4" />
-            <p className="text-gray-500 dark:text-slate-400">Nenhuma vantagem disponível no momento.</p>
+            <p className="text-gray-500 dark:text-slate-400">Nenhum benefício disponível no momento.</p>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

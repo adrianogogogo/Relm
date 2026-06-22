@@ -10,6 +10,8 @@ import {
   MdVerifiedUser,
   MdDescription,
   MdInventory2,
+  MdEvent,
+  MdCardGiftcard,
   MdLogout,
   MdChevronLeft,
   MdChevronRight,
@@ -21,6 +23,8 @@ const MENU = [
   { path: '/loja/garantias', label: 'Garantias', icon: MdVerifiedUser },
   { path: '/loja/seguros', label: 'Cotações de Seguro', icon: MdDescription },
   { path: '/loja/produtos', label: 'Produtos', icon: MdInventory2 },
+  { path: '/loja/eventos', label: 'Eventos', icon: MdEvent },
+  { path: '/loja/beneficios', label: 'Benefícios', icon: MdCardGiftcard },
 ];
 
 export default function StoreLayout() {

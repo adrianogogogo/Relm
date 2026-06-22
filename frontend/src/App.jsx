@@ -39,6 +39,8 @@ import StoreWarrantiesPage from './pages/StoreWarrantiesPage';
 import StoreInsurancesPage from './pages/StoreInsurancesPage';
 import StoreProductsPage from './pages/StoreProductsPage';
 import StoreProfilePage from './pages/StoreProfilePage';
+import StoreEventsPage from './pages/StoreEventsPage';
+import StoreBenefitsPage from './pages/StoreBenefitsPage';
 
 // Admin pages
 import AdminHome from './pages/AdminHome';
@@ -56,6 +58,8 @@ import AdminInsurancesPage from './pages/AdminInsurancesPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AuditLogsPage from './pages/AuditLogsPage';
 import AdminProfilePage from './pages/AdminProfilePage';
+import DistribuidorEventosPage from './pages/DistribuidorEventosPage';
+import DistribuidorBeneficiosPage from './pages/DistribuidorBeneficiosPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -136,6 +140,8 @@ export default function App() {
             <Route path="garantias" element={<StoreWarrantiesPage />} />
             <Route path="seguros" element={<StoreInsurancesPage />} />
             <Route path="produtos" element={<StoreProductsPage />} />
+            <Route path="eventos" element={<StoreEventsPage />} />
+            <Route path="beneficios" element={<StoreBenefitsPage />} />
             <Route path="perfil" element={<StoreProfilePage />} />
           </Route>
 
@@ -210,6 +216,17 @@ export default function App() {
             <Route path="insurances" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA']}>
                 <AdminInsurancesPage />
+              </ProtectedRoute>
+            } />
+            {/* Feed view-only do Distribuidor (não acessa a gestão de eventos/benefícios) */}
+            <Route path="meus-eventos" element={
+              <ProtectedRoute allowedRoles={['DISTRIBUIDOR', 'ADMIN_RELM']}>
+                <DistribuidorEventosPage />
+              </ProtectedRoute>
+            } />
+            <Route path="meus-beneficios" element={
+              <ProtectedRoute allowedRoles={['DISTRIBUIDOR', 'ADMIN_RELM']}>
+                <DistribuidorBeneficiosPage />
               </ProtectedRoute>
             } />
             <Route path="users" element={
