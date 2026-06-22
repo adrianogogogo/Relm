@@ -1,13 +1,48 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { MdClose, MdPerson, MdPedalBike, MdStore, MdDescription, MdCancel, MdCheck, MdPlayArrow } from 'react-icons/md';
+import { MdClose, MdPerson, MdPedalBike, MdStore, MdDescription, MdCancel, MdCheck, MdPlayArrow, MdAttachMoney, MdHistory } from 'react-icons/md';
 import { warrantyAPI } from '../services/api';
+import { useAuthStore } from '../store/authStore';
+
+// Todos os status da FSM (enum WarrantyStatus no backend).
+const WARRANTY_STATUSES = [
+  'RECEBIDO',
+  'EM_ANALISE',
+  'AGUARDANDO_CLIENTE',
+  'APROVADO',
+  'REPROVADO',
+  'FINALIZADO',
+  'CANCELADO',
+];
+
+// Formata um valor numérico/string como moeda brasileira (R$).
+function formatBRL(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const num = Number(value);
+  if (Number.isNaN(num)) return null;
+  return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
 
 export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   const [currentWarranty, setCurrentWarranty] = useState(warranty);
   const [adminNotes, setAdminNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
+
+  // Custo da garantia (input controlado; inicia com o valor atual, se houver).
+  const [costInput, setCostInput] = useState(
+    currentWarranty.cost !== null && currentWarranty.cost !== undefined
+      ? String(currentWarranty.cost)
+      : '',
+  );
+
+  // Reversão de status (override administrativo).
+  const [revertToStatus, setRevertToStatus] = useState('');
+  const [revertReason, setRevertReason] = useState('');
+
+  // Gating: somente ADMIN_RELM/GERENTE_RELM veem custo e reversão.
+  const userType = useAuthStore((state) => state.user?.userType);
+  const isAdminOrManager = userType === 'ADMIN_RELM' || userType === 'GERENTE_RELM';
 
   const startAnalysisMutation = useMutation({
     mutationFn: () => warrantyAPI.updateStatus(currentWarranty.id, { to_status: 'EM_ANALISE' }),
@@ -44,6 +79,76 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
       alert(`❌ Erro ao rejeitar: ${error.response?.data?.message || error.message}`);
     },
   });
+
+  const setCostMutation = useMutation({
+    mutationFn: (cost) => warrantyAPI.setCost(currentWarranty.id, cost),
+    onSuccess: (data) => {
+      alert('✅ Custo salvo com sucesso!');
+      setCurrentWarranty(data);
+      setCostInput(
+        data.cost !== null && data.cost !== undefined ? String(data.cost) : '',
+      );
+      onSuccess();
+    },
+    onError: (error) => {
+      alert(`❌ Erro ao salvar custo: ${error.response?.data?.message || error.message}`);
+    },
+  });
+
+  const revertMutation = useMutation({
+    mutationFn: () =>
+      warrantyAPI.revertStatus(currentWarranty.id, {
+        toStatus: revertToStatus,
+        reason: revertReason,
+      }),
+    onSuccess: (data) => {
+      alert('✅ Status revertido com sucesso!');
+      setCurrentWarranty(data);
+      setRevertToStatus('');
+      setRevertReason('');
+      onSuccess();
+      onClose();
+    },
+    onError: (error) => {
+      alert(`❌ Erro ao reverter status: ${error.response?.data?.message || error.message}`);
+    },
+  });
+
+  const handleSaveCost = () => {
+    const trimmed = costInput.trim();
+    // Vazio => limpa o custo (null).
+    if (trimmed === '') {
+      setCostMutation.mutate(null);
+      return;
+    }
+    // Aceita vírgula ou ponto como separador decimal.
+    const normalized = trimmed.replace(',', '.');
+    const num = Number(normalized);
+    if (Number.isNaN(num) || num < 0) {
+      alert('Informe um valor de custo válido (número maior ou igual a zero).');
+      return;
+    }
+    setCostMutation.mutate(Math.round(num * 100) / 100);
+  };
+
+  const handleRevertStatus = () => {
+    if (!revertToStatus) {
+      alert('Selecione o status de destino.');
+      return;
+    }
+    if (!revertReason.trim()) {
+      alert('Informe a justificativa da reversão.');
+      return;
+    }
+    if (
+      !window.confirm(
+        `Confirma a REVERSÃO do status da garantia ${currentWarranty.protocolNumber}?\n\nDe: ${currentWarranty.status}\nPara: ${revertToStatus}\n\nJustificativa: ${revertReason}\n\nEste é um override administrativo (não envia e-mail ao cliente).`,
+      )
+    ) {
+      return;
+    }
+    revertMutation.mutate();
+  };
 
   const handleStartAnalysis = () => {
     if (
@@ -222,6 +327,106 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
               )}
             </div>
           </div>
+
+          {/* Custo da garantia (admin/gerente) */}
+          {isAdminOrManager && (
+            <div className="bg-gray-50 dark:bg-slate-900/40 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center gap-2">
+                <MdAttachMoney size={18} className="text-gray-500 dark:text-slate-400" /> Custo da garantia (para a empresa)
+              </h3>
+              {formatBRL(currentWarranty.cost) && (
+                <p className="text-sm text-gray-700 dark:text-slate-300 mb-3">
+                  Custo atual:{' '}
+                  <span className="font-semibold text-gray-900 dark:text-slate-100">
+                    {formatBRL(currentWarranty.cost)}
+                  </span>
+                </p>
+              )}
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+                <div className="flex-1">
+                  <label htmlFor="warrantyCost" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                    Valor do custo (R$)
+                  </label>
+                  <input
+                    id="warrantyCost"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    inputMode="decimal"
+                    value={costInput}
+                    onChange={(e) => setCostInput(e.target.value)}
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:text-slate-100"
+                    placeholder="Ex.: 150.00 (deixe vazio para limpar)"
+                  />
+                </div>
+                <button
+                  onClick={handleSaveCost}
+                  disabled={setCostMutation.isPending}
+                  className="px-6 py-2.5 bg-primary hover:bg-primary-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                >
+                  {setCostMutation.isPending && (
+                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  )}
+                  Salvar custo
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Reverter status (override admin/gerente) */}
+          {isAdminOrManager && (
+            <div className="bg-warning/5 dark:bg-warning/10 border border-warning/20 rounded-lg p-4 space-y-4">
+              <h3 className="text-lg font-semibold text-warning flex items-center gap-2">
+                <MdHistory size={18} className="text-warning" /> Reverter status
+              </h3>
+              <p className="text-xs text-gray-600 dark:text-slate-400">
+                Override administrativo do status (ignora o fluxo normal). Não envia e-mail ao cliente. A justificativa é registrada no histórico.
+              </p>
+              <div>
+                <label htmlFor="revertToStatus" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                  Novo status *
+                </label>
+                <select
+                  id="revertToStatus"
+                  value={revertToStatus}
+                  onChange={(e) => setRevertToStatus(e.target.value)}
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-warning/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-warning focus:border-transparent dark:text-slate-100"
+                >
+                  <option value="">Selecione…</option>
+                  {WARRANTY_STATUSES.filter((s) => s !== currentWarranty.status).map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="revertReason" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                  Justificativa *
+                </label>
+                <textarea
+                  id="revertReason"
+                  value={revertReason}
+                  onChange={(e) => setRevertReason(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-warning/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-warning focus:border-transparent dark:text-slate-100"
+                  placeholder="Explique o motivo da reversão do status..."
+                />
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={handleRevertStatus}
+                  disabled={revertMutation.isPending || !revertToStatus || !revertReason.trim()}
+                  className="px-6 py-2.5 bg-warning hover:bg-warning-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                >
+                  {revertMutation.isPending && (
+                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  )}
+                  Reverter
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Notas Admin */}
           {canApprove && !showRejectForm && (

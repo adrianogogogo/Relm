@@ -97,6 +97,10 @@ export const warrantyAPI = {
   updateStatus: (id, data) => api.patch(`/warranty/claims/${id}/status`, data).then((res) => res.data),
   approve: (id, data) => api.post(`/warranty/claims/${id}/approve`, data).then((res) => res.data),
   reject: (id, data) => api.post(`/warranty/claims/${id}/reject`, data).then((res) => res.data),
+  // Define/limpa o custo da garantia (ADMIN_RELM/GERENTE_RELM). cost: number | null
+  setCost: (id, cost) => api.patch(`/warranty/claims/${id}/cost`, { cost }).then((res) => res.data),
+  // Reverte o status (override administrativo). data: { toStatus, reason }
+  revertStatus: (id, data) => api.patch(`/warranty/claims/${id}/revert-status`, data).then((res) => res.data),
   validateToken: (token) => api.get(`/public/warranty/validate/${token}`).then((res) => res.data),
 };
 
