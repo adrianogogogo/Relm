@@ -1,9 +1,43 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AuditLogsService {
+  private readonly logger = new Logger(AuditLogsService.name);
+
   constructor(private prisma: PrismaService) {}
+
+  /**
+   * Grava um registro de auditoria (best-effort).
+   *
+   * NUNCA lança: registrar auditoria não pode quebrar a operação principal.
+   * Em caso de falha, apenas emite um Logger.warn.
+   */
+  async log(params: {
+    userId?: string;
+    action: string;
+    entity: string;
+    entityId?: string;
+    metadata?: any;
+    ipAddress?: string;
+  }): Promise<void> {
+    try {
+      await this.prisma.auditLog.create({
+        data: {
+          userId: params.userId,
+          action: params.action,
+          entity: params.entity,
+          entityId: params.entityId,
+          metadata: params.metadata,
+          ipAddress: params.ipAddress,
+        },
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Falha ao registrar log de auditoria (${params.action} / ${params.entity}): ${error?.message ?? error}`,
+      );
+    }
+  }
 
   async findAll(query: { action?: string; entity?: string; page?: string }) {
     const page = Math.max(1, parseInt(query.page || '1'));
