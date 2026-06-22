@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { MdDescription, MdAccessTime, MdCheckCircle, MdCancel, MdAdd } from 'react-icons/md';
 import { warrantyAPI } from '../services/api';
@@ -13,6 +14,8 @@ export default function WarrantiesPage() {
   const [selectedWarranty, setSelectedWarranty] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const canCreate = user?.role === 'ADMIN_RELM' || user?.role === 'GERENTE_RELM';
@@ -25,6 +28,36 @@ export default function WarrantiesPage() {
         search: searchTerm || undefined,
       }),
   });
+
+  // Deep-link: ?claim=<id> abre automaticamente o modal de revisão da garantia.
+  // Usa a garantia já carregada na lista, ou busca por id se ainda não estiver lá.
+  const claimId = searchParams.get('claim');
+  useEffect(() => {
+    if (!claimId || selectedWarranty) return;
+    const fromList = warranties?.find((w) => String(w.id) === String(claimId));
+    if (fromList) {
+      setSelectedWarranty(fromList);
+      return;
+    }
+    let cancelled = false;
+    warrantyAPI
+      .getById(claimId)
+      .then((data) => {
+        if (!cancelled && data) setSelectedWarranty(data);
+      })
+      .catch(() => {
+        // Garantia inexistente/sem acesso: limpa o param para não tentar de novo.
+        if (!cancelled) setSearchParams({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [claimId, warranties, selectedWarranty, setSearchParams]);
+
+  const closeReviewModal = () => {
+    setSelectedWarranty(null);
+    if (searchParams.get('claim')) setSearchParams({});
+  };
 
   const stats = warranties
     ? {
@@ -194,9 +227,9 @@ export default function WarrantiesPage() {
       {selectedWarranty && (
         <WarrantyReviewModal
           warranty={selectedWarranty}
-          onClose={() => setSelectedWarranty(null)}
+          onClose={closeReviewModal}
           onSuccess={() => {
-            setSelectedWarranty(null);
+            closeReviewModal();
             refetch();
           }}
         />
