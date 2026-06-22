@@ -69,6 +69,10 @@ export const authAPI = {
   login: (email, password) => api.post('/auth/login', { email, password }),
   logout: () => api.post('/auth/logout'),
   refresh: (refreshToken) => api.post('/auth/refresh', { refresh_token: refreshToken }),
+
+  // Troca de senha do usuário logado (equipe Relm / tabela User)
+  changePassword: (currentPassword, newPassword) =>
+    api.post('/auth/change-password', { currentPassword, newPassword }).then((res) => res.data),
 };
 
 export const storeAuthAPI = {
@@ -77,6 +81,9 @@ export const storeAuthAPI = {
   getUsers: () => api.get('/store-auth/users').then((res) => res.data),
   forgotPassword: (email) => api.post('/store-auth/forgot-password', { email }),
   resetPassword: (token, password) => api.post('/store-auth/reset-password', { token, password }),
+  // Troca de senha do lojista logado (tabela StoreUser)
+  changePassword: (currentPassword, newPassword) =>
+    api.post('/store-auth/change-password', { currentPassword, newPassword }).then((res) => res.data),
 };
 
 export const warrantyAPI = {
@@ -186,7 +193,24 @@ export const customerAuthAPI = {
   refresh: (refresh_token) => api.post('/customer-auth/refresh', { refresh_token }),
   forgotPassword: (email) => api.post('/customer-auth/forgot-password', { email }),
   resetPassword: (token, password) => api.post('/customer-auth/reset-password', { token, password }),
+  // Troca de senha do cliente logado (tabela Customer)
+  changePassword: (currentPassword, newPassword) =>
+    api.post('/customer-auth/change-password', { currentPassword, newPassword }).then((res) => res.data),
 };
+
+/**
+ * Escolhe o endpoint de troca de senha conforme o tipo do usuário logado.
+ * - CUSTOMER → /customer-auth   - STORE → /store-auth   - demais (User) → /auth
+ */
+export function changePasswordByUserType(userType, currentPassword, newPassword) {
+  if (userType === 'CUSTOMER') {
+    return customerAuthAPI.changePassword(currentPassword, newPassword);
+  }
+  if (userType === 'STORE') {
+    return storeAuthAPI.changePassword(currentPassword, newPassword);
+  }
+  return authAPI.changePassword(currentPassword, newPassword);
+}
 
 // ── Customer Portal (agora usa token unificado) ───────────────────────────────
 

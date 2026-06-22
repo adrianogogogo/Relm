@@ -5,12 +5,14 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useThemeStore } from '../store/themeStore';
 import { notificationsAPI } from '../services/api';
+import ChangePasswordModal from './ChangePasswordModal';
 import {
   MdLightMode,
   MdDarkMode,
   MdNotifications,
   MdNotificationsNone,
   MdPerson,
+  MdLock,
   MdLogout,
   MdDoneAll,
 } from 'react-icons/md';
@@ -41,6 +43,7 @@ export default function TopBarChrome({
   const queryClient = useQueryClient();
   const [notifOpen, setNotifOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pwdModalOpen, setPwdModalOpen] = useState(false);
   const notifRef = useRef(null);
   const menuRef = useRef(null);
 
@@ -245,15 +248,20 @@ export default function TopBarChrome({
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 mt-2 w-56 rounded-xl border border-gray-200 dark:border-slate-700 bg-surface dark:bg-surface-dark shadow-lg z-50 overflow-hidden">
+          <div className="absolute right-0 mt-2 w-64 rounded-xl border border-gray-200 dark:border-slate-700 bg-surface dark:bg-surface-dark shadow-lg z-50 overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700">
               <p className="text-sm font-semibold text-gray-800 dark:text-slate-200 truncate">
                 {user?.name || 'Usuário'}
               </p>
-              {roleLabel && (
+              {user?.email && (
                 <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
-                  {roleLabel}
+                  {user.email}
                 </p>
+              )}
+              {roleLabel && (
+                <span className="inline-block mt-2 rounded-full bg-gray-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-gray-600 dark:text-slate-300">
+                  {roleLabel}
+                </span>
               )}
             </div>
             <div className="py-1">
@@ -270,6 +278,17 @@ export default function TopBarChrome({
               <button
                 onClick={() => {
                   setMenuOpen(false);
+                  setPwdModalOpen(true);
+                }}
+                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <MdLock size={18} />
+                <span>Alterar Senha</span>
+              </button>
+              <div className="my-1 border-t border-gray-200 dark:border-slate-700" />
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
                   onLogout?.();
                 }}
                 className="flex items-center gap-3 w-full px-4 py-2 text-sm text-error hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
@@ -281,6 +300,11 @@ export default function TopBarChrome({
           </div>
         )}
       </div>
+
+      {/* Modal de troca de senha */}
+      {pwdModalOpen && (
+        <ChangePasswordModal onClose={() => setPwdModalOpen(false)} />
+      )}
     </div>
   );
 }
