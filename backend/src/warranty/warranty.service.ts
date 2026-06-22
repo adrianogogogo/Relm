@@ -7,6 +7,7 @@ import { CreateWarrantyAdminDto } from './dto/create-warranty-admin.dto';
 import { ProductsService } from '../products/products.service';
 import { EmailService } from '../email/email.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import * as crypto from 'crypto';
 
 const FSM_TRANSITIONS = {
@@ -29,6 +30,7 @@ export class WarrantyService {
     private productsService: ProductsService,
     private emailService: EmailService,
     private notificationsService: NotificationsService,
+    private auditLogsService: AuditLogsService,
   ) {}
 
   async createFromPublic(data: CreateWarrantyPublicDto) {
@@ -338,6 +340,20 @@ export class WarrantyService {
       },
     });
 
+    // Auditoria best-effort (nunca lança).
+    await this.auditLogsService.log({
+      userId,
+      action: 'WARRANTY_STATUS_CHANGED',
+      entity: 'warranty_claims',
+      entityId: id,
+      metadata: {
+        protocolNumber: claim.protocolNumber,
+        fromStatus: claim.status,
+        toStatus,
+        comment: data?.comment ?? null,
+      },
+    });
+
     return updated;
   }
 
@@ -466,6 +482,20 @@ export class WarrantyService {
       // Não falha a aprovação se o email não for enviado
     }
 
+    // Auditoria best-effort (nunca lança).
+    await this.auditLogsService.log({
+      userId,
+      action: 'WARRANTY_APPROVED',
+      entity: 'warranty_claims',
+      entityId: id,
+      metadata: {
+        protocolNumber: claim.protocolNumber,
+        fromStatus: claim.status,
+        toStatus: 'APROVADO',
+        adminNotes: adminNotes ?? null,
+      },
+    });
+
     return updated;
   }
 
@@ -566,6 +596,20 @@ export class WarrantyService {
       );
       // Não falha a rejeição se o email não for enviado
     }
+
+    // Auditoria best-effort (nunca lança).
+    await this.auditLogsService.log({
+      userId,
+      action: 'WARRANTY_REJECTED',
+      entity: 'warranty_claims',
+      entityId: id,
+      metadata: {
+        protocolNumber: claim.protocolNumber,
+        fromStatus: claim.status,
+        toStatus: 'REPROVADO',
+        rejectionReason,
+      },
+    });
 
     return updated;
   }
@@ -680,6 +724,20 @@ export class WarrantyService {
         toStatus,
         comment: reason,
         ...(adminUserId && { createdByUserId: adminUserId }),
+      },
+    });
+
+    // Auditoria best-effort (nunca lança).
+    await this.auditLogsService.log({
+      userId: adminUserId,
+      action: 'WARRANTY_STATUS_REVERTED',
+      entity: 'warranty_claims',
+      entityId: id,
+      metadata: {
+        protocolNumber: claim.protocolNumber,
+        fromStatus: claim.status,
+        toStatus,
+        reason,
       },
     });
 
