@@ -206,6 +206,7 @@ export default function AdminLayout() {
             user={user}
             roleLabel={user?.role}
             onLogout={logout}
+            profilePath="/admin/perfil"
             fallbackInitial="A"
           />
         </header>

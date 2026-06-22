@@ -38,6 +38,7 @@ import StoreCustomersPage from './pages/StoreCustomersPage';
 import StoreWarrantiesPage from './pages/StoreWarrantiesPage';
 import StoreInsurancesPage from './pages/StoreInsurancesPage';
 import StoreProductsPage from './pages/StoreProductsPage';
+import StoreProfilePage from './pages/StoreProfilePage';
 
 // Admin pages
 import AdminDashboard from './pages/AdminDashboard';
@@ -54,6 +55,7 @@ import AdminBenefitsPage from './pages/AdminBenefitsPage';
 import AdminInsurancesPage from './pages/AdminInsurancesPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AuditLogsPage from './pages/AuditLogsPage';
+import AdminProfilePage from './pages/AdminProfilePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -134,6 +136,7 @@ export default function App() {
             <Route path="garantias" element={<StoreWarrantiesPage />} />
             <Route path="seguros" element={<StoreInsurancesPage />} />
             <Route path="produtos" element={<StoreProductsPage />} />
+            <Route path="perfil" element={<StoreProfilePage />} />
           </Route>
 
           {/* ── Admin routes (AdminLayout sidebar, no Header/Footer) ──────── */}
@@ -149,6 +152,7 @@ export default function App() {
           >
             {/* Acessível por todos os roles do admin */}
             <Route index element={<AdminDashboard />} />
+            <Route path="perfil" element={<AdminProfilePage />} />
             <Route path="customers" element={<CustomersPage />} />
             <Route path="customers/:id" element={<CustomerDetailPage />} />
             <Route path="stores" element={<StoresPage />} />

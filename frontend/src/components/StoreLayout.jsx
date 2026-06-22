@@ -147,6 +147,7 @@ export default function StoreLayout() {
             user={user}
             roleLabel={user?.store?.tradeName || 'Loja'}
             onLogout={handleLogout}
+            profilePath="/loja/perfil"
             fallbackInitial="L"
           />
         </header>
