@@ -91,6 +91,7 @@ export const storeAuthAPI = {
 
 export const warrantyAPI = {
   createPublic: (data) => api.post('/public/warranty', data),
+  create: (data) => api.post('/warranty/claims', data).then((res) => res.data),
   getAll: (params) => api.get('/warranty/claims', { params }).then((res) => res.data),
   getById: (id) => api.get(`/warranty/claims/${id}`).then((res) => res.data),
   updateStatus: (id, data) => api.patch(`/warranty/claims/${id}/status`, data).then((res) => res.data),

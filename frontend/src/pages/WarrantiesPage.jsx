@@ -1,14 +1,21 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { MdDescription, MdAccessTime, MdCheckCircle, MdCancel } from 'react-icons/md';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { MdDescription, MdAccessTime, MdCheckCircle, MdCancel, MdAdd } from 'react-icons/md';
 import { warrantyAPI } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 import WarrantyReviewModal from '../components/WarrantyReviewModal';
-import { Card, PageHeader, StatusChip, StatCard } from '../components/ui';
+import WarrantyCreateModal from '../components/WarrantyCreateModal';
+import { Card, PageHeader, StatusChip, StatCard, Button } from '../components/ui';
 
 export default function WarrantiesPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedWarranty, setSelectedWarranty] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const canCreate = user?.role === 'ADMIN_RELM' || user?.role === 'GERENTE_RELM';
 
   const { data: warranties, isLoading, refetch } = useQuery({
     queryKey: ['warranties', statusFilter, searchTerm],
@@ -55,6 +62,13 @@ export default function WarrantiesPage() {
         <PageHeader
           title="Garantias"
           subtitle={`${stats.total} garantia(s) encontrada(s)`}
+          action={
+            canCreate && (
+              <Button icon={MdAdd} onClick={() => setShowCreateModal(true)}>
+                Nova Garantia
+              </Button>
+            )
+          }
         />
 
         {/* KPIs */}
@@ -165,6 +179,16 @@ export default function WarrantiesPage() {
           )}
         </Card>
       </div>
+
+      {/* Modal de Cadastro */}
+      {showCreateModal && (
+        <WarrantyCreateModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['warranties'] });
+          }}
+        />
+      )}
 
       {/* Modal de Revisão */}
       {selectedWarranty && (
