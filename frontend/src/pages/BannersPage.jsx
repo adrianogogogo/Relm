@@ -2,7 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { bannersAPI } from '../services/api';
 import { MdAdd, MdEdit, MdDelete, MdVisibility, MdVisibilityOff, MdKeyboardArrowUp, MdKeyboardArrowDown } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
-import { Card, PageHeader, Button } from '../components/ui';
+import { Card, PageHeader, Button, StatusChip } from '../components/ui';
+import {
+  BANNER_AUDIENCES,
+  BANNER_PAGES,
+  getAudienceLabel,
+  getPageLabel,
+} from '../config/bannerTargets';
 
 const BannersPage = () => {
   const { user } = useAuthStore();
@@ -19,6 +25,8 @@ const BannersPage = () => {
     linkText: '',
     displayOrder: 0,
     active: true,
+    audience: 'PUBLIC',
+    page: '',
   });
 
   useEffect(() => {
@@ -41,10 +49,12 @@ const BannersPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // page vazio => null (banner de "todas as páginas" do público).
+      const payload = { ...formData, page: formData.page || null };
       if (editingBanner) {
-        await bannersAPI.update(editingBanner.id, formData);
+        await bannersAPI.update(editingBanner.id, payload);
       } else {
-        await bannersAPI.create(formData);
+        await bannersAPI.create(payload);
       }
       resetForm();
       loadBanners();
@@ -65,8 +75,15 @@ const BannersPage = () => {
       linkText: banner.linkText || '',
       displayOrder: banner.displayOrder,
       active: banner.active,
+      audience: banner.audience || 'PUBLIC',
+      page: banner.page || '',
     });
     setShowForm(true);
+  };
+
+  // Ao trocar o público-alvo, reseta a página para "Todas" (evita combinação inválida).
+  const handleAudienceChange = (audience) => {
+    setFormData((prev) => ({ ...prev, audience, page: '' }));
   };
 
   const handleDelete = async (id) => {
@@ -129,6 +146,8 @@ const BannersPage = () => {
       linkText: '',
       displayOrder: 0,
       active: true,
+      audience: 'PUBLIC',
+      page: '',
     });
     setEditingBanner(null);
     setShowForm(false);
@@ -217,6 +236,39 @@ const BannersPage = () => {
                 </div>
               </div>
 
+              {/* Segmentação: público-alvo + página */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Público-alvo*</label>
+                  <select
+                    value={formData.audience}
+                    onChange={(e) => handleAudienceChange(e.target.value)}
+                    className="input"
+                    required
+                  >
+                    {BANNER_AUDIENCES.map((a) => (
+                      <option key={a.value} value={a.value}>
+                        {a.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Página</label>
+                  <select
+                    value={formData.page}
+                    onChange={(e) => setFormData({ ...formData, page: e.target.value })}
+                    className="input"
+                  >
+                    {(BANNER_PAGES[formData.audience] || []).map((p) => (
+                      <option key={p.value} value={p.value}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="label">Ordem de Exibição</label>
@@ -270,7 +322,13 @@ const BannersPage = () => {
                 <div className="flex-grow">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">{banner.title}</h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">{banner.title}</h3>
+                        <StatusChip
+                          variant="info"
+                          label={`${getAudienceLabel(banner.audience)} · ${getPageLabel(banner.audience, banner.page)}`}
+                        />
+                      </div>
                       {banner.subtitle && (
                         <p className="text-gray-600 dark:text-slate-400 text-sm">{banner.subtitle}</p>
                       )}
