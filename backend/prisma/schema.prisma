@@ -593,11 +593,16 @@ model Banner {
   linkText     String?  @map("link_text")
   displayOrder Int      @default(0) @map("display_order")
   active       Boolean  @default(true)
-  
+
+  // Segmentação por público e página
+  audience     String   @default("PUBLIC") // PUBLIC | CLIENTE | LOJA | ADMIN
+  page         String?  // chave da página dentro do público (NULL = todas as páginas)
+
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
-  
+
   @@index([active])
   @@index([displayOrder])
+  @@index([audience, page, active])
   @@map("banners")
 }
