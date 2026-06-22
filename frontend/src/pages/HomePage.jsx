@@ -49,7 +49,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Banner Carousel */}
-      <BannerCarousel />
+      <BannerCarousel audience="PUBLIC" page="home" />
 
       {/* Features Grid */}
       <section className="py-16 bg-app dark:bg-app-dark">

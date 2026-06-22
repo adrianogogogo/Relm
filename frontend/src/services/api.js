@@ -163,8 +163,10 @@ export const storesAPI = {
 };
 
 export const bannersAPI = {
-  // Public endpoints
-  getActive: () => api.get('/public/banners').then((res) => res.data),
+  // Public endpoints — aceita segmentação { audience, page }.
+  // Sem params, o backend assume audience PUBLIC (compatibilidade com a home).
+  getActive: (params) =>
+    api.get('/public/banners', { params }).then((res) => res.data),
 
   // Admin endpoints
   getAll: () => api.get('/banners').then((res) => res.data),

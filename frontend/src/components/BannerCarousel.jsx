@@ -2,43 +2,43 @@ import React, { useState, useEffect } from 'react';
 import { bannersAPI } from '../services/api';
 import { MdChevronLeft, MdChevronRight } from 'react-icons/md';
 
-const BannerCarousel = () => {
+const BannerCarousel = ({ audience = 'PUBLIC', page }) => {
   const [banners, setBanners] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const loadBanners = async () => {
+      try {
+        const params = { audience };
+        if (page) params.page = page;
+        const data = await bannersAPI.getActive(params);
+        if (cancelled) return;
+        setBanners(Array.isArray(data) ? data : []);
+        setCurrentIndex(0);
+      } catch (err) {
+        if (cancelled) return;
+        setBanners([]);
+        console.error('Erro ao carregar banners:', err);
+      }
+    };
+
     loadBanners();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [audience, page]);
 
   useEffect(() => {
     if (banners.length === 0) return;
-    
+
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % banners.length);
     }, 5000); // Auto-advance every 5 seconds
 
     return () => clearInterval(interval);
   }, [banners.length]);
-
-  const loadBanners = async () => {
-    try {
-      setLoading(true);
-      const data = await bannersAPI.getActive();
-      if (data && data.length > 0) {
-        setBanners(data);
-        setCurrentIndex(0);
-      } else {
-        setError('Nenhum banner disponível');
-      }
-    } catch (err) {
-      setError('Erro ao carregar banners');
-      console.error('Erro ao carregar banners:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const nextBanner = () => {
     if (banners.length === 0) return;
@@ -54,15 +54,8 @@ const BannerCarousel = () => {
     setCurrentIndex(index);
   };
 
-  if (loading) {
-    return (
-      <div className="w-full h-96 bg-gray-200 animate-pulse flex items-center justify-center">
-        <p className="text-gray-500">Carregando banners...</p>
-      </div>
-    );
-  }
-
-  if (error || banners.length === 0) {
+  // Sem banners segmentados para este alvo: não ocupa espaço (render null).
+  if (banners.length === 0) {
     return null;
   }
 

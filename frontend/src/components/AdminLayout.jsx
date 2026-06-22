@@ -2,6 +2,8 @@ import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useSidebarStore } from '../store/sidebarStore';
 import TopBarChrome from './TopBarChrome';
+import BannerCarousel from './BannerCarousel';
+import { getBannerTargetForPath } from '../config/bannerTargets';
 import {
   MdDashboard,
   MdVerifiedUser,
@@ -212,6 +214,8 @@ export default function AdminLayout() {
         </header>
 
         <div className="flex-1 bg-app dark:bg-app-dark transition-colors duration-300">
+          {/* Banner segmentado da página atual (some quando não há banner alvo) */}
+          <BannerCarousel {...getBannerTargetForPath(location.pathname)} />
           <Outlet />
         </div>
       </main>
