@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { StoreAuthController } from './store-auth.controller';
 import { StoreAuthService } from './store-auth.service';
+import { StoreJwtStrategy } from './store-jwt.strategy';
+import { StoreJwtGuard } from './store-jwt.guard';
 import { PrismaModule } from '../prisma/prisma.module';
 import { EmailModule } from '../email/email.module';
 
@@ -10,6 +13,7 @@ import { EmailModule } from '../email/email.module';
   imports: [
     PrismaModule,
     EmailModule,
+    PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -20,7 +24,7 @@ import { EmailModule } from '../email/email.module';
     }),
   ],
   controllers: [StoreAuthController],
-  providers: [StoreAuthService],
-  exports: [StoreAuthService],
+  providers: [StoreAuthService, StoreJwtStrategy, StoreJwtGuard],
+  exports: [StoreAuthService, StoreJwtGuard],
 })
 export class StoreAuthModule {}

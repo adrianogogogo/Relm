@@ -3,6 +3,7 @@ import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { ChangePasswordDto } from '../common/dto/change-password.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -29,6 +30,20 @@ export class AuthController {
   async logout(@Request() req) {
     await this.authService.logout(req.user.userId);
     return { message: 'Logout realizado com sucesso' };
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Alterar senha do usuário logado (tabela User)' })
+  async changePassword(@Request() req, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(
+      req.user.userId,
+      dto.currentPassword,
+      dto.newPassword,
+    );
   }
 
   // ── Endpoints Unificados ────────────────────────────────────────────────────

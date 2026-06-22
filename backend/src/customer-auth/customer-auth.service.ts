@@ -228,4 +228,32 @@ export class CustomerAuthService {
       data: { refreshToken: null },
     });
   }
+
+  // ── Troca de senha do cliente logado ────────────────────────────────────────
+
+  async changePassword(
+    customerId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+    });
+    if (!customer || !customer.active || !customer.passwordHash) {
+      throw new UnauthorizedException('Credenciais inválidas');
+    }
+
+    const valid = await bcrypt.compare(currentPassword, customer.passwordHash);
+    if (!valid) {
+      throw new UnauthorizedException('Senha atual incorreta');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.customer.update({
+      where: { id: customer.id },
+      data: { passwordHash },
+    });
+
+    return { message: 'Senha alterada com sucesso.' };
+  }
 }

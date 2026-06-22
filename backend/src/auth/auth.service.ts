@@ -82,6 +82,32 @@ export class AuthService {
     });
   }
 
+  // ── Troca de senha do usuário logado (equipe Relm / tabela User) ────────────
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.active) {
+      throw new UnauthorizedException('Credenciais inválidas');
+    }
+
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) {
+      throw new UnauthorizedException('Senha atual incorreta');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    });
+
+    return { message: 'Senha alterada com sucesso.' };
+  }
+
   // ── Login Unificado ─────────────────────────────────────────────────────────
 
   async unifiedLogin(email: string, password: string) {

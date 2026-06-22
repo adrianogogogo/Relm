@@ -6,6 +6,8 @@ import { CreateStoreUserDto } from './dto/create-store-user.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { StoreJwtGuard } from './store-jwt.guard';
+import { ChangePasswordDto } from '../common/dto/change-password.dto';
 
 @Controller('store-auth')
 export class StoreAuthController {
@@ -32,6 +34,18 @@ export class StoreAuthController {
       return this.storeAuthService.getStoreUsersByStore(user.storeId);
     }
     throw new ForbiddenException('Este endpoint é exclusivo para usuários de loja');
+  }
+
+  @Post('change-password')
+  @UseGuards(StoreJwtGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  async changePassword(@Request() req, @Body() dto: ChangePasswordDto) {
+    return this.storeAuthService.changePassword(
+      req.user.storeUserId,
+      dto.currentPassword,
+      dto.newPassword,
+    );
   }
 
   @Post('forgot-password')

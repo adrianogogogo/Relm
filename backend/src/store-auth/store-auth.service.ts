@@ -171,6 +171,35 @@ export class StoreAuthService {
     return { message: 'Senha redefinida com sucesso.' };
   }
 
+  // ── Troca de senha do lojista logado ────────────────────────────────────────
+
+  async changePassword(
+    storeUserId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const storeUser = await this.prisma.storeUser.findUnique({
+      where: { id: storeUserId },
+      include: { store: true },
+    });
+    if (!storeUser || !storeUser.isActive || !storeUser.store.active) {
+      throw new UnauthorizedException('Credenciais inválidas');
+    }
+
+    const valid = await bcrypt.compare(currentPassword, storeUser.passwordHash);
+    if (!valid) {
+      throw new UnauthorizedException('Senha atual incorreta');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.storeUser.update({
+      where: { id: storeUser.id },
+      data: { passwordHash },
+    });
+
+    return { message: 'Senha alterada com sucesso.' };
+  }
+
   async getStoreUsersByStore(storeId: string) {
     return this.prisma.storeUser.findMany({
       where: { storeId },

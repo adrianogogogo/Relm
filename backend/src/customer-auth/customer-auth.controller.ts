@@ -13,6 +13,7 @@ import { CustomerAuthService } from './customer-auth.service';
 import { CustomerJwtGuard } from './customer-jwt.guard';
 import { CustomerRegisterDto } from './dto/customer-register.dto';
 import { CustomerLoginDto } from './dto/customer-login.dto';
+import { ChangePasswordDto } from '../common/dto/change-password.dto';
 
 @ApiTags('customer-auth')
 @Controller('customer-auth')
@@ -47,6 +48,20 @@ export class CustomerAuthController {
   async logout(@Request() req) {
     await this.customerAuthService.logout(req.user.customerId);
     return { message: 'Logout realizado com sucesso' };
+  }
+
+  @Post('change-password')
+  @UseGuards(CustomerJwtGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Alterar senha do cliente logado' })
+  async changePassword(@Request() req, @Body() dto: ChangePasswordDto) {
+    return this.customerAuthService.changePassword(
+      req.user.customerId,
+      dto.currentPassword,
+      dto.newPassword,
+    );
   }
 
   @Post('forgot-password')
