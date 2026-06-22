@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { WarrantyStatus } from '@prisma/client';
 import { CustomersService } from '../customers/customers.service';
 import { CreateWarrantyPublicDto } from './dto/create-warranty-public.dto';
+import { CreateWarrantyAdminDto } from './dto/create-warranty-admin.dto';
 import { ProductsService } from '../products/products.service';
 import { EmailService } from '../email/email.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -103,6 +104,99 @@ export class WarrantyService {
     }
 
     return {
+      protocol_number: claim.protocolNumber,
+      status: claim.status,
+      created_at: claim.createdAt,
+    };
+  }
+
+  /**
+   * Cadastro de garantia pelo painel administrativo (ADMIN_RELM/GERENTE_RELM).
+   *
+   * Diferenças em relação ao createFromPublic:
+   *  - O cliente JÁ EXISTE e é vinculado por customerId (sem upsert por email).
+   *  - Como é um cadastro confiável feito pela equipe, o linkStatus já entra
+   *    como CONFIRMED (o enum LinkStatus não possui VERIFIED; CONFIRMED é o
+   *    valor que representa vínculo validado).
+   *  - Mantém o mesmo status inicial RECEBIDO e a mesma FSM/eventos/notificações.
+   */
+  async createByAdmin(dto: CreateWarrantyAdminDto, adminUserId?: string) {
+    // 1) Valida que o cliente existe.
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: dto.customerId },
+    });
+    if (!customer) {
+      throw new NotFoundException('Cliente não encontrado');
+    }
+
+    // 2) Se informada, valida a loja vinculada.
+    if (dto.storeId) {
+      const store = await this.prisma.store.findUnique({
+        where: { id: dto.storeId },
+      });
+      if (!store) {
+        throw new NotFoundException('Loja não encontrada');
+      }
+    }
+
+    // 3) Upsert do produto por serial.
+    const product = await this.productsService.upsertBySerial({
+      serialNumber: dto.serialNumber,
+      brand: dto.brand || 'Relm Bikes',
+      productType: dto.productType,
+      model: dto.model,
+      purchaseDate: dto.purchaseDate ? new Date(dto.purchaseDate) : null,
+      purchaseInvoiceNumber: dto.invoiceNumber,
+      purchaseStoreName: dto.purchaseStoreName,
+      storeId: dto.storeId,
+    });
+
+    // 4) Protocolo único.
+    const protocolNumber = this.generateProtocolNumber();
+
+    // 5) Cria o claim vinculado ao cliente existente (linkStatus CONFIRMED).
+    const claim = await this.prisma.warrantyClaim.create({
+      data: {
+        protocolNumber,
+        customerId: customer.id,
+        productId: product.id,
+        ...(dto.storeId && { storeId: dto.storeId }),
+        invoiceNumber: dto.invoiceNumber,
+        purchaseStoreName: dto.purchaseStoreName,
+        purchaseStoreCity: dto.purchaseStoreCity,
+        purchaseStoreState: dto.purchaseStoreState,
+        customerNotes: dto.customerNotes,
+        adminNotes: dto.adminNotes,
+        linkStatus: 'CONFIRMED',
+        status: WarrantyStatus.RECEBIDO,
+      },
+    });
+
+    // 6) Evento de criação.
+    await this.prisma.warrantyEvent.create({
+      data: {
+        claimId: claim.id,
+        eventType: 'CREATED',
+        toStatus: 'RECEBIDO',
+        comment: 'Garantia cadastrada pelo painel administrativo',
+        ...(adminUserId && { createdByUserId: adminUserId }),
+      },
+    });
+
+    // 7) Notificação best-effort (equipe + loja, se houver). Nunca quebra.
+    const notifyPayload = {
+      type: 'WARRANTY_NEW',
+      title: 'Nova garantia registrada',
+      message: `Protocolo ${claim.protocolNumber} — ${customer.fullName} (${product.model}).`,
+      link: `/admin/warranties/${claim.id}`,
+    };
+    await this.notificationsService.notifyTeam(notifyPayload);
+    if (claim.storeId) {
+      await this.notificationsService.notifyStore(claim.storeId, notifyPayload);
+    }
+
+    return {
+      id: claim.id,
       protocol_number: claim.protocolNumber,
       status: claim.status,
       created_at: claim.createdAt,
