@@ -98,7 +98,7 @@ export class WarrantyService {
       type: 'WARRANTY_NEW',
       title: 'Nova garantia registrada',
       message: `Protocolo ${claim.protocolNumber} — ${customer.fullName} (${product.model}).`,
-      link: `/admin/warranties/${claim.id}`,
+      link: `/admin/warranties?claim=${claim.id}`,
     };
     await this.notificationsService.notifyTeam(notifyPayload);
     if (claim.storeId) {
@@ -190,7 +190,7 @@ export class WarrantyService {
       type: 'WARRANTY_NEW',
       title: 'Nova garantia registrada',
       message: `Protocolo ${claim.protocolNumber} — ${customer.fullName} (${product.model}).`,
-      link: `/admin/warranties/${claim.id}`,
+      link: `/admin/warranties?claim=${claim.id}`,
     };
     await this.notificationsService.notifyTeam(notifyPayload);
     if (claim.storeId) {

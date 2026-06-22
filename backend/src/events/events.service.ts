@@ -149,7 +149,7 @@ export class EventsService {
       type: 'EVENT_REGISTRATION',
       title: 'Nova inscrição em evento',
       message: `${customer.fullName} se inscreveu em "${event.title}".`,
-      link: `/admin/events/${event.id}`,
+      link: `/admin/events`,
     });
 
     return {

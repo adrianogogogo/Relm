@@ -57,7 +57,7 @@ export class InsuranceService {
       type: 'INSURANCE_NEW',
       title: 'Nova cotação de seguro',
       message: `Protocolo ${quote.protocolNumber} — ${customer.fullName}.`,
-      link: `/admin/insurance/${quote.id}`,
+      link: `/admin/insurances`,
     });
 
     return quote;
