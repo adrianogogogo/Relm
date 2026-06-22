@@ -16,6 +16,7 @@ import { UpdateCustomerDto } from './dto/update-customer.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { AdminResetPasswordDto } from '../common/dto/admin-reset-password.dto';
 
 @Controller('customers')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -62,6 +63,13 @@ export class CustomersController {
   @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA')
   update(@Param('id') id: string, @Body() updateCustomerDto: UpdateCustomerDto) {
     return this.customersService.update(id, updateCustomerDto);
+  }
+
+  // Admin redefine a senha de qualquer cliente (ADMIN_RELM-only).
+  @Patch(':id/reset-password')
+  @Roles('ADMIN_RELM')
+  resetPassword(@Param('id') id: string, @Body() dto: AdminResetPasswordDto) {
+    return this.customersService.setPassword(id, dto.password);
   }
 
   @Delete(':id')

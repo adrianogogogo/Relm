@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards, Request, HttpCode, HttpStatus, ForbiddenException } from '@nestjs/common';
+import { Controller, Post, Patch, Body, Get, Param, UseGuards, Request, HttpCode, HttpStatus, ForbiddenException } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { StoreAuthService } from './store-auth.service';
 import { StoreLoginDto } from './dto/store-login.dto';
@@ -8,6 +8,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { StoreJwtGuard } from './store-jwt.guard';
 import { ChangePasswordDto } from '../common/dto/change-password.dto';
+import { AdminResetPasswordDto } from '../common/dto/admin-reset-password.dto';
 
 @Controller('store-auth')
 export class StoreAuthController {
@@ -34,6 +35,18 @@ export class StoreAuthController {
       return this.storeAuthService.getStoreUsersByStore(user.storeId);
     }
     throw new ForbiddenException('Este endpoint é exclusivo para usuários de loja');
+  }
+
+  // Admin (ADMIN_RELM) redefine a senha de qualquer lojista.
+  // Rota mais específica que o GET 'users' fixo — sem colisão.
+  @Patch('users/:id/reset-password')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM')
+  async adminResetPassword(
+    @Param('id') id: string,
+    @Body() dto: AdminResetPasswordDto,
+  ) {
+    return this.storeAuthService.adminSetPassword(id, dto.password);
   }
 
   @Post('change-password')

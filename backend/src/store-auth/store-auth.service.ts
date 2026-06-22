@@ -200,6 +200,24 @@ export class StoreAuthService {
     return { message: 'Senha alterada com sucesso.' };
   }
 
+  // Admin (ADMIN_RELM) redefine a senha de qualquer lojista (StoreUser).
+  async adminSetPassword(storeUserId: string, newPassword: string) {
+    const storeUser = await this.prisma.storeUser.findUnique({
+      where: { id: storeUserId },
+    });
+    if (!storeUser) {
+      throw new BadRequestException('Lojista não encontrado');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.storeUser.update({
+      where: { id: storeUser.id },
+      data: { passwordHash },
+    });
+
+    return { message: 'Senha redefinida com sucesso' };
+  }
+
   async getStoreUsersByStore(storeId: string) {
     return this.prisma.storeUser.findMany({
       where: { storeId },

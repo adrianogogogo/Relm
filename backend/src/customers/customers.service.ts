@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class CustomersService {
@@ -295,6 +296,25 @@ export class CustomersService {
     });
 
     return this.formatCustomer(customer);
+  }
+
+  // Admin (ADMIN_RELM) redefine a senha de qualquer cliente.
+  async setPassword(id: string, newPassword: string) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id },
+    });
+
+    if (!customer) {
+      throw new NotFoundException('Cliente não encontrado');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.customer.update({
+      where: { id },
+      data: { passwordHash },
+    });
+
+    return { message: 'Senha redefinida com sucesso' };
   }
 
   async remove(id: string) {

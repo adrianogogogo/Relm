@@ -112,6 +112,16 @@ export class StoresService {
             active: true,
           },
         },
+        storeUsers: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            isActive: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
 
