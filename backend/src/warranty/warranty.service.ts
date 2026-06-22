@@ -570,6 +570,123 @@ export class WarrantyService {
     return updated;
   }
 
+  /**
+   * Define (ou limpa) o custo da garantia para a empresa.
+   * Restrito a ADMIN_RELM/GERENTE_RELM (RBAC no controller).
+   *
+   * @param cost número >= 0 para definir, ou null para limpar.
+   * Registra um warrantyEvent best-effort 'COST_UPDATED'.
+   */
+  async setCost(id: string, cost: number | null, adminUserId?: string) {
+    const claim = await this.prisma.warrantyClaim.findUnique({
+      where: { id },
+    });
+
+    if (!claim) {
+      throw new NotFoundException('Garantia não encontrada');
+    }
+
+    const updated = await this.prisma.warrantyClaim.update({
+      where: { id },
+      data: { cost },
+    });
+
+    // Evento de histórico (não bloqueia a operação se falhar).
+    try {
+      const comment =
+        cost === null || cost === undefined
+          ? 'Custo da garantia removido'
+          : `Custo definido: R$ ${Number(cost).toFixed(2)}`;
+      await this.prisma.warrantyEvent.create({
+        data: {
+          claimId: id,
+          eventType: 'COST_UPDATED',
+          comment,
+          ...(adminUserId && { createdByUserId: adminUserId }),
+        },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Erro ao registrar evento de custo da garantia ${id}: ${error.message}`,
+      );
+    }
+
+    return updated;
+  }
+
+  /**
+   * Reverte (override administrativo) o status de uma garantia.
+   *
+   * IMPORTANTE: este é um caminho SEPARADO da FSM forward-only. Não usa
+   * FSM_TRANSITIONS — permite mover para qualquer status válido do enum.
+   * Restrito a ADMIN_RELM/GERENTE_RELM (RBAC no controller) e exige
+   * justificativa, registrada no histórico. NÃO envia e-mail ao cliente.
+   *
+   * Se estiver SAINDO de APROVADO, limpa o token/carimbos de validação para
+   * não restar um comprovante "aprovado" válido após a reversão.
+   */
+  async revertStatus(
+    id: string,
+    toStatus: WarrantyStatus,
+    reason: string,
+    adminUserId?: string,
+  ) {
+    const claim = await this.prisma.warrantyClaim.findUnique({
+      where: { id },
+    });
+
+    if (!claim) {
+      throw new NotFoundException('Garantia não encontrada');
+    }
+
+    if (toStatus === claim.status) {
+      throw new BadRequestException(
+        'O novo status deve ser diferente do status atual',
+      );
+    }
+
+    // Override: NÃO valida FSM_TRANSITIONS. Apenas garante que o valor é
+    // um status válido do enum (já garantido pelo DTO @IsIn, reforçado aqui).
+    if (!Object.values(WarrantyStatus).includes(toStatus)) {
+      throw new BadRequestException(`Status inválido: ${toStatus}`);
+    }
+
+    // Ao sair de APROVADO, invalida o comprovante de validação.
+    const leavingApproved = claim.status === WarrantyStatus.APROVADO;
+    const clearApprovalData = leavingApproved
+      ? {
+          validationToken: null,
+          validatedAt: null,
+          approvedAt: null,
+          approvalEmailSentAt: null,
+          tokenGeneratedAt: null,
+        }
+      : {};
+
+    const updated = await this.prisma.warrantyClaim.update({
+      where: { id },
+      data: {
+        status: toStatus,
+        ...clearApprovalData,
+      },
+    });
+
+    // Registro no histórico (justificativa obrigatória).
+    await this.prisma.warrantyEvent.create({
+      data: {
+        claimId: id,
+        eventType: 'STATUS_REVERTED',
+        fromStatus: claim.status,
+        toStatus,
+        comment: reason,
+        ...(adminUserId && { createdByUserId: adminUserId }),
+      },
+    });
+
+    // NÃO envia e-mail ao cliente na reversão (caminho administrativo).
+    return updated;
+  }
+
   // Mascara um email: joao.silva@dominio.com -> j***@dominio.com
   private maskEmail(email?: string | null): string | null {
     if (!email) return null;

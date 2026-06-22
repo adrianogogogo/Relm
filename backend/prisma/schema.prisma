@@ -262,6 +262,9 @@ model WarrantyClaim {
   approvedByUserId     String?        @map("approved_by_user_id")
   approvedAt           DateTime?      @map("approved_at")
   
+  // Custo da garantia para a empresa (informado por admin/gerente)
+  cost                 Decimal?       @db.Decimal(10, 2) @map("cost")
+
   // HelmDesk integration
   helmdeskTicketId     String?        @map("helmdesk_ticket_id")
   

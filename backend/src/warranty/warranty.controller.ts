@@ -3,6 +3,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { WarrantyService } from './warranty.service';
 import { CreateWarrantyPublicDto } from './dto/create-warranty-public.dto';
 import { CreateWarrantyAdminDto } from './dto/create-warranty-admin.dto';
+import { SetCostDto } from './dto/set-cost.dto';
+import { RevertStatusDto } from './dto/revert-status.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -98,6 +100,43 @@ export class WarrantyController {
       req.user.userId,
       body.rejectionReason,
       body.adminNotes,
+    );
+  }
+
+  @Patch('warranty/claims/:id/cost')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Definir/limpar custo da garantia (admin/gerente)' })
+  async setCost(
+    @Param('id') id: string,
+    @Body() body: SetCostDto,
+    @Request() req: any,
+  ) {
+    return this.warrantyService.setCost(
+      id,
+      body.cost ?? null,
+      req.user?.userId,
+    );
+  }
+
+  @Patch('warranty/claims/:id/revert-status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Reverter status da garantia (override admin/gerente)',
+  })
+  async revertStatus(
+    @Param('id') id: string,
+    @Body() body: RevertStatusDto,
+    @Request() req: any,
+  ) {
+    return this.warrantyService.revertStatus(
+      id,
+      body.toStatus,
+      body.reason,
+      req.user?.userId,
     );
   }
 
