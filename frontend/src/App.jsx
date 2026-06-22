@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -239,7 +239,13 @@ export default function App() {
                 <AuditLogsPage />
               </ProtectedRoute>
             } />
+            {/* Catch-all do admin: rotas /admin/... desconhecidas (ex.: links
+                antigos de notificações) redirecionam para /admin em vez de tela branca. */}
+            <Route path="*" element={<Navigate to="/admin" replace />} />
           </Route>
+
+          {/* ── Catch-all global: qualquer outra URL desconhecida volta para a home ── */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
