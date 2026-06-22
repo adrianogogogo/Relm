@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsAPI } from '../services/api';
 import { MdCalendarMonth, MdAdd, MdEdit, MdDelete, MdClose, MdPeople, MdLocationOn } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
-import { PageHeader, Button } from '../components/ui';
+import { PageHeader, StatusChip, Button } from '../components/ui';
 
 const EMPTY_FORM = {
   title: '',
@@ -13,7 +13,14 @@ const EMPTY_FORM = {
   startAt: '',
   endAt: '',
   maxParticipants: '',
+  targetRoles: [],
 };
+
+const TARGET_ROLE_OPTIONS = [
+  { id: 'CLIENTE', label: 'Clientes' },
+  { id: 'LOJA', label: 'Lojas' },
+  { id: 'DISTRIBUIDOR', label: 'Distribuidores' },
+];
 
 function EventModal({ event, onClose }) {
   const queryClient = useQueryClient();
@@ -29,6 +36,7 @@ function EventModal({ event, onClose }) {
           endAt: toLocalDatetime(event.endAt),
           maxParticipants: event.maxParticipants?.toString() || '',
           active: event.active,
+          targetRoles: event.targetRoles || [],
         }
       : { ...EMPTY_FORM }
   );
@@ -130,6 +138,28 @@ function EventModal({ event, onClose }) {
               className="input"
               placeholder="Sem limite"
             />
+          </div>
+          <div>
+            <label className="label">Público-alvo</label>
+            <div className="flex flex-wrap gap-4 mt-2">
+              {TARGET_ROLE_OPTIONS.map((role) => (
+                <label key={role.id} className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.targetRoles.includes(role.id)}
+                    onChange={(e) => {
+                      const newRoles = e.target.checked
+                        ? [...form.targetRoles, role.id]
+                        : form.targetRoles.filter((r) => r !== role.id);
+                      setForm({ ...form, targetRoles: newRoles });
+                    }}
+                    className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+                  />
+                  {role.label}
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">Se nenhum público for selecionado, o evento ficará disponível para todos.</p>
           </div>
           {isEdit && (
             <div className="flex items-center gap-2">
@@ -246,7 +276,18 @@ export default function AdminEventsPage() {
               return (
                 <div key={e.id} className={`card border-l-4 ${e.active ? 'border-l-primary' : 'border-l-gray-300 dark:border-l-slate-600 opacity-60'}`}>
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-gray-900 dark:text-slate-100 text-lg flex-1">{e.title}</h3>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-gray-900 dark:text-slate-100 text-lg">{e.title}</h3>
+                      {e.targetRoles && e.targetRoles.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {e.targetRoles.map((role) => (
+                            <StatusChip key={role} label={role} variant="info" />
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="mt-1 inline-block"><StatusChip label="Todos" variant="neutral" /></span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1 ml-2">
                       <button onClick={() => setRegEvent(e)} className="p-1.5 text-gray-400 hover:text-primary rounded" title="Ver inscrições">
                         <MdPeople className="w-4 h-4" />

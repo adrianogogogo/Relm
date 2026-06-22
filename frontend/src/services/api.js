@@ -98,6 +98,8 @@ export const warrantyAPI = {
 
 export const benefitsAPI = {
   getAll: () => api.get('/public/benefits'),
+  // Feed segmentado pelo perfil do usuário logado (CLIENTE/LOJA/DISTRIBUIDOR)
+  feed: () => api.get('/benefits/feed').then((res) => res.data),
   // Admin
   getAllAdmin: () => api.get('/benefits').then((res) => res.data),
   getById: (id) => api.get(`/benefits/${id}`).then((res) => res.data),
@@ -109,6 +111,8 @@ export const benefitsAPI = {
 export const eventsAPI = {
   getAll: () => api.get('/public/events'),
   register: (eventId, data) => api.post(`/public/events/${eventId}/register`, data).then((res) => res.data),
+  // Feed segmentado pelo perfil do usuário logado (CLIENTE/LOJA/DISTRIBUIDOR)
+  feed: () => api.get('/events/feed').then((res) => res.data),
   // Admin
   getAllAdmin: () => api.get('/events').then((res) => res.data),
   getById: (id) => api.get(`/events/${id}`).then((res) => res.data),
