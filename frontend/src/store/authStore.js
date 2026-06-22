@@ -28,11 +28,12 @@ function getDashboardPath(user) {
       return '/cliente/dashboard';
     case 'STORE':
       return '/loja/dashboard';
+    case 'DISTRIBUIDOR':
+      return '/admin/stores';
     case 'ADMIN_RELM':
     case 'GERENTE_RELM':
     case 'SUPORTE_RELM':
     case 'LOJA':
-    case 'DISTRIBUIDOR':
       return '/admin';
     default:
       return '/admin';

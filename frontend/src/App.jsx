@@ -41,7 +41,7 @@ import StoreProductsPage from './pages/StoreProductsPage';
 import StoreProfilePage from './pages/StoreProfilePage';
 
 // Admin pages
-import AdminDashboard from './pages/AdminDashboard';
+import AdminHome from './pages/AdminHome';
 import WarrantiesPage from './pages/WarrantiesPage';
 import CustomersPage from './pages/CustomersPage';
 import CustomerDetailPage from './pages/CustomerDetailPage';
@@ -151,10 +151,18 @@ export default function App() {
             }
           >
             {/* Acessível por todos os roles do admin */}
-            <Route index element={<AdminDashboard />} />
+            <Route index element={<AdminHome />} />
             <Route path="perfil" element={<AdminProfilePage />} />
-            <Route path="customers" element={<CustomersPage />} />
-            <Route path="customers/:id" element={<CustomerDetailPage />} />
+            <Route path="customers" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA']}>
+                <CustomersPage />
+              </ProtectedRoute>
+            } />
+            <Route path="customers/:id" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA']}>
+                <CustomerDetailPage />
+              </ProtectedRoute>
+            } />
             <Route path="stores" element={<StoresPage />} />
 
             {/* Apenas Relm (não Distribuidor) */}
@@ -175,12 +183,12 @@ export default function App() {
             } />
             <Route path="stores/:id" element={<StoreDetailPage />} />
             <Route path="stores/new" element={
-              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'DISTRIBUIDOR']}>
                 <StoreFormPage />
               </ProtectedRoute>
             } />
             <Route path="stores/:id/edit" element={
-              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'DISTRIBUIDOR']}>
                 <StoreFormPage />
               </ProtectedRoute>
             } />

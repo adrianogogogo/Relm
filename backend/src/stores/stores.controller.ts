@@ -22,7 +22,7 @@ export class StoresController {
   constructor(private readonly storesService: StoresService) {}
 
   @Post()
-  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'DISTRIBUIDOR')
   create(@Body() createStoreDto: CreateStoreDto) {
     return this.storesService.create(createStoreDto);
   }
@@ -50,7 +50,7 @@ export class StoresController {
   }
 
   @Patch(':id')
-  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'DISTRIBUIDOR')
   update(@Param('id') id: string, @Body() updateStoreDto: UpdateStoreDto) {
     return this.storesService.update(id, updateStoreDto);
   }

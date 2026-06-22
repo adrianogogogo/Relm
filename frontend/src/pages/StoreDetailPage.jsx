@@ -28,7 +28,7 @@ export default function StoreDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const canEdit = ['ADMIN_RELM', 'GERENTE_RELM'].includes(user?.role);
+  const canEdit = ['ADMIN_RELM', 'GERENTE_RELM', 'DISTRIBUIDOR'].includes(user?.role);
 
   const { data: store, isLoading, error } = useQuery({
     queryKey: ['store', id],

@@ -26,7 +26,7 @@ const MENU_ITEMS = [
     label: 'Dashboard',
     icon: MdDashboard,
     exact: true,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR'],
+    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'],
   },
   {
     path: '/admin/warranties',
@@ -38,7 +38,7 @@ const MENU_ITEMS = [
     path: '/admin/customers',
     label: 'Clientes',
     icon: MdPeople,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR'],
+    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'],
   },
   {
     path: '/admin/stores',

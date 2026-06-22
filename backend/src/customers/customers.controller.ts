@@ -29,7 +29,7 @@ export class CustomersController {
   }
 
   @Get()
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA')
   findAll(
     @Request() req: any,
     @Query('search') search?: string,
@@ -50,7 +50,7 @@ export class CustomersController {
   }
 
   @Get(':id')
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA')
   findOne(@Request() req: any, @Param('id') id: string) {
     return this.customersService.findOne(id, {
       requesterUserId: req.user?.userId,
