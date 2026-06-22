@@ -84,6 +84,9 @@ export const storeAuthAPI = {
   // Troca de senha do lojista logado (tabela StoreUser)
   changePassword: (currentPassword, newPassword) =>
     api.post('/store-auth/change-password', { currentPassword, newPassword }).then((res) => res.data),
+  // Admin (ADMIN_RELM) redefine a senha de qualquer lojista (tabela StoreUser)
+  adminResetPassword: (id, password) =>
+    api.patch(`/store-auth/users/${id}/reset-password`, { password }).then((res) => res.data),
 };
 
 export const warrantyAPI = {
@@ -154,6 +157,9 @@ export const customersAPI = {
   create: (data) => api.post('/customers', data).then((res) => res.data),
   update: (id, data) => api.patch(`/customers/${id}`, data).then((res) => res.data),
   delete: (id) => api.delete(`/customers/${id}`).then((res) => res.data),
+  // Admin (ADMIN_RELM) redefine a senha de qualquer cliente
+  resetPassword: (id, password) =>
+    api.patch(`/customers/${id}/reset-password`, { password }).then((res) => res.data),
 };
 
 export const storesAPI = {

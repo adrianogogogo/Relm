@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { storesAPI } from '../services/api';
+import { storesAPI, storeAuthAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import {
   MdArrowBack, MdEdit, MdLocationOn, MdPhone, MdEmail, MdBusiness,
   MdPeople, MdVerifiedUser, MdInventory2, MdManageAccounts, MdCheckCircle, MdCancel,
+  MdStorefront, MdVpnKey,
 } from 'react-icons/md';
 import { Card, StatusChip, StatCard } from '../components/ui';
+import AdminResetPasswordModal from '../components/AdminResetPasswordModal';
 
 const ROLE_LABEL = {
   ADMIN_RELM: 'Admin Relm',
@@ -29,6 +32,8 @@ export default function StoreDetailPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const canEdit = ['ADMIN_RELM', 'GERENTE_RELM', 'DISTRIBUIDOR'].includes(user?.role);
+  const isAdmin = user?.role === 'ADMIN_RELM';
+  const [resetTarget, setResetTarget] = useState(null);
 
   const { data: store, isLoading, error } = useQuery({
     queryKey: ['store', id],
@@ -160,6 +165,39 @@ export default function StoreDetailPage() {
                 </div>
               </Card>
             )}
+
+            {/* Lojistas com acesso ao portal (tabela StoreUser) */}
+            {store.storeUsers && store.storeUsers.length > 0 && (
+              <Card>
+                <h2 className="text-base font-semibold text-gray-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+                  <MdStorefront className="w-4 h-4 text-gray-400" /> Lojistas (acesso ao portal)
+                </h2>
+                <div className="space-y-2">
+                  {store.storeUsers.map((u) => (
+                    <div key={u.id} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-slate-800 last:border-0 gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-800 dark:text-slate-100 truncate">{u.name}</p>
+                        <p className="text-xs text-gray-400 dark:text-slate-500 truncate">{u.email}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {u.isActive
+                          ? <MdCheckCircle className="w-4 h-4 text-success" />
+                          : <MdCancel className="w-4 h-4 text-gray-300 dark:text-slate-600" />}
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => setResetTarget(u)}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-primary dark:text-primary-400 hover:underline"
+                          >
+                            <MdVpnKey className="w-4 h-4" /> Redefinir senha
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
           </div>
 
           {/* Coluna lateral — stats */}
@@ -186,6 +224,15 @@ export default function StoreDetailPage() {
           </div>
         </div>
       </div>
+
+      {resetTarget && (
+        <AdminResetPasswordModal
+          title="Redefinir senha do lojista"
+          userName={resetTarget.name}
+          onSubmit={(password) => storeAuthAPI.adminResetPassword(resetTarget.id, password)}
+          onClose={() => setResetTarget(null)}
+        />
+      )}
     </div>
   );
 }

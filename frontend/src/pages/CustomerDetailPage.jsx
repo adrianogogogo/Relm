@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MdLocationOn, MdEvent, MdArrowBack } from 'react-icons/md';
-import api, { insuranceAPI } from '../services/api';
+import { MdLocationOn, MdEvent, MdArrowBack, MdVpnKey } from 'react-icons/md';
+import api, { insuranceAPI, customersAPI } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 import { Card, StatusChip, StatCard } from '../components/ui';
+import AdminResetPasswordModal from '../components/AdminResetPasswordModal';
 
 export default function CustomerDetailPage() {
   const { id } = useParams();
@@ -13,6 +15,10 @@ export default function CustomerDetailPage() {
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN_RELM';
 
   useEffect(() => {
     fetchCustomerData();
@@ -90,12 +96,23 @@ export default function CustomerDetailPage() {
             <h1 className="font-title text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100">{customer.fullName}</h1>
             <p className="text-gray-500 dark:text-slate-400 mt-1">{customer.email}</p>
           </div>
-          <Link
-            to={`/admin/customers/${id}/edit`}
-            className="btn btn-primary shrink-0"
-          >
-            Editar Cliente
-          </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setShowResetPassword(true)}
+                className="btn btn-outline"
+              >
+                <MdVpnKey className="w-4 h-4" /> Redefinir senha
+              </button>
+            )}
+            <Link
+              to={`/admin/customers/${id}/edit`}
+              className="btn btn-primary"
+            >
+              Editar Cliente
+            </Link>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -322,6 +339,15 @@ export default function CustomerDetailPage() {
           </div>
         </Card>
       </div>
+
+      {showResetPassword && (
+        <AdminResetPasswordModal
+          title="Redefinir senha do cliente"
+          userName={customer.fullName}
+          onSubmit={(password) => customersAPI.resetPassword(id, password)}
+          onClose={() => setShowResetPassword(false)}
+        />
+      )}
     </div>
   );
 }
