@@ -203,6 +203,9 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   const [adminNotes, setAdminNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
+  const [showStartAnalysisForm, setShowStartAnalysisForm] = useState(false);
+  const [showApproveForm, setShowApproveForm] = useState(false);
+  const [nextAssigneeId, setNextAssigneeId] = useState('');
   const [copied, setCopied] = useState(false);
 
   // Formulário de nova tarefa (aba Tarefas).
@@ -247,7 +250,6 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
       alert('✅ Garantia aprovada! Email enviado ao cliente.');
       refetchWarranty();
       onSuccess();
-      onClose();
     },
     onError: (error) => {
       alert(`❌ Erro ao aprovar: ${error.response?.data?.message || error.message}`);
@@ -260,7 +262,6 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
       alert('✅ Garantia rejeitada. Email enviado ao cliente.');
       refetchWarranty();
       onSuccess();
-      onClose();
     },
     onError: (error) => {
       alert(`❌ Erro ao rejeitar: ${error.response?.data?.message || error.message}`);
@@ -291,7 +292,6 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
       setRevertToStatus('');
       setRevertReason('');
       onSuccess();
-      onClose();
     },
     onError: (error) => {
       alert(`❌ Erro ao reverter status: ${error.response?.data?.message || error.message}`);
@@ -431,7 +431,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
     setCostMutation.mutate(Math.round(num * 100) / 100);
   };
 
-  const handleRevertStatus = () => {
+  const handleRevertStatus = async () => {
     if (!revertToStatus) {
       alert('Selecione o status de destino.');
       return;
@@ -440,51 +440,62 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
       alert('Informe a justificativa da reversão.');
       return;
     }
-    if (
-      !window.confirm(
-        `Confirma a REVERSÃO do status da garantia ${currentWarranty.protocolNumber}?\n\nDe: ${currentWarranty.status}\nPara: ${revertToStatus}\n\nJustificativa: ${revertReason}\n\nEste é um override administrativo (não envia e-mail ao cliente).`,
-      )
-    ) {
-      return;
+    try {
+      await revertMutation.mutateAsync();
+      if (nextAssigneeId) {
+        await assignMutation.mutateAsync(nextAssigneeId);
+      }
+      setNextAssigneeId('');
+      onClose();
+    } catch {
+      // erros já tratados nas mutations
     }
-    revertMutation.mutate();
   };
 
-  const handleStartAnalysis = () => {
-    if (
-      !window.confirm(
-        `Deseja iniciar a análise da garantia ${currentWarranty.protocolNumber}?`
-      )
-    ) {
-      return;
+  const handleStartAnalysis = async () => {
+    try {
+      await startAnalysisMutation.mutateAsync();
+      if (nextAssigneeId) {
+        await assignMutation.mutateAsync(nextAssigneeId);
+      }
+      setShowStartAnalysisForm(false);
+      setNextAssigneeId('');
+    } catch {
+      // erros já tratados
     }
-    startAnalysisMutation.mutate();
   };
 
-  const handleApprove = () => {
-    if (
-      !window.confirm(
-        `Confirma a APROVAÇÃO da garantia ${currentWarranty.protocolNumber}?\n\nUm email será enviado ao cliente com o token de validação.`,
-      )
-    ) {
-      return;
+  const handleApprove = async () => {
+    try {
+      await approveMutation.mutateAsync();
+      if (nextAssigneeId) {
+        await assignMutation.mutateAsync(nextAssigneeId);
+      }
+      setShowApproveForm(false);
+      setNextAssigneeId('');
+      onClose();
+    } catch {
+      // erros já tratados
     }
-    approveMutation.mutate();
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
     if (!rejectionReason.trim()) {
       alert('Por favor, informe o motivo da rejeição.');
       return;
     }
-    if (
-      !window.confirm(
-        `Confirma a REJEIÇÃO da garantia ${currentWarranty.protocolNumber}?\n\nMotivo: ${rejectionReason}\n\nUm email será enviado ao cliente.`,
-      )
-    ) {
-      return;
+    try {
+      await rejectMutation.mutateAsync();
+      if (nextAssigneeId) {
+        await assignMutation.mutateAsync(nextAssigneeId);
+      }
+      setShowRejectForm(false);
+      setRejectionReason('');
+      setNextAssigneeId('');
+      onClose();
+    } catch {
+      // erros já tratados
     }
-    rejectMutation.mutate();
   };
 
   const reportText = buildEmailReport(currentWarranty);
@@ -558,6 +569,82 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
             <MdClose className="h-6 w-6" />
           </button>
         </div>
+
+        {/* Stepper Visual de Status */}
+        {(() => {
+          const steps = [
+            { id: 'novo', label: 'Novo', statusList: ['RECEBIDO'] },
+            { id: 'triagem', label: 'Em Triagem', statusList: ['EM_ANALISE'] },
+            { id: 'solucao', label: 'Solução', statusList: ['AGUARDANDO_CLIENTE', 'APROVADO', 'REPROVADO'] },
+            { id: 'resolvido', label: 'Resolvido', statusList: ['FINALIZADO'] },
+          ];
+          const currentStatus = currentWarranty.status;
+          let currentStepIndex = steps.findIndex((step) => step.statusList.includes(currentStatus));
+          if (currentStatus === 'CANCELADO') {
+            currentStepIndex = -1;
+          }
+
+          return (
+            <div className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/10 px-6 py-5">
+              {currentStatus === 'CANCELADO' ? (
+                <div className="flex items-center gap-2 text-error bg-error/10 border border-error/20 rounded-lg p-3 text-sm font-semibold">
+                  <MdCancel className="h-5 w-5 shrink-0" />
+                  <span>Esta garantia foi cancelada.</span>
+                </div>
+              ) : (
+                <div className="max-w-3xl mx-auto flex items-center justify-between relative mt-2 mb-2">
+                  {/* Linha de progresso no fundo */}
+                  <div className="absolute left-6 right-6 top-4 h-0.5 bg-gray-200 dark:bg-slate-800 -z-10" />
+                  {/* Linha preenchida de progresso ativo */}
+                  <div 
+                    className="absolute left-6 top-4 h-0.5 bg-primary transition-all duration-500 -z-10"
+                    style={{
+                      width: `${currentStepIndex > 0 ? (currentStepIndex / (steps.length - 1)) * 94 : 0}%`
+                    }}
+                  />
+                  
+                  {steps.map((step, idx) => {
+                    const isCompleted = idx < currentStepIndex;
+                    const isActive = idx === currentStepIndex;
+                    
+                    return (
+                      <div key={step.id} className="flex flex-col items-center relative bg-white dark:bg-surface-dark px-3 z-10">
+                        {/* Círculo do Step */}
+                        <div 
+                          className={`h-8 w-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 font-semibold text-sm ${
+                            isCompleted 
+                              ? 'bg-primary border-primary text-white' 
+                              : isActive 
+                              ? 'bg-white dark:bg-surface-dark border-primary text-primary shadow-md scale-110' 
+                              : 'bg-white dark:bg-surface-dark border-gray-300 dark:border-slate-700 text-gray-400'
+                          }`}
+                        >
+                          {isCompleted ? (
+                            <MdCheck className="h-5 w-5 text-white font-bold" />
+                          ) : (
+                            <span>{idx + 1}</span>
+                          )}
+                        </div>
+                        {/* Label */}
+                        <span 
+                          className={`mt-2 text-xs font-semibold whitespace-nowrap ${
+                            isActive 
+                              ? 'text-primary font-bold' 
+                              : isCompleted 
+                              ? 'text-gray-800 dark:text-slate-200' 
+                              : 'text-gray-400 dark:text-slate-500'
+                          }`}
+                        >
+                          {step.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Body: conteúdo (abas) + sidebar */}
         <div className="flex flex-col lg:flex-row gap-6 p-6">
@@ -743,6 +830,24 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                       </select>
                     </div>
                     <div>
+                      <label htmlFor="revertAssignee" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                        Novo Responsável (para a próxima etapa)
+                      </label>
+                      <select
+                        id="revertAssignee"
+                        value={nextAssigneeId}
+                        onChange={(e) => setNextAssigneeId(e.target.value)}
+                        className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-warning/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-warning focus:border-transparent dark:text-slate-100 text-sm"
+                      >
+                        <option value="">— Manter responsável atual / Sem alterar —</option>
+                        {assignableUsers.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
                       <label htmlFor="revertReason" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                         Justificativa *
                       </label>
@@ -770,20 +875,137 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                   </div>
                 )}
 
-                {/* Notas Admin */}
-                {canApprove && !showRejectForm && (
-                  <div>
-                    <label htmlFor="adminNotes" className="label">
-                      Notas Internas (opcional)
-                    </label>
-                    <textarea
-                      id="adminNotes"
-                      value={adminNotes}
-                      onChange={(e) => setAdminNotes(e.target.value)}
-                      rows={3}
-                      className="input"
-                      placeholder="Adicione observações internas sobre esta garantia..."
-                    />
+                {/* Formulário para Iniciar Análise */}
+                {showStartAnalysisForm && (
+                  <div className="bg-primary/5 dark:bg-primary-400/10 border border-primary/20 rounded-lg p-4 space-y-4">
+                    <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
+                      <MdPlayArrow size={18} className="text-primary" /> Iniciar Análise da Garantia
+                    </h3>
+                    <p className="text-xs text-gray-600 dark:text-slate-400">
+                      Defina um responsável da equipe para acompanhar a triagem desta garantia.
+                    </p>
+                    {isAdminOrManager && (
+                      <div>
+                        <label htmlFor="startAnalysisAssignee" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                          Responsável pela Análise
+                        </label>
+                        <select
+                          id="startAnalysisAssignee"
+                          value={nextAssigneeId}
+                          onChange={(e) => setNextAssigneeId(e.target.value)}
+                          className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:text-slate-100 text-sm"
+                        >
+                          <option value="">— Sem responsável —</option>
+                          {assignableUsers.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    <div>
+                      <label htmlFor="startAnalysisNotes" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                        Notas Internas / Observações (opcional)
+                      </label>
+                      <textarea
+                        id="startAnalysisNotes"
+                        value={adminNotes}
+                        onChange={(e) => setAdminNotes(e.target.value)}
+                        rows={3}
+                        className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:text-slate-100 text-sm"
+                        placeholder="Observações iniciais sobre a triagem..."
+                      />
+                    </div>
+                    <div className="flex justify-end gap-3">
+                      <button
+                        onClick={() => {
+                          setShowStartAnalysisForm(false);
+                          setNextAssigneeId('');
+                        }}
+                        className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800"
+                        disabled={startAnalysisMutation.isPending}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleStartAnalysis}
+                        disabled={startAnalysisMutation.isPending}
+                        className="px-5 py-2 bg-primary hover:bg-primary-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                      >
+                        {startAnalysisMutation.isPending && (
+                          <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        )}
+                        Confirmar Início
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Formulário para Aprovar Garantia */}
+                {showApproveForm && (
+                  <div className="bg-success/5 dark:bg-success/10 border border-success/20 rounded-lg p-4 space-y-4">
+                    <h3 className="text-lg font-semibold text-success flex items-center gap-2">
+                      <MdCheck size={18} className="text-success" /> Aprovar Garantia
+                    </h3>
+                    <p className="text-xs text-gray-600 dark:text-slate-400">
+                      Defina quem será o responsável por conduzir a próxima etapa (Logística/Envio da peça de reposição).
+                    </p>
+                    {isAdminOrManager && (
+                      <div>
+                        <label htmlFor="approveAssignee" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                          Responsável pela Próxima Etapa
+                        </label>
+                        <select
+                          id="approveAssignee"
+                          value={nextAssigneeId}
+                          onChange={(e) => setNextAssigneeId(e.target.value)}
+                          className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-success dark:text-slate-100 text-sm"
+                        >
+                          <option value="">— Sem responsável —</option>
+                          {assignableUsers.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    <div>
+                      <label htmlFor="approveNotes" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                        Notas Internas / Observações (opcional)
+                      </label>
+                      <textarea
+                        id="approveNotes"
+                        value={adminNotes}
+                        onChange={(e) => setAdminNotes(e.target.value)}
+                        rows={3}
+                        className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-success dark:text-slate-100 text-sm"
+                        placeholder="Observações ou orientações sobre a aprovação..."
+                      />
+                    </div>
+                    <div className="flex justify-end gap-3">
+                      <button
+                        onClick={() => {
+                          setShowApproveForm(false);
+                          setNextAssigneeId('');
+                        }}
+                        className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800"
+                        disabled={approveMutation.isPending}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleApprove}
+                        disabled={approveMutation.isPending}
+                        className="px-5 py-2 bg-success hover:bg-success-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                      >
+                        {approveMutation.isPending && (
+                          <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        )}
+                        Confirmar Aprovação
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -793,6 +1015,29 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                     <h3 className="text-lg font-semibold text-error flex items-center gap-2">
                       <MdCancel size={18} className="text-error" /> Rejeitar Garantia
                     </h3>
+                    <p className="text-xs text-gray-600 dark:text-slate-400">
+                      Defina o motivo da rejeição e quem será o responsável por acompanhar a conclusão desta garantia.
+                    </p>
+                    {isAdminOrManager && (
+                      <div>
+                        <label htmlFor="rejectAssignee" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                          Responsável pela Próxima Etapa
+                        </label>
+                        <select
+                          id="rejectAssignee"
+                          value={nextAssigneeId}
+                          onChange={(e) => setNextAssigneeId(e.target.value)}
+                          className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-error/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-error focus:border-transparent dark:text-slate-100 text-sm"
+                        >
+                          <option value="">— Sem responsável —</option>
+                          {assignableUsers.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     <div>
                       <label htmlFor="rejectionReason" className="block text-sm font-medium text-error mb-2">
                         Motivo da Rejeição *
@@ -819,6 +1064,29 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                         className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-error/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-error focus:border-transparent dark:text-slate-100"
                         placeholder="Observações internas..."
                       />
+                    </div>
+                    <div className="flex justify-end gap-3">
+                      <button
+                        onClick={() => {
+                          setShowRejectForm(false);
+                          setRejectionReason('');
+                          setNextAssigneeId('');
+                        }}
+                        className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800"
+                        disabled={rejectMutation.isPending}
+                      >
+                        Cancelar Rejeição
+                      </button>
+                      <button
+                        onClick={handleReject}
+                        disabled={rejectMutation.isPending || !rejectionReason.trim()}
+                        className="px-5 py-2 bg-error hover:bg-error-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {rejectMutation.isPending && (
+                          <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        )}
+                        Confirmar Rejeição
+                      </button>
                     </div>
                   </div>
                 )}
@@ -1190,20 +1458,46 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
           </button>
 
           <div className="flex gap-3">
-            {canStartAnalysis && (
+            {/* Iniciar Análise */}
+            {canStartAnalysis && !showStartAnalysisForm && (
               <button
-                onClick={handleStartAnalysis}
-                disabled={startAnalysisMutation.isPending}
-                className="px-6 py-2.5 bg-warning hover:bg-warning-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                onClick={() => {
+                  setActiveTab('principal');
+                  setShowStartAnalysisForm(true);
+                }}
+                className="px-6 py-2.5 bg-warning hover:bg-warning-600 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5"
               >
-                {startAnalysisMutation.isPending && (
-                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                )}
                 <MdPlayArrow size={16} /> Iniciar Análise
               </button>
             )}
 
-            {canReject && !showRejectForm && (
+            {canStartAnalysis && showStartAnalysisForm && (
+              <>
+                <button
+                  onClick={() => {
+                    setShowStartAnalysisForm(false);
+                    setNextAssigneeId('');
+                  }}
+                  className="px-6 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800"
+                  disabled={startAnalysisMutation.isPending}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleStartAnalysis}
+                  disabled={startAnalysisMutation.isPending}
+                  className="px-6 py-2.5 bg-primary hover:bg-primary-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                >
+                  {startAnalysisMutation.isPending && (
+                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  )}
+                  Confirmar Início
+                </button>
+              </>
+            )}
+
+            {/* Rejeitar */}
+            {canReject && !showRejectForm && !showApproveForm && !showStartAnalysisForm && (
               <button
                 onClick={() => {
                   setActiveTab('principal');
@@ -1222,6 +1516,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                   onClick={() => {
                     setShowRejectForm(false);
                     setRejectionReason('');
+                    setNextAssigneeId('');
                   }}
                   className="px-6 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800"
                   disabled={rejectMutation.isPending}
@@ -1241,17 +1536,42 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
               </>
             )}
 
-            {canApprove && !showRejectForm && (
+            {/* Aprovar */}
+            {canApprove && !showApproveForm && !showRejectForm && !showStartAnalysisForm && (
               <button
-                onClick={handleApprove}
-                disabled={approveMutation.isPending}
+                onClick={() => {
+                  setActiveTab('principal');
+                  setShowApproveForm(true);
+                }}
                 className="px-6 py-2.5 bg-success hover:bg-success-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
-                {approveMutation.isPending && (
-                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                )}
                 <MdCheck size={16} /> Aprovar Garantia
               </button>
+            )}
+
+            {showApproveForm && (
+              <>
+                <button
+                  onClick={() => {
+                    setShowApproveForm(false);
+                    setNextAssigneeId('');
+                  }}
+                  className="px-6 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800"
+                  disabled={approveMutation.isPending}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleApprove}
+                  disabled={approveMutation.isPending}
+                  className="px-6 py-2.5 bg-success hover:bg-success-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                >
+                  {approveMutation.isPending && (
+                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  )}
+                  Confirmar Aprovação
+                </button>
+              </>
             )}
           </div>
         </div>
