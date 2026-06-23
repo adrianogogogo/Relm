@@ -234,7 +234,6 @@ export default function WarrantiesPage() {
           warranty={selectedWarranty}
           onClose={closeReviewModal}
           onSuccess={() => {
-            closeReviewModal();
             refetch();
           }}
         />

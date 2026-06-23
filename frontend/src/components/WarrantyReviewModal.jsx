@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   MdClose, MdPerson, MdPedalBike, MdStore, MdDescription, MdCancel, MdCheck,
@@ -183,7 +183,22 @@ function EmptyState({ children }) {
 }
 
 export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
-  const [currentWarranty, setCurrentWarranty] = useState(warranty);
+  const { data: fullWarranty, refetch: refetchWarranty } = useQuery({
+    queryKey: ['warranty-claim-detail', warranty.id],
+    queryFn: () => warrantyAPI.getById(warranty.id),
+    initialData: warranty,
+  });
+
+  const [currentWarranty, setCurrentWarranty] = useState(fullWarranty || warranty);
+
+  useEffect(() => {
+    if (fullWarranty) {
+      setCurrentWarranty(fullWarranty);
+      setCostInput(
+        fullWarranty.cost !== null && fullWarranty.cost !== undefined ? String(fullWarranty.cost) : ''
+      );
+    }
+  }, [fullWarranty]);
   const [activeTab, setActiveTab] = useState('principal');
   const [adminNotes, setAdminNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
@@ -214,14 +229,11 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   // events). Fazemos merge em vez de replace para não apagar os includes que as
   // abas (sidebar Cliente, Histórico) dependem. Eventos novos só aparecem ao
   // reabrir — aceitável na Onda 1; refetch por getById se virar requisito.
-  const mergeWarranty = (data) =>
-    setCurrentWarranty((prev) => ({ ...prev, ...data }));
-
   const startAnalysisMutation = useMutation({
     mutationFn: () => warrantyAPI.updateStatus(currentWarranty.id, { to_status: 'EM_ANALISE' }),
-    onSuccess: (data) => {
+    onSuccess: () => {
       alert('✅ Análise iniciada com sucesso!');
-      mergeWarranty(data);
+      refetchWarranty();
       onSuccess();
     },
     onError: (error) => {
@@ -233,6 +245,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
     mutationFn: () => warrantyAPI.approve(currentWarranty.id, { adminNotes }),
     onSuccess: () => {
       alert('✅ Garantia aprovada! Email enviado ao cliente.');
+      refetchWarranty();
       onSuccess();
       onClose();
     },
@@ -245,6 +258,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
     mutationFn: () => warrantyAPI.reject(currentWarranty.id, { rejectionReason, adminNotes }),
     onSuccess: () => {
       alert('✅ Garantia rejeitada. Email enviado ao cliente.');
+      refetchWarranty();
       onSuccess();
       onClose();
     },
@@ -255,12 +269,9 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
 
   const setCostMutation = useMutation({
     mutationFn: (cost) => warrantyAPI.setCost(currentWarranty.id, cost),
-    onSuccess: (data) => {
+    onSuccess: () => {
       alert('✅ Custo salvo com sucesso!');
-      mergeWarranty(data);
-      setCostInput(
-        data.cost !== null && data.cost !== undefined ? String(data.cost) : '',
-      );
+      refetchWarranty();
       onSuccess();
     },
     onError: (error) => {
@@ -274,9 +285,9 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
         toStatus: revertToStatus,
         reason: revertReason,
       }),
-    onSuccess: (data) => {
+    onSuccess: () => {
       alert('✅ Status revertido com sucesso!');
-      mergeWarranty(data);
+      refetchWarranty();
       setRevertToStatus('');
       setRevertReason('');
       onSuccess();
@@ -288,16 +299,10 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   });
 
   // ── Tarefas (Onda 2) ────────────────────────────────────────────────────────
-  const setTasks = (updater) =>
-    setCurrentWarranty((prev) => ({
-      ...prev,
-      tasks: typeof updater === 'function' ? updater(prev.tasks || []) : updater,
-    }));
-
   const createTaskMutation = useMutation({
     mutationFn: (payload) => warrantyAPI.createTask(currentWarranty.id, payload),
-    onSuccess: (task) => {
-      setTasks((list) => [...list, task]);
+    onSuccess: () => {
+      refetchWarranty();
       setNewTaskTitle('');
       setNewTaskAssignee('');
       setNewTaskDue('');
@@ -310,8 +315,8 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
 
   const updateTaskMutation = useMutation({
     mutationFn: ({ taskId, data }) => warrantyAPI.updateTask(taskId, data),
-    onSuccess: (task) => {
-      setTasks((list) => list.map((t) => (t.id === task.id ? task : t)));
+    onSuccess: () => {
+      refetchWarranty();
       onSuccess();
     },
     onError: (error) => {
@@ -321,8 +326,8 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
 
   const deleteTaskMutation = useMutation({
     mutationFn: (taskId) => warrantyAPI.deleteTask(taskId),
-    onSuccess: (_data, taskId) => {
-      setTasks((list) => list.filter((t) => t.id !== taskId));
+    onSuccess: () => {
+      refetchWarranty();
       onSuccess();
     },
     onError: (error) => {
@@ -348,16 +353,10 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   };
 
   // ── Anexos (Onda 3) ─────────────────────────────────────────────────────────
-  const setAttachments = (updater) =>
-    setCurrentWarranty((prev) => ({
-      ...prev,
-      attachments: typeof updater === 'function' ? updater(prev.attachments || []) : updater,
-    }));
-
   const uploadAttachmentMutation = useMutation({
     mutationFn: (file) => warrantyAPI.uploadAttachment(currentWarranty.id, file),
-    onSuccess: (att) => {
-      setAttachments((list) => [att, ...list]);
+    onSuccess: () => {
+      refetchWarranty();
       onSuccess();
     },
     onError: (error) => {
@@ -367,8 +366,8 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
 
   const deleteAttachmentMutation = useMutation({
     mutationFn: (attId) => warrantyAPI.deleteAttachment(attId),
-    onSuccess: (_data, attId) => {
-      setAttachments((list) => list.filter((a) => a.id !== attId));
+    onSuccess: () => {
+      refetchWarranty();
       onSuccess();
     },
     onError: (error) => {
@@ -406,8 +405,8 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
 
   const assignMutation = useMutation({
     mutationFn: (userId) => warrantyAPI.assign(currentWarranty.id, userId),
-    onSuccess: (data) => {
-      setCurrentWarranty((prev) => ({ ...prev, assignedTo: data.assignedTo ?? null, assignedToUserId: data.assignedToUserId ?? null }));
+    onSuccess: () => {
+      refetchWarranty();
       onSuccess();
     },
     onError: (error) => {
