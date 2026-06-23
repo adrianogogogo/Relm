@@ -9,6 +9,19 @@ import {
 import { warrantyAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 
+const STEP_INFO = [
+  { name: 'Novo', desc: 'Garantia recebida, aguarda início da análise.' },
+  { name: 'Em Triagem', desc: 'Análise inicial iniciada pela equipe Relm.' },
+  { name: 'Em Análise', desc: 'Identificação de problemas e testes em data/tarefas em andamento.' },
+  { name: 'Solução Proposta', desc: 'Aguardando retorno do cliente sobre a solução proposta.' },
+  { name: 'Em Definição', desc: 'Custo da garantia definido e sob avaliação financeira.' },
+  { name: 'Reprovado', desc: 'A solicitação de garantia foi reprovada.' },
+  { name: 'Logística/Envio', desc: 'Garantia aprovada, processo de envio iniciado.' },
+  { name: 'Em Logística', desc: 'Peças em trânsito ou recebidas.' },
+  { name: 'Resolvido', desc: 'Problema solucionado e registrado.' },
+  { name: 'Fechado', desc: 'Finalização total de tarefas e fechamento do ticket.' }
+];
+
 // Todos os status da FSM (enum WarrantyStatus no backend).
 const WARRANTY_STATUSES = [
   'RECEBIDO',
@@ -250,6 +263,10 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [showStartAnalysisForm, setShowStartAnalysisForm] = useState(false);
   const [showApproveForm, setShowApproveForm] = useState(false);
+  const [showAwaitingClientForm, setShowAwaitingClientForm] = useState(false);
+  const [awaitingClientComment, setAwaitingClientComment] = useState('');
+  const [showFinalizeForm, setShowFinalizeForm] = useState(false);
+  const [resolutionText, setResolutionText] = useState('');
   const [nextAssigneeId, setNextAssigneeId] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -310,6 +327,38 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
     },
     onError: (error) => {
       alert(`❌ Erro ao rejeitar: ${error.response?.data?.message || error.message}`);
+    },
+  });
+
+  const awaitingClientMutation = useMutation({
+    mutationFn: (comment) =>
+      warrantyAPI.updateStatus(currentWarranty.id, {
+        to_status: 'AGUARDANDO_CLIENTE',
+        comment,
+      }),
+    onSuccess: () => {
+      alert('✅ Solução proposta e status atualizado para Pendente Cliente!');
+      refetchWarranty();
+      onSuccess();
+    },
+    onError: (error) => {
+      alert(`❌ Erro ao propor solução: ${error.response?.data?.message || error.message}`);
+    },
+  });
+
+  const finalizeMutation = useMutation({
+    mutationFn: (resolution) =>
+      warrantyAPI.updateStatus(currentWarranty.id, {
+        to_status: 'FINALIZADO',
+        resolution,
+      }),
+    onSuccess: () => {
+      alert('✅ Garantia finalizada com sucesso!');
+      refetchWarranty();
+      onSuccess();
+    },
+    onError: (error) => {
+      alert(`❌ Erro ao finalizar garantia: ${error.response?.data?.message || error.message}`);
     },
   });
 
@@ -543,6 +592,54 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
     }
   };
 
+  const handleAwaitingClient = async () => {
+    if (!awaitingClientComment.trim()) {
+      alert('Por favor, informe a proposta ou instruções para o cliente.');
+      return;
+    }
+    try {
+      await awaitingClientMutation.mutateAsync(awaitingClientComment.trim());
+      if (nextAssigneeId) {
+        await assignMutation.mutateAsync(nextAssigneeId);
+      }
+      setShowAwaitingClientForm(false);
+      setAwaitingClientComment('');
+      setNextAssigneeId('');
+    } catch {
+      // erros já tratados
+    }
+  };
+
+  const handleFinalize = async () => {
+    if (!resolutionText.trim()) {
+      alert('Por favor, informe a resolução/fechamento.');
+      return;
+    }
+    try {
+      await finalizeMutation.mutateAsync(resolutionText.trim());
+      if (nextAssigneeId) {
+        await assignMutation.mutateAsync(nextAssigneeId);
+      }
+      setShowFinalizeForm(false);
+      setResolutionText('');
+      setNextAssigneeId('');
+    } catch {
+      // erros já tratados
+    }
+  };
+
+  const handleReturnToAnalysis = async () => {
+    try {
+      await startAnalysisMutation.mutateAsync();
+      if (nextAssigneeId) {
+        await assignMutation.mutateAsync(nextAssigneeId);
+      }
+      setNextAssigneeId('');
+    } catch {
+      // erros já tratados
+    }
+  };
+
   const reportText = buildEmailReport(currentWarranty);
 
   const handleCopyReport = async () => {
@@ -654,20 +751,31 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                     const isCompleted = stepNum < activeStep;
                     const isActive = stepNum === activeStep;
                     const color = stepColors[idx];
+                    const info = STEP_INFO[idx];
                     
                     return (
-                      <div
-                        key={idx}
-                        className="h-3 flex-1 rounded-full bg-gray-200 dark:bg-slate-700 transition-all duration-500"
-                        style={{
-                          backgroundColor: (isCompleted || isActive) 
-                            ? color 
-                            : undefined,
-                          boxShadow: isActive 
-                            ? `0 0 10px ${color}` 
-                            : 'none',
-                        }}
-                      />
+                      <div key={idx} className="relative group flex-1">
+                        <div
+                          className="h-3 w-full rounded-full bg-gray-200 dark:bg-slate-700 transition-all duration-500 cursor-help"
+                          style={{
+                            backgroundColor: (isCompleted || isActive) 
+                              ? color 
+                              : undefined,
+                            boxShadow: isActive 
+                              ? `0 0 10px ${color}` 
+                              : 'none',
+                          }}
+                        />
+                        {/* Tooltip premium customizado */}
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 hidden group-hover:block bg-slate-900 dark:bg-slate-950 text-white text-[11px] p-2.5 rounded-lg shadow-xl text-center z-30 pointer-events-none transition-all">
+                          <div className="font-bold mb-0.5" style={{ color }}>
+                            {stepNum}. {info.name}
+                          </div>
+                          <div className="text-white/80 leading-normal">{info.desc}</div>
+                          {/* Setinha do tooltip */}
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-900 dark:border-t-slate-950" />
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
@@ -808,6 +916,536 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Card: Fluxo de Trabalho e Próximos Passos */}
+                <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-5 shadow-sm space-y-6">
+                  <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-3">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+                      <MdAssignment className="text-primary" /> Fluxo de Trabalho e Próximos Passos
+                    </h3>
+                    <span className="text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded">
+                      FSM do Sistema
+                    </span>
+                  </div>
+
+                  {/* Mini-Fluxograma FSM Estático */}
+                  <div className="bg-gray-50 dark:bg-slate-900/50 rounded-lg p-4 space-y-4">
+                    <span className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider block">
+                      Visualização do Fluxograma
+                    </span>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center text-center">
+                      {/* 1. Recebido */}
+                      <div className={`p-3 rounded-lg border transition-all ${
+                        currentWarranty.status === 'RECEBIDO'
+                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-800 font-bold shadow-[0_0_12px_rgba(59,130,246,0.2)]'
+                          : 'bg-white dark:bg-slate-800 text-gray-400 border-gray-200 dark:border-slate-700 opacity-60'
+                      }`}>
+                        <p className="text-xs">1. Recebido</p>
+                        <span className="text-[10px] opacity-70">Novo Ticket</span>
+                      </div>
+
+                      {/* 2. Em Análise */}
+                      <div className={`p-3 rounded-lg border transition-all relative ${
+                        currentWarranty.status === 'EM_ANALISE'
+                          ? 'bg-warning/15 text-warning border-warning/50 font-bold shadow-[0_0_12px_rgba(245,158,11,0.2)]'
+                          : 'bg-white dark:bg-slate-800 text-gray-400 border-gray-200 dark:border-slate-700 opacity-60'
+                      }`}>
+                        <p className="text-xs">2. Em Análise</p>
+                        <span className="text-[10px] opacity-70">Triagem / Definição</span>
+                        {/* Setas de retorno para Pendente Cliente */}
+                        <div className="hidden md:block absolute -right-3.5 top-1/2 transform -translate-y-1/2 text-gray-300 dark:text-slate-700 z-10 font-bold text-sm">↔</div>
+                      </div>
+
+                      {/* 3. Pendente Cliente */}
+                      <div className={`p-3 rounded-lg border transition-all ${
+                        currentWarranty.status === 'AGUARDANDO_CLIENTE'
+                          ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-800 font-bold shadow-[0_0_12px_rgba(168,85,247,0.2)]'
+                          : 'bg-white dark:bg-slate-800 text-gray-400 border-gray-200 dark:border-slate-700 opacity-60'
+                      }`}>
+                        <p className="text-xs">3. Pendente Cliente</p>
+                        <span className="text-[10px] opacity-70">Solução Proposta</span>
+                      </div>
+
+                      {/* 4. Decisão / Fim */}
+                      <div className={`p-3 rounded-lg border transition-all ${
+                        ['APROVADO', 'REPROVADO', 'FINALIZADO'].includes(currentWarranty.status)
+                          ? 'bg-success/15 text-success border-success/50 font-bold shadow-[0_0_12px_rgba(16,185,129,0.2)]'
+                          : 'bg-white dark:bg-slate-800 text-gray-400 border-gray-200 dark:border-slate-700 opacity-60'
+                      }`}>
+                        <p className="text-xs">4. Decisão & Fim</p>
+                        <span className="text-[10px] opacity-70">
+                          {currentWarranty.status === 'FINALIZADO' ? 'Finalizado' :
+                           currentWarranty.status === 'APROVADO' ? 'Aprovado (Logística)' :
+                           currentWarranty.status === 'REPROVADO' ? 'Reprovado' : 'Aprov./Reprov./Fim'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status Contextualizado */}
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider block">
+                      Situação do Ticket
+                    </span>
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900/40 rounded-lg border border-slate-100 dark:border-slate-800/60">
+                      <p className="text-sm text-gray-700 dark:text-slate-300 leading-relaxed">
+                        {currentWarranty.status === 'RECEBIDO' && "📥 A garantia foi registrada pelo cliente ou loja e está aguardando a triagem inicial para começar o fluxo de análise técnica."}
+                        {currentWarranty.status === 'EM_ANALISE' && "🔍 A garantia está sob triagem e análise técnica. A equipe pode definir custos, tarefas, solicitar mais informações ao cliente, ou aprovar/rejeitar a solicitação."}
+                        {currentWarranty.status === 'AGUARDANDO_CLIENTE' && "💡 A equipe Relm propôs uma solução ou solicitou informações adicionais do cliente. O fluxo aguarda a resposta do cliente ou o retorno manual à análise."}
+                        {currentWarranty.status === 'APROVADO' && "🚚 A solicitação de garantia foi aprovada. O processo de logística para envio da peça de reposição está em andamento. Finalize a garantia quando concluído."}
+                        {currentWarranty.status === 'REPROVADO' && "❌ A solicitação de garantia foi reprovada devido às especificações ou critérios não atendidos. Finalize a garantia para concluir o ticket."}
+                        {currentWarranty.status === 'FINALIZADO' && "✅ Esta garantia foi resolvida e fechada. Nenhuma ação adicional é necessária."}
+                        {currentWarranty.status === 'CANCELADO' && "🚫 Esta garantia foi cancelada. Nenhuma ação adicional é necessária."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Ações Disponíveis */}
+                  {!['FINALIZADO', 'CANCELADO'].includes(currentWarranty.status) && (
+                    <div className="space-y-4">
+                      <span className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider block">
+                        Ações de Transição
+                      </span>
+                      
+                      {/* Mensagem de RBAC */}
+                      {!isAdminOrManager && (
+                        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-lg p-3 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
+                          <span className="text-sm shrink-0">⚠️</span>
+                          <span>
+                            <strong>Ações restritas:</strong> Seu perfil atual não possui permissão para executar transições nesta garantia. Apenas Administradores ou Gerentes da Relm podem realizar estas alterações.
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex flex-wrap gap-3">
+                        {/* RECEBIDO -> EM_ANALISE */}
+                        {currentWarranty.status === 'RECEBIDO' && (
+                          <button
+                            onClick={() => setShowStartAnalysisForm(true)}
+                            disabled={!isAdminOrManager || startAnalysisMutation.isPending}
+                            className="px-5 py-2.5 bg-warning hover:bg-warning-600 text-white rounded-lg text-sm font-semibold flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                          >
+                            {!isAdminOrManager && <span>🔒</span>}
+                            <MdPlayArrow size={16} /> Iniciar Análise
+                          </button>
+                        )}
+
+                        {/* EM_ANALISE -> AGUARDANDO_CLIENTE / APROVADO / REPROVADO */}
+                        {currentWarranty.status === 'EM_ANALISE' && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setShowAwaitingClientForm(true);
+                                setShowApproveForm(false);
+                                setShowRejectForm(false);
+                                setShowStartAnalysisForm(false);
+                              }}
+                              disabled={!isAdminOrManager || awaitingClientMutation.isPending}
+                              className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                            >
+                              {!isAdminOrManager && <span>🔒</span>}
+                              <span>💡</span> Solicitar Info / Propor Solução
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowApproveForm(true);
+                                setShowAwaitingClientForm(false);
+                                setShowRejectForm(false);
+                                setShowStartAnalysisForm(false);
+                              }}
+                              disabled={!isAdminOrManager || approveMutation.isPending}
+                              className="px-5 py-2.5 bg-success hover:bg-success-600 text-white rounded-lg text-sm font-semibold flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                            >
+                              {!isAdminOrManager && <span>🔒</span>}
+                              <MdCheck size={16} /> Aprovar Garantia
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowRejectForm(true);
+                                setShowAwaitingClientForm(false);
+                                setShowApproveForm(false);
+                                setShowStartAnalysisForm(false);
+                              }}
+                              disabled={!isAdminOrManager || rejectMutation.isPending}
+                              className="px-5 py-2.5 border-2 border-error text-error hover:bg-error hover:text-white rounded-lg text-sm font-semibold flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                            >
+                              {!isAdminOrManager && <span>🔒</span>}
+                              <MdCancel size={16} /> Rejeitar Garantia
+                            </button>
+                          </>
+                        )}
+
+                        {/* AGUARDANDO_CLIENTE -> EM_ANALISE */}
+                        {currentWarranty.status === 'AGUARDANDO_CLIENTE' && (
+                          <button
+                            onClick={() => handleReturnToAnalysis()}
+                            disabled={!isAdminOrManager || startAnalysisMutation.isPending}
+                            className="px-5 py-2.5 bg-warning hover:bg-warning-600 text-white rounded-lg text-sm font-semibold flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                          >
+                            {!isAdminOrManager && <span>🔒</span>}
+                            <MdPlayArrow size={16} /> Retornar para Análise
+                          </button>
+                        )}
+
+                        {/* APROVADO / REPROVADO -> FINALIZADO */}
+                        {['APROVADO', 'REPROVADO'].includes(currentWarranty.status) && (
+                          <button
+                            onClick={() => {
+                              setShowFinalizeForm(true);
+                              setShowApproveForm(false);
+                              setShowRejectForm(false);
+                              setShowAwaitingClientForm(false);
+                            }}
+                            disabled={!isAdminOrManager || finalizeMutation.isPending}
+                            className="px-5 py-2.5 bg-primary hover:bg-primary-600 text-white rounded-lg text-sm font-semibold flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                          >
+                            {!isAdminOrManager && <span>🔒</span>}
+                            <MdCheckCircle size={16} /> Finalizar Garantia
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Formulários de Confirmação e Ação Inline */}
+                      <div className="space-y-4 pt-2">
+                        {/* Formulário Iniciar Análise */}
+                        {showStartAnalysisForm && (
+                          <div className="bg-primary/5 dark:bg-primary-400/10 border border-primary/20 rounded-lg p-4 space-y-4">
+                            <h4 className="text-sm font-semibold text-primary flex items-center gap-2">
+                              <MdPlayArrow size={18} className="text-primary" /> Iniciar Análise da Garantia
+                            </h4>
+                            <div>
+                              <label htmlFor="startAnalysisAssignee" className="block text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">
+                                Responsável pela Análise
+                              </label>
+                              <select
+                                id="startAnalysisAssignee"
+                                value={nextAssigneeId}
+                                onChange={(e) => setNextAssigneeId(e.target.value)}
+                                className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:text-slate-100 text-sm"
+                              >
+                                <option value="">— Sem responsável —</option>
+                                {assignableUsers.map((u) => (
+                                  <option key={u.id} value={u.id}>
+                                    {u.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label htmlFor="startAnalysisNotes" className="block text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">
+                                Notas Internas / Observações (opcional)
+                              </label>
+                              <textarea
+                                id="startAnalysisNotes"
+                                value={adminNotes}
+                                onChange={(e) => setAdminNotes(e.target.value)}
+                                rows={3}
+                                className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:text-slate-100 text-sm"
+                                placeholder="Observações iniciais sobre a triagem..."
+                              />
+                            </div>
+                            <div className="flex justify-end gap-3">
+                              <button
+                                onClick={() => {
+                                  setShowStartAnalysisForm(false);
+                                  setNextAssigneeId('');
+                                }}
+                                className="px-4 py-2 rounded-lg text-xs font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800"
+                                disabled={startAnalysisMutation.isPending}
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                onClick={handleStartAnalysis}
+                                disabled={startAnalysisMutation.isPending}
+                                className="px-4 py-2 bg-primary hover:bg-primary-600 text-white rounded-lg text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                              >
+                                {startAnalysisMutation.isPending && (
+                                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                )}
+                                Confirmar Início
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Formulário Solicitar Info / Propor Solução (Pendente Cliente) */}
+                        {showAwaitingClientForm && (
+                          <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/50 rounded-lg p-4 space-y-4">
+                            <h4 className="text-sm font-semibold text-purple-700 dark:text-purple-400 flex items-center gap-2">
+                              <span>💡</span> Solicitar Informações / Propor Solução
+                            </h4>
+                            <p className="text-xs text-gray-600 dark:text-slate-400">
+                              Descreva as informações que o cliente precisa enviar ou a solução proposta. Este texto será registrado e enviado ao cliente.
+                            </p>
+                            <div>
+                              <label htmlFor="awaitingClientComment" className="block text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">
+                                Instruções / Proposta para o Cliente *
+                              </label>
+                              <textarea
+                                id="awaitingClientComment"
+                                value={awaitingClientComment}
+                                onChange={(e) => setAwaitingClientComment(e.target.value)}
+                                rows={4}
+                                className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-purple-300 dark:border-purple-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-slate-100 text-sm"
+                                placeholder="Ex.: Solicito fotos adicionais do número de série..."
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label htmlFor="awaitingClientAssignee" className="block text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">
+                                Responsável pelo Acompanhamento
+                              </label>
+                              <select
+                                id="awaitingClientAssignee"
+                                value={nextAssigneeId}
+                                onChange={(e) => setNextAssigneeId(e.target.value)}
+                                className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-purple-300 dark:border-purple-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:text-slate-100 text-sm"
+                              >
+                                <option value="">— Sem responsável —</option>
+                                {assignableUsers.map((u) => (
+                                  <option key={u.id} value={u.id}>
+                                    {u.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="flex justify-end gap-3">
+                              <button
+                                onClick={() => {
+                                  setShowAwaitingClientForm(false);
+                                  setAwaitingClientComment('');
+                                  setNextAssigneeId('');
+                                }}
+                                className="px-4 py-2 rounded-lg text-xs font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800"
+                                disabled={awaitingClientMutation.isPending}
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                onClick={handleAwaitingClient}
+                                disabled={awaitingClientMutation.isPending || !awaitingClientComment.trim()}
+                                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                              >
+                                {awaitingClientMutation.isPending && (
+                                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                )}
+                                Enviar Solicitação
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Formulário Aprovar Garantia */}
+                        {showApproveForm && (
+                          <div className="bg-success/5 dark:bg-success/10 border border-success/20 rounded-lg p-4 space-y-4">
+                            <h4 className="text-sm font-semibold text-success flex items-center gap-2">
+                              <MdCheck size={18} className="text-success" /> Aprovar Garantia
+                            </h4>
+                            <div>
+                              <label htmlFor="approveAssignee" className="block text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">
+                                Responsável pela Próxima Etapa (Logística/Envio)
+                              </label>
+                              <select
+                                id="approveAssignee"
+                                value={nextAssigneeId}
+                                onChange={(e) => setNextAssigneeId(e.target.value)}
+                                className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-success dark:text-slate-100 text-sm"
+                              >
+                                <option value="">— Sem responsável —</option>
+                                {assignableUsers.map((u) => (
+                                  <option key={u.id} value={u.id}>
+                                    {u.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label htmlFor="approveNotes" className="block text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">
+                                Notas Internas / Observações (opcional)
+                              </label>
+                              <textarea
+                                id="approveNotes"
+                                value={adminNotes}
+                                onChange={(e) => setAdminNotes(e.target.value)}
+                                rows={3}
+                                className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-success dark:text-slate-100 text-sm"
+                                placeholder="Observações ou orientações sobre a aprovação..."
+                              />
+                            </div>
+                            <div className="flex justify-end gap-3">
+                              <button
+                                onClick={() => {
+                                  setShowApproveForm(false);
+                                  setNextAssigneeId('');
+                                }}
+                                className="px-4 py-2 rounded-lg text-xs font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800"
+                                disabled={approveMutation.isPending}
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                onClick={handleApprove}
+                                disabled={approveMutation.isPending}
+                                className="px-4 py-2 bg-success hover:bg-success-600 text-white rounded-lg text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                              >
+                                {approveMutation.isPending && (
+                                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                )}
+                                Confirmar Aprovação
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Formulário Rejeitar Garantia */}
+                        {showRejectForm && (
+                          <div className="bg-error/5 dark:bg-error/10 border border-error/20 rounded-lg p-4 space-y-4">
+                            <h4 className="text-sm font-semibold text-error flex items-center gap-2">
+                              <MdCancel size={18} className="text-error" /> Rejeitar Garantia
+                            </h4>
+                            <div>
+                              <label htmlFor="rejectionReason" className="block text-xs font-semibold text-error mb-2">
+                                Motivo da Rejeição *
+                              </label>
+                              <textarea
+                                id="rejectionReason"
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                                rows={4}
+                                className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-error/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-error focus:border-transparent dark:text-slate-100 text-sm"
+                                placeholder="Explique ao cliente o motivo da rejeição..."
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label htmlFor="rejectAssignee" className="block text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">
+                                Responsável pela Próxima Etapa
+                              </label>
+                              <select
+                                id="rejectAssignee"
+                                value={nextAssigneeId}
+                                onChange={(e) => setNextAssigneeId(e.target.value)}
+                                className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-error/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-error focus:border-transparent dark:text-slate-100 text-sm"
+                              >
+                                <option value="">— Sem responsável —</option>
+                                {assignableUsers.map((u) => (
+                                  <option key={u.id} value={u.id}>
+                                    {u.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label htmlFor="adminNotesReject" className="block text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">
+                                Notas Internas (opcional)
+                              </label>
+                              <textarea
+                                id="adminNotesReject"
+                                value={adminNotes}
+                                onChange={(e) => setAdminNotes(e.target.value)}
+                                rows={2}
+                                className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-error/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-error focus:border-transparent dark:text-slate-100 text-sm"
+                                placeholder="Observações internas..."
+                              />
+                            </div>
+                            <div className="flex justify-end gap-3">
+                              <button
+                                onClick={() => {
+                                  setShowRejectForm(false);
+                                  setRejectionReason('');
+                                  setNextAssigneeId('');
+                                }}
+                                className="px-4 py-2 rounded-lg text-xs font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800"
+                                disabled={rejectMutation.isPending}
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                onClick={handleReject}
+                                disabled={rejectMutation.isPending || !rejectionReason.trim()}
+                                className="px-4 py-2 bg-error hover:bg-error-600 text-white rounded-lg text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                              >
+                                {rejectMutation.isPending && (
+                                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                )}
+                                Confirmar Rejeição
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Formulário Finalizar Garantia */}
+                        {showFinalizeForm && (
+                          <div className="bg-primary/5 dark:bg-primary-400/10 border border-primary/20 rounded-lg p-4 space-y-4">
+                            <h4 className="text-sm font-semibold text-primary flex items-center gap-2">
+                              <MdCheckCircle size={18} className="text-primary" /> Finalizar Garantia
+                            </h4>
+                            <p className="text-xs text-gray-600 dark:text-slate-400">
+                              Descreva a resolução técnica final desta garantia. Este campo é obrigatório para fechamento.
+                            </p>
+                            <div>
+                              <label htmlFor="resolutionText" className="block text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">
+                                Resolução / Detalhes do Encerramento *
+                              </label>
+                              <textarea
+                                id="resolutionText"
+                                value={resolutionText}
+                                onChange={(e) => setResolutionText(e.target.value)}
+                                rows={4}
+                                className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:text-slate-100 text-sm"
+                                placeholder="Ex.: Peça trocada com sucesso e bicicleta entregue ao cliente."
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label htmlFor="finalizeAssignee" className="block text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">
+                                Responsável pelo Encerramento
+                              </label>
+                              <select
+                                id="finalizeAssignee"
+                                value={nextAssigneeId}
+                                onChange={(e) => setNextAssigneeId(e.target.value)}
+                                className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:text-slate-100 text-sm"
+                              >
+                                <option value="">— Sem responsável —</option>
+                                {assignableUsers.map((u) => (
+                                  <option key={u.id} value={u.id}>
+                                    {u.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="flex justify-end gap-3">
+                              <button
+                                onClick={() => {
+                                  setShowFinalizeForm(false);
+                                  setResolutionText('');
+                                  setNextAssigneeId('');
+                                }}
+                                className="px-4 py-2 rounded-lg text-xs font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800"
+                                disabled={finalizeMutation.isPending}
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                onClick={handleFinalize}
+                                disabled={finalizeMutation.isPending || !resolutionText.trim()}
+                                className="px-4 py-2 bg-primary hover:bg-primary-600 text-white rounded-lg text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                              >
+                                {finalizeMutation.isPending && (
+                                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                )}
+                                Confirmar Encerramento
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Custo da garantia (admin/gerente) */}
@@ -1510,123 +2148,6 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
             Fechar
           </button>
 
-          <div className="flex gap-3">
-            {/* Iniciar Análise */}
-            {canStartAnalysis && !showStartAnalysisForm && (
-              <button
-                onClick={() => {
-                  setActiveTab('principal');
-                  setShowStartAnalysisForm(true);
-                }}
-                className="px-6 py-2.5 bg-warning hover:bg-warning-600 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5"
-              >
-                <MdPlayArrow size={16} /> Iniciar Análise
-              </button>
-            )}
-
-            {canStartAnalysis && showStartAnalysisForm && (
-              <>
-                <button
-                  onClick={() => {
-                    setShowStartAnalysisForm(false);
-                    setNextAssigneeId('');
-                  }}
-                  className="px-6 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800"
-                  disabled={startAnalysisMutation.isPending}
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleStartAnalysis}
-                  disabled={startAnalysisMutation.isPending}
-                  className="px-6 py-2.5 bg-primary hover:bg-primary-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-                >
-                  {startAnalysisMutation.isPending && (
-                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  )}
-                  Confirmar Início
-                </button>
-              </>
-            )}
-
-            {/* Rejeitar */}
-            {canReject && !showRejectForm && !showApproveForm && !showStartAnalysisForm && (
-              <button
-                onClick={() => {
-                  setActiveTab('principal');
-                  setShowRejectForm(true);
-                }}
-                className="px-6 py-2.5 border-2 border-error text-error rounded-lg text-sm font-semibold hover:bg-error hover:text-white transition-colors disabled:opacity-50"
-                disabled={approveMutation.isPending || rejectMutation.isPending}
-              >
-                Rejeitar
-              </button>
-            )}
-
-            {showRejectForm && (
-              <>
-                <button
-                  onClick={() => {
-                    setShowRejectForm(false);
-                    setRejectionReason('');
-                    setNextAssigneeId('');
-                  }}
-                  className="px-6 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800"
-                  disabled={rejectMutation.isPending}
-                >
-                  Cancelar Rejeição
-                </button>
-                <button
-                  onClick={handleReject}
-                  disabled={rejectMutation.isPending || !rejectionReason.trim()}
-                  className="px-6 py-2.5 bg-error hover:bg-error-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {rejectMutation.isPending && (
-                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  )}
-                  Confirmar Rejeição
-                </button>
-              </>
-            )}
-
-            {/* Aprovar */}
-            {canApprove && !showApproveForm && !showRejectForm && !showStartAnalysisForm && (
-              <button
-                onClick={() => {
-                  setActiveTab('principal');
-                  setShowApproveForm(true);
-                }}
-                className="px-6 py-2.5 bg-success hover:bg-success-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-              >
-                <MdCheck size={16} /> Aprovar Garantia
-              </button>
-            )}
-
-            {showApproveForm && (
-              <>
-                <button
-                  onClick={() => {
-                    setShowApproveForm(false);
-                    setNextAssigneeId('');
-                  }}
-                  className="px-6 py-2.5 rounded-lg text-sm font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800"
-                  disabled={approveMutation.isPending}
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleApprove}
-                  disabled={approveMutation.isPending}
-                  className="px-6 py-2.5 bg-success hover:bg-success-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-                >
-                  {approveMutation.isPending && (
-                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  )}
-                  Confirmar Aprovação
-                </button>
-              </>
-            )}
-          </div>
         </div>
       </div>
     </div>
