@@ -15,6 +15,7 @@ import { SetCostDto } from './dto/set-cost.dto';
 import { RevertStatusDto } from './dto/revert-status.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { AssignClaimDto } from './dto/assign-claim.dto';
 
 // Upload de anexos para o disco do servidor. Limite 10MB; PDF e imagens.
 // ponytail: disco local — trocar por S3 se o volume crescer.
@@ -172,6 +173,30 @@ export class WarrantyController {
   @ApiOperation({ summary: 'Validar token de garantia (público)' })
   async validateToken(@Param('token') token: string) {
     return this.warrantyService.validateWarrantyToken(token);
+  }
+
+  // ── Responsável / atribuição (Onda 4) ───────────────────────────────────────
+
+  @Get('warranty/assignable-users')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Listar usuários atribuíveis como responsável' })
+  async assignableUsers() {
+    return this.warrantyService.listAssignableUsers();
+  }
+
+  @Patch('warranty/claims/:id/assign')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Definir/remover responsável da garantia' })
+  async assignClaim(
+    @Param('id') id: string,
+    @Body() body: AssignClaimDto,
+    @Request() req: any,
+  ) {
+    return this.warrantyService.assignClaim(id, body.userId, req.user?.userId);
   }
 
   // ── Tarefas da garantia (Onda 2) ────────────────────────────────────────────

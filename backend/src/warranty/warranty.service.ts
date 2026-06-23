@@ -21,6 +21,17 @@ const FSM_TRANSITIONS = {
   CANCELADO: [],
 };
 
+// Fechamento automático (Onda 4): ao entrar num status resolvido, agenda a data
+// de fechamento. ponytail: só ARMAZENA/EXIBE a data — um cron que de fato muda o
+// status é o upgrade path (não há scheduler hoje).
+const RESOLVED_STATUSES = ['APROVADO', 'REPROVADO', 'FINALIZADO'];
+const AUTO_CLOSE_DAYS = 20;
+function autoClosePatch(toStatus: string) {
+  return RESOLVED_STATUSES.includes(toStatus)
+    ? { autoCloseAt: new Date(Date.now() + AUTO_CLOSE_DAYS * 24 * 60 * 60 * 1000) }
+    : {};
+}
+
 @Injectable()
 export class WarrantyService {
   private readonly logger = new Logger(WarrantyService.name);
@@ -287,8 +298,65 @@ export class WarrantyService {
           orderBy: { createdAt: 'desc' },
           select: { id: true, fileName: true, mimeType: true, size: true, createdAt: true },
         },
+        assignedTo: {
+          select: { id: true, name: true, email: true },
+        },
       },
     });
+  }
+
+  // ── Responsável + atribuição (Onda 4) ───────────────────────────────────────
+
+  // Usuários da equipe Relm que podem ser responsáveis por uma garantia.
+  async listAssignableUsers() {
+    return this.prisma.user.findMany({
+      where: {
+        active: true,
+        role: { in: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'] },
+      },
+      select: { id: true, name: true, role: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  // Define ou remove (userId null/vazio) o responsável atual da garantia.
+  async assignClaim(id: string, userId: string | null | undefined, adminUserId?: string) {
+    const claim = await this.prisma.warrantyClaim.findUnique({ where: { id } });
+    if (!claim) {
+      throw new NotFoundException('Garantia não encontrada');
+    }
+
+    const targetId = userId || null;
+    if (targetId) {
+      const user = await this.prisma.user.findUnique({ where: { id: targetId } });
+      if (!user || !user.active) {
+        throw new BadRequestException('Usuário responsável inválido');
+      }
+    }
+
+    const updated = await this.prisma.warrantyClaim.update({
+      where: { id },
+      data: { assignedToUserId: targetId },
+      include: { assignedTo: { select: { id: true, name: true, email: true } } },
+    });
+
+    // Histórico best-effort (não bloqueia).
+    try {
+      await this.prisma.warrantyEvent.create({
+        data: {
+          claimId: id,
+          eventType: 'ASSIGNED',
+          comment: targetId
+            ? `Responsável definido: ${updated.assignedTo?.name ?? targetId}`
+            : 'Responsável removido',
+          ...(adminUserId && { createdByUserId: adminUserId }),
+        },
+      });
+    } catch (error) {
+      this.logger.error(`Erro ao registrar evento de atribuição ${id}: ${error.message}`);
+    }
+
+    return updated;
   }
 
   // ── Tarefas da garantia (Onda 2) ────────────────────────────────────────────
@@ -443,6 +511,7 @@ export class WarrantyService {
         status: toStatus,
         ...(data?.rejection_reason && { rejectionReason: data.rejection_reason }),
         ...(data?.resolution && { resolution: data.resolution }),
+        ...autoClosePatch(toStatus),
       },
     });
 
@@ -541,6 +610,7 @@ export class WarrantyService {
         approvedAt: now,
         approvedByUserId: userId,
         adminNotes: adminNotes || claim.adminNotes,
+        ...autoClosePatch('APROVADO'),
       },
       include: {
         customer: {
@@ -665,6 +735,7 @@ export class WarrantyService {
         status: 'REPROVADO',
         rejectionReason,
         adminNotes: adminNotes || claim.adminNotes,
+        ...autoClosePatch('REPROVADO'),
       },
       include: {
         customer: {
@@ -830,6 +901,10 @@ export class WarrantyService {
       data: {
         status: toStatus,
         ...clearApprovalData,
+        // Reagenda (se vai para resolvido) ou limpa (se sai de resolvido).
+        autoCloseAt: RESOLVED_STATUSES.includes(toStatus)
+          ? autoClosePatch(toStatus).autoCloseAt
+          : null,
       },
     });
 

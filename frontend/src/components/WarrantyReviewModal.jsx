@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   MdClose, MdPerson, MdPedalBike, MdStore, MdDescription, MdCancel, MdCheck,
   MdPlayArrow, MdAttachMoney, MdHistory, MdAttachFile, MdAssignment, MdEmail,
@@ -28,6 +28,7 @@ const EVENT_LABELS = {
   REJECTED: 'Garantia reprovada',
   STATUS_REVERTED: 'Status revertido',
   COST_UPDATED: 'Custo atualizado',
+  ASSIGNED: 'Responsável alterado',
 };
 
 // Formata um valor numérico/string como moeda brasileira (R$).
@@ -335,6 +336,25 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
       alert('Não foi possível baixar o anexo.');
     }
   };
+
+  // ── Responsável (Onda 4) ────────────────────────────────────────────────────
+  const { data: assignableUsers = [] } = useQuery({
+    queryKey: ['warranty-assignable-users'],
+    queryFn: () => warrantyAPI.assignableUsers(),
+    enabled: isAdminOrManager,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: (userId) => warrantyAPI.assign(currentWarranty.id, userId),
+    onSuccess: (data) => {
+      setCurrentWarranty((prev) => ({ ...prev, assignedTo: data.assignedTo ?? null, assignedToUserId: data.assignedToUserId ?? null }));
+      onSuccess();
+    },
+    onError: (error) => {
+      alert(`❌ Erro ao atribuir responsável: ${error.response?.data?.message || error.message}`);
+    },
+  });
 
   const handleSaveCost = () => {
     const trimmed = costInput.trim();
@@ -982,13 +1002,29 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
 
           {/* ── Sidebar ────────────────────────────────────────────────── */}
           <aside className="lg:w-80 shrink-0 space-y-4">
-            {/* Responsável (sem campo no backend ainda — Onda 4) */}
+            {/* Responsável */}
             <div className="bg-gray-50 dark:bg-slate-900/40 rounded-lg p-4">
               <h4 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center gap-2">
                 <MdSupportAgent size={16} className="text-gray-500 dark:text-slate-400" /> Responsável
               </h4>
-              {/* ponytail: sem campo de atendente/responsável no claim ainda. */}
-              <p className="text-sm text-gray-400 dark:text-slate-500">Atendente designado: —</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-slate-100 mb-2">
+                {currentWarranty.assignedTo?.name || '—'}
+              </p>
+              {isAdminOrManager && (
+                <select
+                  value={currentWarranty.assignedToUserId || ''}
+                  onChange={(e) => assignMutation.mutate(e.target.value || null)}
+                  disabled={assignMutation.isPending}
+                  className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:text-slate-100 disabled:opacity-50"
+                >
+                  <option value="">— Sem responsável —</option>
+                  {assignableUsers.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             {/* Cliente */}
@@ -1043,10 +1079,11 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                   <span className="text-gray-500 dark:text-slate-400 text-xs">Resolvido em</span>
                   <p className="font-medium text-success">{resolvedAt ? formatDateTime(resolvedAt) : '—'}</p>
                 </div>
-                {/* ponytail: sem fechamento automático no backend ainda — Onda 4. */}
                 <div>
                   <span className="text-gray-500 dark:text-slate-400 text-xs">Fecha automaticamente</span>
-                  <p className="font-medium text-gray-400 dark:text-slate-500">—</p>
+                  <p className={`font-medium ${currentWarranty.autoCloseAt ? 'text-warning' : 'text-gray-400 dark:text-slate-500'}`}>
+                    {currentWarranty.autoCloseAt ? formatDateTime(currentWarranty.autoCloseAt) : '—'}
+                  </p>
                 </div>
               </div>
             </div>

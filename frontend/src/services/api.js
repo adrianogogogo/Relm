@@ -121,6 +121,7 @@ export const warrantyAPI = {
     api.get(`/warranty/attachments/${attId}`, { responseType: 'blob' }).then((res) => res.data),
   deleteAttachment: (attId) => api.delete(`/warranty/attachments/${attId}`).then((res) => res.data),
   // Atribuição de responsável (Onda 4)
+  assignableUsers: () => api.get('/warranty/assignable-users').then((res) => res.data),
   assign: (id, userId) => api.patch(`/warranty/claims/${id}/assign`, { userId }).then((res) => res.data),
 };
 

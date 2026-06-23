@@ -181,8 +181,9 @@ model User {
   store          Store?       @relation(fields: [storeId], references: [id])
   distributor    Distributor? @relation(fields: [distributorId], references: [id])
   warrantyEvents WarrantyEvent[]
+  assignedClaims WarrantyClaim[] @relation("ClaimAssignee")
   auditLogs      AuditLog[]
-  
+
   @@index([email])
   @@index([role])
   @@map("users")
@@ -265,6 +266,10 @@ model WarrantyClaim {
   // Custo da garantia para a empresa (informado por admin/gerente)
   cost                 Decimal?       @db.Decimal(10, 2) @map("cost")
 
+  // Responsavel atual + fechamento automatico (Onda 4)
+  assignedToUserId     String?        @map("assigned_to_user_id")
+  autoCloseAt          DateTime?      @map("auto_close_at")
+
   // HelmDesk integration
   helmdeskTicketId     String?        @map("helmdesk_ticket_id")
   
@@ -278,11 +283,13 @@ model WarrantyClaim {
   events   WarrantyEvent[]
   tasks    WarrantyTask[]
   attachments WarrantyAttachment[]
+  assignedTo User? @relation("ClaimAssignee", fields: [assignedToUserId], references: [id])
 
   @@index([protocolNumber])
   @@index([customerId])
   @@index([status])
   @@index([createdAt])
+  @@index([assignedToUserId])
   @@map("warranty_claims")
 }
 
