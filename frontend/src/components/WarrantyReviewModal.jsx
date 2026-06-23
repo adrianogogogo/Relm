@@ -727,6 +727,10 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
     : allTasks.filter((t) => t.assigneeRole === userType);
   const hiddenTaskCount = allTasks.length - visibleTasks.length;
 
+  // Tarefas vinculadas à etapa (status) atual — alimentam "Próximos Passos".
+  const currentStageTasks = visibleTasks.filter((t) => t.stage === currentWarranty.status);
+  const pendingStageTasks = currentStageTasks.filter((t) => t.status === 'pendente');
+
   const resolvedAt =
     events.filter((e) => e.toStatus === 'FINALIZADO').slice(-1)[0]?.createdAt ||
     (['FINALIZADO', 'CANCELADO'].includes(currentWarranty.status)
@@ -1052,13 +1056,80 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                     </div>
                   </div>
 
+                  {/* Próximos Passos: tarefas vinculadas à etapa atual */}
+                  {!['FINALIZADO', 'CANCELADO'].includes(currentWarranty.status) && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider block">
+                          Próximos Passos (tarefas desta etapa)
+                        </span>
+                        <button
+                          onClick={() => setActiveTab('tarefas')}
+                          className="text-xs font-semibold text-primary hover:underline"
+                        >
+                          Ver todas →
+                        </button>
+                      </div>
+                      {currentStageTasks.length === 0 ? (
+                        <p className="text-sm text-gray-400 dark:text-slate-500 italic">
+                          Nenhuma tarefa gerada para esta etapa.
+                        </p>
+                      ) : (
+                        <ul className="space-y-1.5">
+                          {currentStageTasks.map((task) => {
+                            const done = task.status === 'concluida';
+                            const roleLabel = task.assigneeRole
+                              ? (ROLE_LABELS[task.assigneeRole] || task.assigneeRole)
+                              : null;
+                            const badgeClass = roleLabel
+                              ? (roleBadgeClasses[roleLabel] || 'bg-gray-50 text-gray-700 border-gray-200')
+                              : '';
+                            return (
+                              <li key={task.id} className="flex items-center gap-2.5 text-sm">
+                                <button
+                                  onClick={() => toggleTaskDone(task)}
+                                  disabled={updateTaskMutation.isPending}
+                                  className="shrink-0 text-primary disabled:opacity-50"
+                                  title={done ? 'Reabrir' : 'Concluir'}
+                                >
+                                  {done
+                                    ? <MdCheckCircle size={18} className="text-success" />
+                                    : <MdRadioButtonUnchecked size={18} />}
+                                </button>
+                                <span className={done ? 'line-through text-gray-400 dark:text-slate-500' : 'text-gray-800 dark:text-slate-200'}>
+                                  {task.title}
+                                </span>
+                                {roleLabel && (
+                                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${badgeClass}`}>
+                                    {roleLabel}
+                                  </span>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+
                   {/* Ações Disponíveis */}
                   {!['FINALIZADO', 'CANCELADO'].includes(currentWarranty.status) && (
                     <div className="space-y-4">
                       <span className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider block">
                         Ações de Transição
                       </span>
-                      
+
+                      {/* Soft gate: aviso de pendências da etapa (não bloqueia) */}
+                      {isAdminOrManager && pendingStageTasks.length > 0 && (
+                        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-lg p-3 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
+                          <span className="text-sm shrink-0">⚠️</span>
+                          <span>
+                            Há <strong>{pendingStageTasks.length}</strong> tarefa(s) pendente(s) desta etapa.
+                            Você ainda pode avançar, mas o ideal é concluí-las antes.
+                          </span>
+                        </div>
+                      )}
+
                       {/* Mensagem de RBAC */}
                       {!isAdminOrManager && (
                         <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-lg p-3 text-xs text-amber-700 dark:text-amber-400 flex items-start gap-2">
