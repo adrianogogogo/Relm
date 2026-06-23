@@ -1,37 +1,35 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MdAdd, MdEdit, MdDelete, MdClose } from 'react-icons/md';
-import { productsAPI, storesAPI } from '../services/api';
+import { productsAPI } from '../services/api';
 import { PageHeader } from '../components/ui';
 
-const EMPTY = { serialNumber: '', model: '', productType: '', brand: 'Relm Bikes', storeId: '' };
+const EMPTY = { name: '', brand: 'Relm Bikes', sku: '', model: '', year: '', description: '' };
+const OTHER = '__other__';
 
 export default function AdminProductsPage() {
   const qc = useQueryClient();
   const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState(null); // produto em edição (ou null = novo)
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY);
+  const [otherBrand, setOtherBrand] = useState(false);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['admin-products'],
     queryFn: () => productsAPI.getAll(),
   });
-  const { data: stores = [] } = useQuery({
-    queryKey: ['admin-stores-min'],
-    queryFn: () => storesAPI.getAll(),
-  });
+
+  // Marcas para o dropdown: as já cadastradas + 'Relm Bikes', ordenadas.
+  const brandOptions = Array.from(
+    new Set(['Relm Bikes', ...products.map((p) => p.brand).filter(Boolean)]),
+  ).sort();
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['admin-products'] });
 
   const saveMutation = useMutation({
     mutationFn: (payload) =>
-      editing
-        ? productsAPI.update(editing.id, payload)
-        : productsAPI.create(payload),
-    onSuccess: () => {
-      invalidate();
-      closeModal();
-    },
+      editing ? productsAPI.update(editing.id, payload) : productsAPI.create(payload),
+    onSuccess: () => { invalidate(); closeModal(); },
     onError: (e) => alert(`❌ ${e.response?.data?.message || e.message}`),
   });
 
@@ -41,27 +39,29 @@ export default function AdminProductsPage() {
     onError: (e) => alert(`❌ ${e.response?.data?.message || e.message}`),
   });
 
-  const openNew = () => { setEditing(null); setForm(EMPTY); setShowModal(true); };
+  const openNew = () => { setEditing(null); setForm(EMPTY); setOtherBrand(false); setShowModal(true); };
   const openEdit = (p) => {
     setEditing(p);
     setForm({
-      serialNumber: p.serialNumber, model: p.model, productType: p.productType,
-      brand: p.brand || 'Relm Bikes', storeId: p.storeId || '',
+      name: p.name || '', brand: p.brand || 'Relm Bikes', sku: p.sku || '',
+      model: p.model || '', year: p.year ? String(p.year) : '', description: p.description || '',
     });
+    setOtherBrand(!!p.brand && !brandOptions.includes(p.brand));
     setShowModal(true);
   };
-  const closeModal = () => { setShowModal(false); setEditing(null); setForm(EMPTY); };
+  const closeModal = () => { setShowModal(false); setEditing(null); setForm(EMPTY); setOtherBrand(false); };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.serialNumber.trim() || !form.model.trim() || !form.productType.trim()) {
-      alert('Preencha série, modelo e tipo.');
-      return;
-    }
-    const payload = editing
-      ? { model: form.model, productType: form.productType, brand: form.brand, storeId: form.storeId || undefined }
-      : { ...form, storeId: form.storeId || undefined };
-    saveMutation.mutate(payload);
+    if (!form.name.trim()) { alert('Informe o nome do produto.'); return; }
+    saveMutation.mutate({
+      name: form.name.trim(),
+      brand: form.brand.trim() || undefined,
+      sku: form.sku.trim() || undefined,
+      model: form.model.trim() || undefined,
+      year: form.year ? Number(form.year) : undefined,
+      description: form.description.trim() || undefined,
+    });
   };
 
   return (
@@ -77,33 +77,31 @@ export default function AdminProductsPage() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 dark:bg-slate-800/50 text-left">
             <tr>
-              <th className="px-4 py-3">Modelo</th>
-              <th className="px-4 py-3">Tipo</th>
+              <th className="px-4 py-3">Nome</th>
               <th className="px-4 py-3">Marca</th>
-              <th className="px-4 py-3">Nº de Série</th>
-              <th className="px-4 py-3">Loja</th>
+              <th className="px-4 py-3">Modelo</th>
+              <th className="px-4 py-3">SKU</th>
+              <th className="px-4 py-3">Ano</th>
               <th className="px-4 py-3 text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {isLoading && (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">Carregando…</td></tr>
-            )}
+            {isLoading && <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">Carregando…</td></tr>}
             {!isLoading && products.length === 0 && (
               <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">Nenhum produto cadastrado.</td></tr>
             )}
             {products.map((p) => (
               <tr key={p.id} className="border-t border-gray-100 dark:border-slate-800">
-                <td className="px-4 py-3 font-medium">{p.model}</td>
-                <td className="px-4 py-3">{p.productType}</td>
+                <td className="px-4 py-3 font-medium">{p.name || p.model || '—'}</td>
                 <td className="px-4 py-3">{p.brand}</td>
-                <td className="px-4 py-3 font-mono text-xs">{p.serialNumber}</td>
-                <td className="px-4 py-3">{p.store?.tradeName || '—'}</td>
+                <td className="px-4 py-3">{p.model || '—'}</td>
+                <td className="px-4 py-3 font-mono text-xs">{p.sku || '—'}</td>
+                <td className="px-4 py-3">{p.year || '—'}</td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
                     <button onClick={() => openEdit(p)} className="text-gray-400 hover:text-primary" title="Editar"><MdEdit size={18} /></button>
                     <button
-                      onClick={() => window.confirm(`Remover o produto "${p.model}"?`) && deleteMutation.mutate(p.id)}
+                      onClick={() => window.confirm(`Remover "${p.name || p.model}"?`) && deleteMutation.mutate(p.id)}
                       disabled={deleteMutation.isPending}
                       className="text-gray-400 hover:text-error disabled:opacity-50" title="Remover"
                     ><MdDelete size={18} /></button>
@@ -119,41 +117,49 @@ export default function AdminProductsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-surface-dark rounded-xl shadow-xl max-w-lg w-full">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-800">
-              <h2 className="text-lg font-bold">{editing ? 'Editar produto' : 'Novo produto'}</h2>
+              <h2 className="text-lg font-bold">{editing ? 'Editar Produto' : 'Novo Produto'}</h2>
               <button onClick={closeModal}><MdClose size={22} /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="label">Nº de Série *</label>
                 <input
-                  className="input" value={form.serialNumber}
-                  readOnly={!!editing}
-                  onChange={(e) => setForm({ ...form, serialNumber: e.target.value })}
+                  className="input" placeholder="Nome *" value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
                 />
-                {editing && <p className="text-xs text-gray-400 mt-1">A série é imutável.</p>}
               </div>
               <div>
-                <label className="label">Modelo *</label>
-                <input className="input" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
-              </div>
-              <div>
-                <label className="label">Tipo *</label>
-                <input className="input" placeholder="Road, MTB, Gravel, E-bike, Acessórios" value={form.productType} onChange={(e) => setForm({ ...form, productType: e.target.value })} />
-              </div>
-              <div>
-                <label className="label">Marca</label>
-                <input className="input" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
-              </div>
-              <div>
-                <label className="label">Loja (opcional)</label>
-                <select className="input" value={form.storeId} onChange={(e) => setForm({ ...form, storeId: e.target.value })}>
-                  <option value="">—</option>
-                  {stores.map((s) => <option key={s.id} value={s.id}>{s.tradeName}</option>)}
+                <select
+                  className="input"
+                  value={otherBrand ? OTHER : form.brand}
+                  onChange={(e) => {
+                    if (e.target.value === OTHER) { setOtherBrand(true); setForm({ ...form, brand: '' }); }
+                    else { setOtherBrand(false); setForm({ ...form, brand: e.target.value }); }
+                  }}
+                >
+                  {!form.brand && !otherBrand && <option value="">Marca</option>}
+                  {brandOptions.map((b) => <option key={b} value={b}>{b}</option>)}
+                  <option value={OTHER}>Outra marca…</option>
                 </select>
+                {otherBrand && (
+                  <input
+                    className="input mt-2" placeholder="Nome da marca"
+                    value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })}
+                  />
+                )}
               </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={closeModal} className="btn btn-outline flex-1">Cancelar</button>
-                <button type="submit" disabled={saveMutation.isPending} className="btn btn-primary flex-1">
+              <div className="grid grid-cols-2 gap-4">
+                <input className="input" placeholder="SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
+                <input className="input" placeholder="Modelo" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <input className="input" type="number" placeholder="Ano" value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })} />
+              </div>
+              <div>
+                <textarea className="input" rows={3} placeholder="Descrição" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={closeModal} className="text-primary font-semibold px-4">Cancelar</button>
+                <button type="submit" disabled={saveMutation.isPending} className="btn btn-primary">
                   {saveMutation.isPending ? 'Salvando…' : 'Salvar'}
                 </button>
               </div>

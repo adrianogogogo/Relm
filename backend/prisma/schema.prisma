@@ -72,10 +72,16 @@ model Customer {
 
 model Product {
   id                    String    @id @default(uuid())
-  serialNumber          String    @unique @map("serial_number")
+  // serialNumber é da UNIDADE (preenchido na garantia). Catálogo (cadastro
+  // admin por modelo) não tem série — por isso é opcional.
+  serialNumber          String?   @unique @map("serial_number")
+  name                  String?   // Nome comercial do produto (catálogo)
+  sku                   String?   // ponytail: SKU livre, não-único por ora
   brand                 String    @default("Relm Bikes")
-  productType           String    @map("product_type") // Road, MTB, Gravel, E-bike, Acessórios
-  model                 String
+  productType           String?   @map("product_type") // Road, MTB, Gravel, E-bike, Acessórios
+  model                 String?
+  year                  Int?      // Ano do modelo
+  description           String?   @db.Text
   purchaseDate          DateTime? @map("purchase_date")
   purchaseInvoiceNumber String?   @map("purchase_invoice_number")
   purchaseStoreName     String?   @map("purchase_store_name")

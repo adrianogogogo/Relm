@@ -1,21 +1,38 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsOptional, IsString, IsInt, MaxLength, Min, Max } from 'class-validator';
+import { Type } from 'class-transformer';
 
-// serialNumber é imutável (chave de identidade) — não entra no update.
 export class UpdateProductDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  brand?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  sku?: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(120)
   model?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(60)
-  productType?: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(1900)
+  @Max(2100)
+  year?: number;
 
   @IsOptional()
   @IsString()
-  @MaxLength(80)
-  brand?: string;
+  @MaxLength(2000)
+  description?: string;
 
   @IsOptional()
   @IsString()

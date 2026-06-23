@@ -91,14 +91,15 @@ export default function WarrantyPage() {
     }
     const p = products.find((x) => x.id === value);
     if (p) {
+      // Pré-preenche os dados do modelo; a série é da unidade do cliente,
+      // então NÃO é preenchida aqui (ele digita a dele).
       setFormData((prev) => ({
         ...prev,
         product: {
           ...prev.product,
           brand: p.brand || 'Relm',
-          productName: p.productType || '',
+          productName: p.name || p.productType || '',
           model: p.model || '',
-          serialNumber: p.serialNumber || '',
         },
       }));
     }
@@ -308,7 +309,7 @@ export default function WarrantyPage() {
                     <option value="">Selecione seu produto…</option>
                     {products.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.model} — {p.serialNumber} ({p.brand})
+                        {p.name}{p.model ? ` — ${p.model}` : ''} ({p.brand}){p.year ? ` ${p.year}` : ''}
                       </option>
                     ))}
                     <option value="other">Outro / não listado</option>
@@ -363,7 +364,6 @@ export default function WarrantyPage() {
                       required
                       className="input"
                       value={formData.product.serialNumber}
-                      readOnly={productLocked}
                       onChange={(e) =>
                         handleChange('product', 'serialNumber', e.target.value)
                       }

@@ -1,6 +1,5 @@
 import {
   Injectable,
-  ConflictException,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
@@ -12,20 +11,17 @@ import { UpdateProductDto } from './dto/update-product.dto';
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
-  // Catálogo: criação manual pelo admin/gerente (alimenta os dropdowns da garantia).
+  // Catálogo por modelo: criação manual pelo admin/gerente. Sem número de série
+  // (a série é da unidade do cliente, coletada na garantia).
   async create(dto: CreateProductDto) {
-    const exists = await this.prisma.product.findUnique({
-      where: { serialNumber: dto.serialNumber },
-    });
-    if (exists) {
-      throw new ConflictException('Já existe um produto com este número de série');
-    }
     return this.prisma.product.create({
       data: {
-        serialNumber: dto.serialNumber,
-        model: dto.model,
-        productType: dto.productType,
+        name: dto.name,
         brand: dto.brand || 'Relm Bikes',
+        ...(dto.sku && { sku: dto.sku }),
+        ...(dto.model && { model: dto.model }),
+        ...(dto.year !== undefined && { year: dto.year }),
+        ...(dto.description && { description: dto.description }),
         ...(dto.storeId && { storeId: dto.storeId }),
       },
     });
@@ -36,13 +32,15 @@ export class ProductsService {
     if (!product) {
       throw new NotFoundException('Produto não encontrado');
     }
-    // serialNumber é imutável — não atualizado aqui.
     return this.prisma.product.update({
       where: { id },
       data: {
-        ...(dto.model !== undefined && { model: dto.model }),
-        ...(dto.productType !== undefined && { productType: dto.productType }),
+        ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.brand !== undefined && { brand: dto.brand }),
+        ...(dto.sku !== undefined && { sku: dto.sku || null }),
+        ...(dto.model !== undefined && { model: dto.model || null }),
+        ...(dto.year !== undefined && { year: dto.year }),
+        ...(dto.description !== undefined && { description: dto.description || null }),
         ...(dto.storeId !== undefined && { storeId: dto.storeId || null }),
       },
     });
@@ -64,15 +62,18 @@ export class ProductsService {
   }
 
   // Lista enxuta para preencher dropdowns no formulário público de garantia.
+  // Só itens do catálogo (sem série = cadastrados por modelo).
   async findAllPublic() {
     return this.prisma.product.findMany({
-      orderBy: { model: 'asc' },
+      where: { serialNumber: null },
+      orderBy: { name: 'asc' },
       select: {
         id: true,
-        serialNumber: true,
+        name: true,
         brand: true,
         model: true,
         productType: true,
+        year: true,
       },
     });
   }
