@@ -9,6 +9,7 @@ import { EmailService } from '../email/email.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import * as crypto from 'crypto';
+import * as fs from 'fs';
 
 const FSM_TRANSITIONS = {
   RECEBIDO: ['EM_ANALISE'],
@@ -282,6 +283,10 @@ export class WarrantyService {
         tasks: {
           orderBy: { createdAt: 'asc' },
         },
+        attachments: {
+          orderBy: { createdAt: 'desc' },
+          select: { id: true, fileName: true, mimeType: true, size: true, createdAt: true },
+        },
       },
     });
   }
@@ -337,6 +342,63 @@ export class WarrantyService {
     }
     await this.prisma.warrantyTask.delete({ where: { id: taskId } });
     return { message: 'Tarefa removida.' };
+  }
+
+  // ── Anexos da garantia (Onda 3) ─────────────────────────────────────────────
+  // A lista de anexos vem junto no findOne; aqui só upload/download/remoção.
+
+  async createAttachment(
+    claimId: string,
+    file: { originalname: string; mimetype: string; size: number; path: string },
+    userId?: string,
+  ) {
+    const claim = await this.prisma.warrantyClaim.findUnique({ where: { id: claimId } });
+    if (!claim) {
+      // Remove o arquivo já gravado pelo Multer se a garantia não existe.
+      this.safeUnlink(file.path);
+      throw new NotFoundException('Garantia não encontrada');
+    }
+    const att = await this.prisma.warrantyAttachment.create({
+      data: {
+        claimId,
+        fileName: file.originalname,
+        mimeType: file.mimetype,
+        size: file.size,
+        storagePath: file.path,
+        ...(userId && { uploadedByUserId: userId }),
+      },
+      select: { id: true, fileName: true, mimeType: true, size: true, createdAt: true },
+    });
+    return att;
+  }
+
+  // Retorna o registro completo (inclui storagePath) para streaming do download.
+  async getAttachmentForDownload(attId: string) {
+    const att = await this.prisma.warrantyAttachment.findUnique({ where: { id: attId } });
+    if (!att) {
+      throw new NotFoundException('Anexo não encontrado');
+    }
+    return att;
+  }
+
+  async deleteAttachment(attId: string) {
+    const att = await this.prisma.warrantyAttachment.findUnique({ where: { id: attId } });
+    if (!att) {
+      throw new NotFoundException('Anexo não encontrado');
+    }
+    await this.prisma.warrantyAttachment.delete({ where: { id: attId } });
+    this.safeUnlink(att.storagePath); // best-effort, não bloqueia a remoção do registro
+    return { message: 'Anexo removido.' };
+  }
+
+  private safeUnlink(path: string) {
+    try {
+      if (path && fs.existsSync(path)) {
+        fs.unlinkSync(path);
+      }
+    } catch (error) {
+      this.logger.error(`Falha ao remover arquivo ${path}: ${error.message}`);
+    }
   }
 
   async updateStatus(

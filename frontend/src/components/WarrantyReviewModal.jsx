@@ -4,7 +4,7 @@ import {
   MdClose, MdPerson, MdPedalBike, MdStore, MdDescription, MdCancel, MdCheck,
   MdPlayArrow, MdAttachMoney, MdHistory, MdAttachFile, MdAssignment, MdEmail,
   MdContentCopy, MdPictureAsPdf, MdEvent, MdSupportAgent, MdWhatsapp,
-  MdAdd, MdDelete, MdCheckCircle, MdRadioButtonUnchecked,
+  MdAdd, MdDelete, MdCheckCircle, MdRadioButtonUnchecked, MdDownload, MdUploadFile,
 } from 'react-icons/md';
 import { warrantyAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
@@ -50,6 +50,13 @@ function formatDateTime(value) {
 
 function onlyDigits(s) {
   return (s || '').replace(/\D/g, '');
+}
+
+function formatBytes(bytes) {
+  if (!bytes && bytes !== 0) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function statusBadgeClass(status) {
@@ -278,6 +285,55 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   const toggleTaskDone = (task) => {
     const next = task.status === 'concluida' ? 'pendente' : 'concluida';
     updateTaskMutation.mutate({ taskId: task.id, data: { status: next } });
+  };
+
+  // ── Anexos (Onda 3) ─────────────────────────────────────────────────────────
+  const setAttachments = (updater) =>
+    setCurrentWarranty((prev) => ({
+      ...prev,
+      attachments: typeof updater === 'function' ? updater(prev.attachments || []) : updater,
+    }));
+
+  const uploadAttachmentMutation = useMutation({
+    mutationFn: (file) => warrantyAPI.uploadAttachment(currentWarranty.id, file),
+    onSuccess: (att) => {
+      setAttachments((list) => [att, ...list]);
+      onSuccess();
+    },
+    onError: (error) => {
+      alert(`❌ Erro ao enviar anexo: ${error.response?.data?.message || error.message}`);
+    },
+  });
+
+  const deleteAttachmentMutation = useMutation({
+    mutationFn: (attId) => warrantyAPI.deleteAttachment(attId),
+    onSuccess: (_data, attId) => {
+      setAttachments((list) => list.filter((a) => a.id !== attId));
+      onSuccess();
+    },
+    onError: (error) => {
+      alert(`❌ Erro ao remover anexo: ${error.response?.data?.message || error.message}`);
+    },
+  });
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) uploadAttachmentMutation.mutate(file);
+    e.target.value = ''; // permite reenviar o mesmo arquivo
+  };
+
+  const handleDownloadAttachment = async (att) => {
+    try {
+      const blob = await warrantyAPI.downloadAttachment(att.id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = att.fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Não foi possível baixar o anexo.');
+    }
   };
 
   const handleSaveCost = () => {
@@ -691,14 +747,63 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
               </div>
             )}
 
-            {/* ── Aba ANEXOS (Onda 3: backend de uploads) ────────────── */}
+            {/* ── Aba ANEXOS ─────────────────────────────────────────── */}
             {activeTab === 'anexos' && (
-              // ponytail: sem modelo de anexos no backend ainda. Estado vazio
-              // até a Onda 3 (warranty_attachments + upload).
-              <EmptyState>
-                <MdAttachFile className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                Nenhum anexo ainda
-              </EmptyState>
+              <div className="space-y-4">
+                <div className="flex justify-end">
+                  <label className="px-5 py-2 bg-primary hover:bg-primary-600 text-white rounded-lg text-sm font-semibold cursor-pointer flex items-center gap-1.5 disabled:opacity-50">
+                    <MdUploadFile size={16} />
+                    {uploadAttachmentMutation.isPending ? 'Enviando…' : 'Enviar arquivo'}
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept=".pdf,image/*"
+                      onChange={handleFileChange}
+                      disabled={uploadAttachmentMutation.isPending}
+                    />
+                  </label>
+                </div>
+
+                {(currentWarranty.attachments || []).length === 0 ? (
+                  <EmptyState>
+                    <MdAttachFile className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                    Nenhum anexo ainda
+                  </EmptyState>
+                ) : (
+                  <ul className="space-y-2">
+                    {currentWarranty.attachments.map((att) => (
+                      <li
+                        key={att.id}
+                        className="flex items-center gap-3 bg-gray-50 dark:bg-slate-900/40 rounded-lg p-3"
+                      >
+                        <MdAttachFile size={20} className="shrink-0 text-gray-400" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">{att.fileName}</p>
+                          <p className="text-xs text-gray-500 dark:text-slate-400">
+                            {formatBytes(att.size)} · {formatDateTime(att.createdAt)}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleDownloadAttachment(att)}
+                          className="shrink-0 text-gray-400 hover:text-primary"
+                          title="Baixar"
+                        >
+                          <MdDownload size={18} />
+                        </button>
+                        <button
+                          onClick={() => deleteAttachmentMutation.mutate(att.id)}
+                          disabled={deleteAttachmentMutation.isPending}
+                          className="shrink-0 text-gray-400 hover:text-error disabled:opacity-50"
+                          title="Remover"
+                        >
+                          <MdDelete size={18} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="text-xs text-gray-400 dark:text-slate-500">PDF ou imagem, até 10MB.</p>
+              </div>
             )}
 
             {/* ── Aba TAREFAS ────────────────────────────────────────── */}

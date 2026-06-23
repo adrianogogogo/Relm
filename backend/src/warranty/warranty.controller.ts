@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request,
+  UseInterceptors, UploadedFile, BadRequestException, NotFoundException, Res, StreamableFile,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { join, extname } from 'path';
+import { randomUUID } from 'crypto';
+import { mkdirSync, existsSync, createReadStream } from 'fs';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { WarrantyService } from './warranty.service';
 import { CreateWarrantyPublicDto } from './dto/create-warranty-public.dto';
@@ -7,6 +15,24 @@ import { SetCostDto } from './dto/set-cost.dto';
 import { RevertStatusDto } from './dto/revert-status.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+
+// Upload de anexos para o disco do servidor. Limite 10MB; PDF e imagens.
+// ponytail: disco local — trocar por S3 se o volume crescer.
+const warrantyUpload = {
+  storage: diskStorage({
+    destination: (_req, _file, cb) => {
+      const dir = join(process.cwd(), 'uploads', 'warranty');
+      mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (_req, file, cb) => cb(null, `${randomUUID()}${extname(file.originalname)}`),
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req: any, file: any, cb: any) => {
+    const ok = /^(image\/(jpeg|png|webp|gif)|application\/pdf)$/.test(file.mimetype);
+    cb(ok ? null : new BadRequestException('Tipo de arquivo não permitido (PDF ou imagem).'), ok);
+  },
+};
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -179,5 +205,53 @@ export class WarrantyController {
   @ApiOperation({ summary: 'Remover tarefa da garantia' })
   async deleteTask(@Param('taskId') taskId: string) {
     return this.warrantyService.deleteTask(taskId);
+  }
+
+  // ── Anexos da garantia (Onda 3) ─────────────────────────────────────────────
+
+  @Post('warranty/claims/:id/attachments')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('file', warrantyUpload))
+  @ApiOperation({ summary: 'Enviar anexo da garantia (PDF/imagem, até 10MB)' })
+  async uploadAttachment(
+    @Param('id') id: string,
+    @UploadedFile() file: any,
+    @Request() req: any,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Arquivo obrigatório.');
+    }
+    return this.warrantyService.createAttachment(id, file, req.user?.userId);
+  }
+
+  @Get('warranty/attachments/:attId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Baixar anexo da garantia' })
+  async downloadAttachment(
+    @Param('attId') attId: string,
+    @Res({ passthrough: true }) res: any,
+  ): Promise<StreamableFile> {
+    const att = await this.warrantyService.getAttachmentForDownload(attId);
+    if (!existsSync(att.storagePath)) {
+      throw new NotFoundException('Arquivo não encontrado no servidor.');
+    }
+    res.set({
+      'Content-Type': att.mimeType,
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(att.fileName)}"`,
+    });
+    return new StreamableFile(createReadStream(att.storagePath));
+  }
+
+  @Delete('warranty/attachments/:attId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remover anexo da garantia' })
+  async deleteAttachment(@Param('attId') attId: string) {
+    return this.warrantyService.deleteAttachment(attId);
   }
 }

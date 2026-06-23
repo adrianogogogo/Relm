@@ -277,6 +277,7 @@ model WarrantyClaim {
   store    Store?   @relation(fields: [storeId], references: [id])
   events   WarrantyEvent[]
   tasks    WarrantyTask[]
+  attachments WarrantyAttachment[]
 
   @@index([protocolNumber])
   @@index([customerId])
@@ -324,6 +325,25 @@ model WarrantyTask {
 
   @@index([claimId])
   @@map("warranty_tasks")
+}
+
+// Anexos de uma garantia. ponytail: armazenamento em disco do servidor
+// (storagePath). Upgrade path: S3/object storage se o volume crescer.
+model WarrantyAttachment {
+  id               String   @id @default(uuid())
+  claimId          String   @map("claim_id")
+  fileName         String   @map("file_name")
+  mimeType         String   @map("mime_type")
+  size             Int
+  storagePath      String   @map("storage_path")
+  uploadedByUserId String?  @map("uploaded_by_user_id")
+
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  claim WarrantyClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  @@index([claimId])
+  @@map("warranty_attachments")
 }
 
 // ============================================

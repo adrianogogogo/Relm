@@ -106,8 +106,7 @@ export const warrantyAPI = {
   createTask: (id, data) => api.post(`/warranty/claims/${id}/tasks`, data).then((res) => res.data),
   updateTask: (taskId, data) => api.patch(`/warranty/tasks/${taskId}`, data).then((res) => res.data),
   deleteTask: (taskId) => api.delete(`/warranty/tasks/${taskId}`).then((res) => res.data),
-  // Anexos da garantia (Onda 3)
-  listAttachments: (id) => api.get(`/warranty/claims/${id}/attachments`).then((res) => res.data),
+  // Anexos da garantia (Onda 3). Lista vem junto no getById (claim.attachments).
   uploadAttachment: (id, file) => {
     const form = new FormData();
     form.append('file', file);
@@ -117,7 +116,9 @@ export const warrantyAPI = {
       })
       .then((res) => res.data);
   },
-  attachmentUrl: (attId) => `${api.defaults.baseURL}/warranty/attachments/${attId}`,
+  // Download autenticado: busca como blob (o interceptor adiciona o Bearer).
+  downloadAttachment: (attId) =>
+    api.get(`/warranty/attachments/${attId}`, { responseType: 'blob' }).then((res) => res.data),
   deleteAttachment: (attId) => api.delete(`/warranty/attachments/${attId}`).then((res) => res.data),
   // Atribuição de responsável (Onda 4)
   assign: (id, userId) => api.patch(`/warranty/claims/${id}/assign`, { userId }).then((res) => res.data),
