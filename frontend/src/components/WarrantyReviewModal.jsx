@@ -258,6 +258,16 @@ const roleBadgeClasses = {
   'Cliente': 'bg-purple-50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800/50',
 };
 
+// Código do perfil (UserRole no backend) -> rótulo amigável.
+const ROLE_LABELS = {
+  ADMIN_RELM: 'Admin',
+  GERENTE_RELM: 'Gerente',
+  SUPORTE_RELM: 'Suporte',
+  LOJA: 'Loja',
+  DISTRIBUIDOR: 'Distribuidor',
+  CLIENTE: 'Cliente',
+};
+
 export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   const { data: fullWarranty, refetch: refetchWarranty } = useQuery({
     queryKey: ['warranty-claim-detail', warranty.id],
@@ -294,6 +304,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   // Formulário de nova tarefa (aba Tarefas).
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskAssignee, setNewTaskAssignee] = useState('');
+  const [newTaskRole, setNewTaskRole] = useState('');
   const [newTaskDue, setNewTaskDue] = useState('');
 
   // Custo da garantia (input controlado; inicia com o valor atual, se houver).
@@ -420,6 +431,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
       refetchWarranty();
       setNewTaskTitle('');
       setNewTaskAssignee('');
+      setNewTaskRole('');
       setNewTaskDue('');
       onSuccess();
     },
@@ -458,6 +470,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
     createTaskMutation.mutate({
       title: newTaskTitle.trim(),
       assignee: newTaskAssignee.trim() || undefined,
+      assigneeRole: newTaskRole || undefined,
       dueDate: newTaskDue || undefined,
     });
   };
@@ -705,6 +718,15 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   const canStartAnalysis = currentWarranty.status === 'RECEBIDO';
 
   const events = currentWarranty.events || [];
+
+  // Visibilidade das tarefas: ADMIN/GERENTE veem todas; demais perfis veem
+  // apenas as do seu perfil (assigneeRole).
+  const allTasks = currentWarranty.tasks || [];
+  const visibleTasks = isAdminOrManager
+    ? allTasks
+    : allTasks.filter((t) => t.assigneeRole === userType);
+  const hiddenTaskCount = allTasks.length - visibleTasks.length;
+
   const resolvedAt =
     events.filter((e) => e.toStatus === 'FINALIZADO').slice(-1)[0]?.createdAt ||
     (['FINALIZADO', 'CANCELADO'].includes(currentWarranty.status)
@@ -1966,15 +1988,22 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
             {/* ── Aba TAREFAS ────────────────────────────────────────── */}
             {activeTab === 'tarefas' && (
               <div className="space-y-4">
+                {!isAdminOrManager && (
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
+                    Mostrando apenas as tarefas do seu perfil.
+                  </p>
+                )}
                 {/* Lista */}
-                {(currentWarranty.tasks || []).length === 0 ? (
+                {visibleTasks.length === 0 ? (
                   <EmptyState>
                     <MdAssignment className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                    Nenhuma tarefa ainda
+                    {allTasks.length > 0 && hiddenTaskCount > 0
+                      ? 'Nenhuma tarefa do seu perfil'
+                      : 'Nenhuma tarefa ainda'}
                   </EmptyState>
                 ) : (
                   <ul className="space-y-2">
-                    {currentWarranty.tasks.map((task) => {
+                    {visibleTasks.map((task) => {
                       const done = task.status === 'concluida';
                       return (
                         <li
@@ -2010,22 +2039,28 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                               )}
 
                               {(() => {
-                                if (!task.assignee) return null;
+                                // Perfil responsável: preferir a coluna assigneeRole;
+                                // fallback ao texto legado "[Label] Nome".
                                 const parsed = parseAssignee(task.assignee);
-                                if (parsed.role) {
-                                  const badgeClass = roleBadgeClasses[parsed.role] || 'bg-gray-50 dark:bg-slate-800/40 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700';
+                                const roleLabel = task.assigneeRole
+                                  ? (ROLE_LABELS[task.assigneeRole] || task.assigneeRole)
+                                  : parsed.role;
+                                const name = task.assigneeRole ? (task.assignee || '') : parsed.name;
+                                if (roleLabel) {
+                                  const badgeClass = roleBadgeClasses[roleLabel] || 'bg-gray-50 dark:bg-slate-800/40 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700';
                                   return (
                                     <span className="inline-flex items-center gap-1.5">
                                       <span className="text-gray-400">→</span>
                                       <span className={`px-2.5 py-0.5 rounded-full font-semibold border ${badgeClass}`}>
-                                        {parsed.role}
+                                        {roleLabel}
                                       </span>
-                                      {parsed.name && (
-                                        <span className="text-gray-600 dark:text-slate-300 font-medium">{parsed.name}</span>
+                                      {name && (
+                                        <span className="text-gray-600 dark:text-slate-300 font-medium">{name}</span>
                                       )}
                                     </span>
                                   );
                                 }
+                                if (!task.assignee) return null;
                                 return (
                                   <span className="text-gray-500 dark:text-slate-400 flex items-center gap-1">
                                     <span>→</span>
@@ -2071,9 +2106,19 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                       type="text"
                       value={newTaskAssignee}
                       onChange={(e) => setNewTaskAssignee(e.target.value)}
-                      placeholder="Responsável (opcional)"
+                      placeholder="Nome (opcional)"
                       className="flex-1 px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:text-slate-100 text-sm"
                     />
+                    <select
+                      value={newTaskRole}
+                      onChange={(e) => setNewTaskRole(e.target.value)}
+                      className="px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:text-slate-100 text-sm"
+                    >
+                      <option value="">Perfil…</option>
+                      {Object.entries(ROLE_LABELS).map(([code, label]) => (
+                        <option key={code} value={code}>{label}</option>
+                      ))}
+                    </select>
                     <input
                       type="date"
                       value={newTaskDue}

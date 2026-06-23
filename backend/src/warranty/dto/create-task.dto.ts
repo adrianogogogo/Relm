@@ -13,6 +13,10 @@ export class CreateTaskDto {
   assignee?: string;
 
   @IsOptional()
+  @IsIn(['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR', 'CLIENTE'])
+  assigneeRole?: string;
+
+  @IsOptional()
   @IsDateString()
   dueDate?: string;
 
