@@ -370,7 +370,7 @@ export class WarrantyService {
     if (!claim) {
       throw new NotFoundException('Garantia não encontrada');
     }
-    return this.prisma.warrantyTask.create({
+    const task = await this.prisma.warrantyTask.create({
       data: {
         claimId,
         title: data.title,
@@ -380,17 +380,33 @@ export class WarrantyService {
         ...(userId && { createdByUserId: userId }),
       },
     });
+
+    try {
+      await this.prisma.warrantyEvent.create({
+        data: {
+          claimId,
+          eventType: 'TASK_CREATED',
+          comment: `Tarefa criada: "${task.title}"`,
+          ...(userId && { createdByUserId: userId }),
+        },
+      });
+    } catch (error) {
+      this.logger.error(`Erro ao criar evento de histórico para createTask: ${error.message}`);
+    }
+
+    return task;
   }
 
   async updateTask(
     taskId: string,
     data: { title?: string; status?: string; assignee?: string; dueDate?: string },
+    userId?: string,
   ) {
     const task = await this.prisma.warrantyTask.findUnique({ where: { id: taskId } });
     if (!task) {
       throw new NotFoundException('Tarefa não encontrada');
     }
-    return this.prisma.warrantyTask.update({
+    const updated = await this.prisma.warrantyTask.update({
       where: { id: taskId },
       data: {
         ...(data.title !== undefined && { title: data.title }),
@@ -401,14 +417,51 @@ export class WarrantyService {
         }),
       },
     });
+
+    try {
+      let comment = `Tarefa atualizada: "${updated.title}"`;
+      if (data.status !== undefined && data.status !== task.status) {
+        if (updated.status === 'concluida') {
+          comment = `Tarefa concluída: "${updated.title}"`;
+        } else if (updated.status === 'pendente') {
+          comment = `Tarefa reaberta: "${updated.title}"`;
+        }
+      }
+      await this.prisma.warrantyEvent.create({
+        data: {
+          claimId: updated.claimId,
+          eventType: 'TASK_UPDATED',
+          comment,
+          ...(userId && { createdByUserId: userId }),
+        },
+      });
+    } catch (error) {
+      this.logger.error(`Erro ao criar evento de histórico para updateTask: ${error.message}`);
+    }
+
+    return updated;
   }
 
-  async deleteTask(taskId: string) {
+  async deleteTask(taskId: string, userId?: string) {
     const task = await this.prisma.warrantyTask.findUnique({ where: { id: taskId } });
     if (!task) {
       throw new NotFoundException('Tarefa não encontrada');
     }
     await this.prisma.warrantyTask.delete({ where: { id: taskId } });
+
+    try {
+      await this.prisma.warrantyEvent.create({
+        data: {
+          claimId: task.claimId,
+          eventType: 'TASK_DELETED',
+          comment: `Tarefa excluída: "${task.title}"`,
+          ...(userId && { createdByUserId: userId }),
+        },
+      });
+    } catch (error) {
+      this.logger.error(`Erro ao criar evento de histórico para deleteTask: ${error.message}`);
+    }
+
     return { message: 'Tarefa removida.' };
   }
 
@@ -437,6 +490,20 @@ export class WarrantyService {
       },
       select: { id: true, fileName: true, mimeType: true, size: true, createdAt: true },
     });
+
+    try {
+      await this.prisma.warrantyEvent.create({
+        data: {
+          claimId,
+          eventType: 'ATTACHMENT_UPLOADED',
+          comment: `Arquivo anexado: "${att.fileName}"`,
+          ...(userId && { createdByUserId: userId }),
+        },
+      });
+    } catch (error) {
+      this.logger.error(`Erro ao criar evento de histórico para createAttachment: ${error.message}`);
+    }
+
     return att;
   }
 
@@ -449,13 +516,27 @@ export class WarrantyService {
     return att;
   }
 
-  async deleteAttachment(attId: string) {
+  async deleteAttachment(attId: string, userId?: string) {
     const att = await this.prisma.warrantyAttachment.findUnique({ where: { id: attId } });
     if (!att) {
       throw new NotFoundException('Anexo não encontrado');
     }
     await this.prisma.warrantyAttachment.delete({ where: { id: attId } });
     this.safeUnlink(att.storagePath); // best-effort, não bloqueia a remoção do registro
+
+    try {
+      await this.prisma.warrantyEvent.create({
+        data: {
+          claimId: att.claimId,
+          eventType: 'ATTACHMENT_DELETED',
+          comment: `Arquivo removido: "${att.fileName}"`,
+          ...(userId && { createdByUserId: userId }),
+        },
+      });
+    } catch (error) {
+      this.logger.error(`Erro ao criar evento de histórico para deleteAttachment: ${error.message}`);
+    }
+
     return { message: 'Anexo removido.' };
   }
 

@@ -219,8 +219,12 @@ export class WarrantyController {
   @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar tarefa da garantia' })
-  async updateTask(@Param('taskId') taskId: string, @Body() body: UpdateTaskDto) {
-    return this.warrantyService.updateTask(taskId, body);
+  async updateTask(
+    @Param('taskId') taskId: string,
+    @Body() body: UpdateTaskDto,
+    @Request() req: any,
+  ) {
+    return this.warrantyService.updateTask(taskId, body, req.user?.userId);
   }
 
   @Delete('warranty/tasks/:taskId')
@@ -228,8 +232,8 @@ export class WarrantyController {
   @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remover tarefa da garantia' })
-  async deleteTask(@Param('taskId') taskId: string) {
-    return this.warrantyService.deleteTask(taskId);
+  async deleteTask(@Param('taskId') taskId: string, @Request() req: any) {
+    return this.warrantyService.deleteTask(taskId, req.user?.userId);
   }
 
   // ── Anexos da garantia (Onda 3) ─────────────────────────────────────────────
@@ -276,7 +280,7 @@ export class WarrantyController {
   @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remover anexo da garantia' })
-  async deleteAttachment(@Param('attId') attId: string) {
-    return this.warrantyService.deleteAttachment(attId);
+  async deleteAttachment(@Param('attId') attId: string, @Request() req: any) {
+    return this.warrantyService.deleteAttachment(attId, req.user?.userId);
   }
 }

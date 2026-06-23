@@ -31,6 +31,65 @@ const EVENT_LABELS = {
   ASSIGNED: 'Responsável alterado',
 };
 
+const STATUS_LABELS_HISTORY = {
+  RECEBIDO: 'Novo',
+  EM_ANALISE: 'Em Triagem',
+  AGUARDANDO_CLIENTE: 'Solução Proposta',
+  APROVADO: 'Logística/Envio',
+  REPROVADO: 'Reprovado',
+  FINALIZADO: 'Resolvido',
+  CANCELADO: 'Cancelado',
+};
+
+function formatDateTimeWithWord(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const timeStr = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return `${dateStr} às ${timeStr}`;
+}
+
+function getActionBadge(ev) {
+  switch (ev.eventType) {
+    case 'CREATED':
+      return { text: 'Ticket criado', emoji: '🎫' };
+    case 'APPROVED':
+      return { text: 'Solução aprovada', emoji: '✅' };
+    case 'REJECTED':
+      return { text: 'Solução reprovada', emoji: '❌' };
+    case 'COST_UPDATED':
+      return { text: 'Custo atualizado', emoji: '💰' };
+    case 'ASSIGNED':
+      return { text: 'Responsável alterado', emoji: '👤' };
+    case 'TASK_CREATED':
+      return { text: 'Tarefa criada', emoji: '📋' };
+    case 'TASK_UPDATED':
+      if (ev.comment?.includes('concluída')) {
+        return { text: 'Tarefa concluída', emoji: '📋' };
+      } else if (ev.comment?.includes('reaberta')) {
+        return { text: 'Tarefa reaberta', emoji: '📋' };
+      }
+      return { text: 'Tarefa concluída/reaberta', emoji: '📋' };
+    case 'TASK_DELETED':
+      return { text: 'Tarefa excluída', emoji: '📋' };
+    case 'ATTACHMENT_UPLOADED':
+      return { text: 'Arquivo anexado', emoji: '📎' };
+    case 'ATTACHMENT_DELETED':
+      return { text: 'Arquivo removido', emoji: '📎' };
+    case 'STATUS_REVERTED':
+      return { text: 'Status revertido', emoji: '⚡' };
+    case 'SOLUTION_PROPOSED':
+      return { text: 'Solução proposta', emoji: '💡' };
+    case 'STATUS_CHANGE':
+    default:
+      if (ev.toStatus === 'AGUARDANDO_CLIENTE') {
+        return { text: 'Solução proposta', emoji: '💡' };
+      }
+      return { text: 'Status atualizado', emoji: '⚡' };
+  }
+}
+
 // Formata um valor numérico/string como moeda brasileira (R$).
 function formatBRL(value) {
   if (value === null || value === undefined || value === '') return null;
@@ -933,22 +992,39 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                   <ol className="space-y-4">
                     {events.map((ev) => (
                       <li key={ev.id || ev.createdAt} className="flex gap-3">
-                        <div className="shrink-0 h-8 w-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-bold">
-                          {(ev.createdBy?.name || 'S').charAt(0).toUpperCase()}
+                        <div className="shrink-0 h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                          {(ev.createdBy?.name || 'Sistema').charAt(0).toUpperCase()}
                         </div>
-                        <div className="flex-1 min-w-0 border-b border-gray-100 dark:border-slate-800 pb-3">
+                        <div className="flex-1 min-w-0 border-b border-gray-100 dark:border-slate-800 pb-4">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-semibold text-gray-900 dark:text-slate-100 text-sm">
                               {ev.createdBy?.name || 'Sistema'}
                             </span>
-                            <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300">
-                              {EVENT_LABELS[ev.eventType] || ev.eventType}
-                            </span>
+                            {(() => {
+                              const badge = getActionBadge(ev);
+                              return (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 shadow-sm">
+                                  <span>{badge.emoji}</span>
+                                  <span>{badge.text}</span>
+                                </span>
+                              );
+                            })()}
                             {ev.fromStatus && ev.toStatus && (
-                              <span className="flex items-center gap-1 text-[11px]">
-                                <span className={`px-1.5 py-0.5 rounded-full font-semibold ${statusBadgeClass(ev.fromStatus)}`}>{ev.fromStatus}</span>
+                              <span className="flex items-center gap-1.5 text-[11px] ml-1">
+                                <span className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 font-medium">
+                                  {STATUS_LABELS_HISTORY[ev.fromStatus] || ev.fromStatus}
+                                </span>
                                 <span className="text-gray-400">→</span>
-                                <span className={`px-1.5 py-0.5 rounded-full font-semibold ${statusBadgeClass(ev.toStatus)}`}>{ev.toStatus}</span>
+                                <span className="px-1.5 py-0.5 rounded bg-primary text-white font-medium">
+                                  {STATUS_LABELS_HISTORY[ev.toStatus] || ev.toStatus}
+                                </span>
+                                {currentWarranty.assignedTo?.name && (
+                                  <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium ml-1">
+                                    <span>🌐</span>
+                                    <span>→</span>
+                                    <span>{currentWarranty.assignedTo.name}</span>
+                                  </span>
+                                )}
                               </span>
                             )}
                           </div>
@@ -957,7 +1033,21 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                               "{ev.comment}"
                             </p>
                           )}
-                          <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">{formatDateTime(ev.createdAt)}</p>
+                          <p className="mt-1.5 text-xs text-gray-400 dark:text-slate-500 flex items-center gap-1">
+                            <span>{formatDateTimeWithWord(ev.createdAt)}</span>
+                            <span>·</span>
+                            {ev.eventType === 'CREATED' ? (
+                              <span className="flex items-center gap-1">
+                                <span>👁️</span>
+                                <span>Público</span>
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1">
+                                <span>🔒</span>
+                                <span>Interno</span>
+                              </span>
+                            )}
+                          </p>
                         </div>
                       </li>
                     ))}
