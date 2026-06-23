@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { MdArrowBack } from 'react-icons/md';
+import { MdArrowBack, MdVpnKey } from 'react-icons/md';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Card } from '../components/ui';
+import AdminResetPasswordModal from '../components/AdminResetPasswordModal';
 
 export default function CustomerFormPage() {
   const { id } = useParams();
@@ -15,6 +16,7 @@ export default function CustomerFormPage() {
   const [loading, setLoading] = useState(false);
   const [stores, setStores] = useState([]);
   const [errors, setErrors] = useState({});
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     cpf: '',
@@ -439,6 +441,23 @@ export default function CustomerFormPage() {
               </div>
             )}
 
+            {/* Segurança — redefinir senha (apenas ADMIN em modo edição) */}
+            {isEditMode && isAdmin && (
+              <div>
+                <h2 className="font-title text-xl font-bold mb-4 text-gray-900 dark:text-slate-100">Segurança</h2>
+                <button
+                  type="button"
+                  onClick={() => setShowResetPassword(true)}
+                  className="btn btn-outline inline-flex items-center gap-2"
+                >
+                  <MdVpnKey className="w-4 h-4" /> Redefinir senha
+                </button>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+                  Define uma nova senha de acesso ao portal do cliente.
+                </p>
+              </div>
+            )}
+
             {/* Buttons */}
             <div className="flex gap-4 pt-4 border-t border-gray-100 dark:border-slate-800">
               <button
@@ -457,6 +476,17 @@ export default function CustomerFormPage() {
             </div>
         </Card>
       </div>
+
+      {showResetPassword && (
+        <AdminResetPasswordModal
+          title="Redefinir senha do cliente"
+          userName={formData.fullName}
+          onSubmit={(password) =>
+            api.patch(`/customers/${id}/reset-password`, { password }).then((r) => r.data)
+          }
+          onClose={() => setShowResetPassword(false)}
+        />
+      )}
     </div>
   );
 }
