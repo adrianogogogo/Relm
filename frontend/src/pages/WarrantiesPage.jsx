@@ -171,7 +171,12 @@ export default function WarrantiesPage() {
                   {warranties.map((warranty) => (
                     <tr key={warranty.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-bold text-primary dark:text-primary-400">{warranty.protocolNumber}</div>
+                        <button
+                          onClick={() => setSelectedWarranty(warranty)}
+                          className="text-sm font-bold text-primary dark:text-primary-400 hover:underline text-left focus:outline-none"
+                        >
+                          {warranty.protocolNumber}
+                        </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900 dark:text-slate-100">{warranty.customer?.fullName || 'N/A'}</div>
