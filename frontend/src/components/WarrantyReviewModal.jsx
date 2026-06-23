@@ -182,6 +182,51 @@ function EmptyState({ children }) {
   );
 }
 
+// Mapeamento lógico da garantia para 10 etapas do Stepper
+function getProgressStep(w) {
+  const status = w.status;
+  const tasks = w.tasks || [];
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter((t) => t.status === 'concluida').length;
+  const hasCost = w.cost !== null && w.cost !== undefined;
+
+  if (status === 'RECEBIDO') {
+    return { step: 1, label: 'Novo', badgeColor: 'bg-info/15 text-info dark:bg-info/10 border-info/20' };
+  }
+  if (status === 'AGUARDANDO_CLIENTE') {
+    return { step: 4, label: 'Solução Proposta', badgeColor: 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 border-purple-200 dark:border-purple-800' };
+  }
+  if (status === 'REPROVADO') {
+    return { step: 6, label: 'Reprovado', badgeColor: 'bg-error/15 text-error dark:bg-error/10 border-error/20' };
+  }
+  if (status === 'FINALIZADO') {
+    const hasPendingTasks = tasks.some((t) => t.status !== 'concluida');
+    if (!hasPendingTasks && totalTasks > 0) {
+      return { step: 10, label: 'Fechado', badgeColor: 'bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-300 border-gray-200 dark:border-slate-700' };
+    }
+    return { step: 9, label: 'Resolvido', badgeColor: 'bg-success/15 text-success dark:text-success border-success/30' };
+  }
+  if (status === 'APROVADO') {
+    const hasLogisticsTasks = tasks.some((t) => t.title.toLowerCase().includes('envio') || t.title.toLowerCase().includes('logística'));
+    if (hasLogisticsTasks && completedTasks === totalTasks) {
+      return { step: 8, label: 'Em Logística', badgeColor: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700' };
+    }
+    return { step: 7, label: 'Logística/Envio', badgeColor: 'bg-success/15 text-success dark:bg-success/10 border-success/20' };
+  }
+  if (status === 'EM_ANALISE') {
+    if (hasCost) {
+      return { step: 5, label: 'Em Definição', badgeColor: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800' };
+    }
+    if (totalTasks > 0) {
+      return { step: 3, label: 'Em Análise', badgeColor: 'bg-warning/15 text-warning dark:bg-warning/10 border-warning/20' };
+    }
+    return { step: 2, label: 'Em Triagem', badgeColor: 'bg-warning/15 text-warning dark:bg-warning/10 border-warning/20' };
+  }
+
+  return { step: 1, label: 'Novo', badgeColor: 'bg-info/15 text-info dark:bg-info/10 border-info/20' };
+}
+
+
 export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   const { data: fullWarranty, refetch: refetchWarranty } = useQuery({
     queryKey: ['warranty-claim-detail', warranty.id],
@@ -570,78 +615,86 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
           </button>
         </div>
 
-        {/* Stepper Visual de Status */}
+        {/* Stepper Visual de Status (10 Etapas) */}
         {(() => {
-          const steps = [
-            { id: 'novo', label: 'Novo', statusList: ['RECEBIDO'] },
-            { id: 'triagem', label: 'Em Triagem', statusList: ['EM_ANALISE'] },
-            { id: 'solucao', label: 'Solução', statusList: ['AGUARDANDO_CLIENTE', 'APROVADO', 'REPROVADO'] },
-            { id: 'resolvido', label: 'Resolvido', statusList: ['FINALIZADO'] },
-          ];
           const currentStatus = currentWarranty.status;
-          let currentStepIndex = steps.findIndex((step) => step.statusList.includes(currentStatus));
           if (currentStatus === 'CANCELADO') {
-            currentStepIndex = -1;
-          }
-
-          return (
-            <div className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/10 px-6 py-5">
-              {currentStatus === 'CANCELADO' ? (
+            return (
+              <div className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/10 px-6 py-5">
                 <div className="flex items-center gap-2 text-error bg-error/10 border border-error/20 rounded-lg p-3 text-sm font-semibold">
                   <MdCancel className="h-5 w-5 shrink-0" />
                   <span>Esta garantia foi cancelada.</span>
                 </div>
-              ) : (
-                <div className="max-w-3xl mx-auto flex items-center justify-between relative mt-2 mb-2">
-                  {/* Linha de progresso no fundo */}
-                  <div className="absolute left-6 right-6 top-4 h-0.5 bg-gray-200 dark:bg-slate-800 -z-10" />
-                  {/* Linha preenchida de progresso ativo */}
-                  <div 
-                    className="absolute left-6 top-4 h-0.5 bg-primary transition-all duration-500 -z-10"
-                    style={{
-                      width: `${currentStepIndex > 0 ? (currentStepIndex / (steps.length - 1)) * 94 : 0}%`
-                    }}
-                  />
-                  
-                  {steps.map((step, idx) => {
-                    const isCompleted = idx < currentStepIndex;
-                    const isActive = idx === currentStepIndex;
+              </div>
+            );
+          }
+
+          const { step: activeStep, label: activeLabel, badgeColor } = getProgressStep(currentWarranty);
+          const stepsCount = 10;
+          const stepColors = [
+            '#3B82F6', // 1. Novo (Azul)
+            '#F97316', // 2. Em Triagem (Laranja)
+            '#FBBF24', // 3. Em Análise (Amarelo)
+            '#A855F7', // 4. Solução Proposta / Pendente Cliente (Roxo)
+            '#06B6D4', // 5. Em Definição (Ciano)
+            '#F87171', // 6. Reprovado (Vermelho/Coral)
+            '#B45309', // 7. Logística/Envio (Castanho/Laranja Escuro)
+            '#64748B', // 8. Em Logística (Cinza Slate)
+            '#10B981', // 9. Resolvido (Verde)
+            '#9CA3AF', // 10. Fechado (Cinza Escuro)
+          ];
+
+          return (
+            <div className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/10 px-6 py-6">
+              <div className="max-w-4xl mx-auto space-y-4">
+                {/* Fileira de 10 pílulas */}
+                <div className="flex gap-2">
+                  {Array.from({ length: stepsCount }).map((_, idx) => {
+                    const stepNum = idx + 1;
+                    const isCompleted = stepNum < activeStep;
+                    const isActive = stepNum === activeStep;
+                    const color = stepColors[idx];
                     
                     return (
-                      <div key={step.id} className="flex flex-col items-center relative bg-white dark:bg-surface-dark px-3 z-10">
-                        {/* Círculo do Step */}
-                        <div 
-                          className={`h-8 w-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 font-semibold text-sm ${
-                            isCompleted 
-                              ? 'bg-primary border-primary text-white' 
-                              : isActive 
-                              ? 'bg-white dark:bg-surface-dark border-primary text-primary shadow-md scale-110' 
-                              : 'bg-white dark:bg-surface-dark border-gray-300 dark:border-slate-700 text-gray-400'
-                          }`}
-                        >
-                          {isCompleted ? (
-                            <MdCheck className="h-5 w-5 text-white font-bold" />
-                          ) : (
-                            <span>{idx + 1}</span>
-                          )}
-                        </div>
-                        {/* Label */}
-                        <span 
-                          className={`mt-2 text-xs font-semibold whitespace-nowrap ${
-                            isActive 
-                              ? 'text-primary font-bold' 
-                              : isCompleted 
-                              ? 'text-gray-800 dark:text-slate-200' 
-                              : 'text-gray-400 dark:text-slate-500'
-                          }`}
-                        >
-                          {step.label}
-                        </span>
-                      </div>
+                      <div
+                        key={idx}
+                        className="h-3 flex-1 rounded-full bg-gray-200 dark:bg-slate-700 transition-all duration-500"
+                        style={{
+                          backgroundColor: (isCompleted || isActive) 
+                            ? color 
+                            : undefined,
+                          boxShadow: isActive 
+                            ? `0 0 10px ${color}` 
+                            : 'none',
+                        }}
+                      />
                     );
                   })}
                 </div>
-              )}
+
+                {/* Rótulos e Badges */}
+                <div className="flex justify-between items-start text-xs font-semibold text-gray-500 dark:text-slate-400">
+                  {/* Esquerda: Novo */}
+                  <div className="w-24 text-left">
+                    <span>Novo</span>
+                  </div>
+
+                  {/* Centro: Badge ativo */}
+                  <div className="flex flex-col items-center">
+                    <div className={`px-4 py-1.5 rounded-full border text-xs font-bold transition-all shadow-sm ${badgeColor}`}>
+                      {activeLabel}
+                    </div>
+                    <span className="mt-1.5 text-[10px] text-gray-400 dark:text-slate-500 font-medium">
+                      Etapa {activeStep} de {stepsCount}
+                    </span>
+                  </div>
+
+                  {/* Direita: Fechado */}
+                  <div className="w-24 text-right">
+                    <span>Fechado</span>
+                  </div>
+                </div>
+              </div>
             </div>
           );
         })()}
