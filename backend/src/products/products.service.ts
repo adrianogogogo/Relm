@@ -27,6 +27,20 @@ export class ProductsService {
     });
   }
 
+  // Importação em lote (planilha). Cria todos de uma vez; retorna a contagem.
+  async createMany(rows: CreateProductDto[]) {
+    const data = rows.map((r) => ({
+      name: r.name,
+      brand: r.brand || 'Relm Bikes',
+      ...(r.sku && { sku: r.sku }),
+      ...(r.model && { model: r.model }),
+      ...(r.year !== undefined && { year: r.year }),
+      ...(r.description && { description: r.description }),
+    }));
+    const result = await this.prisma.product.createMany({ data });
+    return { created: result.count };
+  }
+
   async update(id: string, dto: UpdateProductDto) {
     const product = await this.prisma.product.findUnique({ where: { id } });
     if (!product) {

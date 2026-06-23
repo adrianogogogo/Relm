@@ -1,8 +1,16 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MdAdd, MdEdit, MdDelete, MdClose } from 'react-icons/md';
+import * as XLSX from 'xlsx';
+import { MdAdd, MdEdit, MdDelete, MdClose, MdUploadFile, MdDownload } from 'react-icons/md';
 import { productsAPI } from '../services/api';
 import { PageHeader } from '../components/ui';
+
+// Normaliza cabeçalhos (minúsculo, sem acento) para casar colunas da planilha.
+const norm = (s) => String(s).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const cell = (row, key) => {
+  for (const k of Object.keys(row)) if (norm(k) === key) return String(row[k] ?? '').trim();
+  return '';
+};
 
 const EMPTY = { name: '', brand: 'Relm Bikes', sku: '', model: '', year: '', description: '' };
 const OTHER = '__other__';
@@ -39,6 +47,51 @@ export default function AdminProductsPage() {
     onError: (e) => alert(`❌ ${e.response?.data?.message || e.message}`),
   });
 
+  const importMutation = useMutation({
+    mutationFn: (rows) => productsAPI.bulkCreate(rows),
+    onSuccess: (res) => { invalidate(); alert(`✅ ${res.created} produto(s) importado(s).`); },
+    onError: (e) => alert(`❌ ${e.response?.data?.message || e.message}`),
+  });
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // permite reimportar o mesmo arquivo
+    if (!file) return;
+    try {
+      const wb = XLSX.read(await file.arrayBuffer());
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      const rows = json
+        .map((r) => {
+          const y = Number(cell(r, 'ano'));
+          return {
+            name: cell(r, 'nome'),
+            brand: cell(r, 'marca') || undefined,
+            sku: cell(r, 'sku') || undefined,
+            model: cell(r, 'modelo') || undefined,
+            year: Number.isInteger(y) && y > 0 ? y : undefined,
+            description: cell(r, 'descricao') || undefined,
+          };
+        })
+        .filter((r) => r.name);
+      if (rows.length === 0) {
+        alert('Nenhuma linha com "Nome" encontrada. Use os cabeçalhos do modelo.');
+        return;
+      }
+      if (!window.confirm(`Importar ${rows.length} produto(s)?`)) return;
+      importMutation.mutate(rows);
+    } catch {
+      alert('Não foi possível ler a planilha. Use .xlsx ou .csv com os cabeçalhos do modelo.');
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    const ws = XLSX.utils.aoa_to_sheet([['Nome', 'Marca', 'SKU', 'Modelo', 'Ano', 'Descrição']]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Produtos');
+    XLSX.writeFile(wb, 'modelo-produtos.xlsx');
+  };
+
   const openNew = () => { setEditing(null); setForm(EMPTY); setOtherBrand(false); setShowModal(true); };
   const openEdit = (p) => {
     setEditing(p);
@@ -68,9 +121,18 @@ export default function AdminProductsPage() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <PageHeader title="Produtos" subtitle="Catálogo usado no formulário de garantia." />
-        <button onClick={openNew} className="btn btn-primary flex items-center gap-2">
-          <MdAdd /> Novo produto
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={handleDownloadTemplate} className="btn btn-outline flex items-center gap-2" title="Baixar planilha modelo">
+            <MdDownload /> Modelo
+          </button>
+          <label className="btn btn-outline flex items-center gap-2 cursor-pointer">
+            <MdUploadFile /> {importMutation.isPending ? 'Importando…' : 'Importar planilha'}
+            <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} disabled={importMutation.isPending} />
+          </label>
+          <button onClick={openNew} className="btn btn-primary flex items-center gap-2">
+            <MdAdd /> Novo produto
+          </button>
+        </div>
       </div>
 
       <div className="card p-0 overflow-hidden">

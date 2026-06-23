@@ -202,6 +202,7 @@ export const productsAPI = {
   getAll: (params) => api.get('/products', { params }).then((res) => res.data),
   getById: (id) => api.get(`/products/${id}`).then((res) => res.data),
   create: (data) => api.post('/products', data).then((res) => res.data),
+  bulkCreate: (products) => api.post('/products/bulk', { products }).then((res) => res.data),
   update: (id, data) => api.patch(`/products/${id}`, data).then((res) => res.data),
   remove: (id) => api.delete(`/products/${id}`).then((res) => res.data),
   // Catálogo público para o formulário de garantia (sem autenticação)
