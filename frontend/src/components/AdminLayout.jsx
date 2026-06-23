@@ -15,6 +15,7 @@ import {
   MdImage,
   MdManageAccounts,
   MdAssignment,
+  MdPedalBike,
   MdLogout,
   MdChevronLeft,
   MdChevronRight,
@@ -45,6 +46,12 @@ const MENU_ITEMS = [
     label: 'Lojas',
     icon: MdStore,
     roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR'],
+  },
+  {
+    path: '/admin/produtos',
+    label: 'Produtos',
+    icon: MdPedalBike,
+    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
   },
   {
     path: '/admin/events',

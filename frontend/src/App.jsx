@@ -56,6 +56,7 @@ import AdminEventsPage from './pages/AdminEventsPage';
 import AdminBenefitsPage from './pages/AdminBenefitsPage';
 import AdminInsurancesPage from './pages/AdminInsurancesPage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import AdminProductsPage from './pages/AdminProductsPage';
 import AuditLogsPage from './pages/AuditLogsPage';
 import AdminProfilePage from './pages/AdminProfilePage';
 import DistribuidorEventosPage from './pages/DistribuidorEventosPage';
@@ -170,6 +171,11 @@ export default function App() {
               </ProtectedRoute>
             } />
             <Route path="stores" element={<StoresPage />} />
+            <Route path="produtos" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                <AdminProductsPage />
+              </ProtectedRoute>
+            } />
 
             {/* Apenas Relm (não Distribuidor) */}
             <Route path="warranties" element={

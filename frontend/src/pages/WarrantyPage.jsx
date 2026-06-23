@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { warrantyAPI } from '../services/api';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { warrantyAPI, productsAPI, storesAPI } from '../services/api';
 import { PageHeader } from '../components/ui';
 
 export default function WarrantyPage() {
@@ -12,6 +12,8 @@ export default function WarrantyPage() {
     onSuccess: (data) => {
       setSuccess(true);
       setProtocol(data.data.protocol_number);
+      setSelectedProductId('');
+      setSelectedStore('');
       setFormData({
         customer: {
           fullName: '',
@@ -61,6 +63,51 @@ export default function WarrantyPage() {
     },
     issueDescription: '',
   });
+
+  // Catálogo para os dropdowns (produtos cadastrados + lojas). Best-effort:
+  // se vazio/erro, o cliente usa "Outro" e preenche manualmente.
+  const { data: products = [] } = useQuery({
+    queryKey: ['public-products'],
+    queryFn: () => productsAPI.getPublic(),
+  });
+  const { data: stores = [] } = useQuery({
+    queryKey: ['public-stores'],
+    queryFn: () => storesAPI.getPublicStores(),
+  });
+
+  // '' = nenhum, 'other' = não listado (preenche manual), id = produto cadastrado.
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [selectedStore, setSelectedStore] = useState('');
+  const productLocked = selectedProductId !== '' && selectedProductId !== 'other';
+
+  const handleProductSelect = (value) => {
+    setSelectedProductId(value);
+    if (value === '' || value === 'other') {
+      handleChange('product', 'brand', 'Relm');
+      handleChange('product', 'productName', '');
+      handleChange('product', 'model', '');
+      handleChange('product', 'serialNumber', '');
+      return;
+    }
+    const p = products.find((x) => x.id === value);
+    if (p) {
+      setFormData((prev) => ({
+        ...prev,
+        product: {
+          ...prev.product,
+          brand: p.brand || 'Relm',
+          productName: p.productType || '',
+          model: p.model || '',
+          serialNumber: p.serialNumber || '',
+        },
+      }));
+    }
+  };
+
+  const handleStoreSelect = (value) => {
+    setSelectedStore(value);
+    handleChange('product', 'purchaseStore', value === 'other' ? '' : value);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -249,6 +296,28 @@ export default function WarrantyPage() {
               {/* Product Info */}
               <section>
                 <h2 className="font-title text-2xl font-bold mb-4">Dados do Produto</h2>
+
+                {/* Seleção do produto cadastrado (preenche os campos). */}
+                <div className="mb-4">
+                  <label className="label">Produto cadastrado</label>
+                  <select
+                    className="input"
+                    value={selectedProductId}
+                    onChange={(e) => handleProductSelect(e.target.value)}
+                  >
+                    <option value="">Selecione seu produto…</option>
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.model} — {p.serialNumber} ({p.brand})
+                      </option>
+                    ))}
+                    <option value="other">Outro / não listado</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Não encontrou? Escolha “Outro / não listado” e preencha manualmente.
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="label">Marca *</label>
@@ -257,7 +326,8 @@ export default function WarrantyPage() {
                       required
                       className="input"
                       value={formData.product.brand}
-                      readOnly
+                      readOnly={productLocked}
+                      onChange={(e) => handleChange('product', 'brand', e.target.value)}
                     />
                   </div>
                   <div>
@@ -267,6 +337,7 @@ export default function WarrantyPage() {
                       required
                       className="input"
                       value={formData.product.productName}
+                      readOnly={productLocked}
                       onChange={(e) =>
                         handleChange('product', 'productName', e.target.value)
                       }
@@ -279,6 +350,7 @@ export default function WarrantyPage() {
                       required
                       className="input"
                       value={formData.product.model}
+                      readOnly={productLocked}
                       onChange={(e) =>
                         handleChange('product', 'model', e.target.value)
                       }
@@ -291,6 +363,7 @@ export default function WarrantyPage() {
                       required
                       className="input"
                       value={formData.product.serialNumber}
+                      readOnly={productLocked}
                       onChange={(e) =>
                         handleChange('product', 'serialNumber', e.target.value)
                       }
@@ -310,15 +383,31 @@ export default function WarrantyPage() {
                   </div>
                   <div>
                     <label className="label">Loja de Compra *</label>
-                    <input
-                      type="text"
-                      required
+                    <select
                       className="input"
-                      value={formData.product.purchaseStore}
-                      onChange={(e) =>
-                        handleChange('product', 'purchaseStore', e.target.value)
-                      }
-                    />
+                      value={selectedStore}
+                      onChange={(e) => handleStoreSelect(e.target.value)}
+                    >
+                      <option value="">Selecione a loja…</option>
+                      {stores.map((s) => (
+                        <option key={s.id} value={s.tradeName}>
+                          {s.tradeName}{s.city ? ` — ${s.city}/${s.state}` : ''}
+                        </option>
+                      ))}
+                      <option value="other">Outra loja</option>
+                    </select>
+                    {selectedStore === 'other' && (
+                      <input
+                        type="text"
+                        required
+                        className="input mt-2"
+                        placeholder="Nome da loja"
+                        value={formData.product.purchaseStore}
+                        onChange={(e) =>
+                          handleChange('product', 'purchaseStore', e.target.value)
+                        }
+                      />
+                    )}
                   </div>
                   <div>
                     <label className="label">Número da Nota Fiscal *</label>

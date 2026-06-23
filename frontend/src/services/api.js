@@ -198,6 +198,16 @@ export const storesAPI = {
   getPublicStores: (params) => api.get('/public/stores', { params }).then((res) => res.data),
 };
 
+export const productsAPI = {
+  getAll: (params) => api.get('/products', { params }).then((res) => res.data),
+  getById: (id) => api.get(`/products/${id}`).then((res) => res.data),
+  create: (data) => api.post('/products', data).then((res) => res.data),
+  update: (id, data) => api.patch(`/products/${id}`, data).then((res) => res.data),
+  remove: (id) => api.delete(`/products/${id}`).then((res) => res.data),
+  // Catálogo público para o formulário de garantia (sem autenticação)
+  getPublic: () => api.get('/public/products').then((res) => res.data),
+};
+
 export const bannersAPI = {
   // Public endpoints — aceita segmentação { audience, page }.
   // Sem params, o backend assume audience PUBLIC (compatibilidade com a home).
