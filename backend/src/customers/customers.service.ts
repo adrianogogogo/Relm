@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
+import { maskCpf, maskPhone, shouldMaskFor } from '../common/utils/mask';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -151,7 +152,9 @@ export class CustomersService {
     ]);
 
     return {
-      data: customers.map((customer) => this.formatCustomer(customer)),
+      data: customers.map((customer) =>
+        this.formatCustomer(customer, filters?.requesterRole),
+      ),
       total,
       page,
       pageSize,
@@ -233,7 +236,7 @@ export class CustomersService {
       }
     }
 
-    return this.formatCustomer(customer);
+    return this.formatCustomer(customer, requester?.requesterRole);
   }
 
   // Busca o storeId vinculado ao usuário (token de LOJA) a partir do banco,
@@ -271,17 +274,27 @@ export class CustomersService {
       }
     }
 
-    // Normalizar CPF se fornecido
+    // Um valor mascarado (contém '*') nunca deve sobrescrever o dado real.
+    const isMasked = (v?: string) => !!v && v.includes('*');
+
+    // Normalizar CPF se fornecido (ignorando valores mascarados)
     let cpfNormalized = updateCustomerDto.cpf;
-    if (cpfNormalized) {
+    if (isMasked(cpfNormalized)) {
+      cpfNormalized = undefined;
+    } else if (cpfNormalized) {
       cpfNormalized = cpfNormalized.replace(/\D/g, '');
     }
+
+    const phoneClean = isMasked(updateCustomerDto.phone)
+      ? undefined
+      : updateCustomerDto.phone;
 
     const customer = await this.prisma.customer.update({
       where: { id },
       data: {
         ...updateCustomerDto,
         cpf: cpfNormalized || existingCustomer.cpf,
+        phone: phoneClean ?? existingCustomer.phone,
       },
       include: {
         store: {
@@ -403,9 +416,12 @@ export class CustomersService {
   }
 
   // Método auxiliar para formatar dados do cliente
-  private formatCustomer(customer: any) {
+  private formatCustomer(customer: any, requesterRole?: string) {
+    const mask = shouldMaskFor(requesterRole);
     return {
       ...customer,
+      cpf: mask ? maskCpf(customer.cpf) : customer.cpf,
+      phone: mask ? maskPhone(customer.phone) : customer.phone,
       name: customer.fullName, // Alias para compatibilidade com frontend
       hasActiveWarranty: customer.warrantyClaims?.some(
         (w) => w.status === 'APROVADO' || w.status === 'FINALIZADO',
