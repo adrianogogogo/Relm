@@ -63,7 +63,7 @@ export class WarrantyController {
 
   @Get('warranty/claims')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar garantias' })
   async findAll(@Query() query: any) {
@@ -72,7 +72,7 @@ export class WarrantyController {
 
   @Get('warranty/claims/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Detalhes da garantia' })
   async findOne(@Param('id') id: string) {
@@ -81,7 +81,7 @@ export class WarrantyController {
 
   @Patch('warranty/claims/:id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Alterar status da garantia (FSM)' })
   async updateStatus(
@@ -203,7 +203,7 @@ export class WarrantyController {
 
   @Post('warranty/claims/:id/tasks')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar tarefa da garantia' })
   async createTask(
@@ -216,7 +216,7 @@ export class WarrantyController {
 
   @Patch('warranty/tasks/:taskId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar tarefa da garantia' })
   async updateTask(@Param('taskId') taskId: string, @Body() body: UpdateTaskDto) {
@@ -225,7 +225,7 @@ export class WarrantyController {
 
   @Delete('warranty/tasks/:taskId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remover tarefa da garantia' })
   async deleteTask(@Param('taskId') taskId: string) {
@@ -236,7 +236,7 @@ export class WarrantyController {
 
   @Post('warranty/claims/:id/attachments')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('file', warrantyUpload))
   @ApiOperation({ summary: 'Enviar anexo da garantia (PDF/imagem, até 10MB)' })
@@ -253,7 +253,7 @@ export class WarrantyController {
 
   @Get('warranty/attachments/:attId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Baixar anexo da garantia' })
   async downloadAttachment(
@@ -273,7 +273,7 @@ export class WarrantyController {
 
   @Delete('warranty/attachments/:attId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remover anexo da garantia' })
   async deleteAttachment(@Param('attId') attId: string) {

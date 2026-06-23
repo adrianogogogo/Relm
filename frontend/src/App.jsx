@@ -173,7 +173,7 @@ export default function App() {
 
             {/* Apenas Relm (não Distribuidor) */}
             <Route path="warranties" element={
-              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA']}>
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
                 <WarrantiesPage />
               </ProtectedRoute>
             } />

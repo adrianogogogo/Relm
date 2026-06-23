@@ -32,7 +32,7 @@ const MENU_ITEMS = [
     path: '/admin/warranties',
     label: 'Garantias',
     icon: MdVerifiedUser,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'],
+    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
   },
   {
     path: '/admin/customers',
