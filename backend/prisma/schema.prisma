@@ -276,7 +276,8 @@ model WarrantyClaim {
   product  Product  @relation(fields: [productId], references: [id])
   store    Store?   @relation(fields: [storeId], references: [id])
   events   WarrantyEvent[]
-  
+  tasks    WarrantyTask[]
+
   @@index([protocolNumber])
   @@index([customerId])
   @@index([status])
@@ -302,6 +303,27 @@ model WarrantyEvent {
   @@index([claimId])
   @@index([createdAt])
   @@map("warranty_events")
+}
+
+// Tarefas operacionais de uma garantia (ex.: "Enviar pneu para a fabrica").
+// Status livre em pt-BR: pendente | concluida | cancelada. Responsavel (assignee)
+// e texto livre — nao ha FK para User (pode ser "Gestor Bikes", time externo, etc).
+model WarrantyTask {
+  id              String    @id @default(uuid())
+  claimId         String    @map("claim_id")
+  title           String
+  status          String    @default("pendente")
+  assignee        String?
+  dueDate         DateTime? @map("due_date")
+  createdByUserId String?   @map("created_by_user_id")
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  claim WarrantyClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  @@index([claimId])
+  @@map("warranty_tasks")
 }
 
 // ============================================

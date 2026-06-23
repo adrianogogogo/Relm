@@ -279,8 +279,64 @@ export class WarrantyService {
           },
           orderBy: { createdAt: 'asc' },
         },
+        tasks: {
+          orderBy: { createdAt: 'asc' },
+        },
       },
     });
+  }
+
+  // ── Tarefas da garantia (Onda 2) ────────────────────────────────────────────
+
+  async createTask(
+    claimId: string,
+    data: { title: string; assignee?: string; dueDate?: string; status?: string },
+    userId?: string,
+  ) {
+    const claim = await this.prisma.warrantyClaim.findUnique({ where: { id: claimId } });
+    if (!claim) {
+      throw new NotFoundException('Garantia não encontrada');
+    }
+    return this.prisma.warrantyTask.create({
+      data: {
+        claimId,
+        title: data.title,
+        ...(data.assignee && { assignee: data.assignee }),
+        ...(data.dueDate && { dueDate: new Date(data.dueDate) }),
+        ...(data.status && { status: data.status }),
+        ...(userId && { createdByUserId: userId }),
+      },
+    });
+  }
+
+  async updateTask(
+    taskId: string,
+    data: { title?: string; status?: string; assignee?: string; dueDate?: string },
+  ) {
+    const task = await this.prisma.warrantyTask.findUnique({ where: { id: taskId } });
+    if (!task) {
+      throw new NotFoundException('Tarefa não encontrada');
+    }
+    return this.prisma.warrantyTask.update({
+      where: { id: taskId },
+      data: {
+        ...(data.title !== undefined && { title: data.title }),
+        ...(data.status !== undefined && { status: data.status }),
+        ...(data.assignee !== undefined && { assignee: data.assignee }),
+        ...(data.dueDate !== undefined && {
+          dueDate: data.dueDate ? new Date(data.dueDate) : null,
+        }),
+      },
+    });
+  }
+
+  async deleteTask(taskId: string) {
+    const task = await this.prisma.warrantyTask.findUnique({ where: { id: taskId } });
+    if (!task) {
+      throw new NotFoundException('Tarefa não encontrada');
+    }
+    await this.prisma.warrantyTask.delete({ where: { id: taskId } });
+    return { message: 'Tarefa removida.' };
   }
 
   async updateStatus(

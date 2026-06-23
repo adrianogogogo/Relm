@@ -102,6 +102,25 @@ export const warrantyAPI = {
   // Reverte o status (override administrativo). data: { toStatus, reason }
   revertStatus: (id, data) => api.patch(`/warranty/claims/${id}/revert-status`, data).then((res) => res.data),
   validateToken: (token) => api.get(`/public/warranty/validate/${token}`).then((res) => res.data),
+  // Tarefas da garantia (Onda 2)
+  createTask: (id, data) => api.post(`/warranty/claims/${id}/tasks`, data).then((res) => res.data),
+  updateTask: (taskId, data) => api.patch(`/warranty/tasks/${taskId}`, data).then((res) => res.data),
+  deleteTask: (taskId) => api.delete(`/warranty/tasks/${taskId}`).then((res) => res.data),
+  // Anexos da garantia (Onda 3)
+  listAttachments: (id) => api.get(`/warranty/claims/${id}/attachments`).then((res) => res.data),
+  uploadAttachment: (id, file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api
+      .post(`/warranty/claims/${id}/attachments`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((res) => res.data);
+  },
+  attachmentUrl: (attId) => `${api.defaults.baseURL}/warranty/attachments/${attId}`,
+  deleteAttachment: (attId) => api.delete(`/warranty/attachments/${attId}`).then((res) => res.data),
+  // Atribuição de responsável (Onda 4)
+  assign: (id, userId) => api.patch(`/warranty/claims/${id}/assign`, { userId }).then((res) => res.data),
 };
 
 export const benefitsAPI = {

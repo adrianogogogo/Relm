@@ -4,6 +4,7 @@ import {
   MdClose, MdPerson, MdPedalBike, MdStore, MdDescription, MdCancel, MdCheck,
   MdPlayArrow, MdAttachMoney, MdHistory, MdAttachFile, MdAssignment, MdEmail,
   MdContentCopy, MdPictureAsPdf, MdEvent, MdSupportAgent, MdWhatsapp,
+  MdAdd, MdDelete, MdCheckCircle, MdRadioButtonUnchecked,
 } from 'react-icons/md';
 import { warrantyAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
@@ -122,6 +123,11 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Formulário de nova tarefa (aba Tarefas).
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskAssignee, setNewTaskAssignee] = useState('');
+  const [newTaskDue, setNewTaskDue] = useState('');
+
   // Custo da garantia (input controlado; inicia com o valor atual, se houver).
   const [costInput, setCostInput] = useState(
     currentWarranty.cost !== null && currentWarranty.cost !== undefined
@@ -213,6 +219,66 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
       alert(`❌ Erro ao reverter status: ${error.response?.data?.message || error.message}`);
     },
   });
+
+  // ── Tarefas (Onda 2) ────────────────────────────────────────────────────────
+  const setTasks = (updater) =>
+    setCurrentWarranty((prev) => ({
+      ...prev,
+      tasks: typeof updater === 'function' ? updater(prev.tasks || []) : updater,
+    }));
+
+  const createTaskMutation = useMutation({
+    mutationFn: (payload) => warrantyAPI.createTask(currentWarranty.id, payload),
+    onSuccess: (task) => {
+      setTasks((list) => [...list, task]);
+      setNewTaskTitle('');
+      setNewTaskAssignee('');
+      setNewTaskDue('');
+      onSuccess();
+    },
+    onError: (error) => {
+      alert(`❌ Erro ao criar tarefa: ${error.response?.data?.message || error.message}`);
+    },
+  });
+
+  const updateTaskMutation = useMutation({
+    mutationFn: ({ taskId, data }) => warrantyAPI.updateTask(taskId, data),
+    onSuccess: (task) => {
+      setTasks((list) => list.map((t) => (t.id === task.id ? task : t)));
+      onSuccess();
+    },
+    onError: (error) => {
+      alert(`❌ Erro ao atualizar tarefa: ${error.response?.data?.message || error.message}`);
+    },
+  });
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: (taskId) => warrantyAPI.deleteTask(taskId),
+    onSuccess: (_data, taskId) => {
+      setTasks((list) => list.filter((t) => t.id !== taskId));
+      onSuccess();
+    },
+    onError: (error) => {
+      alert(`❌ Erro ao remover tarefa: ${error.response?.data?.message || error.message}`);
+    },
+  });
+
+  const handleCreateTask = () => {
+    if (!newTaskTitle.trim()) {
+      alert('Informe o título da tarefa.');
+      return;
+    }
+    createTaskMutation.mutate({
+      title: newTaskTitle.trim(),
+      assignee: newTaskAssignee.trim() || undefined,
+      dueDate: newTaskDue || undefined,
+    });
+  };
+
+  const toggleTaskDone = (task) => {
+    const next = task.status === 'concluida' ? 'pendente' : 'concluida';
+    updateTaskMutation.mutate({ taskId: task.id, data: { status: next } });
+  };
 
   const handleSaveCost = () => {
     const trimmed = costInput.trim();
@@ -635,14 +701,102 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
               </EmptyState>
             )}
 
-            {/* ── Aba TAREFAS (Onda 2: backend de tarefas) ───────────── */}
+            {/* ── Aba TAREFAS ────────────────────────────────────────── */}
             {activeTab === 'tarefas' && (
-              // ponytail: sem modelo de tarefas no backend ainda. Estado vazio
-              // até a Onda 2 (warranty_tasks + endpoints).
-              <EmptyState>
-                <MdAssignment className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                Nenhuma tarefa ainda
-              </EmptyState>
+              <div className="space-y-4">
+                {/* Lista */}
+                {(currentWarranty.tasks || []).length === 0 ? (
+                  <EmptyState>
+                    <MdAssignment className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                    Nenhuma tarefa ainda
+                  </EmptyState>
+                ) : (
+                  <ul className="space-y-2">
+                    {currentWarranty.tasks.map((task) => {
+                      const done = task.status === 'concluida';
+                      return (
+                        <li
+                          key={task.id}
+                          className="flex items-start gap-3 bg-gray-50 dark:bg-slate-900/40 rounded-lg p-3"
+                        >
+                          <button
+                            onClick={() => toggleTaskDone(task)}
+                            disabled={updateTaskMutation.isPending}
+                            className="mt-0.5 shrink-0 text-primary disabled:opacity-50"
+                            title={done ? 'Reabrir tarefa' : 'Concluir tarefa'}
+                          >
+                            {done ? <MdCheckCircle size={20} className="text-success" /> : <MdRadioButtonUnchecked size={20} />}
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium ${done ? 'line-through text-gray-400 dark:text-slate-500' : 'text-gray-900 dark:text-slate-100'}`}>
+                              {task.title}
+                            </p>
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                              <span className={`px-2 py-0.5 rounded-full font-semibold ${
+                                task.status === 'concluida' ? 'bg-success/15 text-success' :
+                                task.status === 'cancelada' ? 'bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300' :
+                                'bg-warning/15 text-warning'
+                              }`}>
+                                {task.status}
+                              </span>
+                              {task.assignee && (
+                                <span className="text-gray-500 dark:text-slate-400">→ {task.assignee}</span>
+                              )}
+                              {task.dueDate && (
+                                <span className="text-gray-500 dark:text-slate-400 flex items-center gap-1">
+                                  <MdEvent size={13} /> {new Date(task.dueDate).toLocaleDateString('pt-BR')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => deleteTaskMutation.mutate(task.id)}
+                            disabled={deleteTaskMutation.isPending}
+                            className="shrink-0 text-gray-400 hover:text-error disabled:opacity-50"
+                            title="Remover tarefa"
+                          >
+                            <MdDelete size={18} />
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+
+                {/* Nova tarefa */}
+                <div className="border-t border-gray-200 dark:border-slate-800 pt-4 space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-slate-100">Nova tarefa</h4>
+                  <input
+                    type="text"
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    placeholder="Título (ex.: Enviar pneu para a fábrica)"
+                    className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:text-slate-100 text-sm"
+                  />
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="text"
+                      value={newTaskAssignee}
+                      onChange={(e) => setNewTaskAssignee(e.target.value)}
+                      placeholder="Responsável (opcional)"
+                      className="flex-1 px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:text-slate-100 text-sm"
+                    />
+                    <input
+                      type="date"
+                      value={newTaskDue}
+                      onChange={(e) => setNewTaskDue(e.target.value)}
+                      className="px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:text-slate-100 text-sm"
+                    />
+                    <button
+                      onClick={handleCreateTask}
+                      disabled={createTaskMutation.isPending || !newTaskTitle.trim()}
+                      className="px-5 py-2 bg-primary hover:bg-primary-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                    >
+                      <MdAdd size={16} /> Adicionar
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* ── Aba HISTÓRICO ──────────────────────────────────────── */}

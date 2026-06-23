@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { WarrantyService } from './warranty.service';
 import { CreateWarrantyPublicDto } from './dto/create-warranty-public.dto';
 import { CreateWarrantyAdminDto } from './dto/create-warranty-admin.dto';
 import { SetCostDto } from './dto/set-cost.dto';
 import { RevertStatusDto } from './dto/revert-status.dto';
+import { CreateTaskDto } from './dto/create-task.dto';
+import { UpdateTaskDto } from './dto/update-task.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -144,5 +146,38 @@ export class WarrantyController {
   @ApiOperation({ summary: 'Validar token de garantia (público)' })
   async validateToken(@Param('token') token: string) {
     return this.warrantyService.validateWarrantyToken(token);
+  }
+
+  // ── Tarefas da garantia (Onda 2) ────────────────────────────────────────────
+
+  @Post('warranty/claims/:id/tasks')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Criar tarefa da garantia' })
+  async createTask(
+    @Param('id') id: string,
+    @Body() body: CreateTaskDto,
+    @Request() req: any,
+  ) {
+    return this.warrantyService.createTask(id, body, req.user?.userId);
+  }
+
+  @Patch('warranty/tasks/:taskId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Atualizar tarefa da garantia' })
+  async updateTask(@Param('taskId') taskId: string, @Body() body: UpdateTaskDto) {
+    return this.warrantyService.updateTask(taskId, body);
+  }
+
+  @Delete('warranty/tasks/:taskId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remover tarefa da garantia' })
+  async deleteTask(@Param('taskId') taskId: string) {
+    return this.warrantyService.deleteTask(taskId);
   }
 }
