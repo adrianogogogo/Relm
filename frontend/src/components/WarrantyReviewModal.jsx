@@ -267,6 +267,9 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   const [awaitingClientComment, setAwaitingClientComment] = useState('');
   const [showFinalizeForm, setShowFinalizeForm] = useState(false);
   const [resolutionText, setResolutionText] = useState('');
+  const [showReturnToAnalysisForm, setShowReturnToAnalysisForm] = useState(false);
+  const [returnToAnalysisChannel, setReturnToAnalysisChannel] = useState('WhatsApp');
+  const [returnToAnalysisNotes, setReturnToAnalysisNotes] = useState('');
   const [nextAssigneeId, setNextAssigneeId] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -295,14 +298,14 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   // abas (sidebar Cliente, Histórico) dependem. Eventos novos só aparecem ao
   // reabrir — aceitável na Onda 1; refetch por getById se virar requisito.
   const startAnalysisMutation = useMutation({
-    mutationFn: () => warrantyAPI.updateStatus(currentWarranty.id, { to_status: 'EM_ANALISE' }),
+    mutationFn: (comment) => warrantyAPI.updateStatus(currentWarranty.id, { to_status: 'EM_ANALISE', comment }),
     onSuccess: () => {
-      alert('✅ Análise iniciada com sucesso!');
+      alert('✅ Análise iniciada ou atualizada com sucesso!');
       refetchWarranty();
       onSuccess();
     },
     onError: (error) => {
-      alert(`❌ Erro ao iniciar análise: ${error.response?.data?.message || error.message}`);
+      alert(`❌ Erro na transição de análise: ${error.response?.data?.message || error.message}`);
     },
   });
 
@@ -629,11 +632,18 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   };
 
   const handleReturnToAnalysis = async () => {
+    if (!returnToAnalysisNotes.trim()) {
+      alert('Por favor, insira a justificativa do contato ou retorno.');
+      return;
+    }
     try {
-      await startAnalysisMutation.mutateAsync();
+      const formattedComment = `[Retornado via ${returnToAnalysisChannel}] ${returnToAnalysisNotes.trim()}`;
+      await startAnalysisMutation.mutateAsync(formattedComment);
       if (nextAssigneeId) {
         await assignMutation.mutateAsync(nextAssigneeId);
       }
+      setShowReturnToAnalysisForm(false);
+      setReturnToAnalysisNotes('');
       setNextAssigneeId('');
     } catch {
       // erros já tratados
@@ -1080,7 +1090,14 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                         {/* AGUARDANDO_CLIENTE -> EM_ANALISE */}
                         {currentWarranty.status === 'AGUARDANDO_CLIENTE' && (
                           <button
-                            onClick={() => handleReturnToAnalysis()}
+                            onClick={() => {
+                              setShowReturnToAnalysisForm(true);
+                              setShowAwaitingClientForm(false);
+                              setShowApproveForm(false);
+                              setShowRejectForm(false);
+                              setShowStartAnalysisForm(false);
+                              setShowFinalizeForm(false);
+                            }}
                             disabled={!isAdminOrManager || startAnalysisMutation.isPending}
                             className="px-5 py-2.5 bg-warning hover:bg-warning-600 text-white rounded-lg text-sm font-semibold flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                           >
@@ -1439,6 +1456,91 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                                   <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                                 )}
                                 Confirmar Encerramento
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Formulário Retornar para Análise */}
+                        {showReturnToAnalysisForm && (
+                          <div className="bg-warning/5 dark:bg-warning/10 border border-warning/20 rounded-lg p-4 space-y-4">
+                            <h4 className="text-sm font-semibold text-warning flex items-center gap-2">
+                              <MdPlayArrow size={18} className="text-warning" /> Retornar Garantia para Análise
+                            </h4>
+                            <p className="text-xs text-gray-600 dark:text-slate-400">
+                              Registre o retorno manual de contato do cliente realizado fora da plataforma. A garantia voltará para o status <strong>Em Análise</strong>.
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label htmlFor="returnToAnalysisChannel" className="block text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">
+                                  Canal de Comunicação *
+                                </label>
+                                <select
+                                  id="returnToAnalysisChannel"
+                                  value={returnToAnalysisChannel}
+                                  onChange={(e) => setReturnToAnalysisChannel(e.target.value)}
+                                  className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-warning/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-warning dark:text-slate-100 text-sm"
+                                >
+                                  <option value="WhatsApp">WhatsApp</option>
+                                  <option value="E-mail">E-mail</option>
+                                  <option value="Telefone">Telefone</option>
+                                  <option value="Outro">Outro</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label htmlFor="returnToAnalysisAssignee" className="block text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">
+                                  Responsável pela Análise
+                                </label>
+                                <select
+                                  id="returnToAnalysisAssignee"
+                                  value={nextAssigneeId}
+                                  onChange={(e) => setNextAssigneeId(e.target.value)}
+                                  className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-warning/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-warning dark:text-slate-100 text-sm"
+                                >
+                                  <option value="">— Sem responsável —</option>
+                                  {assignableUsers.map((u) => (
+                                    <option key={u.id} value={u.id}>
+                                      {u.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                            <div>
+                              <label htmlFor="returnToAnalysisNotes" className="block text-xs font-semibold text-gray-500 dark:text-slate-400 mb-2">
+                                Justificativa / Detalhes do Contato *
+                              </label>
+                              <textarea
+                                id="returnToAnalysisNotes"
+                                value={returnToAnalysisNotes}
+                                onChange={(e) => setReturnToAnalysisNotes(e.target.value)}
+                                rows={4}
+                                className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-warning/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-warning dark:text-slate-100 text-sm"
+                                placeholder="Descreva o que foi acordado ou respondido pelo cliente (ex: cliente enviou os dados via WhatsApp)..."
+                                required
+                              />
+                            </div>
+                            <div className="flex justify-end gap-3">
+                              <button
+                                onClick={() => {
+                                  setShowReturnToAnalysisForm(false);
+                                  setReturnToAnalysisNotes('');
+                                  setNextAssigneeId('');
+                                }}
+                                className="px-4 py-2 rounded-lg text-xs font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-800"
+                                disabled={startAnalysisMutation.isPending}
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                onClick={handleReturnToAnalysis}
+                                disabled={startAnalysisMutation.isPending || !returnToAnalysisNotes.trim()}
+                                className="px-4 py-2 bg-warning hover:bg-warning-600 text-white rounded-lg text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                              >
+                                {startAnalysisMutation.isPending && (
+                                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                )}
+                                Confirmar Retorno
                               </button>
                             </div>
                           </div>
