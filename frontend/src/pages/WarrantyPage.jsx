@@ -75,14 +75,13 @@ export default function WarrantyPage() {
     queryFn: () => storesAPI.getPublicStores(),
   });
 
-  // '' = nenhum, 'other' = não listado (preenche manual), id = produto cadastrado.
+  // '' = nenhum, id = produto cadastrado.
   const [selectedProductId, setSelectedProductId] = useState('');
   const [selectedStore, setSelectedStore] = useState('');
-  const productLocked = selectedProductId !== '' && selectedProductId !== 'other';
 
   const handleProductSelect = (value) => {
     setSelectedProductId(value);
-    if (value === '' || value === 'other') {
+    if (value === '') {
       handleChange('product', 'brand', 'Relm');
       handleChange('product', 'productName', '');
       handleChange('product', 'model', '');
@@ -298,28 +297,23 @@ export default function WarrantyPage() {
               <section>
                 <h2 className="font-title text-2xl font-bold mb-4">Dados do Produto</h2>
 
-                {/* Seleção do produto cadastrado (preenche os campos). */}
-                <div className="mb-4">
-                  <label className="label">Produto cadastrado</label>
-                  <select
-                    className="input"
-                    value={selectedProductId}
-                    onChange={(e) => handleProductSelect(e.target.value)}
-                  >
-                    <option value="">Selecione seu produto…</option>
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}{p.model ? ` — ${p.model}` : ''} ({p.brand}){p.year ? ` ${p.year}` : ''}
-                      </option>
-                    ))}
-                    <option value="other">Outro / não listado</option>
-                  </select>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Não encontrou? Escolha “Outro / não listado” e preencha manualmente.
-                  </p>
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">Produto *</label>
+                    <select
+                      required
+                      className="input"
+                      value={selectedProductId}
+                      onChange={(e) => handleProductSelect(e.target.value)}
+                    >
+                      <option value="">Selecione seu produto…</option>
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}{p.model ? ` — ${p.model}` : ''} ({p.brand}){p.year ? ` ${p.year}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label className="label">Marca *</label>
                     <input
@@ -327,21 +321,7 @@ export default function WarrantyPage() {
                       required
                       className="input"
                       value={formData.product.brand}
-                      readOnly={productLocked}
-                      onChange={(e) => handleChange('product', 'brand', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="label">Produto *</label>
-                    <input
-                      type="text"
-                      required
-                      className="input"
-                      value={formData.product.productName}
-                      readOnly={productLocked}
-                      onChange={(e) =>
-                        handleChange('product', 'productName', e.target.value)
-                      }
+                      readOnly={true}
                     />
                   </div>
                   <div>
@@ -351,10 +331,7 @@ export default function WarrantyPage() {
                       required
                       className="input"
                       value={formData.product.model}
-                      readOnly={productLocked}
-                      onChange={(e) =>
-                        handleChange('product', 'model', e.target.value)
-                      }
+                      readOnly={true}
                     />
                   </div>
                   <div>

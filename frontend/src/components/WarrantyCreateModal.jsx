@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { MdClose, MdSearch, MdPerson, MdCheck } from 'react-icons/md';
-import { warrantyAPI, customersAPI } from '../services/api';
+import { warrantyAPI, customersAPI, productsAPI } from '../services/api';
 
 const EMPTY_FORM = {
   serialNumber: '',
@@ -32,6 +32,36 @@ export default function WarrantyCreateModal({ onClose, onSuccess }) {
   const [searching, setSearching] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const debounceRef = useRef(null);
+
+  // Seleção de produto
+  const [selectedProductId, setSelectedProductId] = useState('');
+
+  const { data: products = [] } = useQuery({
+    queryKey: ['admin-products'],
+    queryFn: () => productsAPI.getAll(),
+  });
+
+  const handleProductSelect = (prodId) => {
+    setSelectedProductId(prodId);
+    if (!prodId) {
+      setForm((prev) => ({
+        ...prev,
+        productType: '',
+        brand: 'Relm Bikes',
+        model: '',
+      }));
+      return;
+    }
+    const p = products.find((x) => x.id === prodId);
+    if (p) {
+      setForm((prev) => ({
+        ...prev,
+        productType: p.name || p.productType || '',
+        brand: p.brand || 'Relm Bikes',
+        model: p.model || '',
+      }));
+    }
+  };
 
   // Busca de clientes com debounce.
   useEffect(() => {
@@ -209,20 +239,32 @@ export default function WarrantyCreateModal({ onClose, onSuccess }) {
           {/* Produto */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
+              <label htmlFor="selectedProduct" className="label">Produto *</label>
+              <select
+                id="selectedProduct"
+                value={selectedProductId}
+                onChange={(e) => handleProductSelect(e.target.value)}
+                className="input"
+              >
+                <option value="">Selecione seu produto…</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}{p.model ? ` — ${p.model}` : ''} ({p.brand}){p.year ? ` ${p.year}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
               <label htmlFor="serialNumber" className="label">Número de Série *</label>
               <input id="serialNumber" name="serialNumber" value={form.serialNumber} onChange={handleChange} className="input" />
             </div>
             <div>
               <label htmlFor="model" className="label">Modelo *</label>
-              <input id="model" name="model" value={form.model} onChange={handleChange} className="input" />
-            </div>
-            <div>
-              <label htmlFor="productType" className="label">Tipo do Produto *</label>
-              <input id="productType" name="productType" value={form.productType} onChange={handleChange} className="input" placeholder="Ex.: Bicicleta, Acessório..." />
+              <input id="model" name="model" value={form.model} className="input" readOnly={true} />
             </div>
             <div>
               <label htmlFor="brand" className="label">Marca</label>
-              <input id="brand" name="brand" value={form.brand} onChange={handleChange} className="input" />
+              <input id="brand" name="brand" value={form.brand} className="input" readOnly={true} />
             </div>
             <div>
               <label htmlFor="purchaseDate" className="label">Data da Compra</label>
