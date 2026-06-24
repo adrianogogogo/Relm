@@ -15,6 +15,53 @@ const typeLabel = (v) => SOLUTION_TYPES.find((t) => t.value === v)?.label || v;
 const fmtBRL = (v) =>
   v == null ? null : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+const formatDateTime = (value) => {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  const dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const timeStr = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return `${dateStr} ${timeStr}`;
+};
+
+const typeBadge = (type) => {
+  let colors = 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+  if (type === 'reparo') colors = 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900/60';
+  if (type === 'troca') colors = 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-300 dark:border-orange-900/60';
+  if (type === 'reembolso') colors = 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/60';
+  if (type === 'cortesia') colors = 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300 dark:border-purple-900/60';
+  
+  return (
+    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${colors} flex items-center gap-1`}>
+      {typeLabel(type)}
+    </span>
+  );
+};
+
+const statusBadge = (s, isAwaitingDirector) => {
+  if (s.status === 'aprovado') {
+    return (
+      <span className="px-3 py-1 rounded-full text-xs font-bold bg-success text-white dark:bg-emerald-600 dark:text-white flex items-center gap-1 shrink-0">
+        ✔️ Aprovado
+      </span>
+    );
+  }
+  if (s.status === 'reprovado') {
+    return (
+      <span className="px-3 py-1 rounded-full text-xs font-bold bg-error text-white dark:bg-rose-600 dark:text-white flex items-center gap-1 shrink-0">
+        ❌ Reprovado
+      </span>
+    );
+  }
+  // pendente
+  const label = isAwaitingDirector ? 'Aguardando diretor' : 'Aguardando gestor';
+  return (
+    <span className="px-3 py-1 rounded-full text-xs font-bold bg-warning/15 text-warning border border-warning/30 flex items-center gap-1 shrink-0">
+      ⏳ {label}
+    </span>
+  );
+};
+
 export default function WarrantyWorkflowPanel({ warranty, onChanged, assignableUsers = [], userType }) {
   const isAdminOrManager = userType === 'ADMIN_RELM' || userType === 'GERENTE_RELM';
 
@@ -216,27 +263,71 @@ export default function WarrantyWorkflowPanel({ warranty, onChanged, assignableU
           const isAwaitingDirector = s.status === 'pendente' && s.authorizationLevel === 'diretor';
           const canActAsGestor = isAwaitingGestor && ['GERENTE_RELM', 'ADMIN_RELM'].includes(userType);
           const canActAsDirector = isAwaitingDirector && userType === 'ADMIN_RELM';
-          const badge = s.status === 'aprovado' ? 'bg-success/15 text-success'
-            : s.status === 'reprovado' ? 'bg-error/15 text-error'
-            : 'bg-warning/15 text-warning';
           return (
-            <div key={s.id} className="bg-gray-50 dark:bg-slate-900/40 rounded-lg p-3 space-y-2">
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <span className="font-semibold text-gray-900 dark:text-slate-100">{typeLabel(s.solutionType)}</span>
-                <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${badge}`}>
-                  {s.status === 'pendente' ? (isAwaitingDirector ? 'Aguardando diretor' : 'Aguardando gestor') : s.status}
-                </span>
-                {s.hasCost && fmtBRL(s.costValue) && (
-                  <span className="text-xs text-gray-600 dark:text-slate-400">{fmtBRL(s.costValue)}</span>
-                )}
+            <div key={s.id} className="border border-gray-200 dark:border-slate-800 rounded-xl p-4 space-y-3 bg-white dark:bg-slate-950/20">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  {typeBadge(s.solutionType)}
+                  {s.requiresDirector && (
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 flex items-center gap-1">
+                      🔒 Requer Diretor
+                    </span>
+                  )}
+                </div>
+                {statusBadge(s, isAwaitingDirector)}
               </div>
-              <p className="text-sm text-gray-700 dark:text-slate-300 whitespace-pre-wrap">{s.description}</p>
-              {s.status === 'reprovado' && s.rejectionReason && (
-                <p className="text-xs text-error">Motivo: {s.rejectionReason}</p>
+
+              <p className="text-sm text-gray-700 dark:text-slate-300 font-medium whitespace-pre-wrap">{s.description}</p>
+
+              {s.hasCost && s.costValue != null && (
+                <div>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500 text-slate-900">
+                    💰 Custo: {fmtBRL(s.costValue)}
+                  </span>
+                </div>
               )}
 
+              <div className="border-t border-gray-100 dark:border-slate-800/80 pt-2 space-y-1">
+                <p className="text-xs text-gray-500 dark:text-slate-400">
+                  Proposta por: <span className="font-semibold text-gray-700 dark:text-slate-300">{s.proposedBy || 'Desconhecido'}</span>
+                  {s.createdAt && ` • ${formatDateTime(s.createdAt)}`}
+                </p>
+
+                {s.status === 'aprovado' && (
+                  <div className="space-y-0.5">
+                    {s.approvedBy && (
+                      <p className="text-xs text-success flex items-center gap-1">
+                        ✔️ Aprovado (nível 1) por: <span className="font-semibold">{s.approvedBy}</span>
+                        {s.approvedAt && ` em ${formatDateTime(s.approvedAt)}`}
+                      </p>
+                    )}
+                    {s.directorApprovedBy && (
+                      <p className="text-xs text-success flex items-center gap-1">
+                        ✔️ Autorizado (diretor) por: <span className="font-semibold">{s.directorApprovedBy}</span>
+                        {s.directorApprovedAt && ` em ${formatDateTime(s.directorApprovedAt)}`}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {s.status === 'reprovado' && (
+                  <div className="space-y-0.5 text-xs text-error">
+                    {s.rejectionReason && (
+                      <p className="flex items-center gap-1">
+                        ❌ Reprovado por gestor. Motivo: <span className="font-semibold">{s.rejectionReason}</span>
+                      </p>
+                    )}
+                    {s.directorRejectionReason && (
+                      <p className="flex items-center gap-1">
+                        ❌ Reprovado por diretor. Motivo: <span className="font-semibold">{s.directorRejectionReason}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {rejectingId === s.id ? (
-                <div className="space-y-2">
+                <div className="space-y-2 border-t border-gray-100 dark:border-slate-800 pt-2">
                   <textarea className="input" rows={2} placeholder="Motivo da reprovação" value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
                   <div className="flex justify-end gap-2">
                     <button className="text-xs font-semibold text-gray-600 px-3" onClick={() => { setRejectingId(null); setRejectReason(''); }}>Cancelar</button>
@@ -248,7 +339,7 @@ export default function WarrantyWorkflowPanel({ warranty, onChanged, assignableU
                   </div>
                 </div>
               ) : (canActAsGestor || canActAsDirector) && (
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-2 pt-1">
                   <button className="px-3 py-1.5 border border-error text-error rounded-lg text-xs font-semibold hover:bg-error hover:text-white"
                     onClick={() => setRejectingId(s.id)}>
                     Reprovar
