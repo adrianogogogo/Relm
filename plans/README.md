@@ -14,12 +14,20 @@ row when done.
 
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
+| 005  | Stop duplicate auto-tasks when a stage is re-entered (rework path) | P1 | S | 001 (soft) | DONE (executor `b200d2f`, reviewed — unmerged) |
 | 001  | Establish a backend test baseline (Jest harness + first characterization specs) | P1 | M | — | TODO |
-| 002  | Mask CPF/phone for LOJA & DISTRIBUIDOR (LGPD) | P1 | M | 001 | TODO |
+| 002  | Mask CPF/phone for LOJA & DISTRIBUIDOR (LGPD) | P1 | M | 001 | DONE (executor `678e531`, reviewed, merged) |
 | 003  | Fix unified refresh for STORE (and customer) tokens | P1 | S | 001 | TODO |
 | 004  | Paginate `warranty.findAll` (bound the claims query) | P2 | S | 001 | TODO |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) | REJECTED (one-line rationale)
+
+> **Reconciled 2026-06-23 at `9472ed4`** (after the warranty resumo / tasks /
+> attachments / auto-generation work). Re-verified: 001–004 are all still valid
+> and unaddressed (the feature work didn't touch tests, customer masking,
+> `auth.refresh`, or `warranty.findAll`). Added 005 (a bug introduced by the
+> auto-task generation). 005 is the highest leverage (real bug, small fix) —
+> recommend it first, then 001.
 
 ## Dependency notes
 
@@ -28,6 +36,22 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) | REJECTED 
   later plan must create its own `*.spec.ts` from scratch using the same
   conventions 001 documents. None of 002/003/004 depend on each other — they
   touch disjoint files and may be done in any order after 001.
+
+## Considered, not yet planned (deferred — ask before planning)
+
+- **`WarrantyService` god service (1222 lines)** — tech-debt; split tasks /
+  attachments / templates / auto-generation into focused services. M effort,
+  MED risk. Worth a plan only when someone takes on the refactor; do 001 first
+  so the split is test-covered.
+- **`WarrantyReviewModal.jsx` god component (2422 lines)** — frontend tech-debt;
+  extract the 5 tabs into child components. M effort, MED risk.
+- **Admin CRUD for `warranty_task_templates`** (direction) — templates are
+  DB-only, editable via SQL/migration; this already caused a prod-vs-code
+  divergence. A management UI/endpoints would make the workflow configurable
+  without deploys. M effort.
+- **Attachments on local disk → object storage (S3)** (direction) — marked as a
+  `ponytail:` upgrade path in code; matters if uploads grow or the API scales
+  horizontally (the 2 PM2 instances currently share one local disk). M effort.
 
 ## Findings considered and rejected (do not re-audit)
 

@@ -12,10 +12,12 @@ import { WarrantyService } from './warranty.service';
 import { CreateWarrantyPublicDto } from './dto/create-warranty-public.dto';
 import { CreateWarrantyAdminDto } from './dto/create-warranty-admin.dto';
 import { SetCostDto } from './dto/set-cost.dto';
-import { RevertStatusDto } from './dto/revert-status.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { AssignClaimDto } from './dto/assign-claim.dto';
+import { CreateSolutionDto } from './dto/create-solution.dto';
+import { ApproveSolutionDto } from './dto/approve-solution.dto';
+import { UpdateClaimStatusDto } from './dto/update-claim-status.dto';
 
 // Upload de anexos para o disco do servidor. Limite 10MB; PDF e imagens.
 // ponytail: disco local — trocar por S3 se o volume crescer.
@@ -79,59 +81,6 @@ export class WarrantyController {
     return this.warrantyService.findOne(id);
   }
 
-  @Patch('warranty/claims/:id/status')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Alterar status da garantia (FSM)' })
-  async updateStatus(
-    @Param('id') id: string,
-    @Body() body: any,
-    @Request() req: any,
-  ) {
-    return this.warrantyService.updateStatus(
-      id,
-      body.to_status,
-      req.user.userId,
-      body,
-    );
-  }
-
-  @Post('warranty/claims/:id/approve')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Aprovar garantia e enviar email com token' })
-  async approve(
-    @Param('id') id: string,
-    @Body() body: { adminNotes?: string },
-    @Request() req: any,
-  ) {
-    return this.warrantyService.approveWarranty(
-      id,
-      req.user.userId,
-      body.adminNotes,
-    );
-  }
-
-  @Post('warranty/claims/:id/reject')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Rejeitar garantia e enviar email' })
-  async reject(
-    @Param('id') id: string,
-    @Body() body: { rejectionReason: string; adminNotes?: string },
-    @Request() req: any,
-  ) {
-    return this.warrantyService.rejectWarranty(
-      id,
-      req.user.userId,
-      body.rejectionReason,
-      body.adminNotes,
-    );
-  }
-
   @Patch('warranty/claims/:id/cost')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_RELM', 'GERENTE_RELM')
@@ -145,26 +94,6 @@ export class WarrantyController {
     return this.warrantyService.setCost(
       id,
       body.cost ?? null,
-      req.user?.userId,
-    );
-  }
-
-  @Patch('warranty/claims/:id/revert-status')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM')
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Reverter status da garantia (override admin/gerente)',
-  })
-  async revertStatus(
-    @Param('id') id: string,
-    @Body() body: RevertStatusDto,
-    @Request() req: any,
-  ) {
-    return this.warrantyService.revertStatus(
-      id,
-      body.toStatus,
-      body.reason,
       req.user?.userId,
     );
   }
@@ -197,6 +126,60 @@ export class WarrantyController {
     @Request() req: any,
   ) {
     return this.warrantyService.assignClaim(id, body.userId, req.user?.userId);
+  }
+
+  // ── Novo workflow (status livre + soluções 2 níveis) ────────────────────────
+
+  @Get('warranty/meta/statuses')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Listar status configuráveis do workflow' })
+  async listStatuses() {
+    return this.warrantyService.listStatuses();
+  }
+
+  @Patch('warranty/claims/:id/workflow-status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Atualizar status (tabela) + passar a bola' })
+  async updateWorkflowStatus(
+    @Param('id') id: string,
+    @Body() body: UpdateClaimStatusDto,
+    @Request() req: any,
+  ) {
+    return this.warrantyService.updateClaimStatus(id, body, req.user?.userId);
+  }
+
+  @Post('warranty/claims/:id/solutions')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Propor solução' })
+  async addSolution(
+    @Param('id') id: string,
+    @Body() body: CreateSolutionDto,
+    @Request() req: any,
+  ) {
+    return this.warrantyService.addSolution(id, body, req.user?.userId);
+  }
+
+  @Patch('warranty/claims/:id/solutions/:solutionId/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Aprovar/reprovar solução (2 níveis)' })
+  async approveSolution(
+    @Param('id') id: string,
+    @Param('solutionId') solutionId: string,
+    @Body() body: ApproveSolutionDto,
+    @Request() req: any,
+  ) {
+    return this.warrantyService.approveSolution(id, solutionId, body, {
+      userId: req.user?.userId,
+      role: req.user?.role,
+    });
   }
 
   // ── Tarefas da garantia (Onda 2) ────────────────────────────────────────────

@@ -186,7 +186,7 @@ model User {
   // Relations
   store          Store?       @relation(fields: [storeId], references: [id])
   distributor    Distributor? @relation(fields: [distributorId], references: [id])
-  warrantyEvents WarrantyEvent[]
+  // warrantyEvents WarrantyEvent[] // DEPRECATED (fase 4)
   assignedClaims WarrantyClaim[] @relation("ClaimAssignee")
   auditLogs      AuditLog[]
 
@@ -215,15 +215,15 @@ model Distributor {
 // WARRANTY MODULE
 // ============================================
 
-enum WarrantyStatus {
-  RECEBIDO
-  EM_ANALISE
-  AGUARDANDO_CLIENTE
-  APROVADO
-  REPROVADO
-  FINALIZADO
-  CANCELADO
-}
+// enum WarrantyStatus {
+//   RECEBIDO
+//   EM_ANALISE
+//   AGUARDANDO_CLIENTE
+//   APROVADO
+//   REPROVADO
+//   FINALIZADO
+//   CANCELADO
+// }
 
 enum LinkStatus {
   PENDING_REVIEW
@@ -251,7 +251,8 @@ model WarrantyClaim {
   
   // Status
   linkStatus           LinkStatus     @default(PENDING_REVIEW) @map("link_status")
-  status               WarrantyStatus @default(RECEBIDO)
+  // status → removido na fase 4. Agora o fluxo é controlado por statusId (FK warranty_statuses).
+  statusId             Int?           @map("status_id")
   
   // Observações
   customerNotes        String?        @map("customer_notes") @db.Text
@@ -286,38 +287,95 @@ model WarrantyClaim {
   customer Customer @relation(fields: [customerId], references: [id])
   product  Product  @relation(fields: [productId], references: [id])
   store    Store?   @relation(fields: [storeId], references: [id])
-  events   WarrantyEvent[]
+  // events   WarrantyEvent[] // DEPRECATED (fase 4)
   tasks    WarrantyTask[]
   attachments WarrantyAttachment[]
   assignedTo User? @relation("ClaimAssignee", fields: [assignedToUserId], references: [id])
+  statusDef  WarrantyStatusDef? @relation(fields: [statusId], references: [id])
+  history    WarrantyHistory[]
+  solutions  WarrantySolution[]
 
   @@index([protocolNumber])
   @@index([customerId])
-  @@index([status])
+  @@index([statusId])
   @@index([createdAt])
   @@index([assignedToUserId])
   @@map("warranty_claims")
 }
 
-model WarrantyEvent {
-  id              String   @id @default(uuid())
-  claimId         String   @map("claim_id")
-  eventType       String   @map("event_type")
-  fromStatus      String?  @map("from_status")
-  toStatus        String?  @map("to_status")
-  comment         String?  @db.Text
-  createdByUserId String?  @map("created_by_user_id")
-  
-  createdAt       DateTime @default(now()) @map("created_at")
-  
-  // Relations
-  claim      WarrantyClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
-  createdBy  User?         @relation(fields: [createdByUserId], references: [id])
-  
+// ============================================
+// NOVO WORKFLOW DE STATUS & SOLUÇÕES (RelmDesk-style)
+// ============================================
+
+// Status configuráveis do workflow (substitui o enum WarrantyStatus).
+model WarrantyStatusDef {
+  id          Int      @id @default(autoincrement())
+  name        String
+  slug        String   @unique
+  color       String   @default("#666666")
+  sortOrder   Int      @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  description String?
+
+  claims WarrantyClaim[]
+
+  @@map("warranty_statuses")
+}
+
+// Timeline imutável (substitui WarrantyEvent). Append-only.
+model WarrantyHistory {
+  id           String   @id @default(uuid())
+  claimId      String   @map("claim_id")
+  userId       String?  @map("user_id")
+  actionType   String   @map("action_type")
+  oldValue     String?  @map("old_value") @db.Text
+  newValue     String?  @map("new_value") @db.Text
+  note         String?  @db.Text
+  isInternal   Boolean  @default(true) @map("is_internal")
+  ballFromId   String?  @map("ball_from_id")
+  ballToId     String?  @map("ball_to_id")
+  statusFromId Int?     @map("status_from_id")
+  statusToId   Int?     @map("status_to_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  claim WarrantyClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
   @@index([claimId])
   @@index([createdAt])
-  @@map("warranty_events")
+  @@map("warranty_history")
 }
+
+// Soluções propostas com autorização em dois níveis (gestor → diretor).
+model WarrantySolution {
+  id                      String    @id @default(uuid())
+  claimId                 String    @map("claim_id")
+  description             String    @db.Text
+  solutionType            String    @default("outro") @map("solution_type") // reparo/troca/reembolso/cortesia/outro
+  hasCost                 Boolean   @default(false) @map("has_cost")
+  costValue               Decimal?  @db.Decimal(10, 2) @map("cost_value")
+  costNotes               String?   @map("cost_notes") @db.Text
+  status                  String    @default("pendente") // pendente/aprovado/reprovado
+  proposedBy              String?   @map("proposed_by")
+  approvedBy              String?   @map("approved_by")
+  approvedAt              DateTime? @map("approved_at")
+  rejectionReason         String?   @map("rejection_reason") @db.Text
+  requiresDirector        Boolean   @default(false) @map("requires_director")
+  authorizationLevel      String    @default("gestor") @map("authorization_level") // gestor/diretor/concluido
+  directorApprovedBy      String?   @map("director_approved_by")
+  directorApprovedAt      DateTime? @map("director_approved_at")
+  directorRejectionReason String?   @map("director_rejection_reason") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  claim WarrantyClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  @@index([claimId])
+  @@index([authorizationLevel, status])
+  @@map("warranty_solutions")
+}
+
+// Modelo WarrantyEvent removido na Fase 4. Tabela preservada no banco para histórico.
 
 // Tarefas operacionais de uma garantia (ex.: "Enviar pneu para a fabrica").
 // Status livre em pt-BR: pendente | concluida | cancelada. Responsavel (assignee)
@@ -365,21 +423,7 @@ model WarrantyAttachment {
 // Templates de tarefas automáticas vinculados a transições da FSM (Onda 7).
 // Ao transicionar para o status `toStatus`, o backend cria WarrantyTasks
 // automaticamente com base nos templates ativos.
-model WarrantyTaskTemplate {
-  id          String         @id @default(uuid())
-  toStatus    WarrantyStatus @map("to_status")
-  title       String
-  description String?        @db.Text
-  targetRole  UserRole       @map("target_role")
-  sortOrder   Int            @default(0) @map("sort_order")
-  active      Boolean        @default(true)
-
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at")
-
-  @@index([toStatus])
-  @@map("warranty_task_templates")
-}
+// Modelo WarrantyTaskTemplate removido na Fase 4. Tabela preservada no banco para histórico.
 
 // ============================================
 // BENEFITS MODULE

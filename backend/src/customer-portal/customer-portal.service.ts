@@ -32,7 +32,7 @@ export class CustomerPortalService {
       select: {
         id: true,
         protocolNumber: true,
-        status: true,
+        statusId: true,
         invoiceNumber: true,
         purchaseStoreName: true,
         purchaseStoreCity: true,
@@ -49,13 +49,12 @@ export class CustomerPortalService {
             serialNumber: true,
           },
         },
-        events: {
+        // events: removido na Fase 4 (WarrantyEvent → WarrantyHistory)
+        history: {
           orderBy: { createdAt: 'asc' },
           select: {
-            eventType: true,
-            fromStatus: true,
-            toStatus: true,
-            comment: true,
+            actionType: true,
+            note: true,
             createdAt: true,
           },
         },

@@ -94,13 +94,6 @@ export const warrantyAPI = {
   create: (data) => api.post('/warranty/claims', data).then((res) => res.data),
   getAll: (params) => api.get('/warranty/claims', { params }).then((res) => res.data),
   getById: (id) => api.get(`/warranty/claims/${id}`).then((res) => res.data),
-  updateStatus: (id, data) => api.patch(`/warranty/claims/${id}/status`, data).then((res) => res.data),
-  approve: (id, data) => api.post(`/warranty/claims/${id}/approve`, data).then((res) => res.data),
-  reject: (id, data) => api.post(`/warranty/claims/${id}/reject`, data).then((res) => res.data),
-  // Define/limpa o custo da garantia (ADMIN_RELM/GERENTE_RELM). cost: number | null
-  setCost: (id, cost) => api.patch(`/warranty/claims/${id}/cost`, { cost }).then((res) => res.data),
-  // Reverte o status (override administrativo). data: { toStatus, reason }
-  revertStatus: (id, data) => api.patch(`/warranty/claims/${id}/revert-status`, data).then((res) => res.data),
   validateToken: (token) => api.get(`/public/warranty/validate/${token}`).then((res) => res.data),
   // Tarefas da garantia (Onda 2)
   createTask: (id, data) => api.post(`/warranty/claims/${id}/tasks`, data).then((res) => res.data),
@@ -123,6 +116,11 @@ export const warrantyAPI = {
   // Atribuição de responsável (Onda 4)
   assignableUsers: () => api.get('/warranty/assignable-users').then((res) => res.data),
   assign: (id, userId) => api.patch(`/warranty/claims/${id}/assign`, { userId }).then((res) => res.data),
+  // Novo workflow (status configurável + soluções 2 níveis)
+  getStatuses: () => api.get('/warranty/meta/statuses').then((res) => res.data),
+  updateWorkflowStatus: (id, data) => api.patch(`/warranty/claims/${id}/workflow-status`, data).then((res) => res.data),
+  addSolution: (id, data) => api.post(`/warranty/claims/${id}/solutions`, data).then((res) => res.data),
+  approveSolution: (id, solutionId, data) => api.patch(`/warranty/claims/${id}/solutions/${solutionId}/approve`, data).then((res) => res.data),
 };
 
 export const benefitsAPI = {

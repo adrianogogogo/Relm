@@ -140,8 +140,8 @@ export class CustomersService {
             },
           },
           warrantyClaims: {
-            where: { status: { in: ['APROVADO', 'FINALIZADO'] } },
-            select: { id: true, status: true },
+            where: { statusId: { in: [6, 10] } },
+            select: { id: true, statusId: true },
           },
         },
         orderBy: { createdAt: 'desc' },
@@ -182,7 +182,7 @@ export class CustomersService {
           select: {
             id: true,
             protocolNumber: true,
-            status: true,
+            statusId: true,
             createdAt: true,
             product: {
               select: {

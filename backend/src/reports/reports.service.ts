@@ -7,7 +7,7 @@ export class ReportsService {
 
   async getWarrantySummary() {
     const summary = await this.prisma.warrantyClaim.groupBy({
-      by: ['status'],
+      by: ['statusId'],
       _count: true,
     });
     return summary;
@@ -22,7 +22,7 @@ export class ReportsService {
       totalInsuranceQuotes,
       recentWarranties,
     ] = await Promise.all([
-      this.prisma.warrantyClaim.groupBy({ by: ['status'], _count: true }),
+      this.prisma.warrantyClaim.groupBy({ by: ['statusId'], _count: true }),
       this.prisma.customer.count({ where: { active: true } }),
       this.prisma.store.count({ where: { active: true } }),
       this.prisma.event.count({ where: { active: true } }),
@@ -33,7 +33,7 @@ export class ReportsService {
         select: {
           id: true,
           protocolNumber: true,
-          status: true,
+          statusId: true,
           createdAt: true,
           customer: { select: { fullName: true } },
         },
@@ -42,7 +42,7 @@ export class ReportsService {
 
     const warrantyByStatus: Record<string, number> = {};
     warrantyCounts.forEach((item) => {
-      warrantyByStatus[item.status] = item._count;
+      warrantyByStatus[item.statusId] = item._count;
     });
 
     const totalWarranties = Object.values(warrantyByStatus).reduce(

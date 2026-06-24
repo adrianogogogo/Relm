@@ -1,6 +1,6 @@
-import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { WarrantyStatus, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { CustomersService } from '../customers/customers.service';
 import { CreateWarrantyPublicDto } from './dto/create-warranty-public.dto';
 import { CreateWarrantyAdminDto } from './dto/create-warranty-admin.dto';
@@ -11,26 +11,28 @@ import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 
-const FSM_TRANSITIONS = {
-  RECEBIDO: ['EM_ANALISE'],
-  EM_ANALISE: ['AGUARDANDO_CLIENTE', 'APROVADO', 'REPROVADO'],
-  AGUARDANDO_CLIENTE: ['EM_ANALISE'],
-  APROVADO: ['FINALIZADO'],
-  REPROVADO: ['FINALIZADO'],
-  FINALIZADO: [],
-  CANCELADO: [],
-};
-
-// Fechamento automático (Onda 4): ao entrar num status resolvido, agenda a data
-// de fechamento. ponytail: só ARMAZENA/EXIBE a data — um cron que de fato muda o
-// status é o upgrade path (não há scheduler hoje).
-const RESOLVED_STATUSES = ['APROVADO', 'REPROVADO', 'FINALIZADO'];
+// Fechamento automático baseado em statusId (novo workflow).
+// IDs fixos da tabela warranty_statuses: 9 = Resolvido, 10 = Fechado/Arquivado.
 const AUTO_CLOSE_DAYS = 20;
-function autoClosePatch(toStatus: string) {
-  return RESOLVED_STATUSES.includes(toStatus)
+function autoCloseForStatus(statusId?: number | null) {
+  return statusId === 9 || statusId === 10
     ? { autoCloseAt: new Date(Date.now() + AUTO_CLOSE_DAYS * 24 * 60 * 60 * 1000) }
-    : {};
+    : { autoCloseAt: null };
 }
+
+// ── Novo workflow (RelmDesk-style): soluções com autorização em 2 níveis ──────
+// gestor = GERENTE_RELM, diretor = ADMIN_RELM.
+const SOLUTION_TYPES_REQUIRE_DIRECTOR = ['troca', 'reembolso'];
+const SOLUTION_TYPE_LABELS: Record<string, string> = {
+  reparo: 'Reparo / Manutenção',
+  troca: 'Troca de Produto',
+  reembolso: 'Reembolso',
+  cortesia: 'Cortesia / Bonificação',
+  outro: 'Outro',
+};
+// IDs fixos da tabela warranty_statuses (seed da migração).
+const STATUS_EM_EXECUCAO = 6;
+const STATUS_LOGISTICA = 7;
 
 @Injectable()
 export class WarrantyService {
@@ -90,17 +92,18 @@ export class WarrantyService {
         purchaseStoreState: data.state,
         customerNotes: data.customer_notes,
         linkStatus: 'PENDING_REVIEW',
-        status: WarrantyStatus.RECEBIDO,
+        statusId: 1,
       },
     });
 
-    // Create event
-    await this.prisma.warrantyEvent.create({
+    // Histórico (novo workflow)
+    await this.prisma.warrantyHistory.create({
       data: {
         claimId: claim.id,
-        eventType: 'CREATED',
-        toStatus: 'RECEBIDO',
-        comment: 'Garantia criada via formulário público',
+        actionType: 'ticket_created',
+        newValue: 'Garantia criada via formulário público',
+        isInternal: true,
+        statusToId: 1,
       },
     });
 
@@ -119,7 +122,7 @@ export class WarrantyService {
 
     return {
       protocol_number: claim.protocolNumber,
-      status: claim.status,
+      statusId: claim.statusId,
       created_at: claim.createdAt,
     };
   }
@@ -132,7 +135,6 @@ export class WarrantyService {
    *  - Como é um cadastro confiável feito pela equipe, o linkStatus já entra
    *    como CONFIRMED (o enum LinkStatus não possui VERIFIED; CONFIRMED é o
    *    valor que representa vínculo validado).
-   *  - Mantém o mesmo status inicial RECEBIDO e a mesma FSM/eventos/notificações.
    */
   async createByAdmin(dto: CreateWarrantyAdminDto, adminUserId?: string) {
     // 1) Valida que o cliente existe.
@@ -182,18 +184,19 @@ export class WarrantyService {
         customerNotes: dto.customerNotes,
         adminNotes: dto.adminNotes,
         linkStatus: 'CONFIRMED',
-        status: WarrantyStatus.RECEBIDO,
+        statusId: 1,
       },
     });
 
-    // 6) Evento de criação.
-    await this.prisma.warrantyEvent.create({
+    // 6) Histórico (novo workflow).
+    await this.prisma.warrantyHistory.create({
       data: {
         claimId: claim.id,
-        eventType: 'CREATED',
-        toStatus: 'RECEBIDO',
-        comment: 'Garantia cadastrada pelo painel administrativo',
-        ...(adminUserId && { createdByUserId: adminUserId }),
+        actionType: 'ticket_created',
+        newValue: 'Garantia cadastrada pelo painel administrativo',
+        isInternal: true,
+        statusToId: 1,
+        userId: adminUserId ?? null,
       },
     });
 
@@ -212,14 +215,14 @@ export class WarrantyService {
     return {
       id: claim.id,
       protocol_number: claim.protocolNumber,
-      status: claim.status,
+      statusId: claim.statusId,
       created_at: claim.createdAt,
     };
   }
 
   async findAll(filters: any) {
     const where: any = {
-      ...(filters.status && { status: filters.status }),
+      ...(filters.statusId && { statusId: Number(filters.statusId) }),
       ...(filters.protocol_number && {
         protocolNumber: { contains: filters.protocol_number },
       }),
@@ -283,14 +286,7 @@ export class WarrantyService {
         },
         product: true,
         store: true,
-        events: {
-          include: {
-            createdBy: {
-              select: { id: true, name: true, email: true },
-            },
-          },
-          orderBy: { createdAt: 'asc' },
-        },
+        // events: removido na Fase 4 (WarrantyEvent → WarrantyHistory)
         tasks: {
           orderBy: { createdAt: 'asc' },
         },
@@ -300,6 +296,13 @@ export class WarrantyService {
         },
         assignedTo: {
           select: { id: true, name: true, email: true },
+        },
+        statusDef: true,
+        history: {
+          orderBy: { createdAt: 'asc' },
+        },
+        solutions: {
+          orderBy: { createdAt: 'desc' },
         },
       },
     });
@@ -340,20 +343,22 @@ export class WarrantyService {
       include: { assignedTo: { select: { id: true, name: true, email: true } } },
     });
 
-    // Histórico best-effort (não bloqueia).
+    // Histórico (novo workflow).
     try {
-      await this.prisma.warrantyEvent.create({
+      const note = targetId
+        ? `Responsável definido: ${updated.assignedTo?.name ?? targetId}`
+        : 'Responsável removido';
+      await this.prisma.warrantyHistory.create({
         data: {
           claimId: id,
-          eventType: 'ASSIGNED',
-          comment: targetId
-            ? `Responsável definido: ${updated.assignedTo?.name ?? targetId}`
-            : 'Responsável removido',
-          ...(adminUserId && { createdByUserId: adminUserId }),
+          actionType: 'note',
+          note,
+          isInternal: true,
+          userId: adminUserId ?? null,
         },
       });
     } catch (error) {
-      this.logger.error(`Erro ao registrar evento de atribuição ${id}: ${error.message}`);
+      this.logger.error(`Erro ao registrar histórico de atribuição ${id}: ${error.message}`);
     }
 
     return updated;
@@ -374,8 +379,8 @@ export class WarrantyService {
       data: {
         claimId,
         title: data.title,
-        // Tarefa manual herda a etapa (status) atual da garantia.
-        stage: claim.status as string,
+        // Tarefa manual: stage livre (não depende mais do enum status).
+        stage: 'workflow',
         ...(data.assignee && { assignee: data.assignee }),
         ...(data.assigneeRole && { assigneeRole: data.assigneeRole }),
         ...(data.dueDate && { dueDate: new Date(data.dueDate) }),
@@ -384,17 +389,19 @@ export class WarrantyService {
       },
     });
 
+    // Histórico (novo workflow)
     try {
-      await this.prisma.warrantyEvent.create({
+      await this.prisma.warrantyHistory.create({
         data: {
           claimId,
-          eventType: 'TASK_CREATED',
-          comment: `Tarefa criada: "${task.title}"`,
-          ...(userId && { createdByUserId: userId }),
+          actionType: 'task_created',
+          note: `Tarefa criada: "${task.title}"`,
+          isInternal: true,
+          userId: userId ?? null,
         },
       });
     } catch (error) {
-      this.logger.error(`Erro ao criar evento de histórico para createTask: ${error.message}`);
+      this.logger.error(`Erro ao criar histórico para createTask: ${error.message}`);
     }
 
     return task;
@@ -430,16 +437,17 @@ export class WarrantyService {
           comment = `Tarefa reaberta: "${updated.title}"`;
         }
       }
-      await this.prisma.warrantyEvent.create({
+      await this.prisma.warrantyHistory.create({
         data: {
           claimId: updated.claimId,
-          eventType: 'TASK_UPDATED',
-          comment,
-          ...(userId && { createdByUserId: userId }),
+          actionType: 'task_created',
+          note: comment,
+          isInternal: true,
+          userId: userId ?? null,
         },
       });
     } catch (error) {
-      this.logger.error(`Erro ao criar evento de histórico para updateTask: ${error.message}`);
+      this.logger.error(`Erro ao criar histórico para updateTask: ${error.message}`);
     }
 
     return updated;
@@ -452,17 +460,19 @@ export class WarrantyService {
     }
     await this.prisma.warrantyTask.delete({ where: { id: taskId } });
 
+    // Histórico (novo workflow)
     try {
-      await this.prisma.warrantyEvent.create({
+      await this.prisma.warrantyHistory.create({
         data: {
           claimId: task.claimId,
-          eventType: 'TASK_DELETED',
-          comment: `Tarefa excluída: "${task.title}"`,
-          ...(userId && { createdByUserId: userId }),
+          actionType: 'task_created',
+          note: `Tarefa excluída: "${task.title}"`,
+          isInternal: true,
+          userId: userId ?? null,
         },
       });
     } catch (error) {
-      this.logger.error(`Erro ao criar evento de histórico para deleteTask: ${error.message}`);
+      this.logger.error(`Erro ao criar histórico para deleteTask: ${error.message}`);
     }
 
     return { message: 'Tarefa removida.' };
@@ -494,17 +504,19 @@ export class WarrantyService {
       select: { id: true, fileName: true, mimeType: true, size: true, createdAt: true },
     });
 
+    // Histórico (novo workflow)
     try {
-      await this.prisma.warrantyEvent.create({
+      await this.prisma.warrantyHistory.create({
         data: {
           claimId,
-          eventType: 'ATTACHMENT_UPLOADED',
-          comment: `Arquivo anexado: "${att.fileName}"`,
-          ...(userId && { createdByUserId: userId }),
+          actionType: 'task_created',
+          note: `Arquivo anexado: "${att.fileName}"`,
+          isInternal: true,
+          userId: userId ?? null,
         },
       });
     } catch (error) {
-      this.logger.error(`Erro ao criar evento de histórico para createAttachment: ${error.message}`);
+      this.logger.error(`Erro ao criar histórico para createAttachment: ${error.message}`);
     }
 
     return att;
@@ -527,17 +539,19 @@ export class WarrantyService {
     await this.prisma.warrantyAttachment.delete({ where: { id: attId } });
     this.safeUnlink(att.storagePath); // best-effort, não bloqueia a remoção do registro
 
+    // Histórico (nov workflow)
     try {
-      await this.prisma.warrantyEvent.create({
+      await this.prisma.warrantyHistory.create({
         data: {
           claimId: att.claimId,
-          eventType: 'ATTACHMENT_DELETED',
-          comment: `Arquivo removido: "${att.fileName}"`,
-          ...(userId && { createdByUserId: userId }),
+          actionType: 'task_created',
+          note: `Arquivo removido: "${att.fileName}"`,
+          isInternal: true,
+          userId: userId ?? null,
         },
       });
     } catch (error) {
-      this.logger.error(`Erro ao criar evento de histórico para deleteAttachment: ${error.message}`);
+      this.logger.error(`Erro ao criar histórico para deleteAttachment: ${error.message}`);
     }
 
     return { message: 'Anexo removido.' };
@@ -553,180 +567,307 @@ export class WarrantyService {
     }
   }
 
-  async updateStatus(
-    id: string,
-    toStatus: WarrantyStatus,
-    userId: string,
-    data?: { comment?: string; rejection_reason?: string; resolution?: string },
+  // ============================================================
+  // NOVO WORKFLOW (RelmDesk-style): status livre + soluções 2 níveis
+  // ============================================================
+
+  async listStatuses() {
+    return this.prisma.warrantyStatusDef.findMany({ orderBy: { sortOrder: 'asc' } });
+  }
+
+  // Atualiza o status (tabela) e "passa a bola" (responsável). Grava histórico.
+  async updateClaimStatus(
+    claimId: string,
+    data: { statusId?: number; ballOwnerId?: string; note?: string; isInternal?: boolean },
+    userId?: string,
   ) {
-    const claim = await this.prisma.warrantyClaim.findUnique({
-      where: { id },
-    });
+    const claim = await this.prisma.warrantyClaim.findUnique({ where: { id: claimId } });
+    if (!claim) throw new NotFoundException('Garantia não encontrada');
 
-    if (!claim) {
-      throw new BadRequestException('Garantia não encontrada');
-    }
+    const oldStatusId = claim.statusId;
+    const oldBall = claim.assignedToUserId;
+    const newStatusId = data.statusId ?? oldStatusId;
+    const newBall = data.ballOwnerId || userId || oldBall || null;
 
-    // Validate FSM
-    const validTransitions = FSM_TRANSITIONS[claim.status];
-    if (!validTransitions.includes(toStatus)) {
-      throw new BadRequestException(
-        `Transição inválida de ${claim.status} para ${toStatus}`,
-      );
-    }
-
-    // Validate required fields
-    if (toStatus === 'AGUARDANDO_CLIENTE' && !data?.comment) {
-      throw new BadRequestException('Comment obrigatório para AGUARDANDO_CLIENTE');
-    }
-
-    if (toStatus === 'REPROVADO' && (!data?.comment || !data?.rejection_reason)) {
-      throw new BadRequestException('Comment e rejection_reason obrigatórios para REPROVADO');
-    }
-
-    if (toStatus === 'FINALIZADO' && !data?.resolution) {
-      throw new BadRequestException('Resolution obrigatório para FINALIZADO');
-    }
-
-    // Update claim
     const updated = await this.prisma.warrantyClaim.update({
-      where: { id },
+      where: { id: claimId },
+      data: { statusId: newStatusId, assignedToUserId: newBall, ...(autoCloseForStatus(newStatusId)) },
+    });
+
+    await this.prisma.warrantyHistory.create({
       data: {
-        status: toStatus,
-        ...(data?.rejection_reason && { rejectionReason: data.rejection_reason }),
-        ...(data?.resolution && { resolution: data.resolution }),
-        ...autoClosePatch(toStatus),
+        claimId,
+        userId: userId ?? null,
+        actionType: 'status_change',
+        note: data.note ?? null,
+        isInternal: data.isInternal ?? true,
+        statusFromId: oldStatusId ?? null,
+        statusToId: newStatusId ?? null,
+        ballFromId: oldBall ?? null,
+        ballToId: newBall,
       },
     });
 
-    // Create event
-    await this.prisma.warrantyEvent.create({
-      data: {
-        claimId: id,
-        eventType: 'STATUS_CHANGE',
-        fromStatus: claim.status,
-        toStatus,
-        comment: data?.comment,
-        createdByUserId: userId,
-      },
-    });
-
-    // Auditoria best-effort (nunca lança).
-    await this.auditLogsService.log({
-      userId,
-      action: 'WARRANTY_STATUS_CHANGED',
-      entity: 'warranty_claims',
-      entityId: id,
-      metadata: {
-        protocolNumber: claim.protocolNumber,
-        fromStatus: claim.status,
-        toStatus,
-        comment: data?.comment ?? null,
-      },
-    });
-
-    // Geração automática de tarefas por template (Onda 7).
-    // best-effort: não bloqueia a transição se falhar.
-    try {
-      await this.generateAutoTasks(id, claim.status, toStatus, userId);
-    } catch (err) {
-      this.logger.error(`Erro ao gerar tarefas automáticas: ${err.message}`);
+    if (newBall && newBall !== userId) {
+      try {
+        await this.notificationsService.notifyUsers([newBall], {
+          type: 'WARRANTY_BALL',
+          title: 'Bola da garantia!',
+          message: `Você recebeu a bola do protocolo ${claim.protocolNumber}.`,
+          link: `/admin/warranties?claim=${claimId}`,
+        });
+      } catch (e) {
+        this.logger.error(`Erro ao notificar bola: ${e.message}`);
+      }
     }
-
     return updated;
   }
 
-  // ── Geração automática de tarefas por template (Onda 7) ─────────────────────
-  //
-  // Consulta os WarrantyTaskTemplate ativos para o status de destino e cria
-  // as WarrantyTasks correspondentes. Resolve o responsável pelo UserRole.
-  // Se a transição for AGUARDANDO_CLIENTE → EM_ANALISE (retorno), NÃO gera
-  // tarefas duplicadas — apenas gera na entrada inicial.
-  private async generateAutoTasks(
+  // Propõe uma solução (sempre inicia no nível gestor).
+  async addSolution(
     claimId: string,
-    fromStatus: string,
-    toStatus: WarrantyStatus,
-    userId: string,
-  ): Promise<void> {
-    // Idempotência por etapa: se este claim já teve tarefas automáticas geradas
-    // para este status (toStatus), não gera de novo. Cobre tanto o retorno
-    // AGUARDANDO_CLIENTE → EM_ANALISE quanto re-entradas via reversão/override
-    // (ex.: APROVADO → revert → EM_ANALISE → APROVADO de novo).
-    const alreadyGenerated = await this.prisma.warrantyTask.count({
-      where: { claimId, stage: toStatus as string, autoGenerated: true },
-    });
-    if (alreadyGenerated > 0) {
-      return;
-    }
+    dto: { description: string; solutionType?: string; hasCost?: boolean; costValue?: number; costNotes?: string },
+    userId?: string,
+  ) {
+    const claim = await this.prisma.warrantyClaim.findUnique({ where: { id: claimId } });
+    if (!claim) throw new NotFoundException('Garantia não encontrada');
 
-    const templates = await this.prisma.warrantyTaskTemplate.findMany({
-      where: { toStatus, active: true },
-      orderBy: { sortOrder: 'asc' },
-    });
+    const type = dto.solutionType || 'outro';
+    const requiresDirector = SOLUTION_TYPES_REQUIRE_DIRECTOR.includes(type);
+    const typeLabel = SOLUTION_TYPE_LABELS[type] || type;
 
-    if (templates.length === 0) return;
-
-    // Busca a garantia com o assignee atual para resolução de responsável
-    const claim = await this.prisma.warrantyClaim.findUnique({
-      where: { id: claimId },
-      include: { assignedTo: true },
-    });
-
-    // Mapa de role → nome do usuário para exibição no assignee
-    const roleNameMap: Partial<Record<UserRole, string>> = {};
-
-    // Se a garantia tem um responsável ativo, usar o nome dele para o role correspondente
-    if (claim?.assignedTo) {
-      roleNameMap[claim.assignedTo.role] = claim.assignedTo.name;
-    }
-
-    // Para roles não cobertos pelo assignee da garantia, buscar qualquer usuário ativo
-    const missingRoles = templates
-      .map((t) => t.targetRole)
-      .filter((role, i, arr) => !roleNameMap[role] && arr.indexOf(role) === i);
-
-    if (missingRoles.length > 0) {
-      const users = await this.prisma.user.findMany({
-        where: { role: { in: missingRoles }, active: true },
-        select: { role: true, name: true },
-      });
-      for (const u of users) {
-        if (!roleNameMap[u.role]) {
-          roleNameMap[u.role] = u.name;
-        }
-      }
-    }
-
-    // Criar tarefas em lote. O perfil responsável vai em assigneeRole (coluna
-    // filtrável); assignee guarda só o nome da pessoa, quando resolvido.
-    const taskData = templates.map((tpl) => ({
-      claimId,
-      title: tpl.title,
-      assignee: roleNameMap[tpl.targetRole] || null,
-      assigneeRole: tpl.targetRole as string,
-      stage: toStatus as string,
-      status: 'pendente',
-      autoGenerated: true,
-      createdByUserId: userId,
-    }));
-
-    await this.prisma.warrantyTask.createMany({ data: taskData });
-
-    // Log agrupado no histórico (um único evento)
-    const statusLabels: Partial<Record<string, string>> = {
-      EM_ANALISE: 'Em Análise',
-      AGUARDANDO_CLIENTE: 'Aguardando Cliente',
-      APROVADO: 'Aprovado',
-      REPROVADO: 'Reprovado',
-      FINALIZADO: 'Finalizado',
-    };
-    const statusLabel = statusLabels[toStatus] || toStatus;
-    await this.prisma.warrantyEvent.create({
+    const sol = await this.prisma.warrantySolution.create({
       data: {
         claimId,
-        eventType: 'WORKFLOW_TASKS',
-        comment: `[Workflow] ${templates.length} tarefa(s) automática(s) gerada(s) para a etapa "${statusLabel}"`,
-        createdByUserId: userId,
+        description: dto.description,
+        solutionType: type,
+        hasCost: dto.hasCost || false,
+        costValue: dto.costValue ?? null,
+        costNotes: dto.costNotes ?? null,
+        proposedBy: userId ?? null,
+        requiresDirector,
+        authorizationLevel: 'gestor',
+      },
+    });
+
+    const custo = dto.hasCost && dto.costValue ? ` | Custo: R$ ${Number(dto.costValue).toFixed(2)}` : '';
+
+    // Tarefa para um gestor autorizar (best-effort).
+    try {
+      await this.prisma.warrantyTask.create({
+        data: {
+          claimId,
+          title: `Autorizar solução — ${typeLabel} | ${claim.protocolNumber}`,
+          assigneeRole: 'GERENTE_RELM',
+          status: 'pendente',
+          autoGenerated: true,
+          ...(userId && { createdByUserId: userId }),
+        },
+      });
+    } catch (e) {
+      this.logger.error(`Erro ao criar层高 o task de autorização: ${e.message}`);
+    }
+
+    await this.prisma.warrantyHistory.create({
+      data: {
+        claimId,
+        userId: userId ?? null,
+        actionType: 'solution_proposed',
+        newValue: `[${typeLabel}] ${dto.description}${custo}`,
+        isInternal: true,
+      },
+    });
+
+    // Notifica gestores/diretores (best-effort).
+    try {
+      const targets = await this.prisma.user.findMany({
+        where: { role: { in: ['GERENTE_RELM', 'ADMIN_RELM'] }, active: true },
+        select: { id: true },
+      });
+      if (targets.length) {
+        await this.notificationsService.notifyUsers(targets.map((u) => u.id), {
+          type: 'WARRANTY_SOLUTION',
+          title: 'Nova solução para autorizar',
+          message: `Protocolo ${claim.protocolNumber}: "${typeLabel}" aguarda autorização.`,
+          link: `/admin/warranties?claim=${claimId}`,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`Erro ao notificar solução: ${e.message}`);
+    }
+
+    return sol;
+  }
+
+  // Aprova/reprova solução — autorização em 2 níveis (gestor → diretor).
+  async approveSolution(
+    claimId: string,
+    solutionId: string,
+    dto: { approved: boolean; rejectionReason?: string },
+    user: { userId: string; role: string },
+  ) {
+    if (!['ADMIN_RELM', 'GERENTE_RELM'].includes(user.role)) {
+      throw new ForbiddenException('Apenas gestor/diretor podem autorizar soluções');
+    }
+
+    const sol = await this.prisma.warrantySolution.findFirst({
+      where: { id: solutionId, claimId },
+    });
+    if (!sol) throw new NotFoundException('Solução não encontrada');
+
+    const claim = await this.prisma.warrantyClaim.findUnique({ where: { id: claimId } });
+    const typeLabel = SOLUTION_TYPE_LABELS[sol.solutionType] || sol.solutionType;
+    const isDiretor = user.role === 'ADMIN_RELM';
+    const isGestor = user.role === 'GERENTE_RELM';
+
+    // ── Reprovação (qualquer nível) ──
+    if (!dto.approved) {
+      await this.prisma.warrantySolution.update({
+        where: { id: solutionId },
+        data: {
+          status: 'reprovado',
+          approvedBy: user.userId,
+          approvedAt: new Date(),
+          rejectionReason: dto.rejectionReason || 'Reprovado',
+        },
+      });
+      await this.prisma.warrantyHistory.create({
+        data: {
+          claimId,
+          userId: user.userId,
+          actionType: 'solution_rejected',
+          newValue: `[${typeLabel}] Reprovado: ${dto.rejectionReason || '—'}`,
+          isInternal: true,
+        },
+      });
+      return { message: 'Solução reprovada' };
+    }
+
+    // ── Nível 1: gestor ──
+    if (sol.authorizationLevel === 'gestor') {
+      if (sol.requiresDirector && isGestor) {
+        // sobe para o nível diretor (não finaliza)
+        await this.prisma.warrantySolution.update({
+          where: { id: solutionId },
+          data: { authorizationLevel: 'diretor', approvedBy: user.userId, approvedAt: new Date() },
+        });
+        try {
+          const dirs = await this.prisma.user.findMany({
+            where: { role: 'ADMIN_RELM', active: true },
+            select: { id: true },
+          });
+          await this.prisma.warrantyTask.create({
+            data: {
+              claimId,
+              title: `Confirmar autorização — ${typeLabel} | ${claim?.protocolNumber}`,
+              assigneeRole: 'ADMIN_RELM',
+              status: 'pendente',
+              autoGenerated: true,
+              createdByUserId: user.userId,
+            },
+          });
+          if (dirs.length) {
+            await this.notificationsService.notifyUsers(dirs.map((d) => d.id), {
+              type: 'WARRANTY_SOLUTION',
+              title: 'Autorização de diretor necessária',
+              message: `Protocolo ${claim?.protocolNumber}: "${typeLabel}" aprovada pelo gestor, aguarda confirmação.`,
+              link: `/admin/warranties?claim=${claimId}`,
+            });
+          }
+        } catch (e) {
+          this.logger.error(`Erro ao escalar para diretor: ${e.message}`);
+        }
+        await this.prisma.warrantyHistory.create({
+          data: {
+            claimId,
+            userId: user.userId,
+            actionType: 'solution_approved',
+            newValue: `[${typeLabel}] Aprovado pelo gestor — aguardando diretor`,
+            isInternal: true,
+          },
+        });
+        return { message: 'Aprovada pelo gestor — aguardando diretor', next_level: 'diretor' };
+      }
+      // não requer diretor (ou diretor aprovando direto) → finaliza
+      await this.finalizeApproval(claimId, solutionId, sol, user, typeLabel, claim?.protocolNumber);
+      return { message: 'Solução aprovada e fluxo de艰涩ução iniciado' };
+    }
+
+    // ── Nível 2: diretor confirma ──
+    if (sol.authorizationLevel === 'diretor') {
+      if (!isDiretor) {
+        throw new ForbiddenException('Esta solução requer confirmação do diretor');
+      }
+      await this.prisma.warrantySolution.update({
+        where: { id: solutionId },
+        data: { directorApprovedBy: user.userId, directorApprovedAt: new Date(), authorizationLevel: 'concluido' },
+      });
+      await this.finalizeApproval(claimId, solutionId, sol, user, typeLabel, claim?.protocolNumber);
+      return { message: 'Solução confirmada pelo diretor — execução iniciada' };
+    }
+
+    throw new BadRequestException('Esta solução já foi processada');
+  }
+
+  // Efeito da aprovação final: marca aprovado, avança o status e cria tarefa de execução.
+  private async finalizeApproval(
+    claimId: string,
+    solutionId: string,
+    sol: any,
+    user: { userId: string },
+    typeLabel: string,
+    bondadeNumber?: string,
+  ) {
+    await this.prisma.warrantySolution.update({
+      where: { id: solutionId },
+      data: {
+        status: 'aprovado',
+        approvedBy: sol.approvedBy ?? user.userId,
+        approvedAt: sol.approvedAt ?? new Date(),
+      },
+    });
+
+    let newStatusId = STATUS_EM_EXECUCAO;
+    let taskTitle = `Executar solução — ${bondadeNumber}`;
+    if (sol.solutionType === 'troca') {
+      newStatusId = STATUS_LOGISTICA;
+      taskTitle = `Executar TROCA — ${bondadeNumber}`;
+    } else if (sol.solutionType === 'reembolso') {
+      const valor = sol.costValue ? `R$ ${Number(sol.costValue).toFixed(2)}` : 'valor a definir';
+      taskTitle = `Processar REEMBOLSO — ${valor} | ${bondadeNumber}`;
+    } else if (sol.solutionType === 'reparo') {
+      taskTitle = `Executar REPARO — ${bondadeNumber}`;
+    } else if (sol.solutionType === 'cortesia') {
+      taskTitle = `Processar CORTESIA — ${bondadeNumber}`;
+    }
+
+    await this.prisma.warrantyClaim.update({
+      where: { id: claimId },
+      data: { statusId: newStatusId },
+    });
+
+    try {
+      await this.prisma.warrantyTask.create({
+        data: {
+          claimId,
+          title: taskTitle,
+          assigneeRole: 'SUPORTE_RELM',
+          status: 'pendente',
+          autoGenerated: true,
+          createdByUserId: user.userId,
+        },
+      });
+    } catch (e) {
+      this.logger.error(`Erro ao criar tarefa de execução: ${e.message}`);
+    }
+
+    await this.prisma.warrantyHistory.create({
+      data: {
+        claimId,
+        userId: user.userId,
+        actionType: 'solution_approved',
+        newValue: `[${typeLabel}] Solução aprovada — execução iniciada`,
+        isInternal: true,
       },
     });
   }
@@ -751,259 +892,6 @@ export class WarrantyService {
     return crypto.randomBytes(32).toString('hex');
   }
 
-  // Aprovar garantia e enviar email
-  async approveWarranty(id: string, userId: string, adminNotes?: string) {
-    const claim = await this.prisma.warrantyClaim.findUnique({
-      where: { id },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            phone: true,
-            cpf: true,
-          },
-        },
-        product: true,
-      },
-    });
-
-    if (!claim) {
-      throw new NotFoundException('Garantia não encontrada');
-    }
-
-    // BUG-02 — FSM como fonte única de verdade. A checagem manual anterior
-    // permitia aprovar direto de RECEBIDO, contornando a FSM (que só permite
-    // RECEBIDO -> EM_ANALISE). Validamos a transição pela FSM_TRANSITIONS.
-    const validTransitions = FSM_TRANSITIONS[claim.status] || [];
-    if (!validTransitions.includes(WarrantyStatus.APROVADO)) {
-      throw new BadRequestException(
-        `Transição inválida de ${claim.status} para APROVADO`,
-      );
-    }
-
-    // Gerar token de validação
-    const validationToken = this.generateValidationToken();
-    const now = new Date();
-
-    // Atualizar claim
-    const updated = await this.prisma.warrantyClaim.update({
-      where: { id },
-      data: {
-        status: 'APROVADO',
-        validationToken,
-        tokenGeneratedAt: now,
-        approvedAt: now,
-        approvedByUserId: userId,
-        adminNotes: adminNotes || claim.adminNotes,
-        ...autoClosePatch('APROVADO'),
-      },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            phone: true,
-            cpf: true,
-          },
-        },
-        product: true,
-      },
-    });
-
-    // Criar evento
-    await this.prisma.warrantyEvent.create({
-      data: {
-        claimId: id,
-        eventType: 'APPROVED',
-        fromStatus: claim.status,
-        toStatus: 'APROVADO',
-        comment: adminNotes || 'Garantia aprovada',
-        createdByUserId: userId,
-      },
-    });
-
-    // Enviar email (não bloqueia a aprovação se falhar)
-    try {
-      if (this.emailService) {
-        await this.emailService.sendWarrantyApprovalEmail({
-          to: updated.customer.email,
-          customerName: updated.customer.fullName,
-          protocolNumber: updated.protocolNumber,
-          validationToken,
-          productModel: updated.product.model,
-          serialNumber: updated.product.serialNumber,
-          approvedAt: now,
-        });
-
-        // Registrar envio do email
-        await this.prisma.warrantyClaim.update({
-          where: { id },
-          data: { approvalEmailSentAt: now },
-        });
-
-        this.logger.log(
-          `Email de aprovação enviado para garantia ${updated.protocolNumber}`,
-        );
-      } else {
-        this.logger.warn('EmailService não disponível - email não enviado');
-      }
-    } catch (error) {
-      this.logger.error(
-        `Erro ao enviar email de aprovação da garantia ${updated.protocolNumber}: ${error.message}`,
-      );
-      // Não falha a aprovação se o email não for enviado
-    }
-
-    // Auditoria best-effort (nunca lança).
-    await this.auditLogsService.log({
-      userId,
-      action: 'WARRANTY_APPROVED',
-      entity: 'warranty_claims',
-      entityId: id,
-      metadata: {
-        protocolNumber: claim.protocolNumber,
-        fromStatus: claim.status,
-        toStatus: 'APROVADO',
-        adminNotes: adminNotes ?? null,
-      },
-    });
-
-    // Geração automática de tarefas por template (best-effort).
-    try {
-      await this.generateAutoTasks(id, claim.status, WarrantyStatus.APROVADO, userId);
-    } catch (err) {
-      this.logger.error(`Erro ao gerar tarefas automáticas (aprovação): ${err.message}`);
-    }
-
-    return updated;
-  }
-
-  // Rejeitar garantia e enviar email
-  async rejectWarranty(
-    id: string,
-    userId: string,
-    rejectionReason: string,
-    adminNotes?: string,
-  ) {
-    const claim = await this.prisma.warrantyClaim.findUnique({
-      where: { id },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            phone: true,
-            cpf: true,
-          },
-        },
-        product: true,
-      },
-    });
-
-    if (!claim) {
-      throw new NotFoundException('Garantia não encontrada');
-    }
-
-    // BUG-02 — FSM como fonte única de verdade. A checagem manual anterior
-    // permitia reprovar direto de RECEBIDO, contornando a FSM (que só permite
-    // RECEBIDO -> EM_ANALISE). Validamos a transição pela FSM_TRANSITIONS.
-    const validTransitions = FSM_TRANSITIONS[claim.status] || [];
-    if (!validTransitions.includes(WarrantyStatus.REPROVADO)) {
-      throw new BadRequestException(
-        `Transição inválida de ${claim.status} para REPROVADO`,
-      );
-    }
-
-    if (!rejectionReason || rejectionReason.trim() === '') {
-      throw new BadRequestException('Motivo da rejeição é obrigatório');
-    }
-
-    // Atualizar claim
-    const updated = await this.prisma.warrantyClaim.update({
-      where: { id },
-      data: {
-        status: 'REPROVADO',
-        rejectionReason,
-        adminNotes: adminNotes || claim.adminNotes,
-        ...autoClosePatch('REPROVADO'),
-      },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            phone: true,
-            cpf: true,
-          },
-        },
-        product: true,
-      },
-    });
-
-    // Criar evento
-    await this.prisma.warrantyEvent.create({
-      data: {
-        claimId: id,
-        eventType: 'REJECTED',
-        fromStatus: claim.status,
-        toStatus: 'REPROVADO',
-        comment: rejectionReason,
-        createdByUserId: userId,
-      },
-    });
-
-    // Enviar email (não bloqueia a rejeição se falhar)
-    try {
-      if (this.emailService) {
-        await this.emailService.sendWarrantyRejectionEmail({
-          to: updated.customer.email,
-          customerName: updated.customer.fullName,
-          protocolNumber: updated.protocolNumber,
-          rejectionReason,
-          productModel: updated.product.model,
-        });
-        this.logger.log(
-          `Email de rejeição enviado para garantia ${updated.protocolNumber}`,
-        );
-      } else {
-        this.logger.warn('EmailService não disponível - email não enviado');
-      }
-    } catch (error) {
-      this.logger.error(
-        `Erro ao enviar email de rejeição da garantia ${updated.protocolNumber}: ${error.message}`,
-      );
-      // Não falha a rejeição se o email não for enviado
-    }
-
-    // Auditoria best-effort (nunca lança).
-    await this.auditLogsService.log({
-      userId,
-      action: 'WARRANTY_REJECTED',
-      entity: 'warranty_claims',
-      entityId: id,
-      metadata: {
-        protocolNumber: claim.protocolNumber,
-        fromStatus: claim.status,
-        toStatus: 'REPROVADO',
-        rejectionReason,
-      },
-    });
-
-    // Geração automática de tarefas por template (best-effort).
-    try {
-      await this.generateAutoTasks(id, claim.status, WarrantyStatus.REPROVADO, userId);
-    } catch (err) {
-      this.logger.error(`Erro ao gerar tarefas automáticas (reprovação): ${err.message}`);
-    }
-
-    return updated;
-  }
-
   /**
    * Define (ou limpa) o custo da garantia para a empresa.
    * Restrito a ADMIN_RELM/GERENTE_RELM (RBAC no controller).
@@ -1025,117 +913,27 @@ export class WarrantyService {
       data: { cost },
     });
 
-    // Evento de histórico (não bloqueia a operação se falhar).
+    // Histórico (novo workflow)
     try {
-      const comment =
+      const note =
         cost === null || cost === undefined
           ? 'Custo da garantia removido'
           : `Custo definido: R$ ${Number(cost).toFixed(2)}`;
-      await this.prisma.warrantyEvent.create({
+      await this.prisma.warrantyHistory.create({
         data: {
           claimId: id,
-          eventType: 'COST_UPDATED',
-          comment,
-          ...(adminUserId && { createdByUserId: adminUserId }),
+          actionType: 'note',
+          note,
+          isInternal: true,
+          userId: adminUserId ?? null,
         },
       });
     } catch (error) {
       this.logger.error(
-        `Erro ao registrar evento de custo da garantia ${id}: ${error.message}`,
+        `Erro ao registrar histórico de custo da garantia ${id}: ${error.message}`,
       );
     }
 
-    return updated;
-  }
-
-  /**
-   * Reverte (override administrativo) o status de uma garantia.
-   *
-   * IMPORTANTE: este é um caminho SEPARADO da FSM forward-only. Não usa
-   * FSM_TRANSITIONS — permite mover para qualquer status válido do enum.
-   * Restrito a ADMIN_RELM/GERENTE_RELM (RBAC no controller) e exige
-   * justificativa, registrada no histórico. NÃO envia e-mail ao cliente.
-   *
-   * Se estiver SAINDO de APROVADO, limpa o token/carimbos de validação para
-   * não restar um comprovante "aprovado" válido após a reversão.
-   */
-  async revertStatus(
-    id: string,
-    toStatus: WarrantyStatus,
-    reason: string,
-    adminUserId?: string,
-  ) {
-    const claim = await this.prisma.warrantyClaim.findUnique({
-      where: { id },
-    });
-
-    if (!claim) {
-      throw new NotFoundException('Garantia não encontrada');
-    }
-
-    if (toStatus === claim.status) {
-      throw new BadRequestException(
-        'O novo status deve ser diferente do status atual',
-      );
-    }
-
-    // Override: NÃO valida FSM_TRANSITIONS. Apenas garante que o valor é
-    // um status válido do enum (já garantido pelo DTO @IsIn, reforçado aqui).
-    if (!Object.values(WarrantyStatus).includes(toStatus)) {
-      throw new BadRequestException(`Status inválido: ${toStatus}`);
-    }
-
-    // Ao sair de APROVADO, invalida o comprovante de validação.
-    const leavingApproved = claim.status === WarrantyStatus.APROVADO;
-    const clearApprovalData = leavingApproved
-      ? {
-          validationToken: null,
-          validatedAt: null,
-          approvedAt: null,
-          approvalEmailSentAt: null,
-          tokenGeneratedAt: null,
-        }
-      : {};
-
-    const updated = await this.prisma.warrantyClaim.update({
-      where: { id },
-      data: {
-        status: toStatus,
-        ...clearApprovalData,
-        // Reagenda (se vai para resolvido) ou limpa (se sai de resolvido).
-        autoCloseAt: RESOLVED_STATUSES.includes(toStatus)
-          ? autoClosePatch(toStatus).autoCloseAt
-          : null,
-      },
-    });
-
-    // Registro no histórico (justificativa obrigatória).
-    await this.prisma.warrantyEvent.create({
-      data: {
-        claimId: id,
-        eventType: 'STATUS_REVERTED',
-        fromStatus: claim.status,
-        toStatus,
-        comment: reason,
-        ...(adminUserId && { createdByUserId: adminUserId }),
-      },
-    });
-
-    // Auditoria best-effort (nunca lança).
-    await this.auditLogsService.log({
-      userId: adminUserId,
-      action: 'WARRANTY_STATUS_REVERTED',
-      entity: 'warranty_claims',
-      entityId: id,
-      metadata: {
-        protocolNumber: claim.protocolNumber,
-        fromStatus: claim.status,
-        toStatus,
-        reason,
-      },
-    });
-
-    // NÃO envia e-mail ao cliente na reversão (caminho administrativo).
     return updated;
   }
 
@@ -1181,8 +979,9 @@ export class WarrantyService {
       throw new NotFoundException('Token de validação inválido');
     }
 
-    if (claim.status !== 'APROVADO') {
-      throw new BadRequestException('Esta garantia não está aprovada');
+    // Validação baseada no novo workflow: statusId 9 (Resolvido) ou 10 (Fechado/Arquivado).
+    if (![9, 10].includes(claim.statusId ?? 0)) {
+      throw new BadRequestException('Esta garantia ainda não está resolvida/fechada');
     }
 
     // BUG-04 — Validação única (idempotente).
@@ -1213,7 +1012,7 @@ export class WarrantyService {
       alreadyValidated,
       warranty: {
         protocolNumber: claim.protocolNumber,
-        status: claim.status,
+        statusId: claim.statusId,
         approvedAt: claim.approvedAt,
         validatedAt: claim.validatedAt || new Date(),
         customer: {
