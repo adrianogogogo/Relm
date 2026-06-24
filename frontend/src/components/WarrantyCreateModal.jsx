@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { MdClose, MdSearch, MdPerson, MdCheck } from 'react-icons/md';
-import { warrantyAPI, customersAPI, productsAPI } from '../services/api';
+import { warrantyAPI, customersAPI, productsAPI, storesAPI } from '../services/api';
 
 const EMPTY_FORM = {
   serialNumber: '',
@@ -59,6 +59,36 @@ export default function WarrantyCreateModal({ onClose, onSuccess }) {
         productType: p.name || p.productType || '',
         brand: p.brand || 'Relm Bikes',
         model: p.model || '',
+      }));
+    }
+  };
+
+  // Seleção de loja
+  const [selectedStoreId, setSelectedStoreId] = useState('');
+
+  const { data: stores = [] } = useQuery({
+    queryKey: ['admin-stores'],
+    queryFn: () => storesAPI.getAll(),
+  });
+
+  const handleStoreSelect = (storeId) => {
+    setSelectedStoreId(storeId);
+    if (!storeId) {
+      setForm((prev) => ({
+        ...prev,
+        purchaseStoreName: '',
+        purchaseStoreCity: '',
+        purchaseStoreState: '',
+      }));
+      return;
+    }
+    const s = stores.find((x) => x.id === storeId);
+    if (s) {
+      setForm((prev) => ({
+        ...prev,
+        purchaseStoreName: s.tradeName,
+        purchaseStoreCity: s.city || '',
+        purchaseStoreState: s.state || '',
       }));
     }
   };
@@ -279,16 +309,28 @@ export default function WarrantyCreateModal({ onClose, onSuccess }) {
               <input id="invoiceNumber" name="invoiceNumber" value={form.invoiceNumber} onChange={handleChange} className="input" />
             </div>
             <div>
-              <label htmlFor="purchaseStoreName" className="label">Loja de Compra *</label>
-              <input id="purchaseStoreName" name="purchaseStoreName" value={form.purchaseStoreName} onChange={handleChange} className="input" />
+              <label htmlFor="selectedStore" className="label">Loja de Compra *</label>
+              <select
+                id="selectedStore"
+                value={selectedStoreId}
+                onChange={(e) => handleStoreSelect(e.target.value)}
+                className="input"
+              >
+                <option value="">Selecione a loja…</option>
+                {stores.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.tradeName}{s.city ? ` — ${s.city}/${s.state}` : ''}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label htmlFor="purchaseStoreCity" className="label">Cidade</label>
-              <input id="purchaseStoreCity" name="purchaseStoreCity" value={form.purchaseStoreCity} onChange={handleChange} className="input" />
+              <input id="purchaseStoreCity" name="purchaseStoreCity" value={form.purchaseStoreCity} className="input" readOnly={true} />
             </div>
             <div>
               <label htmlFor="purchaseStoreState" className="label">Estado</label>
-              <input id="purchaseStoreState" name="purchaseStoreState" value={form.purchaseStoreState} onChange={handleChange} className="input" placeholder="UF" maxLength={100} />
+              <input id="purchaseStoreState" name="purchaseStoreState" value={form.purchaseStoreState} className="input" placeholder="UF" maxLength={100} readOnly={true} />
             </div>
           </div>
 

@@ -106,7 +106,7 @@ export default function WarrantyPage() {
 
   const handleStoreSelect = (value) => {
     setSelectedStore(value);
-    handleChange('product', 'purchaseStore', value === 'other' ? '' : value);
+    handleChange('product', 'purchaseStore', value);
   };
 
   const handleSubmit = (e) => {
@@ -362,6 +362,7 @@ export default function WarrantyPage() {
                     <label className="label">Loja de Compra *</label>
                     <select
                       className="input"
+                      required
                       value={selectedStore}
                       onChange={(e) => handleStoreSelect(e.target.value)}
                     >
@@ -371,20 +372,7 @@ export default function WarrantyPage() {
                           {s.tradeName}{s.city ? ` — ${s.city}/${s.state}` : ''}
                         </option>
                       ))}
-                      <option value="other">Outra loja</option>
                     </select>
-                    {selectedStore === 'other' && (
-                      <input
-                        type="text"
-                        required
-                        className="input mt-2"
-                        placeholder="Nome da loja"
-                        value={formData.product.purchaseStore}
-                        onChange={(e) =>
-                          handleChange('product', 'purchaseStore', e.target.value)
-                        }
-                      />
-                    )}
                   </div>
                   <div>
                     <label className="label">Número da Nota Fiscal *</label>
