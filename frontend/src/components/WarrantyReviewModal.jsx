@@ -277,6 +277,12 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
     initialData: warranty,
   });
 
+  const { data: statuses = [] } = useQuery({
+    queryKey: ['warranty-statuses'],
+    queryFn: () => warrantyAPI.getStatuses(),
+    staleTime: 5 * 60 * 1000,
+  });
+
   const [currentWarranty, setCurrentWarranty] = useState(fullWarranty || warranty);
 
   useEffect(() => {
@@ -323,6 +329,20 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   // Gating: somente ADMIN_RELM/GERENTE_RELM veem custo e reversão.
   const userType = useAuthStore((state) => state.user?.userType);
   const isAdminOrManager = userType === 'ADMIN_RELM' || userType === 'GERENTE_RELM';
+
+  const ACTION_CONFIG = {
+    status_change: { label: 'Mudança de status', color: 'bg-blue-100 text-blue-800', icon: '🔄' },
+    solution_proposed: { label: 'Solução proposta', color: 'bg-yellow-100 text-yellow-800', icon: '💡' },
+    solution_approved: { label: 'Solução aprovada', color: 'bg-green-100 text-green-800', icon: '✅' },
+    solution_rejected: { label: 'Solução reprovada', color: 'bg-red-100 text-red-800', icon: '❌' },
+    note: { label: 'Nota', color: 'bg-gray-100 text-gray-800', icon: '📝' },
+    task_created: { label: 'Tarefa criada', color: 'bg-purple-100 text-purple-800', icon: '📋' },
+    default: { label: 'Ação', color: 'bg-gray-100 text-gray-800', icon: '⚙️' },
+  };
+  const getActionConfig = (actionType) => ACTION_CONFIG[actionType] || ACTION_CONFIG.default;
+  const getStatusLabel = (statusId) => statuses.find((s) => s.id === statusId)?.name || `ID ${statusId}`;
+  const getStatusColor = (statusId) => statuses.find((s) => s.id === statusId)?.color;
+  const getUserName = (userId) => assignableUsers.find((u) => u.id === userId)?.name;
 
   // ponytail: mutations de status retornam o claim "cru" (sem customer/product/
   // events). Fazemos merge em vez de replace para não apagar os includes que as
@@ -743,7 +763,7 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
     { id: 'principal', label: 'Principal' },
     { id: 'anexos', label: 'Anexos' },
     { id: 'tarefas', label: 'Tarefas' },
-    { id: 'historico', label: `Histórico (${events.length})` },
+    { id: 'historico', label: `Histórico (${(currentWarranty.history || []).length})` },
     { id: 'email', label: 'E-mail' },
   ];
 
@@ -1152,71 +1172,50 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
             {/* ── Aba HISTÓRICO ──────────────────────────────────────── */}
             {activeTab === 'historico' && (
               <div>
-                {events.length === 0 ? (
-                  <EmptyState>Sem histórico ainda</EmptyState>
+                {(currentWarranty.history || []).length === 0 ? (
+                  <EmptyState>Nenhuma ação registrada ainda.</EmptyState>
                 ) : (
                   <ol className="space-y-4">
-                    {events.map((ev) => (
-                      <li key={ev.id || ev.createdAt} className="flex gap-3">
-                        <div className="shrink-0 h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shadow-sm">
-                          {(ev.createdBy?.name || 'Sistema').charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0 border-b border-gray-100 dark:border-slate-800 pb-4">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-semibold text-gray-900 dark:text-slate-100 text-sm">
-                              {ev.createdBy?.name || 'Sistema'}
-                            </span>
-                            {(() => {
-                              const badge = getActionBadge(ev);
-                              return (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-gray-700 dark:text-slate-300 shadow-sm">
-                                  <span>{badge.emoji}</span>
-                                  <span>{badge.text}</span>
-                                </span>
-                              );
-                            })()}
-                            {ev.fromStatus && ev.toStatus && (
-                              <span className="flex items-center gap-1.5 text-[11px] ml-1">
-                                <span className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 font-medium">
-                                  {STATUS_LABELS_HISTORY[ev.fromStatus] || ev.fromStatus}
-                                </span>
-                                <span className="text-gray-400">→</span>
-                                <span className="px-1.5 py-0.5 rounded bg-primary text-white font-medium">
-                                  {STATUS_LABELS_HISTORY[ev.toStatus] || ev.toStatus}
-                                </span>
-                                {currentWarranty.assignedTo?.name && (
-                                  <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium ml-1">
-                                    <span>🌐</span>
-                                    <span>→</span>
-                                    <span>{currentWarranty.assignedTo.name}</span>
-                                  </span>
-                                )}
-                              </span>
-                            )}
+                    {(currentWarranty.history || []).map((h) => {
+                      const cfg = getActionConfig(h.actionType);
+                      const fromStatus = h.statusFromId ? { label: getStatusLabel(h.statusFromId), color: getStatusColor(h.statusFromId) } : null;
+                      const toStatus = h.statusToId ? { label: getStatusLabel(h.statusToId), color: getStatusColor(h.statusToId) } : null;
+                      const fromUser = h.ballFromId ? getUserName(h.ballFromId) : null;
+                      const toUser = h.ballToId ? getUserName(h.ballToId) : null;
+                      const actor = h.userId ? getUserName(h.userId) : 'Sistema';
+
+                      return (
+                        <li key={h.id} className="flex gap-3 text-sm border-b border-gray-100 dark:border-slate-800 pb-4">
+                          <div className="shrink-0 w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-lg leading-none">
+                            {cfg.icon}
                           </div>
-                          {ev.comment && (
-                            <p className="mt-1 text-sm italic text-gray-600 dark:text-slate-400 whitespace-pre-wrap">
-                              "{ev.comment}"
-                            </p>
-                          )}
-                          <p className="mt-1.5 text-xs text-gray-400 dark:text-slate-500 flex items-center gap-1">
-                            <span>{formatDateTimeWithWord(ev.createdAt)}</span>
-                            <span>·</span>
-                            {ev.eventType === 'CREATED' ? (
-                              <span className="flex items-center gap-1">
-                                <span>👁️</span>
-                                <span>Público</span>
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1">
-                                <span>🔒</span>
-                                <span>Interno</span>
-                              </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-semibold text-gray-900 dark:text-slate-100">{actor}</span>
+                              <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold ${cfg.color}`}>{cfg.label}</span>
+                              {fromStatus && toStatus && (
+                                <span className="flex items-center gap-1.5 text-[11px]">
+                                  <span className="px-1.5 py-0.5 rounded text-gray-700 dark:text-slate-300 font-medium" style={{color: fromStatus.color}}>{fromStatus.label}</span>
+                                  <span className="text-gray-400">→</span>
+                                  <span className="px-1.5 py-0.5 rounded text-gray-700 dark:text-slate-300 font-medium" style={{color: toStatus.color}}>{toStatus.label}</span>
+                                </span>
+                              )}
+                              {fromUser && toUser && (
+                                <span className="flex items-center gap-1.5 text-[11px] text-gray-600 dark:text-slate-400">
+                                  <span>🌐</span><span>{fromUser ?? 'Ninguém'}</span><span>→</span><span>{toUser ?? 'Ninguém'}</span>
+                                </span>
+                              )}
+                            </div>
+                            {h.note && (
+                              <p className="mt-1 text-xs italic text-gray-600 dark:text-slate-400 whitespace-pre-wrap">{h.note}</p>
                             )}
-                          </p>
-                        </div>
-                      </li>
-                    ))}
+                            <p className="mt-1.5 text-[10px] text-gray-400 dark:text-slate-500">
+                              {new Date(h.createdAt).toLocaleString('pt-BR')}
+                            </p>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ol>
                 )}
               </div>

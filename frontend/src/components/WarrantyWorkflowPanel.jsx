@@ -76,22 +76,6 @@ export default function WarrantyWorkflowPanel({ warranty, onChanged, assignableU
   const solRequiresDirector = SOLUTION_TYPES.find((t) => t.value === sol.solutionType)?.requiresDirector;
   const solutions = warranty.solutions || [];
 
-  // ── Timeline helpers ──
-  const history = warranty.history || [];
-  const ACTION_CONFIG = {
-    status_change: { label: 'Mudança de status', color: 'bg-blue-100 text-blue-800', icon: '🔄' },
-    solution_proposed: { label: 'Solução proposta', color: 'bg-yellow-100 text-yellow-800', icon: '💡' },
-    solution_approved: { label: 'Solução aprovada', color: 'bg-green-100 text-green-800', icon: '✅' },
-    solution_rejected: { label: 'Solução reprovada', color: 'bg-red-100 text-red-800', icon: '❌' },
-    note: { label: 'Nota', color: 'bg-gray-100 text-gray-800', icon: '📝' },
-    task_created: { label: 'Tarefa criada', color: 'bg-purple-100 text-purple-800', icon: '📋' },
-    default: { label: 'Ação', color: 'bg-gray-100 text-gray-800', icon: '⚙️' },
-  };
-  const getActionConfig = (actionType) => ACTION_CONFIG[actionType] || ACTION_CONFIG.default;
-  const getStatusLabel = (statusId) => statuses.find((s) => s.id === statusId)?.name || `ID ${statusId}`;
-  const getStatusColor = (statusId) => statuses.find((s) => s.id === statusId)?.color;
-  const getUserName = (userId) => assignableUsers.find((u) => u.id === userId)?.name;
-
   return (
     <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-5 shadow-sm space-y-6">
       <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100">Status & Soluções</h3>
@@ -241,57 +225,6 @@ export default function WarrantyWorkflowPanel({ warranty, onChanged, assignableU
           </div>
         </div>
       </Dialog>
-
-      {/* ── Timeline do histórico (warranty_history) ── */}
-      <div className="border-t border-gray-100 dark:border-slate-800 pt-4 space-y-3">
-        <span className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Histórico de ações</span>
-        {history.length === 0 ? (
-          <p className="text-sm text-gray-400 dark:text-slate-500 italic">Nenhuma ação registrada ainda.</p>
-        ) : (
-          <ol className="space-y-3">
-            {history.map((h) => {
-              const cfg = getActionConfig(h.actionType);
-              const fromStatus = h.statusFromId ? { label: getStatusLabel(h.statusFromId), color: getStatusColor(h.statusFromId) } : null;
-              const toStatus = h.statusToId ? { label: getStatusLabel(h.statusToId), color: getStatusColor(h.statusToId) } : null;
-              const fromUser = h.ballFromId ? getUserName(h.ballFromId) : null;
-              const toUser = h.ballToId ? getUserName(h.ballToId) : null;
-              const actor = h.userId ? getUserName(h.userId) : 'Sistema';
-
-              return (
-                <li key={h.id} className="flex gap-3 text-sm">
-                  <div className="shrink-0 w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-lg leading-none">
-                    {cfg.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-gray-900 dark:text-slate-100">{actor}</span>
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold ${cfg.color}`}>{cfg.label}</span>
-                      {fromStatus && toStatus && (
-                        <span className="flex items-center gap-1.5 text-[11px]">
-                          <span className="px-1.5 py-0.5 rounded text-gray-700 dark:text-slate-300 font-medium" style={{color: fromStatus.color}}>{fromStatus.label}</span>
-                          <span className="text-gray-400">→</span>
-                          <span className="px-1.5 py-0.5 rounded text-gray-700 dark:text-slate-300 font-medium" style={{color: toStatus.color}}>{toStatus.label}</span>
-                        </span>
-                      )}
-                      {fromUser && toUser && (
-                        <span className="flex items-center gap-1.5 text-[11px] text-gray-600 dark:text-slate-400">
-                          <span>🌐</span><span>{fromUser ?? 'Ninguém'}</span><span>→</span><span>{toUser ?? 'Ninguém'}</span>
-                        </span>
-                      )}
-                    </div>
-                    {h.note && (
-                      <p className="mt-1 text-xs italic text-gray-600 dark:text-slate-400 whitespace-pre-wrap">{h.note}</p>
-                    )}
-                    <p className="mt-0.5 text-[10px] text-gray-400 dark:text-slate-500">
-                      {new Date(h.createdAt).toLocaleString('pt-BR')}
-                    </p>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-      </div>
     </div>
   );
 }
