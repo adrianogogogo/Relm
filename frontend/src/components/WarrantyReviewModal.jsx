@@ -834,35 +834,28 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                   </div>
                 </div>
 
-                {/* Status Atual */}
-                <div className="bg-primary/5 dark:bg-primary-400/10 border border-primary/20 dark:border-primary-400/20 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-primary dark:text-primary-300 mb-3 flex items-center gap-2">
-                    <MdDescription size={18} className="text-primary dark:text-primary-400" /> Status e Observações
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="text-primary-700 dark:text-primary-300">Status:</span>
-                      <span
-                        className="inline-block ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                        style={{ backgroundColor: `${currentWarranty.statusDef?.color || '#666'}1a`, color: currentWarranty.statusDef?.color || '#666' }}
-                      >
-                        {currentWarranty.statusDef?.name || currentWarranty.status}
-                      </span>
+                {/* Observações */}
+                {(currentWarranty.customerNotes || currentWarranty.adminNotes) && (
+                  <div className="bg-primary/5 dark:bg-primary-400/10 border border-primary/20 dark:border-primary-400/20 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-primary dark:text-primary-300 mb-3 flex items-center gap-2">
+                      <MdDescription size={18} className="text-primary dark:text-primary-400" /> Observações
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      {currentWarranty.customerNotes && (
+                        <div>
+                          <span className="text-primary-700 dark:text-primary-300">Observações do Cliente:</span>
+                          <p className="font-medium text-gray-900 dark:text-slate-100 whitespace-pre-wrap">{currentWarranty.customerNotes}</p>
+                        </div>
+                      )}
+                      {currentWarranty.adminNotes && (
+                        <div>
+                          <span className="text-primary-700 dark:text-primary-300">Notas Internas:</span>
+                          <p className="font-medium text-gray-900 dark:text-slate-100 whitespace-pre-wrap">{currentWarranty.adminNotes}</p>
+                        </div>
+                      )}
                     </div>
-                    {currentWarranty.customerNotes && (
-                      <div>
-                        <span className="text-primary-700 dark:text-primary-300">Observações do Cliente:</span>
-                        <p className="font-medium text-gray-900 dark:text-slate-100 whitespace-pre-wrap">{currentWarranty.customerNotes}</p>
-                      </div>
-                    )}
-                    {currentWarranty.adminNotes && (
-                      <div>
-                        <span className="text-primary-700 dark:text-primary-300">Notas Internas:</span>
-                        <p className="font-medium text-gray-900 dark:text-slate-100 whitespace-pre-wrap">{currentWarranty.adminNotes}</p>
-                      </div>
-                    )}
                   </div>
-                </div>
+                )}
 
                 {/* Novo workflow: status configurável + soluções (2 níveis) */}
                 <WarrantyWorkflowPanel

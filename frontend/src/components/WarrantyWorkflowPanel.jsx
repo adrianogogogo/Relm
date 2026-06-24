@@ -263,6 +263,13 @@ export default function WarrantyWorkflowPanel({ warranty, onChanged, assignableU
           const isAwaitingDirector = s.status === 'pendente' && s.authorizationLevel === 'diretor';
           const canActAsGestor = isAwaitingGestor && ['GERENTE_RELM', 'ADMIN_RELM'].includes(userType);
           const canActAsDirector = isAwaitingDirector && userType === 'ADMIN_RELM';
+          
+          const getUserName = (id) => {
+            if (!id) return null;
+            const u = assignableUsers.find((user) => user.id === id);
+            return u ? u.name : id;
+          };
+
           return (
             <div key={s.id} className="border border-gray-200 dark:border-slate-800 rounded-xl p-4 space-y-3 bg-white dark:bg-slate-950/20">
               <div className="flex items-center justify-between gap-4">
@@ -289,7 +296,7 @@ export default function WarrantyWorkflowPanel({ warranty, onChanged, assignableU
 
               <div className="border-t border-gray-100 dark:border-slate-800/80 pt-2 space-y-1">
                 <p className="text-xs text-gray-500 dark:text-slate-400">
-                  Proposta por: <span className="font-semibold text-gray-700 dark:text-slate-300">{s.proposedBy || 'Desconhecido'}</span>
+                  Proposta por: <span className="font-semibold text-gray-700 dark:text-slate-300">{getUserName(s.proposedBy) || 'Desconhecido'}</span>
                   {s.createdAt && ` • ${formatDateTime(s.createdAt)}`}
                 </p>
 
@@ -297,13 +304,13 @@ export default function WarrantyWorkflowPanel({ warranty, onChanged, assignableU
                   <div className="space-y-0.5">
                     {s.approvedBy && (
                       <p className="text-xs text-success flex items-center gap-1">
-                        ✔️ Aprovado (nível 1) por: <span className="font-semibold">{s.approvedBy}</span>
+                        ✔️ Aprovado (nível 1) por: <span className="font-semibold">{getUserName(s.approvedBy)}</span>
                         {s.approvedAt && ` em ${formatDateTime(s.approvedAt)}`}
                       </p>
                     )}
                     {s.directorApprovedBy && (
                       <p className="text-xs text-success flex items-center gap-1">
-                        ✔️ Autorizado (diretor) por: <span className="font-semibold">{s.directorApprovedBy}</span>
+                        ✔️ Autorizado (diretor) por: <span className="font-semibold">{getUserName(s.directorApprovedBy)}</span>
                         {s.directorApprovedAt && ` em ${formatDateTime(s.directorApprovedAt)}`}
                       </p>
                     )}
