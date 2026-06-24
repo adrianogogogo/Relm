@@ -288,9 +288,6 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   useEffect(() => {
     if (fullWarranty) {
       setCurrentWarranty(fullWarranty);
-      setCostInput(
-        fullWarranty.cost !== null && fullWarranty.cost !== undefined ? String(fullWarranty.cost) : ''
-      );
     }
   }, [fullWarranty]);
   const [activeTab, setActiveTab] = useState('principal');
