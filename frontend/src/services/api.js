@@ -116,6 +116,7 @@ export const warrantyAPI = {
   // Atribuição de responsável (Onda 4)
   assignableUsers: () => api.get('/warranty/assignable-users').then((res) => res.data),
   assign: (id, userId) => api.patch(`/warranty/claims/${id}/assign`, { userId }).then((res) => res.data),
+  setCost: (id, cost) => api.patch(`/warranty/claims/${id}/cost`, { cost }).then((res) => res.data),
   // Novo workflow (status configurável + soluções 2 níveis)
   getStatuses: () => api.get('/warranty/meta/statuses').then((res) => res.data),
   updateWorkflowStatus: (id, data) => api.patch(`/warranty/claims/${id}/workflow-status`, data).then((res) => res.data),
