@@ -33,8 +33,25 @@ export default function WarrantyWorkflowPanel({ warranty, onChanged, assignableU
   const [rejectReason, setRejectReason] = useState('');
   const [openStatusDialog, setOpenStatusDialog] = useState(false);
   const [openSolutionDialog, setOpenSolutionDialog] = useState(false);
+  const [openRejectDialog, setOpenRejectDialog] = useState(false);
+  const [claimRejectReason, setClaimRejectReason] = useState('');
 
   const refresh = () => onChanged?.();
+
+  // Gate da garantia: aprovar/reprovar só em "Em Análise" (statusId 4).
+  const atAnalise = warranty.statusId === 4;
+
+  const approveClaimMut = useMutation({
+    mutationFn: () => warrantyAPI.approveClaim(warranty.id),
+    onSuccess: () => { alert('✅ Garantia aprovada — comprovante enviado ao cliente.'); refresh(); },
+    onError: (e) => alert(`❌ ${e.response?.data?.message || e.message}`),
+  });
+
+  const rejectClaimMut = useMutation({
+    mutationFn: () => warrantyAPI.rejectClaim(warranty.id, claimRejectReason.trim()),
+    onSuccess: () => { setOpenRejectDialog(false); setClaimRejectReason(''); alert('Garantia reprovada — processo finalizado.'); refresh(); },
+    onError: (e) => alert(`❌ ${e.response?.data?.message || e.message}`),
+  });
 
   const statusMut = useMutation({
     mutationFn: () => warrantyAPI.updateWorkflowStatus(warranty.id, {
@@ -100,6 +117,31 @@ export default function WarrantyWorkflowPanel({ warranty, onChanged, assignableU
         })}
       </div>
 
+      {/* Gate da garantia em "Em Análise": aprovar / reprovar (admin/gerente) */}
+      {isAdminOrManager && atAnalise && (
+        <div className="border-t border-gray-100 dark:border-slate-800 pt-4 space-y-2">
+          <p className="text-sm text-gray-600 dark:text-slate-300">
+            Esta garantia está <strong>em análise</strong>. Aprove para dar andamento ou reprove para finalizar.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => approveClaimMut.mutate()}
+              disabled={approveClaimMut.isPending}
+              className="px-4 py-2 bg-success hover:bg-success-600 text-white rounded-lg text-sm font-semibold flex-1 disabled:opacity-50"
+            >
+              {approveClaimMut.isPending ? 'Aprovando…' : 'Aprovar garantia'}
+            </button>
+            <button
+              onClick={() => setOpenRejectDialog(true)}
+              disabled={rejectClaimMut.isPending}
+              className="px-4 py-2 border border-error text-error rounded-lg text-sm font-semibold flex-1 hover:bg-error hover:text-white disabled:opacity-50"
+            >
+              Reprovar garantia
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Botões de ação */}
       {isAdminOrManager && (
         <div className="flex gap-3 border-t border-gray-100 dark:border-slate-800 pt-4">
@@ -111,6 +153,29 @@ export default function WarrantyWorkflowPanel({ warranty, onChanged, assignableU
           </button>
         </div>
       )}
+
+      {/* ── Dialog: Reprovar garantia ── */}
+      <Dialog open={openRejectDialog} onClose={() => setOpenRejectDialog(false)} title="Reprovar garantia">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-slate-300">
+            A garantia será finalizada (Fechado) e o cliente receberá um e-mail com o motivo.
+          </p>
+          <textarea
+            className="input" rows={3} placeholder="Motivo da reprovação *"
+            value={claimRejectReason} onChange={(e) => setClaimRejectReason(e.target.value)}
+          />
+          <div className="flex justify-end gap-2">
+            <button className="btn btn-secondary" onClick={() => setOpenRejectDialog(false)}>Cancelar</button>
+            <button
+              onClick={() => rejectClaimMut.mutate()}
+              disabled={rejectClaimMut.isPending || !claimRejectReason.trim()}
+              className="px-4 py-2 bg-error hover:bg-error-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50"
+            >
+              {rejectClaimMut.isPending ? 'Reprovando…' : 'Confirmar reprovação'}
+            </button>
+          </div>
+        </div>
+      </Dialog>
 
       {/* ── Dialog: Atualizar status + passar a bola ── */}
       <Dialog

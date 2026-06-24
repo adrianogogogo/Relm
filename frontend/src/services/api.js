@@ -122,6 +122,9 @@ export const warrantyAPI = {
   updateWorkflowStatus: (id, data) => api.patch(`/warranty/claims/${id}/workflow-status`, data).then((res) => res.data),
   addSolution: (id, data) => api.post(`/warranty/claims/${id}/solutions`, data).then((res) => res.data),
   approveSolution: (id, solutionId, data) => api.patch(`/warranty/claims/${id}/solutions/${solutionId}/approve`, data).then((res) => res.data),
+  // Gate da garantia em "Em Análise" (admin/gerente)
+  approveClaim: (id) => api.post(`/warranty/claims/${id}/approve`).then((res) => res.data),
+  rejectClaim: (id, reason) => api.post(`/warranty/claims/${id}/reject`, { reason }).then((res) => res.data),
 };
 
 export const benefitsAPI = {

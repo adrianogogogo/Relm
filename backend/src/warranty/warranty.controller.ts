@@ -18,6 +18,7 @@ import { AssignClaimDto } from './dto/assign-claim.dto';
 import { CreateSolutionDto } from './dto/create-solution.dto';
 import { ApproveSolutionDto } from './dto/approve-solution.dto';
 import { UpdateClaimStatusDto } from './dto/update-claim-status.dto';
+import { RejectClaimDto } from './dto/reject-claim.dto';
 
 // Upload de anexos para o disco do servidor. Limite 10MB; PDF e imagens.
 // ponytail: disco local — trocar por S3 se o volume crescer.
@@ -96,6 +97,28 @@ export class WarrantyController {
       body.cost ?? null,
       req.user?.userId,
     );
+  }
+
+  @Post('warranty/claims/:id/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Aprovar garantia em Em Análise (admin/gerente)' })
+  async approveClaim(@Param('id') id: string, @Request() req: any) {
+    return this.warrantyService.approveClaim(id, req.user?.userId);
+  }
+
+  @Post('warranty/claims/:id/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reprovar garantia em Em Análise (admin/gerente)' })
+  async rejectClaim(
+    @Param('id') id: string,
+    @Body() body: RejectClaimDto,
+    @Request() req: any,
+  ) {
+    return this.warrantyService.rejectClaim(id, body.reason, req.user?.userId);
   }
 
   @Get('public/warranty/validate/:token')

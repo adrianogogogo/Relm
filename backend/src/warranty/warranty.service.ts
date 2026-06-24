@@ -892,6 +892,113 @@ export class WarrantyService {
     return crypto.randomBytes(32).toString('hex');
   }
 
+  // ── Gate da garantia em "Em Análise" (statusId 4): aprovar/reprovar ──────────
+  // Restrito a ADMIN_RELM/GERENTE_RELM (RBAC no controller).
+
+  // Aprovar: garantia válida → entra em andamento (Solução Proposta = 5).
+  // Gera token + e-mail comprovante ao cliente (best-effort).
+  async approveClaim(id: string, userId?: string) {
+    const claim = await this.prisma.warrantyClaim.findUnique({
+      where: { id },
+      include: { customer: true, product: true },
+    });
+    if (!claim) throw new NotFoundException('Garantia não encontrada');
+    if (claim.statusId !== 4) {
+      throw new BadRequestException('A garantia só pode ser aprovada na etapa "Em Análise".');
+    }
+
+    const token = this.generateValidationToken();
+    const now = new Date();
+    const updated = await this.prisma.warrantyClaim.update({
+      where: { id },
+      data: {
+        statusId: 5,
+        validationToken: token,
+        tokenGeneratedAt: now,
+        approvedAt: now,
+        approvedByUserId: userId ?? null,
+      },
+    });
+
+    await this.prisma.warrantyHistory.create({
+      data: {
+        claimId: id,
+        userId: userId ?? null,
+        actionType: 'status_change',
+        newValue: 'Garantia aprovada',
+        isInternal: true,
+        statusFromId: 4,
+        statusToId: 5,
+      },
+    });
+
+    try {
+      await this.emailService.sendWarrantyApprovalEmail({
+        to: claim.customer.email,
+        customerName: claim.customer.fullName,
+        protocolNumber: claim.protocolNumber,
+        validationToken: token,
+        productModel: claim.product.model,
+        serialNumber: claim.product.serialNumber,
+        approvedAt: now,
+      });
+      await this.prisma.warrantyClaim.update({
+        where: { id },
+        data: { approvalEmailSentAt: now },
+      });
+    } catch (e) {
+      this.logger.error(`Erro ao enviar e-mail de aprovação: ${e.message}`);
+    }
+
+    return updated;
+  }
+
+  // Reprovar: garantia recusada → finaliza (Fechado = 10) + e-mail ao cliente.
+  async rejectClaim(id: string, reason: string, userId?: string) {
+    if (!reason || !reason.trim()) {
+      throw new BadRequestException('Motivo da reprovação é obrigatório');
+    }
+    const claim = await this.prisma.warrantyClaim.findUnique({
+      where: { id },
+      include: { customer: true, product: true },
+    });
+    if (!claim) throw new NotFoundException('Garantia não encontrada');
+    if (claim.statusId !== 4) {
+      throw new BadRequestException('A garantia só pode ser reprovada na etapa "Em Análise".');
+    }
+
+    const updated = await this.prisma.warrantyClaim.update({
+      where: { id },
+      data: { statusId: 10, rejectionReason: reason, ...autoCloseForStatus(10) },
+    });
+
+    await this.prisma.warrantyHistory.create({
+      data: {
+        claimId: id,
+        userId: userId ?? null,
+        actionType: 'status_change',
+        newValue: `Garantia reprovada: ${reason}`,
+        isInternal: true,
+        statusFromId: 4,
+        statusToId: 10,
+      },
+    });
+
+    try {
+      await this.emailService.sendWarrantyRejectionEmail({
+        to: claim.customer.email,
+        customerName: claim.customer.fullName,
+        protocolNumber: claim.protocolNumber,
+        rejectionReason: reason,
+        productModel: claim.product.model,
+      });
+    } catch (e) {
+      this.logger.error(`Erro ao enviar e-mail de reprovação: ${e.message}`);
+    }
+
+    return updated;
+  }
+
   /**
    * Define (ou limpa) o custo da garantia para a empresa.
    * Restrito a ADMIN_RELM/GERENTE_RELM (RBAC no controller).
@@ -979,9 +1086,12 @@ export class WarrantyService {
       throw new NotFoundException('Token de validação inválido');
     }
 
-    // Validação baseada no novo workflow: statusId 9 (Resolvido) ou 10 (Fechado/Arquivado).
-    if (![9, 10].includes(claim.statusId ?? 0)) {
-      throw new BadRequestException('Esta garantia ainda não está resolvida/fechada');
+    // O token só é gerado na APROVAÇÃO da garantia (statusId 5 em diante). Logo,
+    // se há token, a garantia foi aprovada e o comprovante é válido durante todo
+    // o andamento (Solução Proposta=5 → Resolvido=9 → Fechado=10). Reprovadas vão
+    // de 4→10 sem token, então sequer chegam aqui.
+    if ((claim.statusId ?? 0) < 5) {
+      throw new BadRequestException('Esta garantia ainda não foi aprovada');
     }
 
     // BUG-04 — Validação única (idempotente).
