@@ -24,9 +24,15 @@ export default function WarrantiesPage() {
     queryKey: ['warranties', statusFilter, searchTerm],
     queryFn: () =>
       warrantyAPI.getAll({
-        status: statusFilter || undefined,
+        statusId: statusFilter || undefined,
         search: searchTerm || undefined,
       }),
+  });
+
+  const { data: statuses = [] } = useQuery({
+    queryKey: ['warranty-statuses'],
+    queryFn: () => warrantyAPI.getStatuses(),
+    staleTime: 5 * 60 * 1000,
   });
 
   // Deep-link: ?claim=<id> abre automaticamente o modal de revisão da garantia.
@@ -59,34 +65,24 @@ export default function WarrantiesPage() {
     if (searchParams.get('claim')) setSearchParams({});
   };
 
+  // Verdito da garantia no novo workflow:
+  //  aprovada  = já passou pelo gate (approvedAt preenchido)
+  //  reprovada = foi para Fechado(10) sem aprovação
+  //  pendente  = ainda antes/na análise (status 1–4)
+  const verdict = (w) => {
+    if (w.approvedAt) return 'aprovada';
+    if (w.statusId === 10) return 'reprovada';
+    return 'pendente';
+  };
+
   const stats = warranties
     ? {
         total: warranties.length,
-        pending: warranties.filter((w) => w.status === 'RECEBIDO' || w.status === 'EM_ANALISE').length,
-        approved: warranties.filter((w) => w.status === 'APROVADO').length,
-        rejected: warranties.filter((w) => w.status === 'REPROVADO').length,
+        pending: warranties.filter((w) => verdict(w) === 'pendente').length,
+        approved: warranties.filter((w) => verdict(w) === 'aprovada').length,
+        rejected: warranties.filter((w) => verdict(w) === 'reprovada').length,
       }
     : { total: 0, pending: 0, approved: 0, rejected: 0 };
-
-  const statusLabel = {
-    RECEBIDO: 'Recebido',
-    EM_ANALISE: 'Em Análise',
-    AGUARDANDO_CLIENTE: 'Aguardando Cliente',
-    APROVADO: 'Aprovado',
-    REPROVADO: 'Reprovado',
-    FINALIZADO: 'Finalizado',
-    CANCELADO: 'Cancelado',
-  };
-
-  const statusVariant = {
-    RECEBIDO: 'info',
-    EM_ANALISE: 'warning',
-    AGUARDANDO_CLIENTE: 'warning',
-    APROVADO: 'success',
-    REPROVADO: 'error',
-    FINALIZADO: 'neutral',
-    CANCELADO: 'neutral',
-  };
 
   return (
     <div className="py-8 px-6">
@@ -136,12 +132,9 @@ export default function WarrantiesPage() {
                 className="input"
               >
                 <option value="">Todos os status</option>
-                <option value="RECEBIDO">Recebido</option>
-                <option value="EM_ANALISE">Em Análise</option>
-                <option value="AGUARDANDO_CLIENTE">Aguardando Cliente</option>
-                <option value="APROVADO">Aprovado</option>
-                <option value="REPROVADO">Reprovado</option>
-                <option value="FINALIZADO">Finalizado</option>
+                {statuses.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -187,10 +180,16 @@ export default function WarrantiesPage() {
                         <div className="text-sm text-gray-500 dark:text-slate-400">{warranty.product?.serialNumber || 'N/A'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusChip
-                          label={statusLabel[warranty.status] || warranty.status}
-                          variant={statusVariant[warranty.status] || 'neutral'}
-                        />
+                        {warranty.statusDef ? (
+                          <div className="flex flex-col gap-0.5">
+                            <StatusChip label={warranty.statusDef.name} color={warranty.statusDef.color} />
+                            <span className="text-[11px] text-gray-400 dark:text-slate-500">
+                              etapa {warranty.statusDef.sortOrder}/10
+                            </span>
+                          </div>
+                        ) : (
+                          <StatusChip label="—" variant="neutral" />
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-slate-400">
                         {new Date(warranty.createdAt).toLocaleDateString('pt-BR')}

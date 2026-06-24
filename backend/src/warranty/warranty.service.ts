@@ -266,6 +266,9 @@ export class WarrantyService {
             state: true,
           },
         },
+        statusDef: {
+          select: { id: true, name: true, color: true, sortOrder: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
