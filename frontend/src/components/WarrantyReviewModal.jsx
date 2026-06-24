@@ -315,13 +315,6 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   const [newTaskRole, setNewTaskRole] = useState('');
   const [newTaskDue, setNewTaskDue] = useState('');
 
-  // Custo da garantia (input controlado; inicia com o valor atual, se houver).
-  const [costInput, setCostInput] = useState(
-    currentWarranty.cost !== null && currentWarranty.cost !== undefined
-      ? String(currentWarranty.cost)
-      : '',
-  );
-
   // Reversão de status (override administrativo).
   const [revertToStatus, setRevertToStatus] = useState('');
   const [revertReason, setRevertReason] = useState('');
@@ -413,18 +406,6 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
     },
     onError: (error) => {
       alert(`❌ Erro ao finalizar garantia: ${error.response?.data?.message || error.message}`);
-    },
-  });
-
-  const setCostMutation = useMutation({
-    mutationFn: (cost) => warrantyAPI.setCost(currentWarranty.id, cost),
-    onSuccess: () => {
-      alert('✅ Custo salvo com sucesso!');
-      refetchWarranty();
-      onSuccess();
-    },
-    onError: (error) => {
-      alert(`❌ Erro ao salvar custo: ${error.response?.data?.message || error.message}`);
     },
   });
 
@@ -563,23 +544,6 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
       alert(`❌ Erro ao atribuir responsável: ${error.response?.data?.message || error.message}`);
     },
   });
-
-  const handleSaveCost = () => {
-    const trimmed = costInput.trim();
-    // Vazio => limpa o custo (null).
-    if (trimmed === '') {
-      setCostMutation.mutate(null);
-      return;
-    }
-    // Aceita vírgula ou ponto como separador decimal.
-    const normalized = trimmed.replace(',', '.');
-    const num = Number(normalized);
-    if (Number.isNaN(num) || num < 0) {
-      alert('Informe um valor de custo válido (número maior ou igual a zero).');
-      return;
-    }
-    setCostMutation.mutate(Math.round(num * 100) / 100);
-  };
 
   const handleRevertStatus = async () => {
     if (!revertToStatus) {
@@ -910,51 +874,6 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
                   assignableUsers={assignableUsers}
                   userType={userType}
                 />
-                {/* Custo da garantia (admin/gerente) */}
-                {isAdminOrManager && (
-                  <div className="bg-gray-50 dark:bg-slate-900/40 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center gap-2">
-                      <MdAttachMoney size={18} className="text-gray-500 dark:text-slate-400" /> Custo da garantia (para a empresa)
-                    </h3>
-                    {formatBRL(currentWarranty.cost) && (
-                      <p className="text-sm text-gray-700 dark:text-slate-300 mb-3">
-                        Custo atual:{' '}
-                        <span className="font-semibold text-gray-900 dark:text-slate-100">
-                          {formatBRL(currentWarranty.cost)}
-                        </span>
-                      </p>
-                    )}
-                    <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-                      <div className="flex-1">
-                        <label htmlFor="warrantyCost" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                          Valor do custo (R$)
-                        </label>
-                        <input
-                          id="warrantyCost"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          inputMode="decimal"
-                          value={costInput}
-                          onChange={(e) => setCostInput(e.target.value)}
-                          className="w-full px-4 py-2 bg-white dark:bg-slate-900/50 border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent dark:text-slate-100"
-                          placeholder="Ex.: 150.00 (deixe vazio para limpar)"
-                        />
-                      </div>
-                      <button
-                        onClick={handleSaveCost}
-                        disabled={setCostMutation.isPending}
-                        className="px-6 py-2.5 bg-primary hover:bg-primary-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-                      >
-                        {setCostMutation.isPending && (
-                          <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        )}
-                        Salvar custo
-                      </button>
-                    </div>
-                  </div>
-                )}
-
               </div>
             )}
 
