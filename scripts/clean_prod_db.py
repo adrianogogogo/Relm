@@ -7,7 +7,7 @@ sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 HOST = '177.153.62.248'
 PORT = 22
 USER = 'root'
-PASS = 'lXde@12#45'
+PASS = os.environ.get('RELM_VPS_PASS') or sys.exit('defina RELM_VPS_PASS')
 ROOT = r'c:\Users\BOSS\Desktop\Relm\Relm-Care'
 LOCAL_CLEAN_TS = ROOT + r'\backend\prisma\clean.ts'
 BE = '/var/www/relm-careplus-prod/backend'

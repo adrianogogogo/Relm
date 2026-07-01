@@ -1,10 +1,11 @@
+import os
 import paramiko
 import sys
 
 HOST = '177.153.62.248'
 PORT = 22
 USER = 'root'
-PASS = 'lXde@12#45'
+PASS = os.environ.get('RELM_VPS_PASS') or sys.exit('defina RELM_VPS_PASS')
 
 BE = '/var/www/relm-careplus-prod/backend'
 BACKUP = '/root/relm-backups/20260615-235926/env.production.bak'

@@ -1,3 +1,5 @@
+import sys
+import os
 import urllib.request, urllib.error, json, paramiko
 
 BASE='http://177.153.62.248/api'
@@ -43,7 +45,7 @@ for l in found[:3]:
 
 # cleanup via SQL
 c=paramiko.SSHClient(); c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-c.connect('177.153.62.248',username='root',password='lXde@12#45')
+c.connect('177.153.62.248',username='root',password=os.environ.get('RELM_VPS_PASS') or sys.exit('defina RELM_VPS_PASS'))
 sql=("DELETE FROM audit_logs WHERE entity_id='%s';"
      "DELETE FROM warranty_events WHERE claim_id='%s';"
      "DELETE FROM warranty_claims WHERE id='%s';"

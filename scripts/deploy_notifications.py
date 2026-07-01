@@ -1,6 +1,6 @@
 import paramiko, os, sys, time
 
-HOST='177.153.62.248'; PORT=22; USER='root'; PASS='lXde@12#45'
+HOST='177.153.62.248'; PORT=22; USER='root'; PASS=os.environ.get('RELM_VPS_PASS') or sys.exit('defina RELM_VPS_PASS')
 ROOT=r'c:\Users\BOSS\Desktop\Relm\Relm-Care'
 LOCAL_SRC=ROOT+r'\backend\src'
 LOCAL_PRISMA=ROOT+r'\backend\prisma'
