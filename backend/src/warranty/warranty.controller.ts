@@ -54,7 +54,10 @@ export class WarrantyController {
 
   @Post('warranty/claims')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  // Abertura liberada a todos os perfis habilitados exceto Distribuidor.
+  // Cliente abre pelo form público; NF e cliente pré-cadastrado já são exigidos
+  // pelo CreateWarrantyAdminDto + createByAdmin.
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cadastrar garantia (painel admin)' })
   async createByAdmin(
@@ -177,7 +180,9 @@ export class WarrantyController {
 
   @Post('warranty/claims/:id/solutions')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  // Suporte pode SUGERIR solução; aprovar é exclusivo de gestor/superadmin
+  // (endpoint /approve abaixo segue restrito a ADMIN_RELM/GERENTE_RELM).
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Propor solução' })
   async addSolution(
