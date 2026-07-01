@@ -710,6 +710,26 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
     : allTasks.filter((t) => t.assigneeRole === userType);
   const hiddenTaskCount = allTasks.length - visibleTasks.length;
 
+  // Responsáveis por etapa: ordena por prazo (dueDate cresce com a sequência do
+  // fluxo; createdAt empata no seed em lote) e toma a tarefa vigente = primeira
+  // pendente, mais a anterior e a posterior.
+  const orderedTasks = [...allTasks].sort(
+    (a, b) => new Date(a.dueDate || a.createdAt) - new Date(b.dueDate || b.createdAt),
+  );
+  const curIdx = orderedTasks.findIndex((t) => t.status === 'pendente');
+  const prevTask = curIdx > 0 ? orderedTasks[curIdx - 1] : null;
+  const currentTask = curIdx >= 0 ? orderedTasks[curIdx] : null;
+  const nextTask = curIdx >= 0 && curIdx + 1 < orderedTasks.length ? orderedTasks[curIdx + 1] : null;
+  const respRow = (label, t, strong) => (
+    <div className="flex justify-between gap-2">
+      <span className="text-gray-500 dark:text-slate-400">{label}</span>
+      <span className={`text-right ${strong ? 'font-semibold text-gray-900 dark:text-slate-100' : 'font-medium text-gray-600 dark:text-slate-400'}`}>
+        {t ? (ROLE_LABELS[t.assigneeRole] || t.assigneeRole || '—') : '—'}
+        {t && <span className="block text-[10px] font-normal text-gray-400 truncate max-w-[140px]">{t.title}</span>}
+      </span>
+    </div>
+  );
+
   // Tarefas vinculadas à etapa (status) atual — alimentam "Próximos Passos".
   const currentStageTasks = visibleTasks.filter((t) => t.stage === currentWarranty.status);
   const pendingStageTasks = currentStageTasks.filter((t) => t.status === 'pendente');
@@ -1174,6 +1194,11 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
               <p className="text-sm font-medium text-gray-900 dark:text-slate-100 mb-2">
                 {currentWarranty.assignedTo?.name || '—'}
               </p>
+              <div className="space-y-1.5 text-xs mb-3 border-t border-gray-200 dark:border-slate-700 pt-2">
+                {respRow('Anterior', prevTask, false)}
+                {respRow('Vigente', currentTask, true)}
+                {respRow('Posterior', nextTask, false)}
+              </div>
               {isAdminOrManager && (
                 <select
                   value={currentWarranty.assignedToUserId || ''}
