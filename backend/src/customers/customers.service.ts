@@ -78,6 +78,28 @@ export class CustomersService {
     return this.formatCustomer(customer);
   }
 
+  // Importação em lote (planilha). skipDuplicates ignora emails já
+  // cadastrados (unique) sem abortar o restante. Sem notificação por item
+  // (evita spamar a equipe em imports grandes). Retorna a contagem criada.
+  async createMany(rows: CreateCustomerDto[]) {
+    const data = rows.map((r) => ({
+      fullName: r.fullName,
+      email: r.email,
+      phone: r.phone,
+      ...(r.cpf && { cpf: r.cpf.replace(/\D/g, '') }),
+      ...(r.address && { address: r.address }),
+      ...(r.city && { city: r.city }),
+      ...(r.state && { state: r.state }),
+      ...(r.zipCode && { zipCode: r.zipCode }),
+      ...(r.notes && { notes: r.notes }),
+    }));
+    const result = await this.prisma.customer.createMany({
+      data,
+      skipDuplicates: true,
+    });
+    return { created: result.count };
+  }
+
   async findAll(filters?: {
     search?: string;
     storeId?: string;

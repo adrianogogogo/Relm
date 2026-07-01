@@ -13,6 +13,7 @@ import {
 import { CustomersService } from './customers.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
+import { BulkCreateCustomersDto } from './dto/bulk-create-customers.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -27,6 +28,13 @@ export class CustomersController {
   @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA')
   create(@Body() createCustomerDto: CreateCustomerDto) {
     return this.customersService.create(createCustomerDto);
+  }
+
+  // Importação em lote via planilha (.csv/.xlsx). Restrito a admin/gerente.
+  @Post('bulk')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  bulkCreate(@Body() dto: BulkCreateCustomersDto) {
+    return this.customersService.createMany(dto.customers);
   }
 
   @Get()

@@ -41,6 +41,27 @@ export class StoresService {
     return this.formatStore(store);
   }
 
+  // Importação em lote (planilha). skipDuplicates ignora CNPJs já
+  // cadastrados (unique) sem abortar o restante. Retorna a contagem criada.
+  async createMany(rows: CreateStoreDto[]) {
+    const data = rows.map((r) => ({
+      tradeName: r.tradeName,
+      legalName: r.legalName,
+      city: r.city,
+      state: r.state,
+      ...(r.cnpj && { cnpj: r.cnpj.replace(/\D/g, '') }),
+      ...(r.email && { email: r.email }),
+      ...(r.phone && { phone: r.phone }),
+      ...(r.address && { address: r.address }),
+      ...(r.zipCode && { zipCode: r.zipCode }),
+    }));
+    const result = await this.prisma.store.createMany({
+      data,
+      skipDuplicates: true,
+    });
+    return { created: result.count };
+  }
+
   async findAll(filters?: {
     search?: string;
     city?: string;

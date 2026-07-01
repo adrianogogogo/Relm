@@ -183,6 +183,7 @@ export const customersAPI = {
   getAll: (params) => api.get('/customers', { params }).then((res) => res.data),
   getById: (id) => api.get(`/customers/${id}`).then((res) => res.data),
   create: (data) => api.post('/customers', data).then((res) => res.data),
+  bulkCreate: (customers) => api.post('/customers/bulk', { customers }).then((res) => res.data),
   update: (id, data) => api.patch(`/customers/${id}`, data).then((res) => res.data),
   delete: (id) => api.delete(`/customers/${id}`).then((res) => res.data),
   // Admin (ADMIN_RELM) redefine a senha de qualquer cliente
@@ -194,6 +195,7 @@ export const storesAPI = {
   getAll: (params) => api.get('/stores', { params }).then((res) => res.data),
   getById: (id) => api.get(`/stores/${id}`).then((res) => res.data),
   create: (data) => api.post('/stores', data).then((res) => res.data),
+  bulkCreate: (stores) => api.post('/stores/bulk', { stores }).then((res) => res.data),
   update: (id, data) => api.patch(`/stores/${id}`, data).then((res) => res.data),
   delete: (id) => api.delete(`/stores/${id}`).then((res) => res.data),
   // Busca pública (sem autenticação)

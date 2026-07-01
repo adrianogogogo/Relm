@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { MdDelete, MdAdd, MdStore, MdCheckCircle, MdBlock, MdPeople } from 'react-icons/md';
+import { MdDelete, MdAdd, MdStore, MdCheckCircle, MdBlock, MdPeople, MdUploadFile, MdDownload } from 'react-icons/md';
 import { storesAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader, StatusChip, StatCard, Button } from '../components/ui';
+import { readSheetRows, cell, downloadTemplate } from '../utils/sheetImport';
 
 export default function StoresPage() {
   const { user } = useAuthStore();
@@ -13,6 +14,8 @@ export default function StoresPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [stateFilter, setStateFilter] = useState('');
   const [activeFilter, setActiveFilter] = useState('true');
+  const [importing, setImporting] = useState(false);
+  const fileRef = useRef(null);
 
   const { data: stores, isLoading } = useQuery({
     queryKey: ['stores', searchTerm, stateFilter, activeFilter],
@@ -29,6 +32,49 @@ export default function StoresPage() {
     'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
     'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
   ];
+
+  const handleTemplate = () =>
+    downloadTemplate(
+      ['Nome Fantasia', 'Razão Social', 'CNPJ', 'Email', 'Telefone', 'Endereço', 'Cidade', 'Estado', 'CEP'],
+      'modelo-lojas.xlsx',
+      'Lojas',
+    );
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // permite reimportar o mesmo arquivo
+    if (!file) return;
+    try {
+      const json = await readSheetRows(file);
+      const rows = json
+        .map((r) => ({
+          tradeName: cell(r, 'nome fantasia') || cell(r, 'fantasia') || cell(r, 'nome'),
+          legalName: cell(r, 'razao social') || cell(r, 'razao'),
+          cnpj: cell(r, 'cnpj') || undefined,
+          email: cell(r, 'email') || undefined,
+          phone: cell(r, 'telefone') || cell(r, 'fone') || undefined,
+          address: cell(r, 'endereco') || undefined,
+          city: cell(r, 'cidade') || undefined,
+          state: cell(r, 'estado') || cell(r, 'uf') || undefined,
+          zipCode: cell(r, 'cep') || undefined,
+        }))
+        .filter((r) => r.tradeName && r.legalName && r.city && r.state);
+      if (rows.length === 0) {
+        alert('Nenhuma linha válida. Nome Fantasia, Razão Social, Cidade e Estado são obrigatórios. Use os cabeçalhos do modelo.');
+        return;
+      }
+      if (!confirm(`Importar ${rows.length} loja(s)?`)) return;
+      setImporting(true);
+      const res = await storesAPI.bulkCreate(rows);
+      alert(`✅ ${res.created} loja(s) importada(s).`);
+      queryClient.invalidateQueries(['stores']);
+    } catch (err) {
+      const msg = err.response?.data?.message;
+      alert(`❌ ${Array.isArray(msg) ? msg[0] : msg || err.message || 'Falha ao importar.'}`);
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const handleDelete = async (store) => {
     if (!confirm(`Excluir permanentemente a loja "${store.tradeName}"? Esta ação não pode ser desfeita.`)) return;
@@ -57,9 +103,22 @@ export default function StoresPage() {
           title="Lojas Parceiras"
           subtitle={`${stats.total} loja(s) encontrada(s)`}
           action={
-            <Link to="/admin/stores/new">
-              <Button icon={MdAdd}>Nova Loja</Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <button onClick={handleTemplate} className="btn btn-outline flex items-center gap-2" title="Baixar planilha modelo">
+                <MdDownload /> Modelo
+              </button>
+              <button
+                onClick={() => fileRef.current?.click()}
+                disabled={importing}
+                className="btn btn-outline flex items-center gap-2 disabled:opacity-50"
+              >
+                <MdUploadFile /> {importing ? 'Importando…' : 'Importar'}
+              </button>
+              <Link to="/admin/stores/new">
+                <Button icon={MdAdd}>Nova Loja</Button>
+              </Link>
+              <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
+            </div>
           }
         />
 

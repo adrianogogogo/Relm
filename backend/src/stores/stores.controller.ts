@@ -12,6 +12,7 @@ import {
 import { StoresService } from './stores.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
+import { BulkCreateStoresDto } from './dto/bulk-create-stores.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -25,6 +26,13 @@ export class StoresController {
   @Roles('ADMIN_RELM', 'GERENTE_RELM', 'DISTRIBUIDOR')
   create(@Body() createStoreDto: CreateStoreDto) {
     return this.storesService.create(createStoreDto);
+  }
+
+  // Importação em lote via planilha (.csv/.xlsx). Restrito a admin/gerente.
+  @Post('bulk')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  bulkCreate(@Body() dto: BulkCreateStoresDto) {
+    return this.storesService.createMany(dto.stores);
   }
 
   @Get()

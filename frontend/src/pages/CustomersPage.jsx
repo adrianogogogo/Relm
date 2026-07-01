@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { MdDelete, MdPeople, MdHowToReg, MdVerifiedUser, MdEventAvailable, MdAdd } from 'react-icons/md';
+import { MdDelete, MdPeople, MdHowToReg, MdVerifiedUser, MdEventAvailable, MdAdd, MdUploadFile, MdDownload } from 'react-icons/md';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader, StatusChip, StatCard, Button } from '../components/ui';
+import { readSheetRows, cell, downloadTemplate } from '../utils/sheetImport';
 
 export default function CustomersPage() {
   const { user } = useAuthStore();
@@ -13,6 +14,8 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('');
   const [filterStore, setFilterStore] = useState('');
   const [stores, setStores] = useState([]);
+  const [importing, setImporting] = useState(false);
+  const fileRef = useRef(null);
 
   useEffect(() => {
     fetchCustomers();
@@ -39,6 +42,49 @@ export default function CustomersPage() {
       setStores(response.data);
     } catch (error) {
       console.error('Erro ao carregar lojas:', error);
+    }
+  };
+
+  const handleTemplate = () =>
+    downloadTemplate(
+      ['Nome', 'Email', 'Telefone', 'CPF', 'Endereço', 'Cidade', 'Estado', 'CEP', 'Observações'],
+      'modelo-clientes.xlsx',
+      'Clientes',
+    );
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // permite reimportar o mesmo arquivo
+    if (!file) return;
+    try {
+      const json = await readSheetRows(file);
+      const rows = json
+        .map((r) => ({
+          fullName: cell(r, 'nome'),
+          email: cell(r, 'email'),
+          phone: cell(r, 'telefone') || cell(r, 'celular') || cell(r, 'fone'),
+          cpf: cell(r, 'cpf') || undefined,
+          address: cell(r, 'endereco') || undefined,
+          city: cell(r, 'cidade') || undefined,
+          state: cell(r, 'estado') || cell(r, 'uf') || undefined,
+          zipCode: cell(r, 'cep') || undefined,
+          notes: cell(r, 'observacoes') || cell(r, 'obs') || undefined,
+        }))
+        .filter((r) => r.fullName && r.email && r.phone);
+      if (rows.length === 0) {
+        alert('Nenhuma linha válida. Nome, Email e Telefone são obrigatórios. Use os cabeçalhos do modelo.');
+        return;
+      }
+      if (!confirm(`Importar ${rows.length} cliente(s)?`)) return;
+      setImporting(true);
+      const res = await api.post('/customers/bulk', { customers: rows });
+      alert(`✅ ${res.data.created} cliente(s) importado(s).`);
+      fetchCustomers();
+    } catch (err) {
+      const msg = err.response?.data?.message;
+      alert(`❌ ${Array.isArray(msg) ? msg[0] : msg || err.message || 'Falha ao importar.'}`);
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -78,9 +124,22 @@ export default function CustomersPage() {
           title="Clientes"
           subtitle={`${filteredCustomers.length} cliente(s) encontrado(s)`}
           action={
-            <Link to="/admin/customers/new">
-              <Button icon={MdAdd}>Novo Cliente</Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <button onClick={handleTemplate} className="btn btn-outline flex items-center gap-2" title="Baixar planilha modelo">
+                <MdDownload /> Modelo
+              </button>
+              <button
+                onClick={() => fileRef.current?.click()}
+                disabled={importing}
+                className="btn btn-outline flex items-center gap-2 disabled:opacity-50"
+              >
+                <MdUploadFile /> {importing ? 'Importando…' : 'Importar'}
+              </button>
+              <Link to="/admin/customers/new">
+                <Button icon={MdAdd}>Novo Cliente</Button>
+              </Link>
+              <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
+            </div>
           }
         />
 
