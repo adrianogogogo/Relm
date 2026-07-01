@@ -86,6 +86,7 @@ model Product {
   purchaseInvoiceNumber String?   @map("purchase_invoice_number")
   purchaseStoreName     String?   @map("purchase_store_name")
   storeId               String?   @map("store_id")
+  price                 Decimal?  @map("price") @db.Decimal(10, 2)
   
   // Metadata
   createdAt DateTime @default(now()) @map("created_at")

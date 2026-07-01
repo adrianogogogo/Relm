@@ -12,7 +12,7 @@ const cell = (row, key) => {
   return '';
 };
 
-const EMPTY = { name: '', brand: 'Relm Bikes', sku: '', model: '', year: '', description: '' };
+const EMPTY = { name: '', brand: 'Relm Bikes', sku: '', model: '', year: '', description: '', price: '' };
 const OTHER = '__other__';
 
 export default function AdminProductsPage() {
@@ -64,6 +64,8 @@ export default function AdminProductsPage() {
       const rows = json
         .map((r) => {
           const y = Number(cell(r, 'ano'));
+          const pStr = cell(r, 'preco') || cell(r, 'valor');
+          const p = pStr ? Number(pStr) : undefined;
           return {
             name: cell(r, 'nome'),
             brand: cell(r, 'marca') || undefined,
@@ -71,6 +73,7 @@ export default function AdminProductsPage() {
             model: cell(r, 'modelo') || undefined,
             year: Number.isInteger(y) && y > 0 ? y : undefined,
             description: cell(r, 'descricao') || undefined,
+            price: p && !isNaN(p) ? p : undefined,
           };
         })
         .filter((r) => r.name);
@@ -86,7 +89,7 @@ export default function AdminProductsPage() {
   };
 
   const handleDownloadTemplate = () => {
-    const ws = XLSX.utils.aoa_to_sheet([['Nome', 'Marca', 'SKU', 'Modelo', 'Ano', 'Descrição']]);
+    const ws = XLSX.utils.aoa_to_sheet([['Nome', 'Marca', 'SKU', 'Modelo', 'Ano', 'Preço', 'Descrição']]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Produtos');
     XLSX.writeFile(wb, 'modelo-produtos.xlsx');
@@ -98,6 +101,7 @@ export default function AdminProductsPage() {
     setForm({
       name: p.name || '', brand: p.brand || 'Relm Bikes', sku: p.sku || '',
       model: p.model || '', year: p.year ? String(p.year) : '', description: p.description || '',
+      price: p.price ? String(p.price) : '',
     });
     setOtherBrand(!!p.brand && !brandOptions.includes(p.brand));
     setShowModal(true);
@@ -114,6 +118,7 @@ export default function AdminProductsPage() {
       model: form.model.trim() || undefined,
       year: form.year ? Number(form.year) : undefined,
       description: form.description.trim() || undefined,
+      price: form.price ? Number(form.price) : undefined,
     });
   };
 
@@ -144,13 +149,14 @@ export default function AdminProductsPage() {
               <th className="px-4 py-3">Modelo</th>
               <th className="px-4 py-3">SKU</th>
               <th className="px-4 py-3">Ano</th>
+              <th className="px-4 py-3">Preço</th>
               <th className="px-4 py-3 text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {isLoading && <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">Carregando…</td></tr>}
+            {isLoading && <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400">Carregando…</td></tr>}
             {!isLoading && products.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">Nenhum produto cadastrado.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400">Nenhum produto cadastrado.</td></tr>
             )}
             {products.map((p) => (
               <tr key={p.id} className="border-t border-gray-100 dark:border-slate-800">
@@ -159,6 +165,11 @@ export default function AdminProductsPage() {
                 <td className="px-4 py-3">{p.model || '—'}</td>
                 <td className="px-4 py-3 font-mono text-xs">{p.sku || '—'}</td>
                 <td className="px-4 py-3">{p.year || '—'}</td>
+                <td className="px-4 py-3">
+                  {p.price
+                    ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.price)
+                    : '—'}
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
                     <button onClick={() => openEdit(p)} className="text-gray-400 hover:text-primary" title="Editar"><MdEdit size={18} /></button>
@@ -215,6 +226,14 @@ export default function AdminProductsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <input className="input" type="number" placeholder="Ano" value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })} />
+                <input
+                  className="input"
+                  type="number"
+                  step="0.01"
+                  placeholder="Preço (R$)"
+                  value={form.price}
+                  onChange={(e) => setForm({ ...form, price: e.target.value })}
+                />
               </div>
               <div>
                 <textarea className="input" rows={3} placeholder="Descrição" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />

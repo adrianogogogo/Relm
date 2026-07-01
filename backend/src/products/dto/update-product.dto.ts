@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsInt, MaxLength, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsInt, MaxLength, Min, Max, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateProductDto {
@@ -37,4 +37,10 @@ export class UpdateProductDto {
   @IsOptional()
   @IsString()
   storeId?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  price?: number;
 }

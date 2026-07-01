@@ -69,6 +69,7 @@ export default function StoreProductsPage() {
                     <th className="text-left px-6 py-3 text-xs font-semibold text-gray-600 dark:text-slate-300 uppercase">Tipo</th>
                     <th className="text-left px-6 py-3 text-xs font-semibold text-gray-600 dark:text-slate-300 uppercase">Serial</th>
                     <th className="text-left px-6 py-3 text-xs font-semibold text-gray-600 dark:text-slate-300 uppercase">Marca</th>
+                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-600 dark:text-slate-300 uppercase">Valor</th>
                     <th className="text-left px-6 py-3 text-xs font-semibold text-gray-600 dark:text-slate-300 uppercase">Cadastro</th>
                   </tr>
                 </thead>
@@ -79,6 +80,11 @@ export default function StoreProductsPage() {
                       <td className="px-6 py-3 text-gray-600 dark:text-slate-400">{p.productType}</td>
                       <td className="px-6 py-3 font-mono text-sm text-gray-600 dark:text-slate-400">{p.serialNumber}</td>
                       <td className="px-6 py-3 text-gray-600 dark:text-slate-400">{p.brand}</td>
+                      <td className="px-6 py-3 text-gray-600 dark:text-slate-400">
+                        {p.price
+                          ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.price)
+                          : '—'}
+                      </td>
                       <td className="px-6 py-3 text-gray-500 dark:text-slate-400 text-sm">
                         {new Date(p.createdAt).toLocaleDateString('pt-BR')}
                       </td>

@@ -23,6 +23,7 @@ export class ProductsService {
         ...(dto.year !== undefined && { year: dto.year }),
         ...(dto.description && { description: dto.description }),
         ...(dto.storeId && { storeId: dto.storeId }),
+        ...(dto.price !== undefined && { price: dto.price }),
       },
     });
   }
@@ -36,6 +37,7 @@ export class ProductsService {
       ...(r.model && { model: r.model }),
       ...(r.year !== undefined && { year: r.year }),
       ...(r.description && { description: r.description }),
+      ...(r.price !== undefined && { price: r.price }),
     }));
     const result = await this.prisma.product.createMany({ data });
     return { created: result.count };
@@ -56,6 +58,7 @@ export class ProductsService {
         ...(dto.year !== undefined && { year: dto.year }),
         ...(dto.description !== undefined && { description: dto.description || null }),
         ...(dto.storeId !== undefined && { storeId: dto.storeId || null }),
+        ...(dto.price !== undefined && { price: dto.price }),
       },
     });
   }
@@ -88,6 +91,7 @@ export class ProductsService {
         model: true,
         productType: true,
         year: true,
+        price: true,
       },
     });
   }
