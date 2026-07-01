@@ -461,6 +461,40 @@ export class WarrantyService {
     if (!task) {
       throw new NotFoundException('Tarefa não encontrada');
     }
+
+    // Regras de conclusão (só ao marcar como concluída uma tarefa ainda pendente).
+    if (data.status === 'concluida' && task.status !== 'concluida') {
+      // Ordena o fluxo por prazo (mesma lógica do card Responsável; dueDate cresce
+      // com a sequência). ponytail: tarefas manuais sem dueDate podem ficar fora
+      // de ordem — só afeta a checagem se houver tarefa manual entre as do fluxo.
+      const tasks = await this.prisma.warrantyTask.findMany({
+        where: { claimId: task.claimId },
+        orderBy: [{ dueDate: 'asc' }, { createdAt: 'asc' }],
+      });
+      const idx = tasks.findIndex((t) => t.id === taskId);
+      const prev = idx > 0 ? tasks[idx - 1] : null;
+
+      // 1) Fluxo sequencial: a tarefa anterior precisa estar concluída
+      //    (cancelada = pulada, não bloqueia).
+      if (prev && prev.status === 'pendente') {
+        throw new BadRequestException(
+          `Conclua a tarefa anterior ("${prev.title}") antes desta.`,
+        );
+      }
+
+      // 2) A tarefa de sugestão só conclui com ao menos uma solução proposta.
+      if (task.stage === 'sugestao') {
+        const solutions = await this.prisma.warrantySolution.count({
+          where: { claimId: task.claimId },
+        });
+        if (solutions === 0) {
+          throw new BadRequestException(
+            'Proponha uma solução antes de concluir a tarefa de sugestão.',
+          );
+        }
+      }
+    }
+
     const updated = await this.prisma.warrantyTask.update({
       where: { id: taskId },
       data: {
