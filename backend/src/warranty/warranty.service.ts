@@ -420,15 +420,29 @@ export class WarrantyService {
     if (!claim) {
       throw new NotFoundException('Garantia não encontrada');
     }
+
+    // Prazo define a posição no fluxo (ordenação por dueDate). Tarefa nova sem
+    // prazo entra no FIM da sequência (após a última), senão cairia antes das
+    // tarefas pré-determinadas (cujo dueDate é futuro) e as bloquearia.
+    let dueDate = data.dueDate ? new Date(data.dueDate) : null;
+    if (!dueDate) {
+      const last = await this.prisma.warrantyTask.findFirst({
+        where: { claimId, dueDate: { not: null } },
+        orderBy: { dueDate: 'desc' },
+        select: { dueDate: true },
+      });
+      dueDate = new Date((last?.dueDate?.getTime() ?? Date.now()) + 86400000);
+    }
+
     const task = await this.prisma.warrantyTask.create({
       data: {
         claimId,
         title: data.title,
         // Tarefa manual: stage livre (não depende mais do enum status).
         stage: 'workflow',
+        dueDate,
         ...(data.assignee && { assignee: data.assignee }),
         ...(data.assigneeRole && { assigneeRole: data.assigneeRole }),
-        ...(data.dueDate && { dueDate: new Date(data.dueDate) }),
         ...(data.status && { status: data.status }),
         ...(userId && { createdByUserId: userId }),
       },
@@ -1212,5 +1226,44 @@ export class WarrantyService {
         store: claim.store,
       },
     };
+  }
+
+  // ── Exclusão de garantia (somente ADMIN_RELM) ─────────────────────────────
+
+  async deleteClaim(id: string, adminUserId?: string) {
+    const claim = await this.prisma.warrantyClaim.findUnique({
+      where: { id },
+      include: { attachments: true },
+    });
+    if (!claim) {
+      throw new NotFoundException('Garantia não encontrada');
+    }
+
+    // Remove arquivos físicos dos anexos (best-effort: nunca bloqueia a exclusão).
+    for (const att of claim.attachments) {
+      try {
+        if (att.storagePath && fs.existsSync(att.storagePath)) {
+          fs.unlinkSync(att.storagePath);
+        }
+      } catch (err) {
+        this.logger.warn(`Falha ao remover arquivo ${att.storagePath}: ${err.message}`);
+      }
+    }
+
+    // Cascade deleta history, solutions, tasks e attachments (onDelete: Cascade no schema).
+    await this.prisma.warrantyClaim.delete({ where: { id } });
+
+    // Audit log
+    await this.auditLogsService.log({
+      action: 'WARRANTY_DELETED',
+      entity: 'WarrantyClaim',
+      entityId: id,
+      userId: adminUserId,
+      metadata: { protocolNumber: claim.protocolNumber },
+    });
+
+    this.logger.log(`Garantia ${claim.protocolNumber} excluída por ${adminUserId}`);
+
+    return { deleted: true, protocolNumber: claim.protocolNumber };
   }
 }

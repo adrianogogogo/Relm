@@ -125,6 +125,7 @@ export const warrantyAPI = {
   // Gate da garantia em "Em Análise" (admin/gerente)
   approveClaim: (id) => api.post(`/warranty/claims/${id}/approve`).then((res) => res.data),
   rejectClaim: (id, reason) => api.post(`/warranty/claims/${id}/reject`, { reason }).then((res) => res.data),
+  deleteClaim: (id) => api.delete(`/warranty/claims/${id}`).then((res) => res.data),
 };
 
 export const benefitsAPI = {

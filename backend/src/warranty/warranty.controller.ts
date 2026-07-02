@@ -85,6 +85,15 @@ export class WarrantyController {
     return this.warrantyService.findOne(id);
   }
 
+  @Delete('warranty/claims/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Excluir garantia permanentemente (somente superadmin)' })
+  async deleteClaim(@Param('id') id: string, @Request() req: any) {
+    return this.warrantyService.deleteClaim(id, req.user?.userId);
+  }
+
   @Patch('warranty/claims/:id/cost')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_RELM', 'GERENTE_RELM')

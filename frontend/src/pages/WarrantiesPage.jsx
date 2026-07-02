@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { MdDescription, MdAccessTime, MdCheckCircle, MdCancel, MdAdd } from 'react-icons/md';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { MdDescription, MdAccessTime, MdCheckCircle, MdCancel, MdAdd, MdDelete } from 'react-icons/md';
 import { warrantyAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import WarrantyReviewModal from '../components/WarrantyReviewModal';
 import WarrantyCreateModal from '../components/WarrantyCreateModal';
+import Dialog from '../components/Dialog';
 import { Card, PageHeader, StatusChip, StatCard, Button } from '../components/ui';
 
 export default function WarrantiesPage() {
@@ -19,6 +20,21 @@ export default function WarrantiesPage() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const canCreate = user?.role === 'ADMIN_RELM' || user?.role === 'GERENTE_RELM';
+  const isSuperAdmin = user?.userType === 'ADMIN_RELM' || user?.role === 'ADMIN_RELM';
+
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => warrantyAPI.deleteClaim(id),
+    onSuccess: (data) => {
+      setDeleteTarget(null);
+      queryClient.invalidateQueries({ queryKey: ['warranties'] });
+      alert(`✅ Garantia ${data.protocolNumber} excluída com sucesso.`);
+    },
+    onError: (error) => {
+      alert(`❌ Erro ao excluir: ${error.response?.data?.message || error.message}`);
+    },
+  });
 
   const { data: warranties, isLoading, refetch } = useQuery({
     queryKey: ['warranties', statusFilter, searchTerm],
@@ -195,12 +211,23 @@ export default function WarrantiesPage() {
                         {new Date(warranty.createdAt).toLocaleDateString('pt-BR')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => setSelectedWarranty(warranty)}
-                          className="text-primary dark:text-primary-400 hover:underline font-semibold"
-                        >
-                          Revisar
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => setSelectedWarranty(warranty)}
+                            className="text-primary dark:text-primary-400 hover:underline font-semibold"
+                          >
+                            Revisar
+                          </button>
+                          {isSuperAdmin && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setDeleteTarget(warranty); }}
+                              className="text-gray-400 hover:text-error transition-colors p-1 rounded"
+                              title="Excluir garantia"
+                            >
+                              <MdDelete size={18} />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -236,6 +263,40 @@ export default function WarrantiesPage() {
             refetch();
           }}
         />
+      )}
+
+      {/* Dialog de confirmação de exclusão */}
+      {deleteTarget && (
+        <Dialog
+          open={!!deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          title="Excluir Garantia"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600 dark:text-slate-300">
+              Tem certeza que deseja excluir permanentemente a garantia{' '}
+              <strong>{deleteTarget.protocolNumber}</strong>?
+            </p>
+            <p className="text-xs text-error font-medium">
+              ⚠️ Esta ação é irreversível. Todos os dados, anexos, soluções, tarefas e histórico serão apagados.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setDeleteTarget(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => deleteMutation.mutate(deleteTarget.id)}
+                disabled={deleteMutation.isPending}
+                className="px-4 py-2 bg-error hover:bg-error-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? 'Excluindo…' : 'Excluir permanentemente'}
+              </button>
+            </div>
+          </div>
+        </Dialog>
       )}
     </div>
   );

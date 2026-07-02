@@ -10,6 +10,7 @@ import {
 import { warrantyAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import WarrantyWorkflowPanel from './WarrantyWorkflowPanel';
+import Dialog from './Dialog';
 
 
 const STEP_INFO = [
@@ -319,6 +320,9 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
   // Gating: somente ADMIN_RELM/GERENTE_RELM veem custo e reversão.
   const userType = useAuthStore((state) => state.user?.userType);
   const isAdminOrManager = userType === 'ADMIN_RELM' || userType === 'GERENTE_RELM';
+  const isSuperAdmin = userType === 'ADMIN_RELM';
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const ACTION_CONFIG = {
     status_change: { label: 'Mudança de status', color: 'bg-blue-100 text-blue-800', icon: '🔄' },
@@ -539,6 +543,19 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
     },
     onError: (error) => {
       alert(`❌ Erro ao atribuir responsável: ${error.response?.data?.message || error.message}`);
+    },
+  });
+
+  const deleteClaimMutation = useMutation({
+    mutationFn: () => warrantyAPI.deleteClaim(currentWarranty.id),
+    onSuccess: (data) => {
+      setShowDeleteDialog(false);
+      alert(`✅ Garantia ${data.protocolNumber} excluída com sucesso.`);
+      onSuccess();
+      onClose();
+    },
+    onError: (error) => {
+      alert(`❌ Erro ao excluir: ${error.response?.data?.message || error.message}`);
     },
   });
 
@@ -1274,7 +1291,48 @@ export default function WarrantyReviewModal({ warranty, onClose, onSuccess }) {
             Fechar
           </button>
 
+          {isSuperAdmin && (
+            <button
+              onClick={() => setShowDeleteDialog(true)}
+              className="px-4 py-2 border border-error text-error rounded-lg text-sm font-semibold hover:bg-error hover:text-white transition-colors flex items-center gap-1.5 disabled:opacity-50"
+              disabled={busy || deleteClaimMutation.isPending}
+            >
+              <MdDelete size={16} /> Excluir garantia
+            </button>
+          )}
         </div>
+
+        {/* Dialog de confirmação de exclusão */}
+        <Dialog
+          open={showDeleteDialog}
+          onClose={() => setShowDeleteDialog(false)}
+          title="Excluir Garantia Permanentemente"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600 dark:text-slate-300">
+              Tem certeza que deseja excluir permanentemente a garantia{' '}
+              <strong>{currentWarranty.protocolNumber}</strong>?
+            </p>
+            <p className="text-xs text-error font-medium">
+              ⚠️ Esta ação é irreversível. Todos os dados, anexos, soluções, tarefas e histórico serão apagados permanentemente.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowDeleteDialog(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => deleteClaimMutation.mutate()}
+                disabled={deleteClaimMutation.isPending}
+                className="px-4 py-2 bg-error hover:bg-error-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50"
+              >
+                {deleteClaimMutation.isPending ? 'Excluindo…' : 'Excluir permanentemente'}
+              </button>
+            </div>
+          </div>
+        </Dialog>
       </div>
     </div>
   );
