@@ -223,7 +223,14 @@ export default function CustomersPage() {
                     <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-slate-100">{customer.fullName}</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-slate-100 flex items-center gap-1.5">
+                            {customer.fullName}
+                            {customer.currentTier === 'PLUS' && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200 shrink-0">
+                                ★ Plus
+                              </span>
+                            )}
+                          </div>
                           <div className="text-sm text-gray-500 dark:text-slate-400">{customer.cpf}</div>
                         </div>
                       </td>

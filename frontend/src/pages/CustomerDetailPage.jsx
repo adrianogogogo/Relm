@@ -93,7 +93,14 @@ export default function CustomerDetailPage() {
             >
               <MdArrowBack size={16} /> Voltar para clientes
             </Link>
-            <h1 className="font-title text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100">{customer.fullName}</h1>
+            <h1 className="font-title text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+              {customer.fullName}
+              {customer.currentTier === 'PLUS' && (
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                  ★ Care Plus
+                </span>
+              )}
+            </h1>
             <p className="text-gray-500 dark:text-slate-400 mt-1">{customer.email}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
