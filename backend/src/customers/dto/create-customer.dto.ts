@@ -61,4 +61,8 @@ export class CreateCustomerDto {
   @IsOptional()
   @IsBoolean()
   marketingConsent?: boolean;
+
+  @IsOptional()
+  @IsString()
+  currentTier?: 'CARE' | 'PLUS';
 }

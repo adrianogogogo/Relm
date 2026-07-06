@@ -29,6 +29,7 @@ export default function CustomerFormPage() {
     storeId: '',
     notes: '',
     active: true,
+    currentTier: 'CARE',
   });
 
   useEffect(() => {
@@ -64,6 +65,7 @@ export default function CustomerFormPage() {
         storeId: data.storeId ?? 'direct',
         notes: data.notes || '',
         active: data.active ?? true,
+        currentTier: data.currentTier || 'CARE',
       });
     } catch (error) {
       console.error('Erro ao carregar cliente:', error);
@@ -393,6 +395,28 @@ export default function CustomerFormPage() {
                 </select>
                 <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
                   Onde o cliente adquiriu a bicicleta Relm
+                </p>
+              </div>
+            </div>
+
+            {/* Categoria de Relacionamento (Tier) */}
+            <div>
+              <h2 className="font-title text-xl font-bold mb-4 text-gray-900 dark:text-slate-100">Categoria de Relacionamento</h2>
+              <div>
+                <label className="label">
+                  Plano / Categoria
+                </label>
+                <select
+                  name="currentTier"
+                  value={formData.currentTier}
+                  onChange={handleChange}
+                  className="input"
+                >
+                  <option value="CARE">Relm Care (Base)</option>
+                  <option value="PLUS">Relm Care Plus (Premium)</option>
+                </select>
+                <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+                  Define o nível de cashback e os benefícios de suporte e oficina do cliente.
                 </p>
               </div>
             </div>
