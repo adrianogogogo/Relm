@@ -289,4 +289,10 @@ export const rewardsAPI = {
   getCatalog: () => api.get('/v1/rewards/catalog').then((res) => res.data),
   redeem: (data) => api.post('/v1/rewards/redeem', data).then((res) => res.data),
   getVouchers: (customerId) => api.get(`/v1/rewards/vouchers/${customerId}`).then((res) => res.data),
+  createCatalogItem: (data) => api.post('/v1/rewards/catalog', data).then((res) => res.data),
+  updateCatalogItem: (id, data) => api.patch(`/v1/rewards/catalog/${id}`, data).then((res) => res.data),
+  deleteCatalogItem: (id) => api.delete(`/v1/rewards/catalog/${id}`).then((res) => res.data),
+  getAllVouchers: () => api.get('/v1/rewards/vouchers').then((res) => res.data),
+  useVoucher: (code) => api.patch(`/v1/rewards/vouchers/${code}/use`).then((res) => res.data),
+  seedCatalog: () => api.post('/v1/rewards/seed').then((res) => res.data),
 };

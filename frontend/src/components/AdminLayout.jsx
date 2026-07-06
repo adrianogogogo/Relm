@@ -19,6 +19,8 @@ import {
   MdLogout,
   MdChevronLeft,
   MdChevronRight,
+  MdStars,
+  MdReceipt,
 } from 'react-icons/md';
 
 const MENU_ITEMS = [
@@ -28,6 +30,18 @@ const MENU_ITEMS = [
     icon: MdDashboard,
     exact: true,
     roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'],
+  },
+  {
+    path: '/admin/catalogo',
+    label: 'Catálogo Prêmios',
+    icon: MdStars,
+    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+  },
+  {
+    path: '/admin/vouchers',
+    label: 'Vouchers Resgatados',
+    icon: MdReceipt,
+    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
   },
   {
     path: '/admin/warranties',

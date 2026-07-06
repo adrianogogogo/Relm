@@ -62,6 +62,8 @@ import AdminUsersPage from './pages/AdminUsersPage';
 import AdminProductsPage from './pages/AdminProductsPage';
 import AuditLogsPage from './pages/AuditLogsPage';
 import AdminProfilePage from './pages/AdminProfilePage';
+import AdminCatalogPage from './pages/AdminCatalogPage';
+import AdminVouchersPage from './pages/AdminVouchersPage';
 import DistribuidorEventosPage from './pages/DistribuidorEventosPage';
 import DistribuidorBeneficiosPage from './pages/DistribuidorBeneficiosPage';
 
@@ -166,6 +168,16 @@ export default function App() {
             {/* Acessível por todos os roles do admin */}
             <Route index element={<AdminHome />} />
             <Route path="perfil" element={<AdminProfilePage />} />
+            <Route path="catalogo" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                <AdminCatalogPage />
+              </ProtectedRoute>
+            } />
+            <Route path="vouchers" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM']}>
+                <AdminVouchersPage />
+              </ProtectedRoute>
+            } />
             <Route path="customers" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA']}>
                 <CustomersPage />

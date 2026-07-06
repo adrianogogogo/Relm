@@ -113,4 +113,74 @@ export class RewardsService {
       },
     });
   }
+
+  async createCatalogItem(data: { title: string; description: string; pointsCost: number; stock: number }) {
+    return this.prisma.catalogItem.create({
+      data: {
+        ...data,
+        active: true,
+      },
+    });
+  }
+
+  async updateCatalogItem(id: string, data: { title?: string; description?: string; pointsCost?: number; stock?: number; active?: boolean }) {
+    return this.prisma.catalogItem.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async deleteCatalogItem(id: string) {
+    return this.prisma.catalogItem.update({
+      where: { id },
+      data: { active: false },
+    });
+  }
+
+  async getAllVouchers() {
+    return this.prisma.voucher.findMany({
+      include: {
+        customer: true,
+        catalogItem: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async useVoucher(code: string) {
+    const voucher = await this.prisma.voucher.findUnique({
+      where: { code },
+    });
+
+    if (!voucher) {
+      throw new BadRequestException('Voucher not found');
+    }
+
+    if (voucher.status === VoucherStatus.USED) {
+      throw new BadRequestException('Voucher already used');
+    }
+
+    if (new Date(voucher.expiresAt) < new Date()) {
+      throw new BadRequestException('Voucher expired');
+    }
+
+    const updated = await this.prisma.voucher.update({
+      where: { code },
+      data: { status: VoucherStatus.USED },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        userId: null,
+        action: 'UPDATE_STATUS',
+        entity: 'vouchers',
+        entityId: voucher.id,
+        metadata: { code, status: VoucherStatus.USED },
+      },
+    });
+
+    return updated;
+  }
 }

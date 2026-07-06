@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Patch, Delete, Param } from '@nestjs/common';
 import { RewardsService } from './rewards.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
@@ -17,6 +17,41 @@ export class RewardsController {
   @ApiOperation({ summary: 'Get all catalog items' })
   async getCatalog() {
     return this.rewardsService.getCatalog();
+  }
+
+  @Post('catalog')
+  @ApiOperation({ summary: 'Create catalog item' })
+  async createCatalogItem(
+    @Body() dto: { title: string; description: string; pointsCost: number; stock: number },
+  ) {
+    return this.rewardsService.createCatalogItem(dto);
+  }
+
+  @Patch('catalog/:id')
+  @ApiOperation({ summary: 'Update catalog item' })
+  async updateCatalogItem(
+    @Param('id') id: string,
+    @Body() dto: { title?: string; description?: string; pointsCost?: number; stock?: number; active?: boolean },
+  ) {
+    return this.rewardsService.updateCatalogItem(id, dto);
+  }
+
+  @Delete('catalog/:id')
+  @ApiOperation({ summary: 'Inactivate catalog item' })
+  async deleteCatalogItem(@Param('id') id: string) {
+    return this.rewardsService.deleteCatalogItem(id);
+  }
+
+  @Get('vouchers')
+  @ApiOperation({ summary: 'Get all vouchers (admin view)' })
+  async getAllVouchers() {
+    return this.rewardsService.getAllVouchers();
+  }
+
+  @Patch('vouchers/:code/use')
+  @ApiOperation({ summary: 'Mark a voucher as used' })
+  async useVoucher(@Param('code') code: string) {
+    return this.rewardsService.useVoucher(code);
   }
 
   @Get('vouchers/:customerId')
