@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param } from '@nestjs/common';
 import { RewardsService } from './rewards.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
@@ -11,6 +11,18 @@ export class RewardsController {
   @ApiOperation({ summary: 'Redeem a catalog reward item' })
   async redeemReward(@Body() dto: { customerId: string; catalogItemId: string }) {
     return this.rewardsService.redeemReward(dto);
+  }
+
+  @Get('catalog')
+  @ApiOperation({ summary: 'Get all catalog items' })
+  async getCatalog() {
+    return this.rewardsService.getCatalog();
+  }
+
+  @Get('vouchers/:customerId')
+  @ApiOperation({ summary: 'Get all vouchers for a customer' })
+  async getVouchers(@Param('customerId') customerId: string) {
+    return this.rewardsService.getVouchers(customerId);
   }
 
   @Post('seed')

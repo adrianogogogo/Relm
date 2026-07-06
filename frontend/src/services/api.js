@@ -276,3 +276,15 @@ export const customerPortalAPI = {
   getBenefits: () => api.get('/customer-portal/benefits').then((res) => res.data),
   getPointsBalance: (customerId) => api.get(`/v1/points/balance/${customerId}`).then((res) => res.data),
 };
+
+export const workshopAPI = {
+  getAvailableSlots: (customerId) => api.get(`/v1/services/available-slots?customerId=${customerId}`).then((res) => res.data),
+  bookSlot: (data) => api.post('/v1/services/book', data).then((res) => res.data),
+  getCustomerOrders: (customerId) => api.get(`/v1/services/my-orders?customerId=${customerId}`).then((res) => res.data),
+};
+
+export const rewardsAPI = {
+  getCatalog: () => api.get('/v1/rewards/catalog').then((res) => res.data),
+  redeem: (data) => api.post('/v1/rewards/redeem', data).then((res) => res.data),
+  getVouchers: (customerId) => api.get(`/v1/rewards/vouchers/${customerId}`).then((res) => res.data),
+};

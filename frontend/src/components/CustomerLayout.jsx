@@ -14,11 +14,14 @@ import {
   MdLogout,
   MdChevronLeft,
   MdChevronRight,
+  MdBuild,
 } from 'react-icons/md';
 
 const MENU = [
   { path: '/cliente/dashboard', label: 'Início', icon: MdDashboard },
   { path: '/cliente/garantias', label: 'Minhas Garantias', icon: MdVerifiedUser },
+  { path: '/cliente/oficina', label: 'Oficina / Revisões', icon: MdBuild },
+  { path: '/cliente/resgate', label: 'Resgatar Prêmios', icon: MdCardGiftcard },
   { path: '/cliente/eventos', label: 'Meus Eventos', icon: MdEvent },
   { path: '/cliente/vantagens', label: 'Vantagens', icon: MdCardGiftcard },
   { path: '/cliente/seguros', label: 'Cotações de Seguro', icon: MdDescription },
@@ -29,9 +32,32 @@ export default function CustomerLayout() {
   const location = useLocation();
   const { user, logout } = useAuthStore();
   const { collapsed, toggle } = useSidebarStore();
+  const isPlus = user?.currentTier === 'PLUS';
 
   return (
     <div className="flex min-h-screen bg-app dark:bg-app-dark transition-colors duration-300">
+      {isPlus && (
+        <style>{`
+          .text-primary, .text-primary-400, .text-primary-500, .text-primary-600, .border-l-primary-300 {
+            color: #D4AF37 !important;
+            border-color: #D4AF37 !important;
+          }
+          .btn-outline {
+            border-color: #D4AF37 !important;
+            color: #D4AF37 !important;
+          }
+          .btn-outline:hover {
+            background-color: #D4AF37 !important;
+            color: #ffffff !important;
+          }
+          .bg-primary, .btn-primary, .bg-primary-300, .bg-primary-500, .bg-primary-600 {
+            background-color: #D4AF37 !important;
+          }
+          .hover\\:bg-primary-600:hover, .btn-primary:hover {
+            background-color: #C5A028 !important;
+          }
+        `}</style>
+      )}
       {/* Sidebar — §8.1: gradiente vertical #0d2137 → #1a3a5c, recolhível 260↔70px */}
       <aside
         className={`${

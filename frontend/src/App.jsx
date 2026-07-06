@@ -31,6 +31,8 @@ import CustomerEventsPage from './pages/CustomerEventsPage';
 import CustomerBenefitsPage from './pages/CustomerBenefitsPage';
 import CustomerInsurancePage from './pages/CustomerInsurancePage';
 import CustomerProfilePage from './pages/CustomerProfilePage';
+import CustomerWorkshopPage from './pages/CustomerWorkshopPage';
+import CustomerCatalogPage from './pages/CustomerCatalogPage';
 
 // Store portal pages
 import StoreDashboard from './pages/StoreDashboard';
@@ -125,6 +127,8 @@ export default function App() {
             <Route path="vantagens" element={<CustomerBenefitsPage />} />
             <Route path="seguros" element={<CustomerInsurancePage />} />
             <Route path="perfil" element={<CustomerProfilePage />} />
+            <Route path="oficina" element={<CustomerWorkshopPage />} />
+            <Route path="resgate" element={<CustomerCatalogPage />} />
           </Route>
 
           {/* ── Store portal (StoreLayout sidebar, no Header/Footer) ──────── */}

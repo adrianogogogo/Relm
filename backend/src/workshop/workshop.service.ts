@@ -108,4 +108,16 @@ export class WorkshopService {
 
     return order;
   }
+
+  async getCustomerOrders(customerId: string) {
+    return this.prisma.serviceOrder.findMany({
+      where: { customerId },
+      include: {
+        store: true,
+      },
+      orderBy: {
+        scheduledFor: 'desc',
+      },
+    });
+  }
 }

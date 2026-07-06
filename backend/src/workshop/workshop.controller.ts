@@ -14,6 +14,12 @@ export class WorkshopController {
     return this.workshopService.getAvailableSlots(customerId);
   }
 
+  @Get('my-orders')
+  @ApiOperation({ summary: 'Get all service orders for a customer' })
+  async getCustomerOrders(@Query('customerId') customerId: string) {
+    return this.workshopService.getCustomerOrders(customerId);
+  }
+
   @Post('book')
   @ApiOperation({ summary: 'Book a service order' })
   async bookSlot(

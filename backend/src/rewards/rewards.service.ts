@@ -97,4 +97,20 @@ export class RewardsService {
       this.logger.log('Seeded rewards catalog items.');
     }
   }
+
+  async getCatalog() {
+    return this.prisma.catalogItem.findMany();
+  }
+
+  async getVouchers(customerId: string) {
+    return this.prisma.voucher.findMany({
+      where: { customerId },
+      include: {
+        catalogItem: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
 }
