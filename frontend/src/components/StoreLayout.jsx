@@ -15,12 +15,14 @@ import {
   MdLogout,
   MdChevronLeft,
   MdChevronRight,
+  MdBuild,
 } from 'react-icons/md';
 
 const MENU = [
   { path: '/loja/dashboard', label: 'Início', icon: MdDashboard },
   { path: '/loja/clientes', label: 'Clientes', icon: MdPeople },
   { path: '/loja/garantias', label: 'Garantias', icon: MdVerifiedUser },
+  { path: '/loja/oficina', label: 'Oficina / Serviços', icon: MdBuild },
   { path: '/loja/seguros', label: 'Cotações de Seguro', icon: MdDescription },
   { path: '/loja/produtos', label: 'Produtos', icon: MdInventory2 },
   { path: '/loja/eventos', label: 'Eventos', icon: MdEvent },

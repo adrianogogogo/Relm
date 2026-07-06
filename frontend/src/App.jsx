@@ -43,6 +43,7 @@ import StoreProductsPage from './pages/StoreProductsPage';
 import StoreProfilePage from './pages/StoreProfilePage';
 import StoreEventsPage from './pages/StoreEventsPage';
 import StoreBenefitsPage from './pages/StoreBenefitsPage';
+import StoreWorkshopPage from './pages/StoreWorkshopPage';
 
 // Admin pages
 import AdminHome from './pages/AdminHome';
@@ -148,6 +149,7 @@ export default function App() {
             <Route path="eventos" element={<StoreEventsPage />} />
             <Route path="beneficios" element={<StoreBenefitsPage />} />
             <Route path="perfil" element={<StoreProfilePage />} />
+            <Route path="oficina" element={<StoreWorkshopPage />} />
           </Route>
 
           {/* ── Admin routes (AdminLayout sidebar, no Header/Footer) ──────── */}

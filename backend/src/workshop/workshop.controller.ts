@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Query, Param } from '@nestjs/common';
 import { WorkshopService } from './workshop.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { ServiceType } from '@prisma/client';
+import { ServiceType, ServiceStatus } from '@prisma/client';
 
 @ApiTags('Workshop')
 @Controller('v1/services')
@@ -18,6 +18,21 @@ export class WorkshopController {
   @ApiOperation({ summary: 'Get all service orders for a customer' })
   async getCustomerOrders(@Query('customerId') customerId: string) {
     return this.workshopService.getCustomerOrders(customerId);
+  }
+
+  @Get('store-orders')
+  @ApiOperation({ summary: 'Get all service orders for a store' })
+  async getStoreOrders(@Query('storeId') storeId: string) {
+    return this.workshopService.getStoreOrders(storeId);
+  }
+
+  @Patch('orders/:id/status')
+  @ApiOperation({ summary: 'Update status of a service order' })
+  async updateStatus(
+    @Param('id') id: string,
+    @Body('status') status: ServiceStatus,
+  ) {
+    return this.workshopService.updateOrderStatus(id, status);
   }
 
   @Post('book')

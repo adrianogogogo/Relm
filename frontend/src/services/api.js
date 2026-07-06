@@ -281,6 +281,8 @@ export const workshopAPI = {
   getAvailableSlots: (customerId) => api.get(`/v1/services/available-slots?customerId=${customerId}`).then((res) => res.data),
   bookSlot: (data) => api.post('/v1/services/book', data).then((res) => res.data),
   getCustomerOrders: (customerId) => api.get(`/v1/services/my-orders?customerId=${customerId}`).then((res) => res.data),
+  getStoreOrders: (storeId) => api.get(`/v1/services/store-orders?storeId=${storeId}`).then((res) => res.data),
+  updateOrderStatus: (id, status) => api.patch(`/v1/services/orders/${id}/status`, { status }).then((res) => res.data),
 };
 
 export const rewardsAPI = {

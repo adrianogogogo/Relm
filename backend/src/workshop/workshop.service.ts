@@ -120,4 +120,43 @@ export class WorkshopService {
       },
     });
   }
+
+  async getStoreOrders(storeId: string) {
+    return this.prisma.serviceOrder.findMany({
+      where: { storeId },
+      include: {
+        customer: true,
+      },
+      orderBy: {
+        scheduledFor: 'desc',
+      },
+    });
+  }
+
+  async updateOrderStatus(id: string, status: ServiceStatus) {
+    const order = await this.prisma.serviceOrder.findUnique({
+      where: { id },
+    });
+
+    if (!order) {
+      throw new BadRequestException('Service order not found');
+    }
+
+    const updated = await this.prisma.serviceOrder.update({
+      where: { id },
+      data: { status },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        userId: null,
+        action: 'UPDATE_STATUS',
+        entity: 'service_orders',
+        entityId: id,
+        metadata: { oldStatus: order.status, newStatus: status },
+      },
+    });
+
+    return updated;
+  }
 }
