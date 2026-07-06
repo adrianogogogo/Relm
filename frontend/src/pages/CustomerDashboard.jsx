@@ -28,6 +28,7 @@ const WARRANTY_STATUS_VARIANT = {
 
 export default function CustomerDashboard() {
   const { user } = useAuthStore();
+  const isPlus = user?.currentTier === 'PLUS';
 
   const { data: warranties = [] } = useQuery({
     queryKey: ['customer-warranties'],
@@ -49,11 +50,19 @@ export default function CustomerDashboard() {
     queryFn: customerPortalAPI.getInsuranceQuotes,
   });
 
+  const { data: pointsData } = useQuery({
+    queryKey: ['customer-points', user?.id],
+    queryFn: () => customerPortalAPI.getPointsBalance(user?.id),
+    enabled: !!user?.id && isPlus,
+  });
+
+  const points = pointsData?.balance || 0;
+
   const metrics = [
-    { label: 'Garantias', value: warranties.length, icon: MdVerifiedUser, color: '#1565C0', link: '/cliente/garantias' },
-    { label: 'Eventos', value: events.length, icon: MdEvent, color: '#2d3a4a', link: '/cliente/eventos' },
-    { label: 'Vantagens', value: benefits.length, icon: MdCardGiftcard, color: '#9C27B0', link: '/cliente/vantagens' },
-    { label: 'Cotações', value: quotes.length, icon: MdDescription, color: '#FF9800', link: '/cliente/seguros' },
+    { label: 'Garantias', value: warranties.length, icon: MdVerifiedUser, color: isPlus ? '#D4AF37' : '#1565C0', link: '/cliente/garantias' },
+    { label: 'Eventos', value: events.length, icon: MdEvent, color: isPlus ? '#D4AF37' : '#2d3a4a', link: '/cliente/eventos' },
+    { label: 'Vantagens', value: benefits.length, icon: MdCardGiftcard, color: isPlus ? '#D4AF37' : '#9C27B0', link: '/cliente/vantagens' },
+    { label: isPlus ? 'Meus Pontos' : 'Cotações', value: isPlus ? points : quotes.length, icon: isPlus ? MdCardGiftcard : MdDescription, color: isPlus ? '#D4AF37' : '#FF9800', link: isPlus ? '/cliente/vantagens' : '/cliente/seguros' },
   ];
 
   return (
@@ -61,9 +70,22 @@ export default function CustomerDashboard() {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <PageHeader
-          title={`Olá, ${user?.name?.split(' ')[0] || 'cliente'}! 👋`}
+          title={isPlus ? `Olá, ${user?.name?.split(' ')[0] || 'cliente'}! 🌟 (Membro Plus)` : `Olá, ${user?.name?.split(' ')[0] || 'cliente'}! 👋`}
           subtitle="Bem-vindo ao seu portal Relm Care+"
         />
+
+        {/* Upgrade Banner for CARE */}
+        {!isPlus && (
+          <div className="bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg p-6 mb-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+              <h3 className="font-bold text-lg">Faça o upgrade para o Relm Care Plus! 🚴✨</h3>
+              <p className="text-sm opacity-90">Ganhe o dobro de pontos, agendamento prioritário na oficina e Concierge VIP no WhatsApp.</p>
+            </div>
+            <button className="btn bg-white text-teal-600 hover:bg-gray-100 border-none font-semibold">
+              Quero ser Plus
+            </button>
+          </div>
+        )}
 
         {/* KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -174,6 +196,17 @@ export default function CustomerDashboard() {
               <Link to="/cliente/perfil" className="btn btn-outline justify-start">
                 <MdPerson size={18} /> Editar meu perfil
               </Link>
+              {isPlus && (
+                <a
+                  href="https://wa.me/5511987654321?text=Olá!%20Sou%20membro%20Care%20Plus%20e%20gostaria%20de%20falar%20com%20meu%20Concierge."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn text-white justify-start col-span-1 md:col-span-2"
+                  style={{ backgroundColor: '#D4AF37', borderColor: '#D4AF37' }}
+                >
+                  💬 WhatsApp Concierge VIP
+                </a>
+              )}
             </div>
           </Card>
         </div>

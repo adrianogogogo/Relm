@@ -274,4 +274,5 @@ export const customerPortalAPI = {
   getInsuranceQuotes: () => api.get('/customer-portal/insurance-quotes').then((res) => res.data),
   getEvents: () => api.get('/customer-portal/events').then((res) => res.data),
   getBenefits: () => api.get('/customer-portal/benefits').then((res) => res.data),
+  getPointsBalance: (customerId) => api.get(`/v1/points/balance/${customerId}`).then((res) => res.data),
 };

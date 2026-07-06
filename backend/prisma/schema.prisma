@@ -54,6 +54,9 @@ model Customer {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // V2 Expansão
+  currentTier            TierLevel               @default(CARE) @map("current_tier")
+
   // Relations
   store                  Store?                  @relation(fields: [storeId], references: [id])
   warrantyClaims         WarrantyClaim[]
@@ -62,6 +65,10 @@ model Customer {
   newsletterSubscription NewsletterSubscription?
   insuranceQuotes        InsuranceQuote[]
   privacyConsents        PrivacyConsent[]
+  subscription           Subscription?
+  pointsLedger           PointsLedger[]
+  serviceOrders          ServiceOrder[]
+  vouchers               Voucher[]
   
   @@index([email])
   @@index([cpf])
@@ -130,6 +137,7 @@ model Store {
   customers       Customer[]
   warrantyClaims  WarrantyClaim[]
   storeUsers      StoreUser[]
+  serviceOrders   ServiceOrder[]
   
   @@index([city, state])
   @@map("stores")
@@ -733,4 +741,128 @@ model Banner {
   @@index([displayOrder])
   @@index([audience, page, active])
   @@map("banners")
+}
+
+// ============================================
+// V2 EXPANSÃO MODULES
+// ============================================
+
+enum TierLevel {
+  CARE
+  PLUS
+}
+
+enum SubStatus {
+  ACTIVE
+  EXPIRED
+  DOWNGRADED
+}
+
+enum PointTxType {
+  EARN
+  REDEEM
+  EXPIRE
+}
+
+enum ServiceType {
+  REVISION_BASIC
+  REVISION_COMPLETE
+  DIAGNOSTIC
+}
+
+enum PriorityLevel {
+  STANDARD
+  HIGH_PRIORITY
+}
+
+enum ServiceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum VoucherStatus {
+  UNUSED
+  USED
+  EXPIRED
+}
+
+model Subscription {
+  id          String    @id @default(uuid())
+  customerId  String    @unique @map("customer_id")
+  customer    Customer  @relation(fields: [customerId], references: [id])
+  tier        TierLevel @default(CARE)
+  status      SubStatus
+  activatedAt DateTime  @default(now()) @map("activated_at")
+  expiresAt   DateTime? @map("expires_at") // Null se o tier for CARE
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  autoRenew   Boolean   @default(false) @map("auto_renew")
+
+  @@index([customerId, status])
+  @@map("subscriptions")
+}
+
+model PointsLedger {
+  id              String      @id @default(uuid())
+  customerId      String      @map("customer_id")
+  customer        Customer    @relation(fields: [customerId], references: [id])
+  transactionType PointTxType @map("transaction_type")
+  amount          Int
+  description     String
+  referenceId     String?     @map("reference_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  expiresAt       DateTime?   @map("expires_at")
+  isExpired       Boolean     @default(false) @map("is_expired")
+
+  @@index([customerId])
+  @@map("points_ledger")
+}
+
+model ServiceOrder {
+  id              String        @id @default(uuid())
+  customerId      String        @map("customer_id")
+  customer        Customer      @relation(fields: [customerId], references: [id])
+  storeId         String        @map("store_id")
+  store           Store         @relation(fields: [storeId], references: [id])
+  bikeModel       String        @map("bike_model")
+  serviceType     ServiceType   @map("service_type")
+  priority        PriorityLevel
+  deliveryRequest Boolean       @default(false) @map("delivery_request")
+  scheduledFor    DateTime      @map("scheduled_for")
+  status          ServiceStatus
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@map("service_orders")
+}
+
+model CatalogItem {
+  id          String    @id @default(uuid())
+  title       String
+  description String    @db.Text
+  pointsCost  Int       @map("points_cost")
+  stock       Int       @default(0)
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  vouchers    Voucher[]
+
+  @@map("catalog_items")
+}
+
+model Voucher {
+  id            String        @id @default(uuid())
+  code          String        @unique
+  status        VoucherStatus @default(UNUSED)
+  customerId    String        @map("customer_id")
+  catalogItemId String        @map("catalog_item_id")
+  expiresAt     DateTime      @map("expires_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  usedAt        DateTime?     @map("used_at")
+
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  catalogItem CatalogItem @relation(fields: [catalogItemId], references: [id])
+
+  @@map("vouchers")
 }

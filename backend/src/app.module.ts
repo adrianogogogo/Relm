@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { StoreAuthModule } from './store-auth/store-auth.module';
@@ -21,6 +23,11 @@ import { ContentModule } from './content/content.module';
 import { ReportsModule } from './reports/reports.module';
 import { BannersModule } from './banners/banners.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { PointsModule } from './points/points.module';
+import { WorkshopModule } from './workshop/workshop.module';
+import { RewardsModule } from './rewards/rewards.module';
+import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { HealthController } from './health.controller';
 @Module({
   imports: [
@@ -38,6 +45,8 @@ import { HealthController } from './health.controller';
       },
     ]),
     PrismaModule,
+    ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     AuthModule,
     StoreAuthModule,
     CustomerAuthModule,
@@ -56,6 +65,11 @@ import { HealthController } from './health.controller';
     ReportsModule,
     BannersModule,
     NotificationsModule,
+    SubscriptionsModule,
+    PointsModule,
+    WorkshopModule,
+    RewardsModule,
+    WhatsappModule,
   ],
   controllers: [HealthController],
   providers: [

@@ -169,6 +169,7 @@ export class AuthService {
             name: customer.fullName,
             email: customer.email,
             userType: 'CUSTOMER',
+            currentTier: customer.currentTier,
           },
         };
       }
