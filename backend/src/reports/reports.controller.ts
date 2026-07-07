@@ -8,7 +8,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 @ApiTags('reports')
 @Controller('reports')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+@Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA')
 @ApiBearerAuth()
 export class ReportsController {
   constructor(private reportsService: ReportsService) {}
