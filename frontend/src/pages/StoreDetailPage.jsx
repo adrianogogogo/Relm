@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import {
   MdArrowBack, MdEdit, MdLocationOn, MdPhone, MdEmail, MdBusiness,
   MdPeople, MdVerifiedUser, MdInventory2, MdManageAccounts, MdCheckCircle, MdCancel,
-  MdStorefront, MdVpnKey,
+  MdStorefront, MdVpnKey, MdPersonAdd,
 } from 'react-icons/md';
 import { Card, StatusChip, StatCard } from '../components/ui';
 import AdminResetPasswordModal from '../components/AdminResetPasswordModal';
@@ -205,6 +205,22 @@ export default function StoreDetailPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </Card>
+            )}
+
+            {(!store.users || store.users.length === 0) && (!store.storeUsers || store.storeUsers.length === 0) && (
+              <Card>
+                <h2 className="text-base font-semibold text-gray-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+                  <MdManageAccounts className="w-4 h-4 text-gray-400" /> Acesso ao Sistema
+                </h2>
+                <div className="text-center py-6">
+                  <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+                    Nenhum usuário ou lojista cadastrado para esta loja.
+                  </p>
+                  <Link to="/admin/users" className="btn btn-primary btn-sm inline-flex items-center gap-1.5">
+                    <MdPersonAdd size={16} /> Cadastrar Usuário / Lojista
+                  </Link>
                 </div>
               </Card>
             )}
