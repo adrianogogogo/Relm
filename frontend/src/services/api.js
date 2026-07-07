@@ -296,3 +296,8 @@ export const rewardsAPI = {
   useVoucher: (code) => api.patch(`/v1/rewards/vouchers/${code}/use`).then((res) => res.data),
   seedCatalog: () => api.post('/v1/rewards/seed').then((res) => res.data),
 };
+
+export const adminUsersAPI = {
+  resetPassword: (id, password) =>
+    api.patch(`/admin-users/${id}/reset-password`, { password }).then((res) => res.data),
+};

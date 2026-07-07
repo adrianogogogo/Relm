@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { storesAPI, storeAuthAPI } from '../services/api';
+import { storesAPI, storeAuthAPI, adminUsersAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import {
   MdArrowBack, MdEdit, MdLocationOn, MdPhone, MdEmail, MdBusiness,
@@ -34,6 +34,7 @@ export default function StoreDetailPage() {
   const canEdit = ['ADMIN_RELM', 'GERENTE_RELM', 'DISTRIBUIDOR'].includes(user?.role);
   const isAdmin = user?.role === 'ADMIN_RELM';
   const [resetTarget, setResetTarget] = useState(null);
+  const [resetUserTarget, setResetUserTarget] = useState(null);
 
   const { data: store, isLoading, error } = useQuery({
     queryKey: ['store', id],
@@ -159,6 +160,15 @@ export default function StoreDetailPage() {
                         {u.active
                           ? <MdCheckCircle className="w-4 h-4 text-success" />
                           : <MdCancel className="w-4 h-4 text-gray-300 dark:text-slate-600" />}
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => setResetUserTarget(u)}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-primary dark:text-primary-400 hover:underline"
+                          >
+                            <MdVpnKey className="w-4 h-4" /> Redefinir senha
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -231,6 +241,15 @@ export default function StoreDetailPage() {
           userName={resetTarget.name}
           onSubmit={(password) => storeAuthAPI.adminResetPassword(resetTarget.id, password)}
           onClose={() => setResetTarget(null)}
+        />
+      )}
+
+      {resetUserTarget && (
+        <AdminResetPasswordModal
+          title="Redefinir senha do usuário do sistema"
+          userName={resetUserTarget.name}
+          onSubmit={(password) => adminUsersAPI.resetPassword(resetUserTarget.id, password)}
+          onClose={() => setResetUserTarget(null)}
         />
       )}
     </div>

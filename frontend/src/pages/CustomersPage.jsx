@@ -106,7 +106,7 @@ export default function CustomersPage() {
       customer.phone?.includes(search);
     
     const matchesStore = !filterStore || customer.storeId === filterStore;
-    
+      
     return matchesSearch && matchesStore;
   });
 
