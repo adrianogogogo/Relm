@@ -52,7 +52,7 @@ export default function CustomerDashboard() {
 
   const { data: pointsData } = useQuery({
     queryKey: ['customer-points', user?.id],
-    queryFn: () => customerPortalAPI.getPointsBalance(user?.id),
+    queryFn: () => customerPortalAPI.getPointsBalance(),
     enabled: !!user?.id && isPlus,
   });
 

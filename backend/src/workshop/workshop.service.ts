@@ -1,12 +1,16 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PointsService } from '../points/points.service';
 import { TierLevel, ServiceType, PriorityLevel, ServiceStatus } from '@prisma/client';
 
 @Injectable()
 export class WorkshopService {
   private readonly logger = new Logger(WorkshopService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pointsService: PointsService,
+  ) {}
 
   async getAvailableSlots(customerId: string) {
     const customer = await this.prisma.customer.findUnique({
@@ -156,6 +160,11 @@ export class WorkshopService {
         metadata: { oldStatus: order.status, newStatus: status },
       },
     });
+
+    // Credita pontos de fidelidade apenas na transição real para COMPLETED.
+    if (status === ServiceStatus.COMPLETED && order.status !== ServiceStatus.COMPLETED) {
+      await this.pointsService.addWorkshopCompletionPoints(order.customerId, id);
+    }
 
     return updated;
   }

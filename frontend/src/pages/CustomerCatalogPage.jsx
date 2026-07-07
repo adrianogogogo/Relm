@@ -18,7 +18,7 @@ export default function CustomerCatalogPage() {
   // Fetch points balance
   const { data: pointsData } = useQuery({
     queryKey: ['customer-points', user?.id],
-    queryFn: () => customerPortalAPI.getPointsBalance(user?.id),
+    queryFn: () => customerPortalAPI.getPointsBalance(),
     enabled: !!user?.id,
   });
   const balance = pointsData?.balance || 0;

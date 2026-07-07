@@ -1,23 +1,22 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { PointsService } from '../points/points.service';
 import { PointTxType, VoucherStatus, Prisma } from '@prisma/client';
 
 @Injectable()
 export class RewardsService {
   private readonly logger = new Logger(RewardsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pointsService: PointsService,
+  ) {}
 
   async redeemReward(dto: { customerId: string; catalogItemId: string }) {
     return this.prisma.$transaction(async (tx) => {
-      const ledgerSum = await tx.pointsLedger.aggregate({
-        where: { customerId: dto.customerId },
-        _sum: {
-          amount: true,
-        },
-      });
-
-      const balance = ledgerSum._sum.amount || 0;
+      // Saldo vivo (FIFO, já exclui pontos vencidos) na mesma transação.
+      const balance = await this.pointsService.getBalance(dto.customerId, tx);
 
       const item = await tx.catalogItem.findUnique({
         where: { id: dto.catalogItemId },
@@ -52,7 +51,11 @@ export class RewardsService {
         },
       });
 
-      const code = 'RLM-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+      // Hash único de 5 chars alfanuméricos maiúsculos, criptograficamente aleatório.
+      const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      const code =
+        'RLM-' +
+        Array.from(randomBytes(5), (b) => alphabet[b % alphabet.length]).join('');
 
       const voucher = await tx.voucher.create({
         data: {
