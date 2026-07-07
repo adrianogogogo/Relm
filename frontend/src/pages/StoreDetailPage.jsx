@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { storesAPI, storeAuthAPI, adminUsersAPI } from '../services/api';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import api, { storesAPI, storeAuthAPI, adminUsersAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import {
   MdArrowBack, MdEdit, MdLocationOn, MdPhone, MdEmail, MdBusiness,
@@ -30,16 +30,63 @@ const ROLE_HEX = {
 export default function StoreDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const canEdit = ['ADMIN_RELM', 'GERENTE_RELM', 'DISTRIBUIDOR'].includes(user?.role);
   const isAdmin = user?.role === 'ADMIN_RELM';
   const [resetTarget, setResetTarget] = useState(null);
   const [resetUserTarget, setResetUserTarget] = useState(null);
 
+  // States to create a store user directly
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [createError, setCreateError] = useState('');
+  const [createLoading, setCreateLoading] = useState(false);
+
   const { data: store, isLoading, error } = useQuery({
     queryKey: ['store', id],
     queryFn: () => storesAPI.getById(id),
   });
+
+  const handleCreateStoreUser = async (e) => {
+    e.preventDefault();
+    setCreateError('');
+    if (!newUserName.trim() || !newUserEmail.trim() || newUserPassword.length < 6) {
+      setCreateError('Todos os campos são obrigatórios. Senha mínima de 6 caracteres.');
+      return;
+    }
+
+    try {
+      setCreateLoading(true);
+      await api.post('/admin-users', {
+        name: newUserName,
+        email: newUserEmail,
+        password: newUserPassword,
+        role: 'LOJA',
+        storeId: id,
+      });
+      queryClient.invalidateQueries({ queryKey: ['store', id] });
+      setShowCreateForm(false);
+      setNewUserName('');
+      setNewUserEmail('');
+      setNewUserPassword('');
+      alert('Usuário da loja cadastrado com sucesso!');
+    } catch (err) {
+      setCreateError(err.response?.data?.message || 'Falha ao criar usuário.');
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  const initCreateForm = () => {
+    setNewUserName(store ? `${store.tradeName} - Login` : '');
+    setNewUserEmail(store ? store.email || '' : '');
+    setNewUserPassword('');
+    setCreateError('');
+    setShowCreateForm(true);
+  };
 
   if (isLoading) {
     return (
@@ -214,14 +261,80 @@ export default function StoreDetailPage() {
                 <h2 className="text-base font-semibold text-gray-700 dark:text-slate-200 mb-4 flex items-center gap-2">
                   <MdManageAccounts className="w-4 h-4 text-gray-400" /> Acesso ao Sistema
                 </h2>
-                <div className="text-center py-6">
-                  <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
-                    Nenhum usuário ou lojista cadastrado para esta loja.
-                  </p>
-                  <Link to="/admin/users" className="btn btn-primary btn-sm inline-flex items-center gap-1.5">
-                    <MdPersonAdd size={16} /> Cadastrar Usuário / Lojista
-                  </Link>
-                </div>
+
+                {!showCreateForm ? (
+                  <div className="text-center py-6">
+                    <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+                      Nenhum usuário ou lojista cadastrado para esta loja.
+                    </p>
+                    <button
+                      onClick={initCreateForm}
+                      className="btn btn-primary btn-sm inline-flex items-center gap-1.5"
+                    >
+                      <MdPersonAdd size={16} /> Cadastrar Usuário / Lojista
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleCreateStoreUser} className="space-y-4">
+                    {createError && (
+                      <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300 p-3 rounded-lg text-xs">
+                        {createError}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="label">Nome da Credencial *</label>
+                        <input
+                          type="text"
+                          className="input"
+                          value={newUserName}
+                          onChange={(e) => setNewUserName(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="label">E-mail de Acesso *</label>
+                        <input
+                          type="email"
+                          className="input"
+                          value={newUserEmail}
+                          onChange={(e) => setNewUserEmail(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="label">Senha Inicial *</label>
+                      <input
+                        type="password"
+                        className="input"
+                        placeholder="Mínimo 6 caracteres"
+                        value={newUserPassword}
+                        onChange={(e) => setNewUserPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <div className="flex gap-3 justify-end pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowCreateForm(false)}
+                        className="btn btn-outline btn-sm"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        className="btn btn-primary btn-sm"
+                        disabled={createLoading}
+                      >
+                        {createLoading ? 'Salvando...' : 'Criar Usuário'}
+                      </button>
+                    </div>
+                  </form>
+                )}
               </Card>
             )}
           </div>
