@@ -13,7 +13,7 @@ export default function AdminDashboard() {
     queryFn: () => api.get('/reports/dashboard-stats').then((res) => res.data),
   });
 
-  const isRelm = ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'].includes(user?.role);
+  const hasAccess = (allowedRoles) => allowedRoles.includes(user?.role);
 
   const statusLabel = {
     RECEBIDO: 'Recebido',
@@ -41,8 +41,9 @@ export default function AdminDashboard() {
       label: 'Garantias Ativas',
       value: stats?.warranties?.pending ?? '—',
       icon: MdVerifiedUser,
-      color: '#1565C0',
+      color: '#183757',
       link: '/admin/warranties',
+      roles: ['ADMIN_RELM', 'GERENTE_RELM'],
     },
     {
       label: 'Clientes',
@@ -50,6 +51,7 @@ export default function AdminDashboard() {
       icon: MdPeople,
       color: '#2d3a4a',
       link: '/admin/customers',
+      roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'],
     },
     {
       label: 'Lojas Parceiras',
@@ -57,6 +59,7 @@ export default function AdminDashboard() {
       icon: MdStore,
       color: '#9C27B0',
       link: '/admin/stores',
+      roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR'],
     },
     {
       label: 'Eventos Ativos',
@@ -64,8 +67,9 @@ export default function AdminDashboard() {
       icon: MdEvent,
       color: '#FF9800',
       link: '/admin/events',
+      roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
     },
-  ];
+  ].filter((card) => card.roles.includes(user?.role));
 
   return (
     <div className="py-8 px-6">
@@ -101,35 +105,41 @@ export default function AdminDashboard() {
           <Card>
             <h2 className="font-title text-xl font-bold mb-4 text-gray-900 dark:text-slate-100">Ações Rápidas</h2>
             <div className="space-y-3">
-              {isRelm && (
+              {hasAccess(['ADMIN_RELM', 'GERENTE_RELM']) && (
                 <Link to="/admin/warranties" className="btn btn-outline w-full justify-start">
                   <MdAssignment size={18} /> Gerenciar Garantias
                 </Link>
               )}
-              <Link to="/admin/customers" className="btn btn-outline w-full justify-start">
-                <MdPeople size={18} /> Gerenciar Clientes
-              </Link>
-              <Link to="/admin/stores" className="btn btn-outline w-full justify-start">
-                <MdStore size={18} /> Gerenciar Lojas
-              </Link>
-              {isRelm && (
-                <>
-                  <Link to="/admin/events" className="btn btn-outline w-full justify-start">
-                    <MdEvent size={18} /> Gerenciar Eventos
-                  </Link>
-                  <Link to="/admin/benefits" className="btn btn-outline w-full justify-start">
-                    <MdCardGiftcard size={18} /> Gerenciar Benefícios
-                  </Link>
-                  <Link to="/admin/insurances" className="btn btn-outline w-full justify-start">
-                    <MdDescription size={18} /> Cotações de Seguro
-                  </Link>
-                </>
+              {hasAccess(['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA']) && (
+                <Link to="/admin/customers" className="btn btn-outline w-full justify-start">
+                  <MdPeople size={18} /> Gerenciar Clientes
+                </Link>
+              )}
+              {hasAccess(['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR']) && (
+                <Link to="/admin/stores" className="btn btn-outline w-full justify-start">
+                  <MdStore size={18} /> Gerenciar Lojas
+                </Link>
+              )}
+              {hasAccess(['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM']) && (
+                <Link to="/admin/events" className="btn btn-outline w-full justify-start">
+                  <MdEvent size={18} /> Gerenciar Eventos
+                </Link>
+              )}
+              {hasAccess(['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM']) && (
+                <Link to="/admin/benefits" className="btn btn-outline w-full justify-start">
+                  <MdCardGiftcard size={18} /> Gerenciar Benefícios
+                </Link>
+              )}
+              {hasAccess(['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA']) && (
+                <Link to="/admin/insurances" className="btn btn-outline w-full justify-start">
+                  <MdDescription size={18} /> Cotações de Seguro
+                </Link>
               )}
             </div>
           </Card>
 
-          {/* Warranty Status Breakdown — apenas para perfis Relm */}
-          {isRelm && (
+          {/* Warranty Status Breakdown — apenas para perfis autorizados */}
+          {hasAccess(['ADMIN_RELM', 'GERENTE_RELM']) && (
             <Card>
               <h2 className="font-title text-xl font-bold mb-4 text-gray-900 dark:text-slate-100">Garantias por Status</h2>
               {isLoading ? (
@@ -153,8 +163,8 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        {/* Recent Warranties — apenas para perfis Relm */}
-        {isRelm && (
+        {/* Recent Warranties — apenas para perfis autorizados */}
+        {hasAccess(['ADMIN_RELM', 'GERENTE_RELM']) && (
           <Card>
             <h2 className="font-title text-xl font-bold mb-4 text-gray-900 dark:text-slate-100">Garantias Recentes</h2>
             {isLoading ? (
