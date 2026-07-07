@@ -14,17 +14,17 @@ export default {
       colors: {
         // Cor de marca (azul corporativo do design system) — ancorada em #1565C0
         primary: {
-          DEFAULT: '#1565C0',
+          DEFAULT: '#183757',
           50: '#e3f2fd',
           100: '#bbdefb',
           200: '#90caf9',
           300: '#64b5f6',
           400: '#42a5f5',
-          500: '#1565C0',
-          600: '#1976d2',
-          700: '#0d47a1',
-          800: '#0a3880',
-          900: '#072a60',
+          500: '#183757',
+          600: '#15314e',
+          700: '#11283f',
+          800: '#0e1f32',
+          900: '#091522',
         },
         // Slate escuro (secundário do design system)
         secondary: {
@@ -81,7 +81,7 @@ export default {
       },
       backgroundImage: {
         'sidebar-gradient': 'linear-gradient(180deg, #0d2137 0%, #1a3a5c 100%)',
-        'auth-gradient': 'linear-gradient(135deg, #0d2137 0%, #1565C0 100%)',
+        'auth-gradient': 'linear-gradient(135deg, #0d2137 0%, #183757 100%)',
       },
       boxShadow: {
         card: '0 2px 12px rgba(0,0,0,0.06)',
