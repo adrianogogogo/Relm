@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 import { workshopAPI, storesAPI } from '../services/api';
+import { useEntitlements } from '../hooks/useEntitlements';
 import { Card, PageHeader, Button, StatusChip } from '../components/ui';
 import { MdEvent, MdBuild, MdDirectionsBike, MdLocalShipping, MdLock } from 'react-icons/md';
 
@@ -9,6 +10,8 @@ export default function CustomerWorkshopPage() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const isPlus = user?.currentTier === 'PLUS';
+  const { care: careEnt } = useEntitlements();
+  const careQuota = careEnt?.freeBasicRevisionsPerYear ?? 1;
 
   const [storeId, setStoreId] = useState('');
   const [bikeModel, setBikeModel] = useState('');
@@ -107,7 +110,7 @@ export default function CustomerWorkshopPage() {
               <p className="text-sm opacity-90">
                 {isPlus
                   ? 'Você tem direito a agendamento prioritário de oficina, revisões completas ilimitadas e serviço de busca e entrega (leva-e-traz) grátis!'
-                  : 'Você tem direito a 1 Revisão Básica por ano civil. Upgrades de serviços e logística de leva-e-traz estão bloqueados (disponíveis apenas no Care Plus).'}
+                  : `Você tem direito a ${careQuota} Revisão(ões) Básica(s) por ano civil. Upgrades de serviços e logística de leva-e-traz estão bloqueados (disponíveis apenas no Care Plus).`}
               </p>
             </div>
           </div>

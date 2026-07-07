@@ -1,7 +1,7 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
-import { TierLevel } from '@prisma/client';
+import { ENTITLEMENTS } from '../common/entitlements';
 import axios from 'axios';
 
 @Injectable()
@@ -58,9 +58,7 @@ export class WhatsappService {
       return { status: 'customer_not_found' };
     }
 
-    const isPlus = customer.currentTier === TierLevel.PLUS;
-
-    if (!isPlus) {
+    if (!ENTITLEMENTS[customer.currentTier].concierge) {
       const messageText = 'Olá! O canal Concierge é exclusivo para membros Premium (Care Plus). Adquira uma bicicleta Relm ou assine o plano Plus para ter acesso a este canal.';
       await this.sendMockWhatsAppMessage(senderPhone, messageText);
       return { status: 'restricted' };

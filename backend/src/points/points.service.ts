@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointTxType, TierLevel, PointsLedger } from '@prisma/client';
+import { ENTITLEMENTS } from '../common/entitlements';
 
 // Validade dos pontos: 12 meses a partir do EARN (PRD 9.2.1).
 const EARN_EXPIRY_DAYS = 365;
@@ -93,7 +94,7 @@ export class PointsService {
     const client = tx || this.prisma;
     const subscription = await client.subscription.findUnique({ where: { customerId } });
     const tier = subscription ? subscription.tier : TierLevel.CARE;
-    const multiplier = tier === TierLevel.PLUS ? 2.0 : 1.0;
+    const multiplier = ENTITLEMENTS[tier].pointsMultiplier;
     const amount = Math.floor(Math.floor(purchaseValue) * multiplier);
     return this.earnPoints(customerId, amount, description, referenceId, tx);
   }

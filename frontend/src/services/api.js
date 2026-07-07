@@ -130,6 +130,10 @@ export const warrantyAPI = {
 
 export const benefitsAPI = {
   getAll: () => api.get('/public/benefits'),
+  // Tabela comparativa CARE vs PLUS (pública)
+  getTiersComparison: () => api.get('/public/tiers/comparison').then((res) => res.data),
+  // Knobs por tier — frontend indexa por user.currentTier
+  getTiersEntitlements: () => api.get('/public/tiers/entitlements').then((res) => res.data),
   // Feed segmentado pelo perfil do usuário logado (CLIENTE/LOJA/DISTRIBUIDOR)
   feed: () => api.get('/benefits/feed').then((res) => res.data),
   // Admin

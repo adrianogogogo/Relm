@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { MdVerifiedUser, MdDescription, MdEvent, MdPerson, MdLocationOn, MdCardGiftcard } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import { customerPortalAPI } from '../services/api';
+import { useEntitlements } from '../hooks/useEntitlements';
 import { Card, PageHeader, StatCard, StatusChip } from '../components/ui';
 
 const WARRANTY_STATUS_LABEL = {
@@ -28,6 +29,7 @@ const WARRANTY_STATUS_VARIANT = {
 
 export default function CustomerDashboard() {
   const { user } = useAuthStore();
+  const { current: ent, plus: plusEnt } = useEntitlements();
   const isPlus = user?.currentTier === 'PLUS';
 
   const { data: warranties = [] } = useQuery({
@@ -79,7 +81,7 @@ export default function CustomerDashboard() {
           <div className="bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg p-6 mb-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
               <h3 className="font-bold text-lg">Faça o upgrade para o Relm Care Plus! 🚴✨</h3>
-              <p className="text-sm opacity-90">Ganhe o dobro de pontos, agendamento prioritário na oficina e Concierge VIP no WhatsApp.</p>
+              <p className="text-sm opacity-90">Ganhe {plusEnt?.pointsMultiplier ?? 2}x pontos, agendamento prioritário na oficina e Concierge VIP no WhatsApp.</p>
             </div>
             <button className="btn bg-white text-teal-600 hover:bg-gray-100 border-none font-semibold">
               Quero ser Plus
@@ -196,7 +198,7 @@ export default function CustomerDashboard() {
               <Link to="/cliente/perfil" className="btn btn-outline justify-start">
                 <MdPerson size={18} /> Editar meu perfil
               </Link>
-              {isPlus && (
+              {ent?.concierge && (
                 <a
                   href="https://wa.me/5511987654321?text=Olá!%20Sou%20membro%20Care%20Plus%20e%20gostaria%20de%20falar%20com%20meu%20Concierge."
                   target="_blank"

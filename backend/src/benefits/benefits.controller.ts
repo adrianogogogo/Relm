@@ -17,6 +17,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { FeedAudienceGuard } from '../common/guards/feed-audience.guard';
+import { TIER_COMPARISON, ENTITLEMENTS } from '../common/entitlements';
 
 @ApiTags('benefits')
 @Controller()
@@ -27,6 +28,18 @@ export class BenefitsController {
   @Get('public/benefits')
   findAllPublic() {
     return this.benefitsService.findAllPublic();
+  }
+
+  // Tabela comparativa CARE vs PLUS — mesma fonte que o enforcement.
+  @Get('public/tiers/comparison')
+  tiersComparison() {
+    return TIER_COMPARISON;
+  }
+
+  // Knobs por tier — o frontend indexa por user.currentTier (mesma fonte do enforcement).
+  @Get('public/tiers/entitlements')
+  tiersEntitlements() {
+    return ENTITLEMENTS;
   }
 
   // ── Feed segmentado por perfil (autenticado: CLIENTE/LOJA/DISTRIBUIDOR) ────

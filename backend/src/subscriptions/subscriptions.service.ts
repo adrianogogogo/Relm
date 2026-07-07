@@ -4,6 +4,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron } from '@nestjs/schedule';
 import { TierLevel, SubStatus } from '@prisma/client';
 import { PointsService } from '../points/points.service';
+import { ENTITLEMENTS } from '../common/entitlements';
 
 @Injectable()
 export class SubscriptionsService {
@@ -29,6 +30,13 @@ export class SubscriptionsService {
     const tier = dto.invoice_type === 'BIKE' ? TierLevel.PLUS : TierLevel.CARE;
     const expiresAt = dto.invoice_type === 'BIKE' ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) : null;
     const status = SubStatus.ACTIVE;
+
+    // Renovação = compra de bike por quem já é PLUS ativo → rende bônus de pontos.
+    const existing = await this.prisma.subscription.findUnique({ where: { customerId: customer.id } });
+    const isRenewal =
+      dto.invoice_type === 'BIKE' &&
+      existing?.tier === TierLevel.PLUS &&
+      existing?.status === SubStatus.ACTIVE;
 
     const updated = await this.prisma.$transaction(async (tx) => {
       await tx.customer.update({
@@ -68,6 +76,17 @@ export class SubscriptionsService {
           customer.id,
           dto.purchase_value,
           `Compra de ${dto.invoice_type} - Série ${dto.product_serial_number}`,
+          subscription.id,
+          tx,
+        );
+      }
+
+      // Bônus de renovação (benefício PLUS).
+      if (isRenewal && ENTITLEMENTS[TierLevel.PLUS].renewalBonusPoints > 0) {
+        await this.pointsService.earnPoints(
+          customer.id,
+          ENTITLEMENTS[TierLevel.PLUS].renewalBonusPoints,
+          'Bônus de renovação Care Plus',
           subscription.id,
           tx,
         );

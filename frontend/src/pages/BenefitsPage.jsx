@@ -8,6 +8,11 @@ export default function BenefitsPage() {
     queryFn: () => benefitsAPI.getAll().then((res) => res.data),
   });
 
+  const { data: comparison } = useQuery({
+    queryKey: ['tiers-comparison'],
+    queryFn: () => benefitsAPI.getTiersComparison(),
+  });
+
   return (
     <div className="min-h-screen bg-app dark:bg-app-dark py-12">
       <div className="container mx-auto px-4">
@@ -16,6 +21,35 @@ export default function BenefitsPage() {
             title="Clube de Vantagens"
             subtitle="Benefícios exclusivos para você!"
           />
+
+          {comparison && comparison.length > 0 && (
+            <section className="mb-12">
+              <h2 className="font-title text-2xl font-bold mb-1">Comparativo de benefícios</h2>
+              <p className="text-sm text-gray-500 italic mb-4">
+                Valores ilustrativos, a calibrar na fase de estruturação.
+              </p>
+              <div className="overflow-x-auto rounded-lg shadow">
+                <table className="w-full text-left border-collapse min-w-[640px]">
+                  <thead>
+                    <tr>
+                      <th className="bg-gray-900 text-white px-4 py-3 font-bold uppercase text-sm">Benefício</th>
+                      <th className="bg-[#00BCD4] text-white px-4 py-3 font-bold uppercase text-sm text-center">Relm Care</th>
+                      <th className="bg-[#D4AF37] text-white px-4 py-3 font-bold uppercase text-sm text-center">Relm Care Plus</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {comparison.map((row, i) => (
+                      <tr key={row.label} className={i % 2 ? 'bg-gray-50 dark:bg-gray-800/40' : ''}>
+                        <td className="px-4 py-3 font-semibold">{row.label}</td>
+                        <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300">{row.care}</td>
+                        <td className="px-4 py-3 text-center font-semibold text-[#B8860B] bg-[#D4AF37]/10">{row.plus}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
 
           {isLoading ? (
             <div className="text-center py-12">

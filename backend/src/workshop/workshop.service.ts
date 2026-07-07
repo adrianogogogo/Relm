@@ -1,7 +1,8 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
-import { TierLevel, ServiceType, PriorityLevel, ServiceStatus } from '@prisma/client';
+import { ServiceType, PriorityLevel, ServiceStatus } from '@prisma/client';
+import { ENTITLEMENTS } from '../common/entitlements';
 
 @Injectable()
 export class WorkshopService {
@@ -21,7 +22,7 @@ export class WorkshopService {
       throw new BadRequestException('Customer not found');
     }
 
-    const isPlus = customer.currentTier === TierLevel.PLUS;
+    const ent = ENTITLEMENTS[customer.currentTier];
 
     const baseSlots = [
       '2026-07-07T09:00:00Z',
@@ -35,7 +36,7 @@ export class WorkshopService {
       '2026-07-07T17:00:00Z',
     ];
 
-    const slots = isPlus ? [...vipSlots, ...baseSlots].sort() : baseSlots;
+    const slots = ent.prioritySlots ? [...vipSlots, ...baseSlots].sort() : baseSlots;
 
     return {
       customerId,
@@ -60,20 +61,21 @@ export class WorkshopService {
       throw new BadRequestException('Customer not found');
     }
 
-    const isPlus = customer.currentTier === TierLevel.PLUS;
-    const priority = isPlus ? PriorityLevel.HIGH_PRIORITY : PriorityLevel.STANDARD;
+    const ent = ENTITLEMENTS[customer.currentTier];
+    const priority = ent.prioritySlots ? PriorityLevel.HIGH_PRIORITY : PriorityLevel.STANDARD;
 
-    if (!isPlus) {
-      if (dto.serviceType === ServiceType.REVISION_COMPLETE) {
-        throw new BadRequestException('Complete revision is only available to Care Plus members.');
-      }
+    if (!ent.completeRevision && dto.serviceType === ServiceType.REVISION_COMPLETE) {
+      throw new BadRequestException('Complete revision is only available to Care Plus members.');
+    }
 
-      if (dto.deliveryRequest) {
-        throw new BadRequestException('Delivery request is only available to Care Plus members.');
-      }
+    if (!ent.delivery && dto.deliveryRequest) {
+      throw new BadRequestException('Delivery request is only available to Care Plus members.');
+    }
 
+    // Cota anual de revisões básicas gratuitas (null = ilimitado).
+    if (ent.freeBasicRevisionsPerYear !== null && dto.serviceType === ServiceType.REVISION_BASIC) {
       const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
-      const pastRevision = await this.prisma.serviceOrder.findFirst({
+      const usedThisYear = await this.prisma.serviceOrder.count({
         where: {
           customerId: dto.customerId,
           serviceType: ServiceType.REVISION_BASIC,
@@ -82,8 +84,10 @@ export class WorkshopService {
         },
       });
 
-      if (pastRevision) {
-        throw new BadRequestException('CARE members are limited to 1 basic revision per year.');
+      if (usedThisYear >= ent.freeBasicRevisionsPerYear) {
+        throw new BadRequestException(
+          `Cota de ${ent.freeBasicRevisionsPerYear} revisão(ões) básica(s) por ano atingida.`,
+        );
       }
     }
 
@@ -94,7 +98,7 @@ export class WorkshopService {
         bikeModel: dto.bikeModel,
         serviceType: dto.serviceType,
         priority,
-        deliveryRequest: isPlus ? !!dto.deliveryRequest : false,
+        deliveryRequest: ent.delivery ? !!dto.deliveryRequest : false,
         scheduledFor: new Date(dto.scheduledFor),
         status: ServiceStatus.SCHEDULED,
       },
