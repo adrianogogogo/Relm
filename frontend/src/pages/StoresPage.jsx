@@ -10,6 +10,7 @@ import { readSheetRows, cell, downloadTemplate } from '../utils/sheetImport';
 export default function StoresPage() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'ADMIN_RELM';
+  const canManage = ['ADMIN_RELM', 'GERENTE_RELM', 'DISTRIBUIDOR'].includes(user?.role);
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [stateFilter, setStateFilter] = useState('');
@@ -102,7 +103,7 @@ export default function StoresPage() {
         <PageHeader
           title="Lojas Parceiras"
           subtitle={`${stats.total} loja(s) encontrada(s)`}
-          action={
+          action={canManage && (
             <div className="flex items-center gap-2">
               <button onClick={handleTemplate} className="btn btn-outline flex items-center gap-2" title="Baixar planilha modelo">
                 <MdDownload /> Modelo
@@ -119,7 +120,7 @@ export default function StoresPage() {
               </Link>
               <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
             </div>
-          }
+          )}
         />
 
         {/* Stats */}
@@ -224,9 +225,11 @@ export default function StoresPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-4">
-                          <Link to={`/admin/stores/${store.id}/edit`} className="text-primary dark:text-primary-400 hover:underline font-semibold">
-                            Editar
-                          </Link>
+                          {canManage && (
+                            <Link to={`/admin/stores/${store.id}/edit`} className="text-primary dark:text-primary-400 hover:underline font-semibold">
+                              Editar
+                            </Link>
+                          )}
                           <Link to={`/admin/stores/${store.id}`} className="text-gray-600 dark:text-slate-300 hover:underline">
                             Ver Detalhes
                           </Link>

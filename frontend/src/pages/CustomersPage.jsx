@@ -9,6 +9,7 @@ import { readSheetRows, cell, downloadTemplate } from '../utils/sheetImport';
 export default function CustomersPage() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'ADMIN_RELM';
+  const canManage = ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'].includes(user?.role);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -123,7 +124,7 @@ export default function CustomersPage() {
         <PageHeader
           title="Clientes"
           subtitle={`${filteredCustomers.length} cliente(s) encontrado(s)`}
-          action={
+          action={canManage && (
             <div className="flex items-center gap-2">
               <button onClick={handleTemplate} className="btn btn-outline flex items-center gap-2" title="Baixar planilha modelo">
                 <MdDownload /> Modelo
@@ -140,7 +141,7 @@ export default function CustomersPage() {
               </Link>
               <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
             </div>
-          }
+          )}
         />
 
         {/* Stats */}
@@ -259,9 +260,11 @@ export default function CustomersPage() {
                           <Link to={`/admin/customers/${customer.id}`} className="text-primary dark:text-primary-400 hover:underline font-semibold">
                             Ver Detalhes
                           </Link>
-                          <Link to={`/admin/customers/${customer.id}/edit`} className="text-gray-600 dark:text-slate-300 hover:underline">
-                            Editar
-                          </Link>
+                          {canManage && (
+                             <Link to={`/admin/customers/${customer.id}/edit`} className="text-gray-600 dark:text-slate-300 hover:underline">
+                               Editar
+                             </Link>
+                           )}
                           {isAdmin && (
                             <button
                               onClick={() => handleDelete(customer)}
