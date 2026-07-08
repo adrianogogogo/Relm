@@ -520,6 +520,10 @@ Acesse o catálogo completo em PDF: [link]
     { key: 'plus_annual_fee', value: '299.00' },
     // Valor de 1 ponto em R$ (passivo contábil de pontos — Onda 7). Placeholder.
     { key: 'point_value_brl', value: '0.05' },
+    // Wave 3 — Engajamento
+    { key: 'referral_bonus_points',      value: '500' },
+    { key: 'birthday_bonus_points',      value: '200' },
+    { key: 'event_participation_points', value: '100' },
   ];
 
   for (const setting of clubSettings) {

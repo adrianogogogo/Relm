@@ -1,6 +1,7 @@
 import {
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MaxLength,
   MinLength,
@@ -30,4 +31,9 @@ export class CustomerRegisterDto {
   @IsNotEmpty()
   @MaxLength(100, { message: 'Número da nota fiscal deve ter no máximo 100 caracteres' })
   invoiceNumber: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  referralCode?: string;
 }

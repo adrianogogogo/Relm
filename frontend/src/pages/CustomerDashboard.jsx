@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MdVerifiedUser, MdDescription, MdEvent, MdPerson, MdLocationOn, MdCardGiftcard } from 'react-icons/md';
+import { MdVerifiedUser, MdDescription, MdEvent, MdPerson, MdLocationOn, MdCardGiftcard, MdShare, MdContentCopy, MdCheck } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import { customerPortalAPI } from '../services/api';
 import { useEntitlements } from '../hooks/useEntitlements';
@@ -26,6 +27,54 @@ const WARRANTY_STATUS_VARIANT = {
   FINALIZADO: 'neutral',
   CANCELADO: 'neutral',
 };
+
+function ReferralCard() {
+  const [copied, setCopied] = useState(false);
+
+  const { data } = useQuery({
+    queryKey: ['customer-referral'],
+    queryFn: customerPortalAPI.getReferral,
+  });
+
+  const code = data?.referralCode ?? '—';
+  const completed = data?.completedCount ?? 0;
+
+  function handleCopy() {
+    if (!data?.referralCode) return;
+    navigator.clipboard.writeText(data.referralCode).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <Card>
+      <div className="flex items-center gap-2 mb-3">
+        <MdShare size={20} className="text-teal-500 shrink-0" />
+        <h2 className="font-title text-lg font-bold text-gray-900 dark:text-slate-100">Indique e Ganhe</h2>
+      </div>
+      <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+        Compartilhe seu código. Quando o amigo indicado fizer a primeira compra,
+        você recebe pontos de bônus!
+      </p>
+      <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-800 rounded-lg px-4 py-3 mb-4">
+        <span className="font-mono text-xl font-bold text-primary tracking-widest flex-1">{code}</span>
+        <button
+          onClick={handleCopy}
+          title="Copiar código"
+          className="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
+        >
+          {copied
+            ? <MdCheck size={20} className="text-green-500" />
+            : <MdContentCopy size={20} className="text-gray-400" />}
+        </button>
+      </div>
+      <p className="text-xs text-gray-400 dark:text-slate-500">
+        {completed} indicaç{completed === 1 ? 'ão' : 'ões'} concluída{completed !== 1 ? 's' : ''}
+      </p>
+    </Card>
+  );
+}
 
 export default function CustomerDashboard() {
   const { user } = useAuthStore();
@@ -181,6 +230,9 @@ export default function CustomerDashboard() {
               </div>
             )}
           </Card>
+
+          {/* Indique e Ganhe */}
+          <ReferralCard />
 
           {/* Ações rápidas */}
           <Card>

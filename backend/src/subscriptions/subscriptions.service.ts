@@ -4,6 +4,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron } from '@nestjs/schedule';
 import { Prisma, TierLevel, SubStatus } from '@prisma/client';
 import { PointsService } from '../points/points.service';
+import { EngagementService } from '../engagement/engagement.service';
 import { ENTITLEMENTS } from '../common/entitlements';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class SubscriptionsService {
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
     private readonly pointsService: PointsService,
+    private readonly engagementService: EngagementService,
   ) {}
 
   async salesTrigger(dto: { customer_email: string; product_serial_number: string; invoice_type: 'BIKE' | 'ACCESSORY'; purchase_value?: number }) {
@@ -90,6 +92,12 @@ export class SubscriptionsService {
           subscription.id,
           tx,
         );
+      }
+
+      // Programa de indicação: se esta é a primeira compra do cliente indicado,
+      // completa o referral e premia o referrer. Idempotente (guard interno).
+      if (!existing) {
+        await this.engagementService.completeReferral(customer.id, tx);
       }
 
       return { customer, subscription };

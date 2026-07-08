@@ -3,12 +3,14 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
-  NotFoundException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
+import { EngagementService } from '../engagement/engagement.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { CustomerRegisterDto } from './dto/customer-register.dto';
@@ -21,6 +23,8 @@ export class CustomerAuthService {
     private jwtService: JwtService,
     private config: ConfigService,
     private emailService: EmailService,
+    @Inject(forwardRef(() => EngagementService))
+    private engagementService: EngagementService,
   ) {}
 
   async register(dto: CustomerRegisterDto) {
@@ -64,26 +68,34 @@ export class CustomerAuthService {
       }
       // Cliente existe (cadastrado via formulário de garantia) mas sem senha — ativa a conta
       const hash = await bcrypt.hash(dto.password, 10);
-      const customer = await this.prisma.customer.update({
-        where: { id: existing.id },
-        data: {
-          passwordHash: hash,
-          fullName: dto.fullName || existing.fullName,
-          phone: dto.phone || existing.phone,
-        },
+      const customer = await this.prisma.$transaction(async (tx) => {
+        const updated = await tx.customer.update({
+          where: { id: existing.id },
+          data: {
+            passwordHash: hash,
+            fullName: dto.fullName || existing.fullName,
+            phone: dto.phone || existing.phone,
+          },
+        });
+        await this.engagementService.applyReferralCode(updated.id, dto.referralCode, tx);
+        return updated;
       });
       return this.generateTokens(customer);
     }
 
     // Novo cliente
     const hash = await bcrypt.hash(dto.password, 10);
-    const customer = await this.prisma.customer.create({
-      data: {
-        email: dto.email,
-        passwordHash: hash,
-        fullName: dto.fullName,
-        phone: dto.phone,
-      },
+    const customer = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.customer.create({
+        data: {
+          email: dto.email,
+          passwordHash: hash,
+          fullName: dto.fullName,
+          phone: dto.phone,
+        },
+      });
+      await this.engagementService.applyReferralCode(created.id, dto.referralCode, tx);
+      return created;
     });
 
     return this.generateTokens(customer);

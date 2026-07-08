@@ -156,6 +156,9 @@ export const eventsAPI = {
   update: (id, data) => api.patch(`/events/${id}`, data).then((res) => res.data),
   remove: (id) => api.delete(`/events/${id}`).then((res) => res.data),
   getRegistrations: (id) => api.get(`/events/${id}/registrations`).then((res) => res.data),
+  // Wave 3 — Presença (admin)
+  markAttendance: (registrationId) =>
+    api.patch(`/events/registrations/${registrationId}/attend`).then((res) => res.data),
 };
 
 export const insuranceAPI = {
@@ -280,6 +283,8 @@ export const customerPortalAPI = {
   getEvents: () => api.get('/customer-portal/events').then((res) => res.data),
   getBenefits: () => api.get('/customer-portal/benefits').then((res) => res.data),
   getPointsBalance: () => api.get('/v1/points/balance').then((res) => res.data),
+  // Wave 3 — Indicação
+  getReferral: () => api.get('/customer-portal/referral').then((res) => res.data),
 };
 
 export const workshopAPI = {

@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { EventsService } from './events.service';
+import { EngagementService } from '../engagement/engagement.service';
 import { RegisterEventDto } from './dto/register-event.dto';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -24,7 +25,10 @@ import { FeedAudienceGuard } from '../common/guards/feed-audience.guard';
 @ApiTags('events')
 @Controller()
 export class EventsController {
-  constructor(private eventsService: EventsService) {}
+  constructor(
+    private eventsService: EventsService,
+    private engagementService: EngagementService,
+  ) {}
 
   // ── Public ───────────────────────────────────────────────────────────────
   @Get('public/events')
@@ -94,5 +98,14 @@ export class EventsController {
   @ApiBearerAuth()
   getRegistrations(@Param('id') id: string) {
     return this.eventsService.getRegistrations(id);
+  }
+
+  /** Marca presença de um inscrito (admin) e credita pontos de participação. */
+  @Patch('events/registrations/:registrationId/attend')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @ApiBearerAuth()
+  markAttendance(@Param('registrationId') registrationId: string) {
+    return this.engagementService.markAttendance(registrationId);
   }
 }

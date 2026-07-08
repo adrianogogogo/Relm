@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsAPI } from '../services/api';
-import { MdCalendarMonth, MdAdd, MdEdit, MdDelete, MdClose, MdPeople, MdLocationOn } from 'react-icons/md';
+import { MdCalendarMonth, MdAdd, MdEdit, MdDelete, MdClose, MdPeople, MdLocationOn, MdCheckCircle, MdRadioButtonUnchecked } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import { PageHeader, StatusChip, Button } from '../components/ui';
 
@@ -186,9 +186,15 @@ function EventModal({ event, onClose }) {
 }
 
 function RegistrationsModal({ event, onClose }) {
+  const queryClient = useQueryClient();
   const { data: registrations, isLoading } = useQuery({
     queryKey: ['event-registrations', event.id],
     queryFn: () => eventsAPI.getRegistrations(event.id),
+  });
+
+  const attendMutation = useMutation({
+    mutationFn: (registrationId) => eventsAPI.markAttendance(registrationId),
+    onSuccess: () => queryClient.invalidateQueries(['event-registrations', event.id]),
   });
 
   return (
@@ -214,7 +220,22 @@ function RegistrationsModal({ event, onClose }) {
                     <p className="font-medium text-gray-900 dark:text-slate-100 text-sm">{r.customer.fullName}</p>
                     <p className="text-xs text-gray-500 dark:text-slate-400">{r.customer.email}</p>
                   </div>
-                  <p className="text-xs text-gray-400 dark:text-slate-500">{new Date(r.createdAt).toLocaleDateString('pt-BR')}</p>
+                  <div className="flex items-center gap-3">
+                    <p className="text-xs text-gray-400 dark:text-slate-500">{new Date(r.createdAt).toLocaleDateString('pt-BR')}</p>
+                    <button
+                      title={r.attended ? 'Presente' : 'Marcar presença'}
+                      disabled={r.attended || attendMutation.isPending}
+                      onClick={() => !r.attended && attendMutation.mutate(r.id)}
+                      className="flex items-center gap-1 text-xs disabled:opacity-60"
+                    >
+                      {r.attended
+                        ? <MdCheckCircle size={20} className="text-green-500" />
+                        : <MdRadioButtonUnchecked size={20} className="text-gray-300 dark:text-slate-600 hover:text-primary" />}
+                      <span className={r.attended ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-slate-500'}>
+                        {r.attended ? 'Presente' : 'Marcar'}
+                      </span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -222,6 +243,8 @@ function RegistrationsModal({ event, onClose }) {
         </div>
         <div className="pt-3 border-t border-gray-100 dark:border-slate-800 mt-3 text-sm text-gray-500 dark:text-slate-400">
           {registrations?.length ?? 0} inscrito{registrations?.length !== 1 ? 's' : ''}
+          {' · '}
+          {registrations?.filter((r) => r.attended).length ?? 0} presente{(registrations?.filter((r) => r.attended).length ?? 0) !== 1 ? 's' : ''}
         </div>
       </div>
     </div>

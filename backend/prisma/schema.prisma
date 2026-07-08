@@ -57,8 +57,14 @@ model Customer {
   // V2 Expansão
   currentTier            TierLevel               @default(CARE) @map("current_tier")
 
+  // Referral (Wave 3)
+  referralCode           String?                 @unique @map("referral_code")
+  referredById           String?                 @map("referred_by_id")
+
   // Relations
   store                  Store?                  @relation(fields: [storeId], references: [id])
+  referredBy             Customer?               @relation("CustomerReferrals", fields: [referredById], references: [id])
+  referrals              Customer[]              @relation("CustomerReferrals")
   warrantyClaims         WarrantyClaim[]
   benefitMemberships     BenefitMembership[]
   eventRegistrations     EventRegistration[]
@@ -71,6 +77,8 @@ model Customer {
   serviceOrders          ServiceOrder[]
   vouchers               Voucher[]
   payments               Payment[]
+  referralsSent          Referral[]              @relation("ReferrerReferrals")
+  referralReceived       Referral?               @relation("ReferredReferrals")
 
   @@index([email])
   @@index([cpf])
@@ -604,16 +612,18 @@ model Event {
 }
 
 model EventRegistration {
-  id         String   @id @default(uuid())
-  eventId    String   @map("event_id")
-  customerId String   @map("customer_id")
-  
-  createdAt  DateTime @default(now()) @map("created_at")
-  
+  id         String    @id @default(uuid())
+  eventId    String    @map("event_id")
+  customerId String    @map("customer_id")
+  attended   Boolean   @default(false)
+  attendedAt DateTime? @map("attended_at")
+
+  createdAt  DateTime  @default(now()) @map("created_at")
+
   // Relations
   event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   customer Customer @relation(fields: [customerId], references: [id])
-  
+
   @@unique([eventId, customerId])
   @@index([eventId])
   @@map("event_registrations")
@@ -932,6 +942,31 @@ model ServiceOrder {
   createdAt       DateTime      @default(now()) @map("created_at")
 
   @@map("service_orders")
+}
+
+// ============================================
+// ENGAGEMENT MODULE (Wave 3)
+// ============================================
+
+enum ReferralStatus {
+  PENDING
+  COMPLETED
+}
+
+model Referral {
+  id           String         @id @default(uuid())
+  referrerId   String         @map("referrer_id")
+  referredId   String         @unique @map("referred_id")
+  status       ReferralStatus @default(PENDING)
+  pointsAwarded Int?          @map("points_awarded")
+  completedAt  DateTime?      @map("completed_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  referrer Customer @relation("ReferrerReferrals", fields: [referrerId], references: [id])
+  referred Customer @relation("ReferredReferrals", fields: [referredId], references: [id])
+
+  @@index([referrerId])
+  @@map("referrals")
 }
 
 model CatalogItem {
