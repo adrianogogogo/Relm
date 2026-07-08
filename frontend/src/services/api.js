@@ -305,6 +305,10 @@ export const workshopAPI = {
   getCustomerOrders: (customerId) => api.get(`/v1/services/my-orders?customerId=${customerId}`).then((res) => res.data),
   getStoreOrders: (storeId) => api.get(`/v1/services/store-orders?storeId=${storeId}`).then((res) => res.data),
   updateOrderStatus: (id, status) => api.patch(`/v1/services/orders/${id}/status`, { status }).then((res) => res.data),
+  // Wave 6 — saldo anual de serviços por tipo (usado/permitido)
+  getAllowance: (customerId) => api.get(`/v1/services/allowance?customerId=${customerId}`).then((res) => res.data),
+  // Wave 6 — avança logística leva-e-traz (busca e entrega)
+  advanceLogistics: (id, logisticsStatus) => api.patch(`/v1/services/orders/${id}/logistics`, { logisticsStatus }).then((res) => res.data),
 };
 
 export const rewardsAPI = {

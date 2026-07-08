@@ -827,6 +827,9 @@ enum ServiceType {
   REVISION_BASIC
   REVISION_COMPLETE
   DIAGNOSTIC
+  LAVAGEM_LUBRIFICACAO // Wave 6
+  BUSCA_ENTREGA // Wave 6 — logística leva-e-traz
+  BIKE_FITTING // Wave 6
 }
 
 enum PriorityLevel {
@@ -839,6 +842,15 @@ enum ServiceStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+// Wave 6 — etapas da logística leva-e-traz (só para serviceType=BUSCA_ENTREGA)
+enum LogisticsStatus {
+  COLETA_AGENDADA
+  EM_TRANSPORTE_COLETA
+  NA_OFICINA
+  EM_TRANSPORTE_ENTREGA
+  ENTREGUE
 }
 
 enum VoucherStatus {
@@ -939,13 +951,18 @@ model ServiceOrder {
   storeId         String        @map("store_id")
   store           Store         @relation(fields: [storeId], references: [id])
   bikeModel       String        @map("bike_model")
-  serviceType     ServiceType   @map("service_type")
+  serviceType     ServiceType   @default(REVISION_BASIC) @map("service_type")
   priority        PriorityLevel
   deliveryRequest Boolean       @default(false) @map("delivery_request")
   scheduledFor    DateTime      @map("scheduled_for")
   status          ServiceStatus
   createdAt       DateTime      @default(now()) @map("created_at")
 
+  // Wave 6 — logística leva-e-traz (só quando serviceType=BUSCA_ENTREGA)
+  pickupAddress   String?          @map("pickup_address")
+  logisticsStatus LogisticsStatus? @map("logistics_status")
+
+  @@index([customerId, serviceType, createdAt])
   @@map("service_orders")
 }
 

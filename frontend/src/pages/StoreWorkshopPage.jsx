@@ -2,7 +2,33 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 import { workshopAPI } from '../services/api';
 import { Card, PageHeader, Button, StatusChip } from '../components/ui';
-import { MdBuild, MdDirectionsBike, MdLocalShipping, MdPriorityHigh, MdPlayArrow, MdCheck, MdClose } from 'react-icons/md';
+import { MdBuild, MdDirectionsBike, MdLocalShipping, MdPriorityHigh, MdPlayArrow, MdCheck, MdClose, MdArrowForward } from 'react-icons/md';
+
+const SERVICE_LABELS = {
+  REVISION_BASIC: 'Revisão Básica',
+  REVISION_COMPLETE: 'Revisão Completa',
+  DIAGNOSTIC: 'Diagnóstico Técnico',
+  LAVAGEM_LUBRIFICACAO: 'Lavagem e Lubrificação',
+  BUSCA_ENTREGA: 'Busca e Entrega',
+  BIKE_FITTING: 'Bike Fitting',
+};
+
+// Próxima etapa da logística + rótulo do botão
+const LOGISTICS_NEXT = {
+  COLETA_AGENDADA: { next: 'EM_TRANSPORTE_COLETA', label: 'Iniciar coleta' },
+  EM_TRANSPORTE_COLETA: { next: 'NA_OFICINA', label: 'Chegou na oficina' },
+  NA_OFICINA: { next: 'EM_TRANSPORTE_ENTREGA', label: 'Sair p/ entrega' },
+  EM_TRANSPORTE_ENTREGA: { next: 'ENTREGUE', label: 'Confirmar entrega' },
+  ENTREGUE: null,
+};
+
+const LOGISTICS_LABELS = {
+  COLETA_AGENDADA: 'Coleta agendada',
+  EM_TRANSPORTE_COLETA: 'Em transporte (coleta)',
+  NA_OFICINA: 'Na oficina',
+  EM_TRANSPORTE_ENTREGA: 'Em transporte (entrega)',
+  ENTREGUE: 'Entregue',
+};
 
 export default function StoreWorkshopPage() {
   const user = useAuthStore((state) => state.user);
@@ -27,6 +53,14 @@ export default function StoreWorkshopPage() {
   const handleStatusChange = (id, newStatus) => {
     updateStatusMutation.mutate({ id, status: newStatus });
   };
+
+  // Avança a logística leva-e-traz (busca e entrega)
+  const advanceLogisticsMutation = useMutation({
+    mutationFn: ({ id, logisticsStatus }) => workshopAPI.advanceLogistics(id, logisticsStatus),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store-service-orders', storeId] });
+    },
+  });
 
   const formatDate = (isoString) => {
     const d = new Date(isoString);
@@ -74,7 +108,7 @@ export default function StoreWorkshopPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-slate-800 text-gray-800 dark:text-slate-200">
                   {orders.map((o) => {
-                    const isVip = o.customer?.currentTier === 'PLUS';
+                    const isVip = o.isPriority ?? (o.customer?.currentTier === 'PLUS');
                     return (
                       <tr key={o.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors">
                         {/* Cliente Info */}
@@ -83,7 +117,7 @@ export default function StoreWorkshopPage() {
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                             isVip ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-gray-100 text-gray-700 dark:bg-slate-800'
                           }`}>
-                            {isVip ? '★ Care Plus' : 'Care Base'}
+                            {isVip ? '★ PLUS' : 'Care Base'}
                           </span>
                         </td>
 
@@ -98,11 +132,7 @@ export default function StoreWorkshopPage() {
                         {/* Servico Info */}
                         <td className="p-4 space-y-1">
                           <p className="font-semibold">
-                            {o.serviceType === 'REVISION_BASIC'
-                              ? 'Revisão Básica'
-                              : o.serviceType === 'REVISION_COMPLETE'
-                              ? 'Revisão Completa'
-                              : 'Diagnóstico Técnico'}
+                            {SERVICE_LABELS[o.serviceType] || o.serviceType}
                           </p>
                           {o.priority === 'HIGH_PRIORITY' ? (
                             <span className="inline-flex items-center gap-0.5 text-xs text-rose-500 font-bold">
@@ -120,7 +150,32 @@ export default function StoreWorkshopPage() {
 
                         {/* Logistics Info */}
                         <td className="p-4">
-                          {o.deliveryRequest ? (
+                          {o.serviceType === 'BUSCA_ENTREGA' ? (
+                            <div className="space-y-1.5">
+                              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold text-xs">
+                                <MdLocalShipping /> {LOGISTICS_LABELS[o.logisticsStatus] || 'Leva-e-Traz'}
+                              </span>
+                              {o.pickupAddress && (
+                                <p className="text-[10px] text-gray-400 italic max-w-[160px]">📍 {o.pickupAddress}</p>
+                              )}
+                              {LOGISTICS_NEXT[o.logisticsStatus] && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-amber-600 border-amber-500 hover:bg-amber-500 hover:text-white text-[11px]"
+                                  loading={advanceLogisticsMutation.isPending}
+                                  onClick={() =>
+                                    advanceLogisticsMutation.mutate({
+                                      id: o.id,
+                                      logisticsStatus: LOGISTICS_NEXT[o.logisticsStatus].next,
+                                    })
+                                  }
+                                >
+                                  <MdArrowForward /> {LOGISTICS_NEXT[o.logisticsStatus].label}
+                                </Button>
+                              )}
+                            </div>
+                          ) : o.deliveryRequest ? (
                             <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold">
                               <MdLocalShipping /> Leva-e-Traz
                             </span>

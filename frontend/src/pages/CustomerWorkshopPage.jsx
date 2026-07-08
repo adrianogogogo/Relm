@@ -6,6 +6,23 @@ import { useEntitlements } from '../hooks/useEntitlements';
 import { Card, PageHeader, Button, StatusChip } from '../components/ui';
 import { MdEvent, MdBuild, MdDirectionsBike, MdLocalShipping, MdLock } from 'react-icons/md';
 
+const LOGISTICS_STEPS = [
+  { key: 'COLETA_AGENDADA', label: 'Coleta agendada' },
+  { key: 'EM_TRANSPORTE_COLETA', label: 'Em transporte (coleta)' },
+  { key: 'NA_OFICINA', label: 'Na oficina' },
+  { key: 'EM_TRANSPORTE_ENTREGA', label: 'Em transporte (entrega)' },
+  { key: 'ENTREGUE', label: 'Entregue' },
+];
+
+const SERVICE_LABELS = {
+  REVISION_BASIC: 'Revisão Básica',
+  REVISION_COMPLETE: 'Revisão Completa',
+  DIAGNOSTIC: 'Diagnóstico Técnico',
+  LAVAGEM_LUBRIFICACAO: 'Lavagem e Lubrificação',
+  BUSCA_ENTREGA: 'Busca e Entrega',
+  BIKE_FITTING: 'Bike Fitting',
+};
+
 export default function CustomerWorkshopPage() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
@@ -18,8 +35,19 @@ export default function CustomerWorkshopPage() {
   const [serviceType, setServiceType] = useState('REVISION_BASIC');
   const [scheduledFor, setScheduledFor] = useState('');
   const [deliveryRequest, setDeliveryRequest] = useState(false);
+  const [pickupAddress, setPickupAddress] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Saldo anual por tipo (Wave 6) — fonte de verdade vem do backend
+  const { data: allowance } = useQuery({
+    queryKey: ['workshop-allowance', user?.id],
+    queryFn: () => workshopAPI.getAllowance(user?.id),
+    enabled: !!user?.id,
+  });
+  const allowanceItems = allowance?.items || [];
+  const allowanceByType = Object.fromEntries(allowanceItems.map((i) => [i.serviceType, i]));
+  const isBuscaEntrega = serviceType === 'BUSCA_ENTREGA';
 
   // Fetch available slots
   const { data: slotsData, isLoading: loadingSlots } = useQuery({
@@ -54,8 +82,10 @@ export default function CustomerWorkshopPage() {
       setServiceType('REVISION_BASIC');
       setScheduledFor('');
       setDeliveryRequest(false);
+      setPickupAddress('');
       queryClient.invalidateQueries({ queryKey: ['my-service-orders', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['available-slots', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['workshop-allowance', user?.id] });
     },
     onError: (err) => {
       setErrorMsg(err.response?.data?.message || 'Falha ao agendar revisão.');
@@ -69,6 +99,10 @@ export default function CustomerWorkshopPage() {
       setErrorMsg('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
+    if (isBuscaEntrega && !pickupAddress.trim()) {
+      setErrorMsg('Informe o endereço de coleta para a busca e entrega.');
+      return;
+    }
 
     bookMutation.mutate({
       customerId: user.id,
@@ -77,6 +111,7 @@ export default function CustomerWorkshopPage() {
       serviceType,
       scheduledFor: new Date(scheduledFor),
       deliveryRequest: isPlus ? deliveryRequest : false,
+      pickupAddress: isBuscaEntrega ? pickupAddress.trim() : undefined,
     });
   };
 
@@ -172,15 +207,42 @@ export default function CustomerWorkshopPage() {
                   value={serviceType}
                   onChange={(e) => setServiceType(e.target.value)}
                 >
-                  <option value="REVISION_BASIC">Revisão Básica (Gratuito para todos)</option>
-                  <option value="REVISION_COMPLETE" disabled={!isPlus}>
-                    Revisão Completa {!isPlus && '🔒 (Exclusivo Plus)'}
-                  </option>
+                  {allowanceItems.map((it) => {
+                    const locked = !it.includedInTier;
+                    const exhausted = it.includedInTier && it.remaining <= 0;
+                    const suffix = locked
+                      ? '🔒 (Seja Plus)'
+                      : `— ${it.remaining} de ${it.allowed} disponível${it.allowed > 1 ? 'is' : ''}`;
+                    return (
+                      <option key={it.serviceType} value={it.serviceType} disabled={locked || exhausted}>
+                        {it.label} {suffix}{exhausted && ' (esgotado)'}
+                      </option>
+                    );
+                  })}
                   <option value="DIAGNOSTIC" disabled={!isPlus}>
-                    Diagnóstico Elétrico/Eletrônico {!isPlus && '🔒 (Exclusivo Plus)'}
+                    Diagnóstico Elétrico/Eletrônico {!isPlus && '🔒 (Seja Plus)'}
                   </option>
                 </select>
+                {!isPlus && (
+                  <p className="text-xs text-purple-500 mt-1 flex items-center gap-1">
+                    <MdLock className="inline" /> Serviços bloqueados são exclusivos do Care Plus.
+                  </p>
+                )}
               </div>
+
+              {/* Endereço de coleta — só para Busca e Entrega */}
+              {isBuscaEntrega && (
+                <div>
+                  <label className="label">Endereço de Coleta *</label>
+                  <input
+                    type="text"
+                    placeholder="Rua, número, bairro, cidade"
+                    className="input"
+                    value={pickupAddress}
+                    onChange={(e) => setPickupAddress(e.target.value)}
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="label">Horários Disponíveis (Prioritários para Plus) *</label>
@@ -260,11 +322,7 @@ export default function CustomerWorkshopPage() {
                       <StatusChip status={o.status} />
                     </div>
                     <p className="text-gray-500 dark:text-slate-400">
-                      {o.serviceType === 'REVISION_BASIC'
-                        ? 'Revisão Básica'
-                        : o.serviceType === 'REVISION_COMPLETE'
-                        ? 'Revisão Completa'
-                        : 'Diagnóstico Técnico'}
+                      {SERVICE_LABELS[o.serviceType] || o.serviceType}
                     </p>
                     <p className="text-gray-600 dark:text-slate-300 font-medium">
                       📅 {formatDate(o.scheduledFor)}
@@ -272,9 +330,29 @@ export default function CustomerWorkshopPage() {
                     <p className="text-gray-500 dark:text-slate-400 italic">
                       📍 {o.store?.name}
                     </p>
-                    {o.deliveryRequest && (
+                    {o.deliveryRequest && o.serviceType !== 'BUSCA_ENTREGA' && (
                       <div className="flex items-center gap-1 text-amber-500 font-semibold text-[10px]">
                         <MdLocalShipping /> Leva-e-Traz solicitado
+                      </div>
+                    )}
+                    {/* Timeline de logística (Busca e Entrega) */}
+                    {o.serviceType === 'BUSCA_ENTREGA' && o.logisticsStatus && (
+                      <div className="pt-1 border-t border-gray-100 dark:border-slate-800 mt-1">
+                        <p className="flex items-center gap-1 text-amber-600 font-semibold text-[10px] mb-1">
+                          <MdLocalShipping /> Rastreamento leva-e-traz
+                        </p>
+                        <ol className="space-y-0.5">
+                          {LOGISTICS_STEPS.map((step, idx) => {
+                            const currentIdx = LOGISTICS_STEPS.findIndex((s) => s.key === o.logisticsStatus);
+                            const done = idx <= currentIdx;
+                            return (
+                              <li key={step.key} className={`flex items-center gap-1.5 text-[10px] ${done ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-gray-400'}`}>
+                                <span className={`h-1.5 w-1.5 rounded-full ${done ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                                {step.label}
+                              </li>
+                            );
+                          })}
+                        </ol>
                       </div>
                     )}
                   </div>

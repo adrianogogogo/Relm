@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Patch, Body, Query, Param } from '@nestjs/common';
 import { WorkshopService } from './workshop.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { ServiceType, ServiceStatus } from '@prisma/client';
+import { ServiceType, ServiceStatus, LogisticsStatus } from '@prisma/client';
 
 @ApiTags('Workshop')
 @Controller('v1/services')
@@ -12,6 +12,12 @@ export class WorkshopController {
   @ApiOperation({ summary: 'Get available slots for a customer' })
   async getAvailableSlots(@Query('customerId') customerId: string) {
     return this.workshopService.getAvailableSlots(customerId);
+  }
+
+  @Get('allowance')
+  @ApiOperation({ summary: 'Saldo anual de serviços por tipo (usado/permitido)' })
+  async getAllowance(@Query('customerId') customerId: string) {
+    return this.workshopService.getAllowanceSummary(customerId);
   }
 
   @Get('my-orders')
@@ -35,6 +41,15 @@ export class WorkshopController {
     return this.workshopService.updateOrderStatus(id, status);
   }
 
+  @Patch('orders/:id/logistics')
+  @ApiOperation({ summary: 'Avança o status de logística (busca e entrega)' })
+  async advanceLogistics(
+    @Param('id') id: string,
+    @Body('logisticsStatus') logisticsStatus: LogisticsStatus,
+  ) {
+    return this.workshopService.advanceLogistics(id, logisticsStatus);
+  }
+
   @Post('book')
   @ApiOperation({ summary: 'Book a service order' })
   async bookSlot(
@@ -45,6 +60,7 @@ export class WorkshopController {
       serviceType: ServiceType;
       scheduledFor: Date;
       deliveryRequest?: boolean;
+      pickupAddress?: string;
     },
   ) {
     return this.workshopService.bookSlot(dto);
