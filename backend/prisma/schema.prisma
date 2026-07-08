@@ -975,18 +975,50 @@ model Referral {
 }
 
 model CatalogItem {
-  id          String    @id @default(uuid())
-  title       String
-  description String    @db.Text
-  pointsCost  Int       @map("points_cost")
-  stock       Int       @default(0)
-  active      Boolean   @default(true)
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id           String     @id @default(uuid())
+  title        String
+  description  String     @db.Text
+  pointsCost   Int        @map("points_cost")
+  stock        Int        @default(0)
+  active       Boolean    @default(true)
+  // Pré-venda exclusiva por tier (Wave 5)
+  presaleUntil DateTime?  @map("presale_until")
+  presaleTier  TierLevel? @map("presale_tier")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
 
   vouchers    Voucher[]
 
   @@map("catalog_items")
+}
+
+// ============================================
+// PARTNERS MODULE (Wave 5)
+// ============================================
+
+enum PartnerCategory {
+  CAFE
+  HOTEL
+  PROVA
+  OUTRO
+}
+
+model Partner {
+  id          String          @id @default(uuid())
+  name        String
+  category    PartnerCategory
+  description String?         @db.Text
+  benefit     String
+  minTier     TierLevel       @default(CARE) @map("min_tier")
+  logoUrl     String?         @map("logo_url")
+  link        String?
+  city        String?
+  active      Boolean         @default(true)
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  @@index([active, minTier])
+  @@map("partners")
 }
 
 model Voucher {

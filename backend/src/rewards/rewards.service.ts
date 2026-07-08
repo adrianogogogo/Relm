@@ -1,8 +1,9 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
-import { PointTxType, VoucherStatus, Prisma } from '@prisma/client';
+import { PointTxType, VoucherStatus, TierLevel, Prisma } from '@prisma/client';
+import { tierAtLeast } from '../common/entitlements';
 
 @Injectable()
 export class RewardsService {
@@ -24,6 +25,22 @@ export class RewardsService {
 
       if (!item || !item.active) {
         throw new BadRequestException('Reward not found or inactive');
+      }
+
+      // Enforcement de pré-venda: se o item está em janela de pré-venda, somente
+      // clientes com tier >= presaleTier podem resgatar. O tier é derivado da
+      // assinatura no banco — NUNCA do payload (evita bypass de autorização).
+      const now = new Date();
+      if (item.presaleUntil && item.presaleTier && item.presaleUntil > now) {
+        const subscription = await tx.subscription.findUnique({
+          where: { customerId: dto.customerId },
+          select: { tier: true, status: true },
+        });
+        const customerTier =
+          subscription?.status === 'ACTIVE' ? subscription.tier : TierLevel.CARE;
+        if (!tierAtLeast(customerTier, item.presaleTier as TierLevel)) {
+          throw new ForbiddenException('Este item está em pré-venda exclusiva para um tier superior.');
+        }
       }
 
       if (balance < item.pointsCost) {
@@ -101,8 +118,18 @@ export class RewardsService {
     }
   }
 
-  async getCatalog() {
-    return this.prisma.catalogItem.findMany();
+  async getCatalog(customerTier?: TierLevel) {
+    const items = await this.prisma.catalogItem.findMany();
+    if (!customerTier) return items;
+
+    const now = new Date();
+    return items.filter((item) => {
+      // Se está em janela de pré-venda e cliente não tem tier suficiente → ocultar
+      if (item.presaleUntil && item.presaleTier && item.presaleUntil > now) {
+        return tierAtLeast(customerTier, item.presaleTier as TierLevel);
+      }
+      return true;
+    });
   }
 
   async getVouchers(customerId: string) {
@@ -117,7 +144,14 @@ export class RewardsService {
     });
   }
 
-  async createCatalogItem(data: { title: string; description: string; pointsCost: number; stock: number }) {
+  async createCatalogItem(data: {
+    title: string;
+    description: string;
+    pointsCost: number;
+    stock: number;
+    presaleUntil?: Date | null;
+    presaleTier?: TierLevel | null;
+  }) {
     return this.prisma.catalogItem.create({
       data: {
         ...data,
@@ -126,7 +160,15 @@ export class RewardsService {
     });
   }
 
-  async updateCatalogItem(id: string, data: { title?: string; description?: string; pointsCost?: number; stock?: number; active?: boolean }) {
+  async updateCatalogItem(id: string, data: {
+    title?: string;
+    description?: string;
+    pointsCost?: number;
+    stock?: number;
+    active?: boolean;
+    presaleUntil?: Date | null;
+    presaleTier?: TierLevel | null;
+  }) {
     return this.prisma.catalogItem.update({
       where: { id },
       data,

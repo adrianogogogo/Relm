@@ -71,6 +71,8 @@ import AdminVouchersPage from './pages/AdminVouchersPage';
 import DistribuidorEventosPage from './pages/DistribuidorEventosPage';
 import DistribuidorBeneficiosPage from './pages/DistribuidorBeneficiosPage';
 import AdminPaymentsPage from './pages/AdminPaymentsPage';
+import AdminPartnersPage from './pages/AdminPartnersPage';
+import CustomerPartnersPage from './pages/CustomerPartnersPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -139,6 +141,7 @@ export default function App() {
             <Route path="oficina" element={<CustomerWorkshopPage />} />
             <Route path="resgate" element={<CustomerCatalogPage />} />
             <Route path="ranking" element={<CustomerRankingPage />} />
+            <Route path="parcerias" element={<CustomerPartnersPage />} />
           </Route>
 
           {/* ── Store portal (StoreLayout sidebar, no Header/Footer) ──────── */}
@@ -262,6 +265,11 @@ export default function App() {
             <Route path="pagamentos" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
                 <AdminPaymentsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="parceiros" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM']}>
+                <AdminPartnersPage />
               </ProtectedRoute>
             } />
             {/* Feed view-only do Distribuidor (não acessa a gestão de eventos/benefícios) */}

@@ -22,6 +22,7 @@ import {
   MdStars,
   MdReceipt,
   MdPayments,
+  MdStorefront,
 } from 'react-icons/md';
 
 const MENU_ITEMS = [
@@ -98,6 +99,12 @@ const MENU_ITEMS = [
     label: 'Pagamentos (Anuidade)',
     icon: MdPayments,
     roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+  },
+  {
+    path: '/admin/parceiros',
+    label: 'Parcerias',
+    icon: MdStorefront,
+    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
   },
   {
     path: '/admin/insurances',

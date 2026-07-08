@@ -1,6 +1,7 @@
-import { Controller, Post, Body, Get, Patch, Delete, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Patch, Delete, Param, Query } from '@nestjs/common';
 import { RewardsService } from './rewards.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { TierLevel } from '@prisma/client';
 
 @ApiTags('Rewards')
 @Controller('v1/rewards')
@@ -10,30 +11,54 @@ export class RewardsController {
   @Post('redeem')
   @ApiOperation({ summary: 'Redeem a catalog reward item' })
   async redeemReward(@Body() dto: { customerId: string; catalogItemId: string }) {
-    return this.rewardsService.redeemReward(dto);
+    // customerTier NÃO é aceito do cliente — o tier é derivado da assinatura no service.
+    return this.rewardsService.redeemReward({ customerId: dto.customerId, catalogItemId: dto.catalogItemId });
   }
 
   @Get('catalog')
-  @ApiOperation({ summary: 'Get all catalog items' })
-  async getCatalog() {
-    return this.rewardsService.getCatalog();
+  @ApiOperation({ summary: 'Get all catalog items (optional ?tier=CARE|PLUS filters presale)' })
+  async getCatalog(@Query('tier') tier?: TierLevel) {
+    return this.rewardsService.getCatalog(tier);
   }
 
   @Post('catalog')
   @ApiOperation({ summary: 'Create catalog item' })
   async createCatalogItem(
-    @Body() dto: { title: string; description: string; pointsCost: number; stock: number },
+    @Body() dto: {
+      title: string;
+      description: string;
+      pointsCost: number;
+      stock: number;
+      presaleUntil?: string | null;
+      presaleTier?: TierLevel | null;
+    },
   ) {
-    return this.rewardsService.createCatalogItem(dto);
+    return this.rewardsService.createCatalogItem({
+      ...dto,
+      presaleUntil: dto.presaleUntil ? new Date(dto.presaleUntil) : null,
+    });
   }
 
   @Patch('catalog/:id')
   @ApiOperation({ summary: 'Update catalog item' })
   async updateCatalogItem(
     @Param('id') id: string,
-    @Body() dto: { title?: string; description?: string; pointsCost?: number; stock?: number; active?: boolean },
+    @Body() dto: {
+      title?: string;
+      description?: string;
+      pointsCost?: number;
+      stock?: number;
+      active?: boolean;
+      presaleUntil?: string | null;
+      presaleTier?: TierLevel | null;
+    },
   ) {
-    return this.rewardsService.updateCatalogItem(id, dto);
+    return this.rewardsService.updateCatalogItem(id, {
+      ...dto,
+      presaleUntil: dto.presaleUntil !== undefined
+        ? (dto.presaleUntil ? new Date(dto.presaleUntil) : null)
+        : undefined,
+    });
   }
 
   @Delete('catalog/:id')

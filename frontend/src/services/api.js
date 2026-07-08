@@ -308,7 +308,9 @@ export const workshopAPI = {
 };
 
 export const rewardsAPI = {
-  getCatalog: () => api.get('/v1/rewards/catalog').then((res) => res.data),
+  /** tier opcional (CARE|PLUS) filtra pré-vendas server-side */
+  getCatalog: (tier) =>
+    api.get('/v1/rewards/catalog', { params: tier ? { tier } : {} }).then((res) => res.data),
   redeem: (data) => api.post('/v1/rewards/redeem', data).then((res) => res.data),
   getVouchers: (customerId) => api.get(`/v1/rewards/vouchers/${customerId}`).then((res) => res.data),
   createCatalogItem: (data) => api.post('/v1/rewards/catalog', data).then((res) => res.data),
@@ -317,6 +319,18 @@ export const rewardsAPI = {
   getAllVouchers: () => api.get('/v1/rewards/vouchers').then((res) => res.data),
   useVoucher: (code) => api.patch(`/v1/rewards/vouchers/${code}/use`).then((res) => res.data),
   seedCatalog: () => api.post('/v1/rewards/seed').then((res) => res.data),
+};
+
+// ── Parcerias (Wave 5) ───────────────────────────────────────────────────────
+
+export const partnersAPI = {
+  // Portal cliente — parceiros ativos com flag eligible
+  getForCustomer: () => api.get('/partners/for-customer').then((res) => res.data),
+  // Admin CRUD
+  getAll: () => api.get('/partners').then((res) => res.data),
+  create: (data) => api.post('/partners', data).then((res) => res.data),
+  update: (id, data) => api.patch(`/partners/${id}`, data).then((res) => res.data),
+  remove: (id) => api.delete(`/partners/${id}`).then((res) => res.data),
 };
 
 // ── Pagamentos da anuidade (ONDA 1) ───────────────────────────────────────────

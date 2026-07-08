@@ -1,5 +1,19 @@
 import { TierLevel } from '@prisma/client';
 
+// Ordem dos tiers (crescente). Usado por tierAtLeast para comparação.
+const TIER_ORDER: Record<TierLevel, number> = {
+  CARE: 0,
+  PLUS: 1,
+};
+
+/**
+ * Retorna true se customerTier >= requiredTier.
+ * Fonte única de comparação de tiers — não usar === 'PLUS' solto no código.
+ */
+export function tierAtLeast(customerTier: TierLevel, requiredTier: TierLevel): boolean {
+  return TIER_ORDER[customerTier] >= TIER_ORDER[requiredTier];
+}
+
 /**
  * Fonte ÚNICA de verdade dos direitos por tier. Alimenta os dois lados:
  * - Enforcement: os services leem ENTITLEMENTS[tier].<knob> (nunca `=== PLUS` solto).

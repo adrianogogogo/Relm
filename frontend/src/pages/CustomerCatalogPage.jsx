@@ -3,7 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 import { rewardsAPI, customerPortalAPI } from '../services/api';
 import { Card, PageHeader, Button } from '../components/ui';
-import { MdCardGiftcard, MdStars, MdCheckCircle, MdOutlineHistory, MdLock } from 'react-icons/md';
+import { MdCardGiftcard, MdStars, MdCheckCircle, MdOutlineHistory, MdLock, MdTimer } from 'react-icons/md';
+
+function presaleDaysLeft(presaleUntil) {
+  if (!presaleUntil) return null;
+  const diff = new Date(presaleUntil) - new Date();
+  if (diff <= 0) return null;
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
 
 export default function CustomerCatalogPage() {
   const { user } = useAuthStore();
@@ -23,10 +30,10 @@ export default function CustomerCatalogPage() {
   });
   const balance = pointsData?.balance || 0;
 
-  // Fetch rewards catalog
+  // Fetch rewards catalog — passa tier para filtrar pré-vendas server-side
   const { data: catalog = [], isLoading: loadingCatalog } = useQuery({
-    queryKey: ['rewards-catalog'],
-    queryFn: rewardsAPI.getCatalog,
+    queryKey: ['rewards-catalog', user?.currentTier],
+    queryFn: () => rewardsAPI.getCatalog(user?.currentTier),
   });
 
   // Fetch my active vouchers
@@ -126,8 +133,21 @@ export default function CustomerCatalogPage() {
                 {catalog.map((item) => {
                   const outOfStock = item.stock <= 0;
                   const canAfford = balance >= item.pointsCost;
+                  const daysLeft = presaleDaysLeft(item.presaleUntil);
+                  const inPresale = daysLeft !== null && item.presaleTier;
+                  const isPresalePlus = inPresale && item.presaleTier === 'PLUS' && !isPlus;
                   return (
-                    <Card key={item.id} className="flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden">
+                    <Card key={item.id} className={`flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden ${isPresalePlus ? 'ring-1 ring-amber-400/60' : ''}`}>
+                      {/* Badge pré-venda */}
+                      {inPresale && (
+                        <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold mb-2 w-fit ${isPresalePlus ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'}`}>
+                          {isPresalePlus ? <MdLock size={12} /> : <MdTimer size={12} />}
+                          {isPresalePlus
+                            ? `Pré-venda exclusiva PLUS — ${daysLeft}d restantes`
+                            : `Pré-venda — ${daysLeft}d restantes`}
+                        </div>
+                      )}
+
                       <div className="space-y-2">
                         <div className="flex justify-between items-start">
                           <h4 className="font-title font-bold text-gray-900 dark:text-slate-100 text-base">{item.title}</h4>
@@ -138,6 +158,14 @@ export default function CustomerCatalogPage() {
                         <p className="text-xs text-gray-600 dark:text-slate-400 line-clamp-2">{item.description}</p>
                       </div>
 
+                      {/* CTA upgrade para CARE tentando resgatar pré-venda PLUS */}
+                      {isPresalePlus && (
+                        <div className="mt-3 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                          <MdLock size={14} className="shrink-0" />
+                          <span>Disponível somente para membros <strong>PLUS</strong>. <a href="/cliente/assinatura" className="underline font-semibold">Seja Plus</a></span>
+                        </div>
+                      )}
+
                       <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center gap-2">
                         <span className={`text-[10px] font-semibold ${outOfStock ? 'text-rose-500' : 'text-gray-500 dark:text-slate-400'}`}>
                           {outOfStock ? 'Esgotado' : `Estoque: ${item.stock} un`}
@@ -146,9 +174,9 @@ export default function CustomerCatalogPage() {
                           size="sm"
                           variant="primary"
                           onClick={() => handleRedeemRequest(item)}
-                          disabled={outOfStock || !canAfford}
+                          disabled={outOfStock || !canAfford || isPresalePlus}
                         >
-                          Resgatar
+                          {isPresalePlus ? 'Bloqueado' : 'Resgatar'}
                         </Button>
                       </div>
                     </Card>

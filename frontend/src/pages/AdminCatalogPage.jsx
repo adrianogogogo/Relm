@@ -2,7 +2,13 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { rewardsAPI } from '../services/api';
 import { Card, PageHeader, Button } from '../components/ui';
-import { MdStars, MdAdd, MdEdit, MdDelete, MdCheck, MdClose } from 'react-icons/md';
+import { MdStars, MdAdd, MdEdit, MdDelete, MdCheck, MdClose, MdTimer } from 'react-icons/md';
+
+const TIER_OPTIONS = [
+  { value: '', label: 'Sem restrição (todos)' },
+  { value: 'CARE', label: 'CARE ou superior' },
+  { value: 'PLUS', label: 'PLUS exclusivo' },
+];
 
 export default function AdminCatalogPage() {
   const queryClient = useQueryClient();
@@ -15,6 +21,8 @@ export default function AdminCatalogPage() {
   const [pointsCost, setPointsCost] = useState(50);
   const [stock, setStock] = useState(10);
   const [active, setActive] = useState(true);
+  const [presaleUntil, setPresaleUntil] = useState('');
+  const [presaleTier, setPresaleTier] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
   // Fetch catalog
@@ -23,6 +31,8 @@ export default function AdminCatalogPage() {
     queryFn: rewardsAPI.getCatalog,
   });
 
+  const toLocalDatetime = (iso) => (iso ? iso.slice(0, 16) : '');
+
   const openCreateModal = () => {
     setEditingItem(null);
     setTitle('');
@@ -30,6 +40,8 @@ export default function AdminCatalogPage() {
     setPointsCost(50);
     setStock(10);
     setActive(true);
+    setPresaleUntil('');
+    setPresaleTier('');
     setErrorMsg('');
     setShowModal(true);
   };
@@ -41,6 +53,8 @@ export default function AdminCatalogPage() {
     setPointsCost(item.pointsCost);
     setStock(item.stock);
     setActive(item.active);
+    setPresaleUntil(toLocalDatetime(item.presaleUntil));
+    setPresaleTier(item.presaleTier ?? '');
     setErrorMsg('');
     setShowModal(true);
   };
@@ -90,7 +104,15 @@ export default function AdminCatalogPage() {
       return;
     }
 
-    const payload = { title, description, pointsCost: Number(pointsCost), stock: Number(stock), active };
+    const payload = {
+      title,
+      description,
+      pointsCost: Number(pointsCost),
+      stock: Number(stock),
+      active,
+      presaleUntil: presaleUntil ? new Date(presaleUntil).toISOString() : null,
+      presaleTier: presaleTier || null,
+    };
 
     if (editingItem) {
       updateMutation.mutate({ id: editingItem.id, data: payload });
@@ -140,6 +162,7 @@ export default function AdminCatalogPage() {
                   <th className="p-4">Descrição</th>
                   <th className="p-4">Custo (Pontos)</th>
                   <th className="p-4">Estoque</th>
+                  <th className="p-4">Pré-venda</th>
                   <th className="p-4">Status</th>
                   <th className="p-4 text-right">Ações</th>
                 </tr>
@@ -153,6 +176,15 @@ export default function AdminCatalogPage() {
                       {item.pointsCost} pts
                     </td>
                     <td className="p-4">{item.stock} un</td>
+                    <td className="p-4">
+                      {item.presaleUntil && item.presaleTier && new Date(item.presaleUntil) > new Date() ? (
+                        <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                          <MdTimer size={12} /> {item.presaleTier} até {new Date(item.presaleUntil).toLocaleDateString('pt-BR')}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-gray-400">—</span>
+                      )}
+                    </td>
                     <td className="p-4">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                         item.active ? 'bg-emerald-100 text-emerald-850 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-rose-100 text-rose-850 dark:bg-rose-950 dark:text-rose-300'
@@ -240,6 +272,39 @@ export default function AdminCatalogPage() {
                       required
                     />
                   </div>
+                </div>
+
+                {/* Pré-venda exclusiva */}
+                <div className="border border-amber-200 dark:border-amber-800 rounded-lg p-3 space-y-3 bg-amber-50/50 dark:bg-amber-950/20">
+                  <p className="text-xs font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                    <MdTimer size={14} /> Pré-venda exclusiva (opcional)
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">Fim da pré-venda</label>
+                      <input
+                        type="datetime-local"
+                        className="input"
+                        value={presaleUntil}
+                        onChange={(e) => setPresaleUntil(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="label">Tier mínimo</label>
+                      <select
+                        className="input"
+                        value={presaleTier}
+                        onChange={(e) => setPresaleTier(e.target.value)}
+                      >
+                        {TIER_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-amber-700 dark:text-amber-400">
+                    Enquanto a data não passar, somente o tier selecionado pode ver e resgatar este item.
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-2 py-2">
