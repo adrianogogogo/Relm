@@ -33,6 +33,7 @@ import CustomerInsurancePage from './pages/CustomerInsurancePage';
 import CustomerProfilePage from './pages/CustomerProfilePage';
 import CustomerWorkshopPage from './pages/CustomerWorkshopPage';
 import CustomerCatalogPage from './pages/CustomerCatalogPage';
+import CustomerSubscriptionPage from './pages/CustomerSubscriptionPage';
 
 // Store portal pages
 import StoreDashboard from './pages/StoreDashboard';
@@ -44,6 +45,7 @@ import StoreProfilePage from './pages/StoreProfilePage';
 import StoreEventsPage from './pages/StoreEventsPage';
 import StoreBenefitsPage from './pages/StoreBenefitsPage';
 import StoreWorkshopPage from './pages/StoreWorkshopPage';
+import StorePaymentsPage from './pages/StorePaymentsPage';
 
 // Admin pages
 import AdminHome from './pages/AdminHome';
@@ -66,6 +68,7 @@ import AdminCatalogPage from './pages/AdminCatalogPage';
 import AdminVouchersPage from './pages/AdminVouchersPage';
 import DistribuidorEventosPage from './pages/DistribuidorEventosPage';
 import DistribuidorBeneficiosPage from './pages/DistribuidorBeneficiosPage';
+import AdminPaymentsPage from './pages/AdminPaymentsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -125,6 +128,7 @@ export default function App() {
             }
           >
             <Route path="dashboard" element={<CustomerDashboard />} />
+            <Route path="assinatura" element={<CustomerSubscriptionPage />} />
             <Route path="garantias" element={<CustomerWarrantiesPage />} />
             <Route path="eventos" element={<CustomerEventsPage />} />
             <Route path="vantagens" element={<CustomerBenefitsPage />} />
@@ -145,6 +149,7 @@ export default function App() {
           >
             <Route path="dashboard" element={<StoreDashboard />} />
             <Route path="clientes" element={<StoreCustomersPage />} />
+            <Route path="pagamentos" element={<StorePaymentsPage />} />
             <Route path="garantias" element={<StoreWarrantiesPage />} />
             <Route path="seguros" element={<StoreInsurancesPage />} />
             <Route path="produtos" element={<StoreProductsPage />} />
@@ -244,6 +249,11 @@ export default function App() {
             <Route path="insurances" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA']}>
                 <AdminInsurancesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="pagamentos" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                <AdminPaymentsPage />
               </ProtectedRoute>
             } />
             {/* Feed view-only do Distribuidor (não acessa a gestão de eventos/benefícios) */}

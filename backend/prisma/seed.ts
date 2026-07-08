@@ -510,6 +510,28 @@ Acesse o catálogo completo em PDF: [link]
 
   console.log(`✅ Newsletter criada\n`);
 
+  // ============================================
+  // 15. Club Settings (configurações calibráveis do clube)
+  // ============================================
+  console.log('⚙️  Criando Configurações do Clube...');
+
+  const clubSettings: { key: string; value: string }[] = [
+    // Valor da anuidade Care Plus em R$ (placeholder calibrável — deck slide 16).
+    { key: 'plus_annual_fee', value: '299.00' },
+    // Valor de 1 ponto em R$ (passivo contábil de pontos — Onda 7). Placeholder.
+    { key: 'point_value_brl', value: '0.05' },
+  ];
+
+  for (const setting of clubSettings) {
+    await prisma.clubSettings.upsert({
+      where: { key: setting.key },
+      update: {},
+      create: setting,
+    });
+  }
+
+  console.log(`✅ Configurações do Clube criadas\n`);
+
   console.log('✅ Seed concluído com sucesso! 🎉\n');
 }
 

@@ -16,11 +16,13 @@ import {
   MdChevronLeft,
   MdChevronRight,
   MdBuild,
+  MdPayments,
 } from 'react-icons/md';
 
 const MENU = [
   { path: '/loja/dashboard', label: 'Início', icon: MdDashboard },
   { path: '/loja/clientes', label: 'Clientes', icon: MdPeople },
+  { path: '/loja/pagamentos', label: 'Pagamentos (Anuidade)', icon: MdPayments },
   { path: '/loja/garantias', label: 'Garantias', icon: MdVerifiedUser },
   { path: '/loja/oficina', label: 'Oficina / Serviços', icon: MdBuild },
   { path: '/loja/seguros', label: 'Cotações de Seguro', icon: MdDescription },

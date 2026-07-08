@@ -21,6 +21,7 @@ import {
   MdChevronRight,
   MdStars,
   MdReceipt,
+  MdPayments,
 } from 'react-icons/md';
 
 const MENU_ITEMS = [
@@ -91,6 +92,12 @@ const MENU_ITEMS = [
     label: 'Benefícios',
     icon: MdCardGiftcard,
     roles: ['DISTRIBUIDOR'],
+  },
+  {
+    path: '/admin/pagamentos',
+    label: 'Pagamentos (Anuidade)',
+    icon: MdPayments,
+    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
   },
   {
     path: '/admin/insurances',

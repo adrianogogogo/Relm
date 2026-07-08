@@ -69,7 +69,8 @@ model Customer {
   pointsLedger           PointsLedger[]
   serviceOrders          ServiceOrder[]
   vouchers               Voucher[]
-  
+  payments               Payment[]
+
   @@index([email])
   @@index([cpf])
   @@index([storeId])
@@ -799,8 +800,62 @@ model Subscription {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   autoRenew   Boolean   @default(false) @map("auto_renew")
 
+  payments    Payment[]
+
   @@index([customerId, status])
   @@map("subscriptions")
+}
+
+// ============================================
+// PAGAMENTOS (anuidade Plus) — ONDA 1
+// ============================================
+
+enum PaymentMethod {
+  MANUAL_LOJA // registrado pela loja (fecha a cobrança presencial)
+  MANUAL_RELM // registrado direto pela Relm
+  GATEWAY // reservado para gateway futuro (Asaas/MP/etc.)
+}
+
+enum PaymentStatus {
+  PENDING // aguardando confirmação da Relm (registro por loja)
+  CONFIRMED // pago/confirmado → renova a assinatura
+  CANCELLED
+}
+
+// Pagamento da anuidade Plus. Registro manual hoje; pronto para gateway futuro
+// via `gatewayId` + method GATEWAY (PaymentGatewayService).
+model Payment {
+  id             String        @id @default(uuid())
+  subscriptionId String        @map("subscription_id")
+  subscription   Subscription  @relation(fields: [subscriptionId], references: [id])
+  customerId     String        @map("customer_id")
+  customer       Customer      @relation(fields: [customerId], references: [id])
+  amount         Decimal       @db.Decimal(10, 2)
+  method         PaymentMethod
+  status         PaymentStatus @default(PENDING)
+  // Quem registrou: id do User (equipe) ou do StoreUser (lojista).
+  registeredById   String  @map("registered_by_id")
+  registeredByType String  @map("registered_by_type") // "USER" | "STORE_USER"
+  gatewayId        String? @map("gateway_id") // reservado p/ gateway futuro
+  paidAt           DateTime? @map("paid_at")
+  notes            String? @db.Text
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@index([customerId])
+  @@index([subscriptionId])
+  @@index([status])
+  @@map("payments")
+}
+
+// Configurações calibráveis do clube (valor da anuidade, valor do ponto, etc.).
+model ClubSettings {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("club_settings")
 }
 
 model PointsLedger {

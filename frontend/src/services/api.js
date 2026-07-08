@@ -301,6 +301,27 @@ export const rewardsAPI = {
   seedCatalog: () => api.post('/v1/rewards/seed').then((res) => res.data),
 };
 
+// ── Pagamentos da anuidade (ONDA 1) ───────────────────────────────────────────
+// Registro manual (loja/admin) + confirmação/cancelamento (Relm) + histórico
+// do cliente. Pronto para gateway futuro sem mudança no frontend.
+
+export const paymentsAPI = {
+  // Admin/Gerente Relm
+  getAnnualFee: () => api.get('/payments/annual-fee').then((res) => res.data),
+  getAll: (params) => api.get('/payments', { params }).then((res) => res.data),
+  register: (data) => api.post('/payments', data).then((res) => res.data),
+  confirm: (id) => api.patch(`/payments/${id}/confirm`).then((res) => res.data),
+  cancel: (id) => api.patch(`/payments/${id}/cancel`).then((res) => res.data),
+
+  // Loja (registra pagamento PENDING para a Relm confirmar)
+  storeGetAnnualFee: () => api.get('/store/payments/annual-fee').then((res) => res.data),
+  storeRegister: (data) => api.post('/store/payments', data).then((res) => res.data),
+  storeGetMine: () => api.get('/store/payments').then((res) => res.data),
+
+  // Cliente (portal) — histórico da própria anuidade
+  getMy: () => api.get('/payments/my').then((res) => res.data),
+};
+
 export const adminUsersAPI = {
   resetPassword: (id, password) =>
     api.patch(`/admin-users/${id}/reset-password`, { password }).then((res) => res.data),

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron } from '@nestjs/schedule';
-import { TierLevel, SubStatus } from '@prisma/client';
+import { Prisma, TierLevel, SubStatus } from '@prisma/client';
 import { PointsService } from '../points/points.service';
 import { ENTITLEMENTS } from '../common/entitlements';
 
@@ -102,6 +102,75 @@ export class SubscriptionsService {
     });
 
     return updated.subscription;
+  }
+
+  /**
+   * Renova/ativa a assinatura Plus por 1 ano a partir do pagamento confirmado
+   * da anuidade. Reutiliza a mesma lógica de bônus de renovação da venda de bike.
+   * Idempotência e transação ficam a cargo do chamador (payments.service), que
+   * passa o `tx` da transação de confirmação do pagamento.
+   *
+   * @returns { subscription, isRenewal } — isRenewal indica se rendeu bônus.
+   */
+  async renewFromPayment(
+    customerId: string,
+    tx: Prisma.TransactionClient,
+    actor?: { id: string; type: string },
+  ): Promise<{ subscription: any; isRenewal: boolean }> {
+    const existing = await tx.subscription.findUnique({ where: { customerId } });
+    // Renovação = já era PLUS ativo. Ativação nova (upgrade CARE→PLUS via
+    // pagamento) não rende bônus de renovação.
+    const isRenewal =
+      existing?.tier === TierLevel.PLUS && existing?.status === SubStatus.ACTIVE;
+
+    const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+
+    await tx.customer.update({
+      where: { id: customerId },
+      data: { currentTier: TierLevel.PLUS },
+    });
+
+    const subscription = await tx.subscription.upsert({
+      where: { customerId },
+      update: {
+        tier: TierLevel.PLUS,
+        status: SubStatus.ACTIVE,
+        expiresAt,
+        activatedAt: new Date(),
+      },
+      create: {
+        customerId,
+        tier: TierLevel.PLUS,
+        status: SubStatus.ACTIVE,
+        expiresAt,
+      },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        userId: actor?.type === 'USER' ? actor.id : null,
+        action: 'UPDATE_SENSITIVE',
+        entity: 'subscriptions',
+        entityId: subscription.id,
+        metadata: {
+          reason: 'Renovação por pagamento da anuidade',
+          expiresAt,
+          ...(actor ? { actorId: actor.id, actorType: actor.type } : {}),
+        },
+      },
+    });
+
+    if (isRenewal && ENTITLEMENTS[TierLevel.PLUS].renewalBonusPoints > 0) {
+      await this.pointsService.earnPoints(
+        customerId,
+        ENTITLEMENTS[TierLevel.PLUS].renewalBonusPoints,
+        'Bônus de renovação Care Plus',
+        subscription.id,
+        tx,
+      );
+    }
+
+    return { subscription, isRenewal };
   }
 
   @Cron('0 1 * * *')

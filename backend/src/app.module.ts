@@ -28,6 +28,7 @@ import { PointsModule } from './points/points.module';
 import { WorkshopModule } from './workshop/workshop.module';
 import { RewardsModule } from './rewards/rewards.module';
 import { WhatsappModule } from './whatsapp/whatsapp.module';
+import { PaymentsModule } from './payments/payments.module';
 import { HealthController } from './health.controller';
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { HealthController } from './health.controller';
     WorkshopModule,
     RewardsModule,
     WhatsappModule,
+    PaymentsModule,
   ],
   controllers: [HealthController],
   providers: [
