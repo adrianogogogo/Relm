@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MdVerifiedUser, MdDescription, MdEvent, MdPerson, MdLocationOn, MdCardGiftcard, MdShare, MdContentCopy, MdCheck } from 'react-icons/md';
+import { MdVerifiedUser, MdDescription, MdEvent, MdPerson, MdLocationOn, MdCardGiftcard, MdShare, MdContentCopy, MdCheck, MdEmojiEvents } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
-import { customerPortalAPI } from '../services/api';
+import { customerPortalAPI, gamificationAPI } from '../services/api';
 import { useEntitlements } from '../hooks/useEntitlements';
 import { Card, PageHeader, StatCard, StatusChip } from '../components/ui';
 
@@ -72,6 +72,57 @@ function ReferralCard() {
       <p className="text-xs text-gray-400 dark:text-slate-500">
         {completed} indicaç{completed === 1 ? 'ão' : 'ões'} concluída{completed !== 1 ? 's' : ''}
       </p>
+    </Card>
+  );
+}
+
+function AchievementsCard() {
+  const { data: badges = [] } = useQuery({
+    queryKey: ['customer-achievements'],
+    queryFn: gamificationAPI.getMyAchievements,
+  });
+
+  const earned = badges.filter((b) => b.earned);
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <MdEmojiEvents size={20} className="text-yellow-500 shrink-0" />
+          <h2 className="font-title text-lg font-bold text-gray-900 dark:text-slate-100">Conquistas</h2>
+        </div>
+        <Link to="/cliente/ranking" className="text-primary dark:text-primary-400 text-sm hover:underline">
+          Ver ranking →
+        </Link>
+      </div>
+
+      {badges.length === 0 ? (
+        <p className="text-sm text-gray-400 dark:text-slate-500">Carregando conquistas...</p>
+      ) : (
+        <>
+          <p className="text-xs text-gray-500 dark:text-slate-400 mb-3">
+            {earned.length} de {badges.length} desbloqueada{earned.length !== 1 ? 's' : ''}
+          </p>
+          <div className="grid grid-cols-5 gap-2">
+            {badges.map((badge) => (
+              <div
+                key={badge.id}
+                title={badge.earned ? `${badge.name}: ${badge.description}` : `Bloqueado: ${badge.description}`}
+                className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-colors ${
+                  badge.earned
+                    ? 'border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-700'
+                    : 'border-gray-200 bg-gray-50 dark:bg-slate-800 dark:border-slate-700 opacity-40 grayscale'
+                }`}
+              >
+                <span className="text-2xl leading-none">{badge.icon || '🏅'}</span>
+                <span className="text-[10px] text-center leading-tight text-gray-600 dark:text-slate-300 line-clamp-2">
+                  {badge.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </Card>
   );
 }
@@ -233,6 +284,9 @@ export default function CustomerDashboard() {
 
           {/* Indique e Ganhe */}
           <ReferralCard />
+
+          {/* Conquistas */}
+          <AchievementsCard />
 
           {/* Ações rápidas */}
           <Card>

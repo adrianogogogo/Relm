@@ -84,7 +84,9 @@ function makeService(payment: any, opts: { configuredFee?: number; customerStore
       .mockResolvedValue({ confirmed: true, paidAt: new Date(), gatewayId: null }),
   };
 
-  const svc = new PaymentsService(prisma, subscriptionsService, notifications, gateway);
+  const gamification: any = { checkAndGrant: jest.fn().mockResolvedValue(undefined) };
+
+  const svc = new PaymentsService(prisma, subscriptionsService, notifications, gamification, gateway);
   return { svc, prisma, tx, subscriptionsService, notifications, gateway, store };
 }
 

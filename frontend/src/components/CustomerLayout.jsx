@@ -16,6 +16,7 @@ import {
   MdChevronRight,
   MdBuild,
   MdWorkspacePremium,
+  MdEmojiEvents,
 } from 'react-icons/md';
 
 const MENU = [
@@ -27,6 +28,7 @@ const MENU = [
   { path: '/cliente/eventos', label: 'Meus Eventos', icon: MdEvent },
   { path: '/cliente/vantagens', label: 'Vantagens', icon: MdCardGiftcard },
   { path: '/cliente/seguros', label: 'Cotações de Seguro', icon: MdDescription },
+  { path: '/cliente/ranking', label: 'Ranking', icon: MdEmojiEvents },
   { path: '/cliente/perfil', label: 'Meu Perfil', icon: MdPerson },
 ];
 

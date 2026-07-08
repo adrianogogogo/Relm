@@ -61,6 +61,10 @@ model Customer {
   referralCode           String?                 @unique @map("referral_code")
   referredById           String?                 @map("referred_by_id")
 
+  // Gamification (Wave 4)
+  leaderboardOptIn       Boolean                 @default(false) @map("leaderboard_opt_in")
+  nickname               String?
+
   // Relations
   store                  Store?                  @relation(fields: [storeId], references: [id])
   referredBy             Customer?               @relation("CustomerReferrals", fields: [referredById], references: [id])
@@ -79,6 +83,7 @@ model Customer {
   payments               Payment[]
   referralsSent          Referral[]              @relation("ReferrerReferrals")
   referralReceived       Referral?               @relation("ReferredReferrals")
+  customerAchievements   CustomerAchievement[]
 
   @@index([email])
   @@index([cpf])
@@ -998,4 +1003,36 @@ model Voucher {
   catalogItem CatalogItem @relation(fields: [catalogItemId], references: [id])
 
   @@map("vouchers")
+}
+
+// ============================================
+// GAMIFICATION MODULE (Wave 4)
+// ============================================
+
+model Achievement {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String
+  icon        String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  customerAchievements CustomerAchievement[]
+
+  @@map("achievements")
+}
+
+model CustomerAchievement {
+  id            String      @id @default(uuid())
+  customerId    String      @map("customer_id")
+  achievementId String      @map("achievement_id")
+  earnedAt      DateTime    @default(now()) @map("earned_at")
+
+  customer    Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, achievementId])
+  @@index([customerId])
+  @@map("customer_achievements")
 }

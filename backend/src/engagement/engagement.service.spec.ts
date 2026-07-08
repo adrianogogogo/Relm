@@ -62,7 +62,9 @@ function makeService(overrides: {
     earnPoints: jest.fn().mockResolvedValue({ id: 'ledger1' }),
   };
 
-  const service = new EngagementService(prisma, pointsService);
+  const gamification: any = { checkAndGrant: jest.fn().mockResolvedValue(undefined) };
+
+  const service = new EngagementService(prisma, pointsService, gamification);
 
   return { service, prisma, pointsService, txMock };
 }

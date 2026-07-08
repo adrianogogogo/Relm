@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
+import { GamificationService } from '../gamification/gamification.service';
 import { ReferralStatus, SubStatus } from '@prisma/client';
 import * as crypto from 'crypto';
 
@@ -17,6 +18,7 @@ export class EngagementService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pointsService: PointsService,
+    private readonly gamification: GamificationService,
   ) {}
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -168,6 +170,11 @@ export class EngagementService {
     this.logger.log(
       `Referral ${referral.id} completed: ${points} pts → referrer ${referral.referrerId}`,
     );
+
+    // Gamificação best-effort — nunca quebra o fluxo de referral.
+    this.gamification.checkAndGrant(referral.referrerId).catch((err) =>
+      this.logger.error(`checkAndGrant falhou após referral: ${err?.message}`),
+    );
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -270,6 +277,13 @@ export class EngagementService {
       );
       awarded = true;
     });
+
+    // Gamificação best-effort — nunca quebra o fluxo de presença.
+    if (awarded) {
+      this.gamification.checkAndGrant(reg.customerId).catch((err) =>
+        this.logger.error(`checkAndGrant falhou após presença: ${err?.message}`),
+      );
+    }
 
     return { attended: true, pointsAwarded: awarded ? points : null };
   }

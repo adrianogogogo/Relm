@@ -287,6 +287,18 @@ export const customerPortalAPI = {
   getReferral: () => api.get('/customer-portal/referral').then((res) => res.data),
 };
 
+// ── Gamificação (Wave 4) ──────────────────────────────────────────────────────
+
+export const gamificationAPI = {
+  /** Todos os badges com earned=true/false para o cliente autenticado. */
+  getMyAchievements: () => api.get('/gamification/my-achievements').then((res) => res.data),
+  /** Top 20 do ranking anual (apenas clientes com opt-in). */
+  getLeaderboard: () => api.get('/gamification/leaderboard').then((res) => res.data),
+  /** Define participação no ranking e apelido (LGPD opt-in). */
+  updateOptIn: (optIn, nickname) =>
+    api.patch('/gamification/leaderboard-optin', { optIn, nickname }).then((res) => res.data),
+};
+
 export const workshopAPI = {
   getAvailableSlots: (customerId) => api.get(`/v1/services/available-slots?customerId=${customerId}`).then((res) => res.data),
   bookSlot: (data) => api.post('/v1/services/book', data).then((res) => res.data),

@@ -536,6 +536,29 @@ Acesse o catálogo completo em PDF: [link]
 
   console.log(`✅ Configurações do Clube criadas\n`);
 
+  // ============================================
+  // 16. Achievements / Badges (Wave 4 — Gamificação)
+  // ============================================
+  console.log('🏆 Criando Badges de Conquistas...');
+
+  const badges = [
+    { code: 'PRIMEIRA_COMPRA', name: 'Primeira Compra',  description: 'Realizou o primeiro pedido na Relm',              icon: '🛒' },
+    { code: 'DEZ_PEDAIS',      name: 'Dez Pedais',       description: 'Participou de 10 eventos do clube',               icon: '🚴' },
+    { code: 'RENOVACAO_PLUS',  name: 'Renovação Plus',   description: 'Renovou a assinatura Plus',                       icon: '⭐' },
+    { code: 'INDICOU_5',       name: 'Embaixador',       description: 'Completou 5 indicações de novos membros',         icon: '🤝' },
+    { code: 'PONTOS_10K',      name: 'Clube dos 10K',    description: 'Acumulou 10.000 pontos ao longo do tempo',        icon: '🏆' },
+  ];
+
+  for (const badge of badges) {
+    await prisma.achievement.upsert({
+      where: { code: badge.code },
+      update: { name: badge.name, description: badge.description, icon: badge.icon },
+      create: { ...badge, active: true },
+    });
+  }
+
+  console.log(`✅ Badges criados\n`);
+
   console.log('✅ Seed concluído com sucesso! 🎉\n');
 }
 

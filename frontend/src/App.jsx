@@ -34,6 +34,7 @@ import CustomerProfilePage from './pages/CustomerProfilePage';
 import CustomerWorkshopPage from './pages/CustomerWorkshopPage';
 import CustomerCatalogPage from './pages/CustomerCatalogPage';
 import CustomerSubscriptionPage from './pages/CustomerSubscriptionPage';
+import CustomerRankingPage from './pages/CustomerRankingPage';
 
 // Store portal pages
 import StoreDashboard from './pages/StoreDashboard';
@@ -137,6 +138,7 @@ export default function App() {
             <Route path="perfil" element={<CustomerProfilePage />} />
             <Route path="oficina" element={<CustomerWorkshopPage />} />
             <Route path="resgate" element={<CustomerCatalogPage />} />
+            <Route path="ranking" element={<CustomerRankingPage />} />
           </Route>
 
           {/* ── Store portal (StoreLayout sidebar, no Header/Footer) ──────── */}

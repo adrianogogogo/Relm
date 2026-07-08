@@ -11,6 +11,7 @@ import { PaymentMethod, PaymentStatus, Prisma, SubStatus, TierLevel } from '@pri
 import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { GamificationService } from '../gamification/gamification.service';
 import {
   PAYMENT_GATEWAY,
   PaymentGatewayService,
@@ -42,6 +43,7 @@ export class PaymentsService {
     private readonly prisma: PrismaService,
     private readonly subscriptionsService: SubscriptionsService,
     private readonly notifications: NotificationsService,
+    private readonly gamification: GamificationService,
     @Inject(PAYMENT_GATEWAY)
     private readonly gateway: PaymentGatewayService,
   ) {}
@@ -266,6 +268,12 @@ export class PaymentsService {
     this.logger.log(
       `Pagamento ${result.payment.id} criado e confirmado atomicamente; assinatura ${result.subscription.id} renovada.`,
     );
+
+    // Gamificação best-effort — nunca quebra o fluxo de pagamento.
+    this.gamification.checkAndGrant(customer.id).catch((err) =>
+      this.logger.error(`checkAndGrant falhou após pagamento atômico: ${err?.message}`),
+    );
+
     return result.payment;
   }
 
@@ -349,6 +357,12 @@ export class PaymentsService {
     this.logger.log(
       `Pagamento ${payment.id} confirmado; assinatura ${result.subscription.id} renovada.`,
     );
+
+    // Gamificação best-effort — nunca quebra o fluxo de confirmação.
+    this.gamification.checkAndGrant(payment.customerId).catch((err) =>
+      this.logger.error(`checkAndGrant falhou após confirmação de pagamento: ${err?.message}`),
+    );
+
     return result.updated;
   }
 
