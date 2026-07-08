@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, Request, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { InsuranceService } from './insurance.service';
 import { CreateInsurancePublicDto } from './dto/create-insurance-public.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { CustomerJwtGuard } from '../customer-auth/customer-jwt.guard';
 
 @ApiTags('insurance')
 @Controller()
@@ -75,5 +76,38 @@ export class InsuranceController {
   @ApiBearerAuth()
   renew(@Param('id') id: string) {
     return this.insuranceService.renew(id);
+  }
+
+  // ── Apólices (admin) ──────────────────────────────────────────────────────
+  @Get('insurance/policies')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA')
+  @ApiBearerAuth()
+  findAllPolicies(@Query() query: { status?: string; customerId?: string }) {
+    return this.insuranceService.findAllPolicies(query);
+  }
+
+  @Get('insurance/policies/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA')
+  @ApiBearerAuth()
+  findOnePolicy(@Param('id') id: string) {
+    return this.insuranceService.findOnePolicy(id);
+  }
+
+  @Patch('insurance/policies/:id/cancel')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @ApiBearerAuth()
+  cancelPolicy(@Param('id') id: string) {
+    return this.insuranceService.cancelPolicy(id);
+  }
+
+  // ── Apólices (portal do cliente) ──────────────────────────────────────────
+  @Get('customer-portal/insurance-policies')
+  @UseGuards(CustomerJwtGuard)
+  @ApiBearerAuth()
+  findMyPolicies(@Request() req: any) {
+    return this.insuranceService.findPoliciesForCustomer(req.user.customerId);
   }
 }

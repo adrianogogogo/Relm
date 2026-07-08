@@ -64,6 +64,7 @@ model Customer {
   eventRegistrations     EventRegistration[]
   newsletterSubscription NewsletterSubscription?
   insuranceQuotes        InsuranceQuote[]
+  insurancePolicies      InsurancePolicy[]
   privacyConsents        PrivacyConsent[]
   subscription           Subscription?
   pointsLedger           PointsLedger[]
@@ -104,7 +105,8 @@ model Product {
   store           Store?          @relation(fields: [storeId], references: [id])
   warrantyClaims  WarrantyClaim[]
   insuranceQuotes InsuranceQuote[]
-  
+  insurancePolicies InsurancePolicy[]
+
   @@index([serialNumber])
   @@index([storeId])
   @@map("products")
@@ -527,10 +529,51 @@ model InsuranceQuote {
   // Relations
   customer Customer @relation(fields: [customerId], references: [id])
   product  Product? @relation(fields: [productId], references: [id])
-  
+  policies InsurancePolicy[]
+
   @@index([protocolNumber])
   @@index([customerId])
   @@map("insurance_quotes")
+}
+
+// ============================================
+// APÓLICE DE SEGURO (entidade de 1ª classe) — ONDA 2
+// ============================================
+//
+// A apólice é genérica: a seguradora parceira ainda não está definida. Nasce da
+// conversão de uma cotação (quoteId) OU sem cotação (apólice do 1º ano incluída
+// para quem compra bike e ganha 1 ano de Plus).
+enum PolicyStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+model InsurancePolicy {
+  id           String       @id @default(uuid())
+  policyNumber String       @unique @map("policy_number")
+  insurer      String
+  coverage     String?      @db.Text
+  premium      Decimal?     @db.Decimal(10, 2)
+  status       PolicyStatus @default(ACTIVE)
+  startsAt     DateTime     @map("starts_at")
+  expiresAt    DateTime     @map("expires_at")
+
+  quoteId    String? @map("quote_id")
+  customerId String  @map("customer_id")
+  productId  String? @map("product_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  quote    InsuranceQuote? @relation(fields: [quoteId], references: [id])
+  customer Customer        @relation(fields: [customerId], references: [id])
+  product  Product?        @relation(fields: [productId], references: [id])
+
+  @@index([customerId, status])
+  @@index([expiresAt])
+  @@map("insurance_policies")
 }
 
 // ============================================

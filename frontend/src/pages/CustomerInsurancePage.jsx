@@ -8,18 +8,27 @@ const STATUS_LABEL = {
   PENDING: 'Aguardando',
   ACTIVE: 'Ativa',
   CANCELLED: 'Cancelada',
+  EXPIRED: 'Expirada',
 };
 
 const STATUS_VARIANT = {
   PENDING: 'warning',
   ACTIVE: 'success',
   CANCELLED: 'error',
+  EXPIRED: 'neutral',
 };
+
+const formatDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : '—');
 
 export default function CustomerInsurancePage() {
   const { data: quotes = [], isLoading } = useQuery({
     queryKey: ['customer-quotes'],
     queryFn: customerPortalAPI.getInsuranceQuotes,
+  });
+
+  const { data: policies = [] } = useQuery({
+    queryKey: ['customer-policies'],
+    queryFn: customerPortalAPI.getInsurancePolicies,
   });
 
   return (
@@ -34,6 +43,46 @@ export default function CustomerInsurancePage() {
             </Link>
           }
         />
+
+        {policies.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-slate-200 mb-3">Minhas apólices</h2>
+            <div className="space-y-4">
+              {policies.map((p) => (
+                <Card key={p.id}>
+                  <div className="flex items-start justify-between mb-3 gap-3">
+                    <div className="min-w-0">
+                      <p className="font-bold text-gray-800 dark:text-slate-200">{p.policyNumber}</p>
+                      <p className="text-sm text-gray-500 dark:text-slate-400">{p.insurer}</p>
+                    </div>
+                    <div className="shrink-0">
+                      <StatusChip
+                        label={STATUS_LABEL[p.status] || p.status}
+                        variant={STATUS_VARIANT[p.status] || 'neutral'}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm text-gray-600 dark:text-slate-300">
+                    <div>
+                      <span className="text-xs text-gray-400 dark:text-slate-500 block">Vigência</span>
+                      {formatDate(p.startsAt)} — {formatDate(p.expiresAt)}
+                    </div>
+                    {p.premium != null && (
+                      <div>
+                        <span className="text-xs text-gray-400 dark:text-slate-500 block">Prêmio</span>
+                        R$ {Number(p.premium).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {policies.length > 0 && (
+          <h2 className="text-lg font-bold text-gray-800 dark:text-slate-200 mb-3">Cotações</h2>
+        )}
 
         {isLoading ? (
           <div className="flex justify-center py-16">

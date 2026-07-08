@@ -168,12 +168,12 @@ export const insuranceAPI = {
   approveQuote: (id, data) => api.patch(`/insurance/quotes/${id}/approve`, data).then((res) => res.data),
   rejectQuote: (id) => api.patch(`/insurance/quotes/${id}/reject`).then((res) => res.data),
   convertToPolicy: (id) => api.post(`/insurance/quotes/${id}/convert`).then((res) => res.data),
-  // Apólices (V1: cotações aprovadas servem como apólice)
-  getPolicies: (params) => api.get('/insurance/quotes', { params: { ...params, status: 'APPROVED' } }).then((res) => res.data),
-  getPolicyById: (id) => api.get(`/insurance/quotes/${id}`).then((res) => res.data),
-  cancelPolicy: (id) => api.patch(`/insurance/quotes/${id}/reject`).then((res) => res.data),
-  renewPolicy: (id) => api.patch(`/insurance/quotes/${id}/renew`).then((res) => res.data),
-  createPolicy: (data) => api.post('/insurance/quotes', data).then((res) => res.data),
+  // Apólices (entidade de 1ª classe — ONDA 2)
+  getPolicies: (params) => api.get('/insurance/policies', { params }).then((res) => res.data),
+  getPolicyById: (id) => api.get(`/insurance/policies/${id}`).then((res) => res.data),
+  cancelPolicy: (id) => api.patch(`/insurance/policies/${id}/cancel`).then((res) => res.data),
+  // A renovação de vigência parte da cotação de origem (gera novo período).
+  renewPolicy: (quoteId) => api.patch(`/insurance/quotes/${quoteId}/renew`).then((res) => res.data),
 };
 
 export const newsletterAPI = {
@@ -276,6 +276,7 @@ export const customerPortalAPI = {
   getMe: () => api.get('/customer-portal/me').then((res) => res.data),
   getWarranties: () => api.get('/customer-portal/warranties').then((res) => res.data),
   getInsuranceQuotes: () => api.get('/customer-portal/insurance-quotes').then((res) => res.data),
+  getInsurancePolicies: () => api.get('/customer-portal/insurance-policies').then((res) => res.data),
   getEvents: () => api.get('/customer-portal/events').then((res) => res.data),
   getBenefits: () => api.get('/customer-portal/benefits').then((res) => res.data),
   getPointsBalance: () => api.get('/v1/points/balance').then((res) => res.data),

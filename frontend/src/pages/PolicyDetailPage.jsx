@@ -12,26 +12,41 @@ import {
   MdBusiness,
   MdVerifiedUser,
   MdError,
-  MdRefresh,
   MdCancel,
-  MdPrint
+  MdPrint,
 } from 'react-icons/md';
 import { insuranceAPI } from '../services/api';
+
+const STATUS_COLORS = {
+  ACTIVE: 'bg-green-100 text-green-800',
+  EXPIRED: 'bg-red-100 text-red-800',
+  CANCELLED: 'bg-gray-100 text-gray-800',
+};
+
+const STATUS_LABELS = {
+  ACTIVE: 'Ativa',
+  EXPIRED: 'Expirada',
+  CANCELLED: 'Cancelada',
+};
+
+const formatMoney = (v) =>
+  v != null
+    ? `R$ ${parseFloat(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+    : '—';
+
+const formatDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : '—');
 
 const PolicyDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [showRenewModal, setShowRenewModal] = useState(false);
 
-  // Buscar detalhes da apólice
   const { data: policy, isLoading } = useQuery({
     queryKey: ['insurance-policy', id],
-    queryFn: () => insuranceAPI.getPolicyById(id)
+    queryFn: () => insuranceAPI.getPolicyById(id),
   });
 
-  // Mutation para cancelar
   const cancelMutation = useMutation({
     mutationFn: () => insuranceAPI.cancelPolicy(id),
     onSuccess: () => {
@@ -39,61 +54,16 @@ const PolicyDetailPage = () => {
       queryClient.invalidateQueries(['insurance-policies']);
       setShowCancelModal(false);
       alert('Apólice cancelada com sucesso!');
-    }
+    },
   });
 
-  // Mutation para renovar
-  const renewMutation = useMutation({
-    mutationFn: () => insuranceAPI.renewPolicy(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['insurance-policy', id]);
-      queryClient.invalidateQueries(['insurance-policies']);
-      setShowRenewModal(false);
-      alert('Apólice renovada com sucesso!');
-    }
-  });
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleCancel = () => {
-    if (confirm('Tem certeza que deseja cancelar esta apólice?')) {
-      cancelMutation.mutate();
-    }
-  };
-
-  const handleRenew = () => {
-    if (confirm('Deseja renovar esta apólice por mais 12 meses?')) {
-      renewMutation.mutate();
-    }
-  };
-
-  if (isLoading) {
-    return <div className="p-6">Carregando...</div>;
-  }
-
-  if (!policy) {
-    return <div className="p-6">Apólice não encontrada</div>;
-  }
-
-  const statusColors = {
-    ACTIVE: 'bg-green-100 text-green-800',
-    EXPIRED: 'bg-red-100 text-red-800',
-    CANCELLED: 'bg-gray-100 text-gray-800'
-  };
-
-  const statusLabels = {
-    ACTIVE: 'Ativa',
-    EXPIRED: 'Expirada',
-    CANCELLED: 'Cancelada'
-  };
+  if (isLoading) return <div className="p-6">Carregando...</div>;
+  if (!policy) return <div className="p-6">Apólice não encontrada</div>;
 
   const isExpiring = () => {
-    const endDate = new Date(policy.end_date);
-    const today = new Date();
-    const daysUntilExpire = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
-    return daysUntilExpire <= 30 && daysUntilExpire > 0;
+    if (policy.status !== 'ACTIVE' || !policy.expiresAt) return false;
+    const days = Math.ceil((new Date(policy.expiresAt) - new Date()) / (1000 * 60 * 60 * 24));
+    return days <= 30 && days > 0;
   };
 
   return (
@@ -102,34 +72,34 @@ const PolicyDetailPage = () => {
       <div className="flex items-center justify-between mb-6 print:hidden">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate('/admin/seguros')}
+            onClick={() => navigate('/admin/insurances')}
             className="p-2 hover:bg-gray-100 rounded-lg"
           >
             <MdArrowBack size={20} />
           </button>
           <div>
-            <h1 className="text-2xl font-bold">Apólice {policy.policy_number}</h1>
+            <h1 className="text-2xl font-bold">Apólice {policy.policyNumber}</h1>
             <p className="text-gray-600 text-sm">
-              Emitida em {new Date(policy.created_at).toLocaleDateString('pt-BR')}
+              Emitida em {formatDate(policy.createdAt)}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className={`px-4 py-2 rounded-full text-sm font-semibold ${statusColors[policy.status]}`}>
-            {statusLabels[policy.status]}
-          </span>
-        </div>
+        <span
+          className={`px-4 py-2 rounded-full text-sm font-semibold ${STATUS_COLORS[policy.status]}`}
+        >
+          {STATUS_LABELS[policy.status] || policy.status}
+        </span>
       </div>
 
       {/* Alerta de Vencimento */}
-      {isExpiring() && policy.status === 'ACTIVE' && (
+      {isExpiring() && (
         <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg print:hidden">
           <div className="flex items-center gap-2">
             <MdError size={20} className="text-yellow-600" />
             <div>
               <p className="font-semibold text-yellow-800">Apólice próxima do vencimento</p>
               <p className="text-sm text-yellow-700">
-                Vencimento em {new Date(policy.end_date).toLocaleDateString('pt-BR')}
+                Vencimento em {formatDate(policy.expiresAt)}
               </p>
             </div>
           </div>
@@ -140,18 +110,11 @@ const PolicyDetailPage = () => {
       {policy.status === 'ACTIVE' && (
         <div className="flex gap-3 mb-6 print:hidden">
           <button
-            onClick={handlePrint}
+            onClick={() => window.print()}
             className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
             <MdPrint size={18} />
             Imprimir
-          </button>
-          <button
-            onClick={() => setShowRenewModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-          >
-            <MdRefresh size={18} />
-            Renovar
           </button>
           <button
             onClick={() => setShowCancelModal(true)}
@@ -163,7 +126,7 @@ const PolicyDetailPage = () => {
         </div>
       )}
 
-      {/* Informações do Cliente */}
+      {/* Segurado */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <MdPerson size={20} className="text-blue-500" />
@@ -190,74 +153,50 @@ const PolicyDetailPage = () => {
           </div>
           <div>
             <label className="text-sm text-gray-600">CPF</label>
-            <p className="font-medium">{policy.customer?.cpf}</p>
+            <p className="font-medium">{policy.customer?.cpf || '—'}</p>
           </div>
         </div>
       </div>
 
-      {/* Informações da Seguradora */}
+      {/* Seguradora */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <MdBusiness size={20} className="text-blue-500" />
           Seguradora
         </h2>
-        <p className="font-medium text-lg">{policy.insurance_company}</p>
+        <p className="font-medium text-lg">{policy.insurer}</p>
       </div>
 
-      {/* Valores */}
+      {/* Valores e Cobertura */}
       <div className="bg-white rounded-lg shadow p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <MdAttachMoney size={20} className="text-blue-500" />
-          Valores
+          Prêmio e Cobertura
         </h2>
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <label className="text-sm text-gray-600">Valor da Bike</label>
-            <p className="font-medium text-xl">
-              R$ {parseFloat(policy.bike_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
+            <label className="text-sm text-gray-600">Prêmio</label>
+            <p className="font-bold text-2xl text-green-600">{formatMoney(policy.premium)}</p>
           </div>
-          <div>
-            <label className="text-sm text-gray-600">Cobertura</label>
-            <p className="font-medium text-xl">
-              R$ {parseFloat(policy.coverage_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
-          </div>
-          <div>
-            <label className="text-sm text-gray-600">Prêmio Mensal</label>
-            <p className="font-bold text-2xl text-green-600">
-              R$ {parseFloat(policy.monthly_premium).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
-          </div>
-          <div>
-            <label className="text-sm text-gray-600">Prêmio Anual</label>
-            <p className="font-medium text-xl">
-              R$ {parseFloat(policy.annual_premium).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </p>
-          </div>
-          {policy.deductible && (
+          {policy.product && (
             <div>
-              <label className="text-sm text-gray-600">Franquia</label>
+              <label className="text-sm text-gray-600">Produto</label>
               <p className="font-medium text-lg">
-                R$ {parseFloat(policy.deductible).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                {policy.product.model || '—'}
+                {policy.product.serialNumber ? ` — ${policy.product.serialNumber}` : ''}
               </p>
             </div>
           )}
         </div>
-      </div>
-
-      {/* Cobertura */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <MdVerifiedUser size={20} className="text-blue-500" />
-          Cobertura
-        </h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm text-gray-600">Tipo</label>
-            <p className="font-medium">{policy.coverage_type || 'Cobertura Padrão'}</p>
+        {policy.coverage && (
+          <div className="mt-4">
+            <label className="text-sm text-gray-600 flex items-center gap-1">
+              <MdVerifiedUser size={14} />
+              Cobertura
+            </label>
+            <p className="text-gray-700 whitespace-pre-wrap">{policy.coverage}</p>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Vigência */}
@@ -269,27 +208,23 @@ const PolicyDetailPage = () => {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-sm text-gray-600">Início</label>
-            <p className="font-medium text-lg">
-              {new Date(policy.start_date).toLocaleDateString('pt-BR')}
-            </p>
+            <p className="font-medium text-lg">{formatDate(policy.startsAt)}</p>
           </div>
           <div>
             <label className="text-sm text-gray-600">Término</label>
-            <p className="font-medium text-lg">
-              {new Date(policy.end_date).toLocaleDateString('pt-BR')}
-            </p>
+            <p className="font-medium text-lg">{formatDate(policy.expiresAt)}</p>
           </div>
         </div>
       </div>
 
-      {/* Observações */}
-      {policy.notes && (
+      {/* Cotação de origem */}
+      {policy.quote && (
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <MdDescription size={20} className="text-blue-500" />
-            Observações
+            Cotação de origem
           </h2>
-          <p className="text-gray-700 whitespace-pre-wrap">{policy.notes}</p>
+          <p className="font-mono font-medium">{policy.quote.protocolNumber}</p>
         </div>
       )}
 
@@ -303,7 +238,7 @@ const PolicyDetailPage = () => {
             </p>
             <div className="flex gap-3">
               <button
-                onClick={handleCancel}
+                onClick={() => cancelMutation.mutate()}
                 disabled={cancelMutation.isPending}
                 className="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 disabled:bg-gray-400"
               >
@@ -314,33 +249,6 @@ const PolicyDetailPage = () => {
                 className="flex-1 bg-gray-300 py-2 rounded-lg hover:bg-gray-400"
               >
                 Voltar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Renovar */}
-      {showRenewModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-xl font-bold mb-4">Renovar Apólice</h3>
-            <p className="text-gray-600 mb-6">
-              Deseja renovar esta apólice por mais 12 meses com os mesmos valores?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={handleRenew}
-                disabled={renewMutation.isPending}
-                className="flex-1 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 disabled:bg-gray-400"
-              >
-                {renewMutation.isPending ? 'Renovando...' : 'Confirmar'}
-              </button>
-              <button
-                onClick={() => setShowRenewModal(false)}
-                className="flex-1 bg-gray-300 py-2 rounded-lg hover:bg-gray-400"
-              >
-                Cancelar
               </button>
             </div>
           </div>
