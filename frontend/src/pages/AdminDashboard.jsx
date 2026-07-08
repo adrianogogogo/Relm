@@ -115,7 +115,7 @@ export default function AdminDashboard() {
                   <MdPeople size={18} /> Gerenciar Clientes
                 </Link>
               )}
-              {hasAccess(['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR']) && (
+              {hasAccess(['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'DISTRIBUIDOR']) && (
                 <Link to="/admin/stores" className="btn btn-outline w-full justify-start">
                   <MdStore size={18} /> Gerenciar Lojas
                 </Link>

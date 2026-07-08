@@ -188,7 +188,11 @@ export default function App() {
                 <CustomerDetailPage />
               </ProtectedRoute>
             } />
-            <Route path="stores" element={<StoresPage />} />
+            <Route path="stores" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'DISTRIBUIDOR']}>
+                <StoresPage />
+              </ProtectedRoute>
+            } />
             <Route path="produtos" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
                 <AdminProductsPage />
