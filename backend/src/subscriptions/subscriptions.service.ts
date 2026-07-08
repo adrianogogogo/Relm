@@ -6,6 +6,7 @@ import { Prisma, TierLevel, SubStatus } from '@prisma/client';
 import { PointsService } from '../points/points.service';
 import { EngagementService } from '../engagement/engagement.service';
 import { ENTITLEMENTS } from '../common/entitlements';
+import { CronHealthService } from '../common/cron-health.service';
 
 @Injectable()
 export class SubscriptionsService {
@@ -16,6 +17,7 @@ export class SubscriptionsService {
     private readonly eventEmitter: EventEmitter2,
     private readonly pointsService: PointsService,
     private readonly engagementService: EngagementService,
+    private readonly cronHealth: CronHealthService,
   ) {}
 
   async salesTrigger(dto: { customer_email: string; product_serial_number: string; invoice_type: 'BIKE' | 'ACCESSORY'; purchase_value?: number }) {
@@ -183,6 +185,12 @@ export class SubscriptionsService {
 
   @Cron('0 1 * * *')
   async handleSubscriptionExpiration() {
+    return this.cronHealth.track('subscription-expiration', () =>
+      this._handleSubscriptionExpiration(),
+    );
+  }
+
+  private async _handleSubscriptionExpiration() {
     this.logger.log('Running daily subscription expiration cron job...');
     const now = new Date();
 

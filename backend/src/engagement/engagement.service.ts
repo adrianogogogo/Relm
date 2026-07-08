@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
 import { GamificationService } from '../gamification/gamification.service';
 import { ReferralStatus, SubStatus } from '@prisma/client';
+import { CronHealthService } from '../common/cron-health.service';
 import * as crypto from 'crypto';
 
 // ClubSettings keys (Wave 3)
@@ -19,6 +20,7 @@ export class EngagementService {
     private readonly prisma: PrismaService,
     private readonly pointsService: PointsService,
     private readonly gamification: GamificationService,
+    private readonly cronHealth: CronHealthService,
   ) {}
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -189,6 +191,10 @@ export class EngagementService {
    */
   @Cron('0 8 * * *')
   async handleBirthdayBonus(): Promise<void> {
+    await this.cronHealth.track('birthday-bonus', () => this._handleBirthdayBonus());
+  }
+
+  private async _handleBirthdayBonus(): Promise<void> {
     this.logger.log('Running birthday bonus cron...');
     const now = new Date();
     const month = now.getMonth() + 1; // 1-12

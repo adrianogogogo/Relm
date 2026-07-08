@@ -33,6 +33,7 @@ import { EngagementModule } from './engagement/engagement.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { PartnersModule } from './partners/partners.module';
 import { HealthController } from './health.controller';
+import { CommonModule } from './common/common.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -49,6 +50,7 @@ import { HealthController } from './health.controller';
       },
     ]),
     PrismaModule,
+    CommonModule,
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
     AuthModule,

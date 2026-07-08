@@ -1,5 +1,6 @@
 /// <reference types="jest" />
 import { InsuranceService } from './insurance.service';
+import { CronHealthService } from '../common/cron-health.service';
 
 // Constrói um InsuranceService com prisma/dependências mockadas, no estilo do
 // payments.service.spec.ts (construtor direto, sem TestingModule).
@@ -57,7 +58,7 @@ function makeService(opts: {
     notifyTeam: jest.fn().mockResolvedValue(undefined),
   };
 
-  const svc = new InsuranceService(prisma, customersService, notifications);
+  const svc = new InsuranceService(prisma, customersService, notifications, new CronHealthService());
   return { svc, prisma, tx, notifications, created };
 }
 

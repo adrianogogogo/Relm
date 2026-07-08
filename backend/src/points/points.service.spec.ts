@@ -1,5 +1,6 @@
 /// <reference types="jest" />
 import { PointsService } from './points.service';
+import { CronHealthService } from '../common/cron-health.service';
 
 // Rows helper — só os campos que computeState lê.
 function earn(id: string, amount: number, ageDays: number, expiryDays = 365, isExpired = false) {
@@ -21,7 +22,7 @@ function makeService(rows: any[]) {
   const prisma: any = {
     pointsLedger: { findMany: jest.fn().mockResolvedValue(rows) },
   };
-  return new PointsService(prisma);
+  return new PointsService(prisma, new CronHealthService());
 }
 
 describe('PointsService.getBalance (FIFO + expiração)', () => {

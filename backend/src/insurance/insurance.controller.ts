@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Patch, Body, Param, Query, Request, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { InsuranceService } from './insurance.service';
 import { CreateInsurancePublicDto } from './dto/create-insurance-public.dto';
@@ -14,6 +15,7 @@ export class InsuranceController {
 
   // ── Público ──────────────────────────────────────────────────────────────
   @Post('public/insurance-quote')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   create(@Body() body: CreateInsurancePublicDto) {
     return this.insuranceService.create(body);
   }

@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CustomersService } from '../customers/customers.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateInsurancePublicDto } from './dto/create-insurance-public.dto';
+import { CronHealthService } from '../common/cron-health.service';
 import * as crypto from 'crypto';
 
 // Janelas (em dias) de aviso de vencimento da apólice. O cron dispara exatamente
@@ -20,6 +21,7 @@ export class InsuranceService {
     private prisma: PrismaService,
     private customersService: CustomersService,
     private notificationsService: NotificationsService,
+    private cronHealth: CronHealthService,
   ) {}
 
   // Gera número de protocolo único e resistente a concorrência.
@@ -390,6 +392,12 @@ export class InsuranceService {
    */
   @Cron('0 3 * * *')
   async handlePolicyExpiration() {
+    return this.cronHealth.track('insurance-policy-expiration', () =>
+      this._handlePolicyExpiration(),
+    );
+  }
+
+  private async _handlePolicyExpiration() {
     this.logger.log('Running daily insurance policy expiration cron job...');
     const now = new Date();
 

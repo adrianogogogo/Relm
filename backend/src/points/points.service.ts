@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointTxType, TierLevel, PointsLedger } from '@prisma/client';
 import { ENTITLEMENTS } from '../common/entitlements';
+import { CronHealthService } from '../common/cron-health.service';
 
 // Validade dos pontos: 12 meses a partir do EARN (PRD 9.2.1).
 const EARN_EXPIRY_DAYS = 365;
@@ -14,7 +15,10 @@ const WORKSHOP_COMPLETION_POINTS = 50;
 export class PointsService {
   private readonly logger = new Logger(PointsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cronHealth: CronHealthService,
+  ) {}
 
   /**
    * Estado do ledger via FIFO: resgates consomem os EARN mais antigos primeiro,
@@ -113,6 +117,10 @@ export class PointsService {
   /** Cron diário (02:00) que materializa transações EXPIRE dos pontos vencidos. */
   @Cron('0 2 * * *')
   async expireOldPoints() {
+    return this.cronHealth.track('points-expiry', () => this._expireOldPoints());
+  }
+
+  private async _expireOldPoints() {
     this.logger.log('Running daily points expiration cron job...');
     const now = new Date();
     const lots = await this.prisma.pointsLedger.findMany({

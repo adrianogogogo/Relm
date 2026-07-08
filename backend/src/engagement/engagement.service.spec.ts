@@ -1,5 +1,6 @@
 /// <reference types="jest" />
 import { EngagementService } from './engagement.service';
+import { CronHealthService } from '../common/cron-health.service';
 import { ReferralStatus } from '@prisma/client';
 
 // ── Factories ──────────────────────────────────────────────────────────────
@@ -64,7 +65,7 @@ function makeService(overrides: {
 
   const gamification: any = { checkAndGrant: jest.fn().mockResolvedValue(undefined) };
 
-  const service = new EngagementService(prisma, pointsService, gamification);
+  const service = new EngagementService(prisma, pointsService, gamification, new CronHealthService());
 
   return { service, prisma, pointsService, txMock };
 }

@@ -21,6 +21,7 @@ export class CustomerAuthController {
   constructor(private customerAuthService: CustomerAuthService) {}
 
   @Post('register')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Cadastro de cliente com nota fiscal' })
   async register(@Body() dto: CustomerRegisterDto) {
     return this.customerAuthService.register(dto);
