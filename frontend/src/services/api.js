@@ -362,3 +362,15 @@ export const adminUsersAPI = {
   resetPassword: (id, password) =>
     api.patch(`/admin-users/${id}/reset-password`, { password }).then((res) => res.data),
 };
+
+
+// ── Club Reports API (Onda 7) ─────────────────────────────────────────────────
+
+export const clubReportsAPI = {
+  getPointsLiability: () =>
+    api.get('/reports/club/points-liability').then((res) => res.data),
+  getRevenue: () =>
+    api.get('/reports/club/revenue').then((res) => res.data),
+  getFunnel: () =>
+    api.get('/reports/club/funnel').then((res) => res.data),
+};

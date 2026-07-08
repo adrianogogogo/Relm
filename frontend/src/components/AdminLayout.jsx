@@ -23,6 +23,7 @@ import {
   MdReceipt,
   MdPayments,
   MdStorefront,
+  MdAnalytics,
 } from 'react-icons/md';
 
 const MENU_ITEMS = [
@@ -105,6 +106,12 @@ const MENU_ITEMS = [
     label: 'Parcerias',
     icon: MdStorefront,
     roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
+  },
+  {
+    path: '/admin/relatorios-clube',
+    label: 'Relatórios do Clube',
+    icon: MdAnalytics,
+    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
   },
   {
     path: '/admin/insurances',

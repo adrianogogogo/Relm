@@ -72,6 +72,7 @@ import DistribuidorEventosPage from './pages/DistribuidorEventosPage';
 import DistribuidorBeneficiosPage from './pages/DistribuidorBeneficiosPage';
 import AdminPaymentsPage from './pages/AdminPaymentsPage';
 import AdminPartnersPage from './pages/AdminPartnersPage';
+import AdminClubReportsPage from './pages/AdminClubReportsPage';
 import CustomerPartnersPage from './pages/CustomerPartnersPage';
 
 const queryClient = new QueryClient({
@@ -270,6 +271,11 @@ export default function App() {
             <Route path="parceiros" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM']}>
                 <AdminPartnersPage />
+              </ProtectedRoute>
+            } />
+            <Route path="relatorios-clube" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                <AdminClubReportsPage />
               </ProtectedRoute>
             } />
             {/* Feed view-only do Distribuidor (não acessa a gestão de eventos/benefícios) */}
