@@ -198,7 +198,9 @@ export default function AdminInsurancesPage() {
                 <tbody className="divide-y divide-gray-200 dark:divide-slate-800">
                   {filtered.map((q) => (
                     <tr key={q.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors">
-                      <td className="px-6 py-4 font-mono text-sm font-bold text-primary dark:text-primary-400">{q.protocolNumber}</td>
+                      <td className="px-6 py-4 font-mono text-sm font-bold text-primary dark:text-primary-400">
+                        <Link to={`/admin/insurances/${q.id}`} className="hover:underline">{q.protocolNumber}</Link>
+                      </td>
                       <td className="px-6 py-4 font-medium text-gray-900 dark:text-slate-100">{q.customer?.fullName || '—'}</td>
                       <td className="px-6 py-4 text-gray-600 dark:text-slate-400 text-sm">{q.customer?.email || '—'}</td>
                       <td className="px-6 py-4 text-gray-700 dark:text-slate-300">

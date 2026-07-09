@@ -15,11 +15,18 @@ import {
   MdPedalBike
 } from 'react-icons/md';
 import { insuranceAPI } from '../services/api';
+import { useAuthStore } from '../store/authStore';
+
+// Perfis que podem AGIR sobre a cotação (aprovar/rejeitar/converter).
+// SUPORTE_RELM entra em modo leitura — vê o processo e status, sem alterar.
+const CAN_ACT = ['ADMIN_RELM', 'GERENTE_RELM'];
 
 const QuoteDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const canAct = CAN_ACT.includes(user?.role);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [approveData, setApproveData] = useState({
@@ -62,8 +69,8 @@ const QuoteDetailPage = () => {
       queryClient.invalidateQueries(['insurance-quote', id]);
       queryClient.invalidateQueries(['insurance-quotes']);
       queryClient.invalidateQueries(['insurance-policies']);
-      alert(`Apólice ${data.policy_number} criada com sucesso!`);
-      navigate('/admin/seguros');
+      alert(`Apólice ${data.policy?.policyNumber || ''} criada com sucesso!`);
+      navigate('/admin/insurances');
     }
   });
 
@@ -121,15 +128,15 @@ const QuoteDetailPage = () => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate('/admin/seguros')}
+            onClick={() => navigate('/admin/insurances')}
             className="p-2 hover:bg-gray-100 rounded-lg"
           >
             <MdArrowBack size={20} />
           </button>
           <div>
-            <h1 className="text-2xl font-bold">Cotação {quote.protocol_number}</h1>
+            <h1 className="text-2xl font-bold">Cotação {quote.protocolNumber}</h1>
             <p className="text-gray-600 text-sm">
-              Criada em {new Date(quote.created_at).toLocaleDateString('pt-BR')}
+              Criada em {new Date(quote.createdAt).toLocaleDateString('pt-BR')}
             </p>
           </div>
         </div>
@@ -138,8 +145,8 @@ const QuoteDetailPage = () => {
         </span>
       </div>
 
-      {/* Ações */}
-      {quote.status === 'PENDING' && (
+      {/* Ações — apenas ADMIN/GERENTE. SUPORTE vê em modo leitura. */}
+      {canAct && quote.status === 'PENDING' && (
         <div className="flex gap-3 mb-6">
           <button
             onClick={() => setShowApproveModal(true)}
@@ -158,7 +165,7 @@ const QuoteDetailPage = () => {
         </div>
       )}
 
-      {quote.status === 'ACEITA' && (
+      {canAct && quote.status === 'ACEITA' && (
         <button
           onClick={handleConvert}
           disabled={convertMutation.isPending}
@@ -167,6 +174,12 @@ const QuoteDetailPage = () => {
           <MdDescription size={18} />
           {convertMutation.isPending ? 'Convertendo...' : 'Converter em Apólice'}
         </button>
+      )}
+
+      {!canAct && (
+        <p className="mb-6 text-sm text-gray-500 italic">
+          Você está no modo de consulta — acompanhe o processo e o status desta cotação.
+        </p>
       )}
 
       {/* Informações do Cliente */}
@@ -214,7 +227,9 @@ const QuoteDetailPage = () => {
               Valor da Bike
             </label>
             <p className="font-medium text-xl">
-              R$ {parseFloat(quote.bike_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {quote.bikeValue
+                ? `R$ ${parseFloat(quote.bikeValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                : '—'}
             </p>
           </div>
           <div>
@@ -228,24 +243,24 @@ const QuoteDetailPage = () => {
       </div>
 
       {/* Informações da Cotação */}
-      {(quote.quote_value || quote.insurance_company) && (
+      {(quote.quoteValue || quote.insuranceCompany) && (
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <MdBusiness size={20} className="text-blue-500" />
             Detalhes da Cotação
           </h2>
           <div className="grid grid-cols-2 gap-4">
-            {quote.insurance_company && (
+            {quote.insuranceCompany && (
               <div>
                 <label className="text-sm text-gray-600">Seguradora</label>
-                <p className="font-medium">{quote.insurance_company}</p>
+                <p className="font-medium">{quote.insuranceCompany}</p>
               </div>
             )}
-            {quote.quote_value && (
+            {quote.quoteValue && (
               <div>
-                <label className="text-sm text-gray-600">Valor Mensal</label>
+                <label className="text-sm text-gray-600">Valor do seguro</label>
                 <p className="font-medium text-xl text-green-600">
-                  R$ {parseFloat(quote.quote_value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  R$ {parseFloat(quote.quoteValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
             )}

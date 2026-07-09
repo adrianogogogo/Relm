@@ -62,6 +62,7 @@ import AdminEventsPage from './pages/AdminEventsPage';
 import AdminBenefitsPage from './pages/AdminBenefitsPage';
 import AdminInsurancesPage from './pages/AdminInsurancesPage';
 import PolicyDetailPage from './pages/PolicyDetailPage';
+import QuoteDetailPage from './pages/QuoteDetailPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminProductsPage from './pages/AdminProductsPage';
 import AuditLogsPage from './pages/AuditLogsPage';
@@ -256,6 +257,11 @@ export default function App() {
             <Route path="insurances" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA']}>
                 <AdminInsurancesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="insurances/:id" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM']}>
+                <QuoteDetailPage />
               </ProtectedRoute>
             } />
             <Route path="insurances/policies/:id" element={
