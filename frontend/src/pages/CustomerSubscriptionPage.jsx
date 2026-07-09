@@ -82,20 +82,24 @@ export default function CustomerSubscriptionPage() {
           <div className="flex gap-3">
             <MdInfo className="w-6 h-6 text-amber-500 shrink-0" />
             <div>
-              <h3 className="font-bold text-gray-900 dark:text-slate-100 mb-1">Como renovar sua anuidade</h3>
+              <h3 className="font-bold text-gray-900 dark:text-slate-100 mb-1">
+                {isPlus ? 'Como renovar sua anuidade' : 'Como virar Relm Care Plus'}
+              </h3>
               <p className="text-sm text-gray-600 dark:text-slate-400 mb-2">
-                A cobrança da anuidade Care Plus é feita presencialmente. Para renovar por mais 1 ano:
+                {isPlus
+                  ? 'A cobrança da anuidade Care Plus é feita presencialmente. Para renovar por mais 1 ano:'
+                  : 'O Care Plus dá 2x pontos, agendamento prioritário na oficina, seguro e Concierge VIP. A anuidade é paga presencialmente:'}
               </p>
               <ul className="text-sm text-gray-600 dark:text-slate-400 space-y-1 list-disc pl-5">
                 <li className="flex items-center gap-2 -ml-5 list-none">
                   <MdStore className="w-4 h-4 text-primary" /> Procure uma loja parceira Relm e feche o pagamento no balcão.
                 </li>
                 <li className="flex items-center gap-2 -ml-5 list-none">
-                  <MdPayments className="w-4 h-4 text-primary" /> Ou fale diretamente com a Relm para regularizar sua anuidade.
+                  <MdPayments className="w-4 h-4 text-primary" /> Ou fale diretamente com a Relm {isPlus ? 'para regularizar sua anuidade.' : 'para contratar o Care Plus.'}
                 </li>
               </ul>
               <p className="text-xs text-gray-400 dark:text-slate-500 mt-3">
-                Assim que o pagamento for confirmado, sua assinatura é renovada e os pontos de bônus são creditados automaticamente.
+                Assim que o pagamento for confirmado, sua assinatura {isPlus ? 'é renovada' : 'sobe para Plus'} e os pontos de bônus são creditados automaticamente.
               </p>
             </div>
           </div>

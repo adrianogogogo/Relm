@@ -183,9 +183,9 @@ export default function CustomerDashboard() {
               <h3 className="font-bold text-lg">Faça o upgrade para o Relm Care Plus! 🚴✨</h3>
               <p className="text-sm opacity-90">Ganhe {plusEnt?.pointsMultiplier ?? 2}x pontos, agendamento prioritário na oficina e Concierge VIP no WhatsApp.</p>
             </div>
-            <button className="btn bg-white text-teal-600 hover:bg-gray-100 border-none font-semibold">
+            <Link to="/cliente/assinatura" className="btn bg-white text-teal-600 hover:bg-gray-100 border-none font-semibold shrink-0">
               Quero ser Plus
-            </button>
+            </Link>
           </div>
         )}
 
