@@ -93,6 +93,9 @@ export class WorkshopService {
    * Tier derivado da Subscription. Consumido pela tela do cliente.
    */
   async getAllowanceSummary(customerId: string) {
+    if (!customerId) {
+      throw new BadRequestException('customerId é obrigatório');
+    }
     const customer = await this.prisma.customer.findUnique({
       where: { id: customerId },
     });

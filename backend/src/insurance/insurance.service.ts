@@ -13,6 +13,15 @@ import * as crypto from 'crypto';
 // janela ocorre uma única vez por apólice).
 const EXPIRY_WARNING_DAYS = [30, 7];
 
+// Cobertura padrão da apólice genérica "RELM Bike Protect" (bikes de alto
+// desempenho). Usada quando a seguradora parceira ainda não definiu texto próprio.
+export const GENERIC_COVERAGE =
+  'RELM Bike Protect — Coberturas: roubo e furto qualificado; danos acidentais ' +
+  '(queda, colisão, incêndio, raio, explosão, vandalismo); danos em transporte ' +
+  'terrestre; acessórios fixos até 20% do valor da bike. Exclusões: furto simples, ' +
+  'desgaste natural, mau uso, competições (salvo cobertura adicional), danos ' +
+  'estéticos. Franquia: 10% da indenização. Vigência: 12 meses.';
+
 @Injectable()
 export class InsuranceService {
   private readonly logger = new Logger(InsuranceService.name);
@@ -188,6 +197,7 @@ export class InsuranceService {
         data: {
           policyNumber,
           insurer: quote.insuranceCompany ?? 'A definir',
+          coverage: GENERIC_COVERAGE,
           premium: quote.quoteValue ?? null,
           status: PolicyStatus.ACTIVE,
           startsAt: now,
