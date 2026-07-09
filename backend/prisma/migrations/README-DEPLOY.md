@@ -63,17 +63,15 @@ Se as 6 migrations das ondas aparecerem como *pending*, siga para a seção 3.
 
 ### Cenário B — o schema base existe mas veio de `db push` (sem histórico)
 
-Marque **todas** as migrations anteriores às ondas como já aplicadas
-(`resolve --applied`), sem reexecutá-las, para não recriar tabelas existentes:
+Marque **todas** as migrations anteriores às ondas (18 pastas, de
+`20260601190457_init_helmdesk_bridge` até `20260701000000_add_product_price`)
+como já aplicadas (`resolve --applied`), sem reexecutá-las, para não recriar
+tabelas existentes. Um loop resolve todas de uma vez:
 
 ```bash
-# Lista as migrations base (tudo ANTES de 20260708000000).
-ls -d prisma/migrations/2026060*_* prisma/migrations/2026061*_* prisma/migrations/2026062*_* prisma/migrations/2026070100000_* 2>/dev/null
-
-# Marque cada uma como aplicada (repita para todas as base). Exemplo:
-npx prisma migrate resolve --applied 20260601190457_init_helmdesk_bridge
-npx prisma migrate resolve --applied 20260603000000_add_new_modules_and_target_roles
-# ... (todas as migrations com prefixo < 20260708000000)
+for m in $(ls prisma/migrations | grep -vE '^20260708|^README|^migration_lock'); do
+  npx prisma migrate resolve --applied "$m"
+done
 ```
 
 Alternativa (baseline por diff, se preferir gerar a baseline a partir do banco vivo):
@@ -102,6 +100,22 @@ npx prisma generate
 ```
 
 `migrate deploy` aplica apenas as migrations pendentes (as 6 das ondas), em ordem.
+
+### 3.1. Seeds de produção (ClubSettings da Onda 1)
+
+> ⚠️ **NÃO rode `npx prisma db seed` em produção** — o `seed.ts` cria dados
+> demo (lojas, usuários e clientes fictícios via upsert).
+
+As migrations já semeiam: chaves de engajamento (Onda 3) e os 5 badges (Onda 4).
+Faltam apenas as duas chaves da Onda 1, que vivem só no seed demo. Insira via SQL
+idempotente (ajuste os valores à precificação real antes de rodar):
+
+```sql
+INSERT INTO club_settings (id, key, value, updated_at) VALUES
+  (gen_random_uuid(), 'plus_annual_fee', '299.00', NOW()),
+  (gen_random_uuid(), 'point_value_brl', '0.05',   NOW())
+ON CONFLICT (key) DO NOTHING;
+```
 
 ---
 
@@ -156,9 +170,17 @@ SELECT key, value FROM club_settings ORDER BY key;
 Verificação de app (após restart do backend):
 
 ```bash
+# prod: api-careplus.relmbikes.com.br (porta local 3001)
+# staging: staging-api-careplus.relmbikes.com.br (porta local 3002)
 curl -sf https://API_HOST/health        # {"status":"ok"}
 curl -sf https://API_HOST/health/crons  # lista os 4 crons e último status
 ```
+
+> **Deploy do código da aplicação** (upload, `npm run build`, `pm2 reload`) não
+> está coberto aqui — use os scripts `scripts/deploy_*.py` (staging:
+> `scripts/deploy_staging_club.py`, que executa este runbook automatizado,
+> incluindo backup e baseline). Este documento é a referência do procedimento
+> de banco/migrations.
 
 ---
 
@@ -195,7 +217,8 @@ psql "$DATABASE_URL" -c "\dt payments"   # deve retornar 'Did not find any relat
       5/min; forgot/reset 3/min) e `POST /public/insurance-quote` (5/min).
       → **Sem pendência** neste item.
 - [ ] Variáveis de ambiente de produção (`DATABASE_URL`, JWT secrets, SMTP) setadas.
-- [ ] Seed de `club_settings` conferido (valores de anuidade/ponto calibrados).
+- [ ] `club_settings` populado via SQL da seção 3.1 (⚠️ NUNCA `prisma db seed`
+      em produção — cria dados demo) e valores de anuidade/ponto calibrados.
 
 ---
 
