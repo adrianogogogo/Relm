@@ -6,12 +6,20 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
+import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { GamificationService } from './gamification.service';
 import { CustomerJwtGuard } from '../customer-auth/customer-jwt.guard';
 
+// Decorators obrigatórios: o ValidationPipe global usa forbidNonWhitelisted,
+// então campos sem decorator são rejeitados com 400.
 class LeaderboardOptInDto {
+  @IsBoolean()
   optIn: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(30, { message: 'Apelido deve ter no máximo 30 caracteres' })
   nickname?: string;
 }
 
