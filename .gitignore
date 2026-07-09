@@ -91,3 +91,7 @@ desktop.ini
 __pycache__/
 *.pyc
 .deploy_ts
+
+# Arquivos temporarios de trabalho
+scratch/
+backend/scratch/
