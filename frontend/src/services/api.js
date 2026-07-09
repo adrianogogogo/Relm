@@ -381,3 +381,14 @@ export const clubReportsAPI = {
   getFunnel: () =>
     api.get('/reports/club/funnel').then((res) => res.data),
 };
+
+export const whatsappAPI = {
+  getPublicContact: () =>
+    api.get('/public/whatsapp-contact').then((res) => res.data),
+  getSettings: () =>
+    api.get('/whatsapp/settings').then((res) => res.data),
+  saveSettings: (data) =>
+    api.put('/whatsapp/settings', data).then((res) => res.data),
+  broadcast: (data) =>
+    api.post('/whatsapp/broadcast', data).then((res) => res.data),
+};

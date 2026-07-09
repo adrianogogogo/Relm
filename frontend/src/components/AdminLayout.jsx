@@ -25,6 +25,7 @@ import {
   MdStorefront,
   MdAnalytics,
 } from 'react-icons/md';
+import { FaWhatsapp } from 'react-icons/fa';
 
 const MENU_ITEMS = [
   {
@@ -99,6 +100,12 @@ const MENU_ITEMS = [
     path: '/admin/pagamentos',
     label: 'Pagamentos (Anuidade)',
     icon: MdPayments,
+    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+  },
+  {
+    path: '/admin/whatsapp',
+    label: 'WhatsApp',
+    icon: FaWhatsapp,
     roles: ['ADMIN_RELM', 'GERENTE_RELM'],
   },
   {

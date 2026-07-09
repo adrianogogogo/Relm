@@ -524,6 +524,11 @@ Acesse o catálogo completo em PDF: [link]
     { key: 'referral_bonus_points',      value: '500' },
     { key: 'birthday_bonus_points',      value: '200' },
     { key: 'event_participation_points', value: '100' },
+    // WhatsApp Cloud API (configurar em /admin/whatsapp — não commitar valores reais)
+    { key: 'whatsapp_number',         value: '' },
+    { key: 'whatsapp_cloud_token',    value: '' },
+    { key: 'whatsapp_phone_number_id', value: '' },
+    { key: 'whatsapp_template_name',  value: '' },
   ];
 
   for (const setting of clubSettings) {

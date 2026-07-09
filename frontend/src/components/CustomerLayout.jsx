@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import WhatsAppFloatingButton from './WhatsAppFloatingButton';
 import { useAuthStore } from '../store/authStore';
 import { useSidebarStore } from '../store/sidebarStore';
 import TopBarChrome from './TopBarChrome';
@@ -184,6 +185,7 @@ export default function CustomerLayout() {
           <Outlet />
         </div>
       </main>
+      <WhatsAppFloatingButton />
     </div>
   );
 }

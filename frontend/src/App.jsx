@@ -72,6 +72,7 @@ import AdminVouchersPage from './pages/AdminVouchersPage';
 import DistribuidorEventosPage from './pages/DistribuidorEventosPage';
 import DistribuidorBeneficiosPage from './pages/DistribuidorBeneficiosPage';
 import AdminPaymentsPage from './pages/AdminPaymentsPage';
+import AdminWhatsAppPage from './pages/AdminWhatsAppPage';
 import AdminPartnersPage from './pages/AdminPartnersPage';
 import AdminClubReportsPage from './pages/AdminClubReportsPage';
 import CustomerPartnersPage from './pages/CustomerPartnersPage';
@@ -272,6 +273,11 @@ export default function App() {
             <Route path="pagamentos" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
                 <AdminPaymentsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="whatsapp" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                <AdminWhatsAppPage />
               </ProtectedRoute>
             } />
             <Route path="parceiros" element={
