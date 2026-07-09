@@ -112,4 +112,19 @@ export class InsuranceController {
   findMyPolicies(@Request() req: any) {
     return this.insuranceService.findPoliciesForCustomer(req.user.customerId);
   }
+
+  // Cliente aceita/recusa uma cotação COTADA. Escopado ao customerId do JWT.
+  @Patch('customer-portal/insurance-quotes/:id/accept')
+  @UseGuards(CustomerJwtGuard)
+  @ApiBearerAuth()
+  acceptMyQuote(@Param('id') id: string, @Request() req: any) {
+    return this.insuranceService.acceptQuote(id, req.user.customerId);
+  }
+
+  @Patch('customer-portal/insurance-quotes/:id/decline')
+  @UseGuards(CustomerJwtGuard)
+  @ApiBearerAuth()
+  declineMyQuote(@Param('id') id: string, @Request() req: any) {
+    return this.insuranceService.declineQuote(id, req.user.customerId);
+  }
 }

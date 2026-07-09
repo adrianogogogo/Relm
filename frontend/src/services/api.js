@@ -277,9 +277,16 @@ export function changePasswordByUserType(userType, currentPassword, newPassword)
 
 export const customerPortalAPI = {
   getMe: () => api.get('/customer-portal/me').then((res) => res.data),
+  updateProfile: (data) => api.put('/customer-portal/profile', data).then((res) => res.data),
+  updatePassword: (data) => api.put('/customer-portal/password', data).then((res) => res.data),
   getWarranties: () => api.get('/customer-portal/warranties').then((res) => res.data),
   getInsuranceQuotes: () => api.get('/customer-portal/insurance-quotes').then((res) => res.data),
   getInsurancePolicies: () => api.get('/customer-portal/insurance-policies').then((res) => res.data),
+  // Wave 9 — cliente aceita/recusa uma cotação COTADA
+  acceptInsuranceQuote: (id) =>
+    api.patch(`/customer-portal/insurance-quotes/${id}/accept`).then((res) => res.data),
+  declineInsuranceQuote: (id) =>
+    api.patch(`/customer-portal/insurance-quotes/${id}/decline`).then((res) => res.data),
   getEvents: () => api.get('/customer-portal/events').then((res) => res.data),
   getBenefits: () => api.get('/customer-portal/benefits').then((res) => res.data),
   getPointsBalance: () => api.get('/v1/points/balance').then((res) => res.data),

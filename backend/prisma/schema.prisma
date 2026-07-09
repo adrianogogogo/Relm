@@ -535,7 +535,8 @@ model InsuranceQuote {
   quoteValue        Decimal? @map("quote_value") @db.Decimal(10, 2)
   insuranceCompany  String?  @map("insurance_company")
   status            String   @default("PENDING")
-  
+  quotedAt          DateTime? @map("quoted_at")
+
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
   

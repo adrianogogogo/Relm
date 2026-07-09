@@ -1,8 +1,10 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Put, UseGuards, Request, Body } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CustomerPortalService } from './customer-portal.service';
 import { CustomerJwtGuard } from '../customer-auth/customer-jwt.guard';
 import { EngagementService } from '../engagement/engagement.service';
+import { UpdateCustomerProfileDto } from './dto/update-profile.dto';
+import { UpdateCustomerPasswordDto } from './dto/update-password.dto';
 
 @ApiTags('customer-portal')
 @Controller('customer-portal')
@@ -17,6 +19,16 @@ export class CustomerPortalController {
   @Get('me')
   getProfile(@Request() req: any) {
     return this.customerPortalService.getProfile(req.user.customerId);
+  }
+
+  @Put('profile')
+  updateProfile(@Request() req: any, @Body() dto: UpdateCustomerProfileDto) {
+    return this.customerPortalService.updateProfile(req.user.customerId, dto);
+  }
+
+  @Put('password')
+  updatePassword(@Request() req: any, @Body() dto: UpdateCustomerPasswordDto) {
+    return this.customerPortalService.updatePassword(req.user.customerId, dto);
   }
 
   @Get('warranties')

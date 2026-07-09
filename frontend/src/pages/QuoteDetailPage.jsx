@@ -97,16 +97,22 @@ const QuoteDetailPage = () => {
 
   const statusColors = {
     PENDING: 'bg-yellow-100 text-yellow-800',
-    APPROVED: 'bg-green-100 text-green-800',
-    REJECTED: 'bg-red-100 text-red-800',
-    CONVERTED: 'bg-blue-100 text-blue-800'
+    COTADA: 'bg-blue-100 text-blue-800',
+    ACEITA: 'bg-indigo-100 text-indigo-800',
+    DECLINADA: 'bg-gray-100 text-gray-800',
+    EXPIRADA: 'bg-gray-100 text-gray-800',
+    RECUSADA: 'bg-red-100 text-red-800',
+    CONVERTED: 'bg-green-100 text-green-800',
   };
 
   const statusLabels = {
-    PENDING: 'Pendente',
-    APPROVED: 'Aprovada',
-    REJECTED: 'Rejeitada',
-    CONVERTED: 'Convertida'
+    PENDING: 'Aguardando cotação',
+    COTADA: 'Cotação enviada',
+    ACEITA: 'Aceita pelo cliente',
+    DECLINADA: 'Recusada pelo cliente',
+    EXPIRADA: 'Expirada',
+    RECUSADA: 'Não aprovada',
+    CONVERTED: 'Apólice emitida',
   };
 
   return (
@@ -140,7 +146,7 @@ const QuoteDetailPage = () => {
             className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
           >
             <MdCheckCircle size={18} />
-            Aprovar
+            Aprovar / Enviar cotação
           </button>
           <button
             onClick={() => setShowRejectModal(true)}
@@ -152,7 +158,7 @@ const QuoteDetailPage = () => {
         </div>
       )}
 
-      {quote.status === 'APPROVED' && (
+      {quote.status === 'ACEITA' && (
         <button
           onClick={handleConvert}
           disabled={convertMutation.isPending}

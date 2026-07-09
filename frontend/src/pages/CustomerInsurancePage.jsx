@@ -1,11 +1,18 @@
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MdVerifiedUser, MdAdd } from 'react-icons/md';
 import { customerPortalAPI } from '../services/api';
 import { Card, PageHeader, StatusChip, Button } from '../components/ui';
 
 const STATUS_LABEL = {
-  PENDING: 'Aguardando',
+  PENDING: 'Aguardando cotação',
+  COTADA: 'Cotação recebida',
+  ACEITA: 'Aceita — aguardando emissão',
+  DECLINADA: 'Recusada por você',
+  EXPIRADA: 'Expirada',
+  CONVERTED: 'Apólice emitida',
+  RECUSADA: 'Não aprovada',
+  // Apólices
   ACTIVE: 'Ativa',
   CANCELLED: 'Cancelada',
   EXPIRED: 'Expirada',
@@ -13,6 +20,12 @@ const STATUS_LABEL = {
 
 const STATUS_VARIANT = {
   PENDING: 'warning',
+  COTADA: 'info',
+  ACEITA: 'info',
+  DECLINADA: 'neutral',
+  EXPIRADA: 'neutral',
+  CONVERTED: 'success',
+  RECUSADA: 'error',
   ACTIVE: 'success',
   CANCELLED: 'error',
   EXPIRED: 'neutral',
@@ -30,6 +43,21 @@ export default function CustomerInsurancePage() {
     queryKey: ['customer-policies'],
     queryFn: customerPortalAPI.getInsurancePolicies,
   });
+
+  const queryClient = useQueryClient();
+  const refetchAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['customer-quotes'] });
+    queryClient.invalidateQueries({ queryKey: ['customer-policies'] });
+  };
+  const acceptMutation = useMutation({
+    mutationFn: (id) => customerPortalAPI.acceptInsuranceQuote(id),
+    onSuccess: refetchAll,
+  });
+  const declineMutation = useMutation({
+    mutationFn: (id) => customerPortalAPI.declineInsuranceQuote(id),
+    onSuccess: refetchAll,
+  });
+  const isMutating = acceptMutation.isPending || declineMutation.isPending;
 
   return (
     <div className="py-8 px-6">
@@ -140,6 +168,37 @@ export default function CustomerInsurancePage() {
                     </div>
                   )}
                 </div>
+                {q.status === 'COTADA' && (
+                  <div className="mt-4 rounded-lg bg-primary/5 dark:bg-primary/10 p-4">
+                    {q.quoteValue && (
+                      <p className="text-center mb-3">
+                        <span className="block text-xs text-gray-500 dark:text-slate-400">Sua cotação</span>
+                        <span className="text-2xl font-bold text-primary">
+                          R$ {Number(q.quoteValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          <span className="text-sm font-normal">/mês</span>
+                        </span>
+                      </p>
+                    )}
+                    <div className="flex gap-3">
+                      <Button
+                        className="flex-1"
+                        disabled={isMutating}
+                        onClick={() => acceptMutation.mutate(q.id)}
+                      >
+                        Contratar seguro
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        className="flex-1"
+                        disabled={isMutating}
+                        onClick={() => declineMutation.mutate(q.id)}
+                      >
+                        Não tenho interesse
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 <p className="text-xs text-gray-400 dark:text-slate-500 mt-3">
                   Solicitado em {new Date(q.createdAt).toLocaleDateString('pt-BR')}
                 </p>

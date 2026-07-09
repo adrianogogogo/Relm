@@ -22,6 +22,30 @@ export const GENERIC_COVERAGE =
   'desgaste natural, mau uso, competições (salvo cobertura adicional), danos ' +
   'estéticos. Franquia: 10% da indenização. Vigência: 12 meses.';
 
+// Máquina de estados leve da cotação (Wave 9). Fonte da verdade das transições
+// permitidas. `status` é uma String simples (não enum Prisma).
+//
+// PENDING  → COTADA (Relm cota: seta quoteValue + insurer, notifica)
+//          → RECUSADA (Relm recusa)
+// COTADA   → ACEITA (cliente aceita) | DECLINADA (cliente recusa) | EXPIRADA (7d sem resposta, cron)
+// ACEITA   → CONVERTED (Relm emite a apólice — convert())
+//
+// DECISÃO: CONVERTED é o rótulo do estado emitido (reaproveitado, não criamos
+// EMITIDA). ACEITA é o gate obrigatório antes de convert(). Compat: os antigos
+// APPROVED/REJECTED foram remapeados para COTADA/RECUSADA.
+export const QUOTE_TRANSITIONS: Record<string, string[]> = {
+  PENDING: ['COTADA', 'RECUSADA'],
+  COTADA: ['ACEITA', 'DECLINADA', 'EXPIRADA'],
+  ACEITA: ['CONVERTED'],
+  DECLINADA: [],
+  EXPIRADA: [],
+  RECUSADA: [],
+  CONVERTED: [],
+};
+
+// Cotações COTADA sem resposta expiram após este número de dias.
+const QUOTE_EXPIRY_DAYS = 7;
+
 @Injectable()
 export class InsuranceService {
   private readonly logger = new Logger(InsuranceService.name);
@@ -132,34 +156,110 @@ export class InsuranceService {
     return quote;
   }
 
+  /**
+   * Relm envia a cotação: PENDING → COTADA. Seta quoteValue, seguradora e
+   * quotedAt (usado pelo cron de expiração). Atômico via updateMany filtrando o
+   * status esperado (sem check-then-act).
+   */
   async approve(id: string, data: { quoteValue: number; insuranceCompany: string }) {
-    const quote = await this.prisma.insuranceQuote.findUnique({ where: { id } });
-    if (!quote) throw new NotFoundException('Cotação não encontrada');
-
-    return this.prisma.insuranceQuote.update({
-      where: { id },
+    const flipped = await this.prisma.insuranceQuote.updateMany({
+      where: { id, status: 'PENDING' },
       data: {
-        status: 'APPROVED',
+        status: 'COTADA',
         quoteValue: data.quoteValue,
         insuranceCompany: data.insuranceCompany,
+        quotedAt: new Date(),
       },
+    });
+    if (flipped.count !== 1) {
+      throw new ConflictException('Transição inválida ou já realizada');
+    }
+
+    const quote = await this.prisma.insuranceQuote.findUniqueOrThrow({
+      where: { id },
+      include: {
+        customer: { select: { id: true, fullName: true, email: true, phone: true, cpf: true } },
+      },
+    });
+
+    // Sem canal de notificação ao cliente disponível: notifica a equipe.
+    await this.notificationsService.notifyTeam({
+      type: 'INSURANCE_QUOTED',
+      title: 'Cotação enviada ao cliente',
+      message: `Protocolo ${quote.protocolNumber} — cotação de ${quote.customer.fullName} aguardando resposta.`,
+      link: '/admin/insurances',
+    });
+
+    return quote;
+  }
+
+  /** Relm recusa a cotação: PENDING → RECUSADA. Atômico. */
+  async reject(id: string) {
+    const flipped = await this.prisma.insuranceQuote.updateMany({
+      where: { id, status: 'PENDING' },
+      data: { status: 'RECUSADA' },
+    });
+    if (flipped.count !== 1) {
+      throw new ConflictException('Transição inválida ou já realizada');
+    }
+
+    return this.prisma.insuranceQuote.findUniqueOrThrow({
+      where: { id },
       include: {
         customer: { select: { id: true, fullName: true, email: true, phone: true, cpf: true } },
       },
     });
   }
 
-  async reject(id: string) {
-    const quote = await this.prisma.insuranceQuote.findUnique({ where: { id } });
-    if (!quote) throw new NotFoundException('Cotação não encontrada');
-
-    return this.prisma.insuranceQuote.update({
-      where: { id },
-      data: { status: 'REJECTED' },
-      include: {
-        customer: { select: { id: true, fullName: true, email: true, phone: true, cpf: true } },
-      },
+  /**
+   * Cliente aceita a cotação: COTADA → ACEITA. Escopado ao customerId do JWT
+   * (o WHERE inclui customerId — sem IDOR). Atômico.
+   */
+  async acceptQuote(id: string, customerId: string) {
+    const flipped = await this.prisma.insuranceQuote.updateMany({
+      where: { id, customerId, status: 'COTADA' },
+      data: { status: 'ACEITA' },
     });
+    if (flipped.count !== 1) {
+      throw new ConflictException('Transição inválida ou já realizada');
+    }
+
+    const quote = await this.prisma.insuranceQuote.findUniqueOrThrow({
+      where: { id },
+      include: { customer: { select: { id: true, fullName: true } } },
+    });
+    await this.notificationsService.notifyTeam({
+      type: 'INSURANCE_ACCEPTED',
+      title: 'Cliente aceitou a cotação',
+      message: `Protocolo ${quote.protocolNumber} — ${quote.customer.fullName} aceitou. Pronto para emissão.`,
+      link: '/admin/insurances',
+    });
+    return quote;
+  }
+
+  /**
+   * Cliente recusa a cotação: COTADA → DECLINADA. Escopado ao customerId. Atômico.
+   */
+  async declineQuote(id: string, customerId: string) {
+    const flipped = await this.prisma.insuranceQuote.updateMany({
+      where: { id, customerId, status: 'COTADA' },
+      data: { status: 'DECLINADA' },
+    });
+    if (flipped.count !== 1) {
+      throw new ConflictException('Transição inválida ou já realizada');
+    }
+
+    const quote = await this.prisma.insuranceQuote.findUniqueOrThrow({
+      where: { id },
+      include: { customer: { select: { id: true, fullName: true } } },
+    });
+    await this.notificationsService.notifyTeam({
+      type: 'INSURANCE_DECLINED',
+      title: 'Cliente recusou a cotação',
+      message: `Protocolo ${quote.protocolNumber} — ${quote.customer.fullName} não teve interesse.`,
+      link: '/admin/insurances',
+    });
+    return quote;
   }
 
   /**
@@ -171,22 +271,20 @@ export class InsuranceService {
   async convert(id: string) {
     const quote = await this.prisma.insuranceQuote.findUnique({ where: { id } });
     if (!quote) throw new NotFoundException('Cotação não encontrada');
-    if (quote.status === 'CONVERTED') {
-      throw new ConflictException('Cotação já foi convertida em apólice.');
-    }
 
     const now = new Date();
     const policyNumber = this.generatePolicyNumber();
 
     const { quote: updatedQuote, policy } = await this.prisma.$transaction(async (tx) => {
-      // updateMany com filtro de status torna a conversão atômica: em corrida,
-      // apenas uma request flipa o status; a outra cai no ConflictException.
+      // Gate: só emite a partir de ACEITA (cliente aceitou). updateMany com
+      // filtro de status torna a conversão atômica: em corrida, apenas uma
+      // request flipa o status; a outra cai no ConflictException.
       const flipped = await tx.insuranceQuote.updateMany({
-        where: { id, status: { not: 'CONVERTED' } },
+        where: { id, status: 'ACEITA' },
         data: { status: 'CONVERTED' },
       });
       if (flipped.count === 0) {
-        throw new ConflictException('Cotação já foi convertida em apólice.');
+        throw new ConflictException('Transição inválida ou já realizada');
       }
       const updatedQuote = await tx.insuranceQuote.findUniqueOrThrow({
         where: { id },
@@ -418,6 +516,17 @@ export class InsuranceService {
     });
     if (expired.count > 0) {
       this.logger.log(`Expired ${expired.count} insurance policies.`);
+    }
+
+    // 1b) Expira cotações COTADA sem resposta há mais de QUOTE_EXPIRY_DAYS dias.
+    // Idempotente: só toca linhas ainda em COTADA.
+    const quoteCutoff = new Date(now.getTime() - QUOTE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+    const expiredQuotes = await this.prisma.insuranceQuote.updateMany({
+      where: { status: 'COTADA', quotedAt: { lt: quoteCutoff } },
+      data: { status: 'EXPIRADA' },
+    });
+    if (expiredQuotes.count > 0) {
+      this.logger.log(`Expired ${expiredQuotes.count} insurance quotes (no answer).`);
     }
 
     // 2) Avisos de vencimento em janelas exatas (30/7 dias).

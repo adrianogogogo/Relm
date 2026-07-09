@@ -7,6 +7,26 @@ import { Card, PageHeader, StatusChip } from '../components/ui';
 
 const POLICY_STATUS_LABEL = { ACTIVE: 'Ativa', EXPIRED: 'Expirada', CANCELLED: 'Cancelada' };
 const POLICY_STATUS_VARIANT = { ACTIVE: 'success', EXPIRED: 'error', CANCELLED: 'neutral' };
+
+// Estados da máquina de cotação (Wave 9).
+const QUOTE_STATUS_LABEL = {
+  PENDING: 'Aguardando cotação',
+  COTADA: 'Cotação enviada',
+  ACEITA: 'Aceita pelo cliente',
+  DECLINADA: 'Recusada pelo cliente',
+  EXPIRADA: 'Expirada',
+  RECUSADA: 'Não aprovada',
+  CONVERTED: 'Apólice emitida',
+};
+const QUOTE_STATUS_VARIANT = {
+  PENDING: 'warning',
+  COTADA: 'info',
+  ACEITA: 'info',
+  DECLINADA: 'neutral',
+  EXPIRADA: 'neutral',
+  RECUSADA: 'error',
+  CONVERTED: 'success',
+};
 const formatDate = (d) => (d ? new Date(d).toLocaleDateString('pt-BR') : '—');
 
 export default function AdminInsurancesPage() {
@@ -191,8 +211,8 @@ export default function AdminInsurancesPage() {
                       </td>
                       <td className="px-6 py-4">
                         <StatusChip
-                          label={q.status === 'PENDING' ? 'Pendente' : q.status === 'SENT_TO_HELMDESK' ? 'Enviado' : q.status}
-                          variant={q.status === 'PENDING' ? 'warning' : 'success'}
+                          label={QUOTE_STATUS_LABEL[q.status] || q.status}
+                          variant={QUOTE_STATUS_VARIANT[q.status] || 'neutral'}
                         />
                       </td>
                       <td className="px-6 py-4 text-gray-500 dark:text-slate-400 text-sm">

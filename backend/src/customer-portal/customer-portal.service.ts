@@ -1,5 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { UpdateCustomerProfileDto } from './dto/update-profile.dto';
+import { UpdateCustomerPasswordDto } from './dto/update-password.dto';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class CustomerPortalService {
@@ -23,6 +26,49 @@ export class CustomerPortalService {
         createdAt: true,
       },
     });
+  }
+
+  async updateProfile(customerId: string, dto: UpdateCustomerProfileDto) {
+    return this.prisma.customer.update({
+      where: { id: customerId },
+      data: dto,
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        cpf: true,
+        birthDate: true,
+        address: true,
+        city: true,
+        state: true,
+        zipCode: true,
+        marketingConsent: true,
+      },
+    });
+  }
+
+  async updatePassword(customerId: string, dto: UpdateCustomerPasswordDto) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+    });
+
+    if (!customer || !customer.passwordHash) {
+      throw new BadRequestException('Usuário não encontrado ou não possui senha definida.');
+    }
+
+    const matches = await bcrypt.compare(dto.oldPassword, customer.passwordHash);
+    if (!matches) {
+      throw new BadRequestException('A senha antiga está incorreta.');
+    }
+
+    const newHash = await bcrypt.hash(dto.newPassword, 10);
+    await this.prisma.customer.update({
+      where: { id: customerId },
+      data: { passwordHash: newHash },
+    });
+
+    return { message: 'Senha alterada com sucesso.' };
   }
 
   async getWarranties(customerId: string) {
