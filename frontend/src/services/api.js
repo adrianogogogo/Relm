@@ -329,6 +329,7 @@ export const rewardsAPI = {
   deleteCatalogItem: (id) => api.delete(`/v1/rewards/catalog/${id}`).then((res) => res.data),
   getAllVouchers: () => api.get('/v1/rewards/vouchers').then((res) => res.data),
   useVoucher: (code) => api.patch(`/v1/rewards/vouchers/${code}/use`).then((res) => res.data),
+  createManualVoucher: (data) => api.post('/v1/rewards/vouchers/manual', data).then((res) => res.data),
   seedCatalog: () => api.post('/v1/rewards/seed').then((res) => res.data),
 };
 

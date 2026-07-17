@@ -1,7 +1,10 @@
-import { Controller, Post, Body, Get, Patch, Delete, Param, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Patch, Delete, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { RewardsService } from './rewards.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { TierLevel } from '@prisma/client';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 
 @ApiTags('Rewards')
 @Controller('v1/rewards')
@@ -71,6 +74,25 @@ export class RewardsController {
   @ApiOperation({ summary: 'Get all vouchers (admin view)' })
   async getAllVouchers() {
     return this.rewardsService.getAllVouchers();
+  }
+
+  @Post('vouchers/manual')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @ApiOperation({ summary: 'Create voucher manually (Admin/Gerente only)' })
+  async createVoucherManual(
+    @Request() req: any,
+    @Body() dto: {
+      customerId: string;
+      catalogItemId: string;
+      debitPoints: boolean;
+      expirationDays: number;
+    },
+  ) {
+    return this.rewardsService.createVoucherManual({
+      ...dto,
+      requesterUserId: req.user.userId,
+    });
   }
 
   @Patch('vouchers/:code/use')

@@ -104,6 +104,92 @@ export class RewardsService {
     });
   }
 
+  async createVoucherManual(dto: {
+    customerId: string;
+    catalogItemId: string;
+    debitPoints: boolean;
+    expirationDays: number;
+    requesterUserId: string;
+  }) {
+    return this.prisma.$transaction(async (tx) => {
+      const customer = await tx.customer.findUnique({
+        where: { id: dto.customerId },
+      });
+      if (!customer) {
+        throw new BadRequestException('Customer not found');
+      }
+
+      const item = await tx.catalogItem.findUnique({
+        where: { id: dto.catalogItemId },
+      });
+      if (!item || !item.active) {
+        throw new BadRequestException('Reward not found or inactive');
+      }
+
+      if (item.stock <= 0) {
+        throw new BadRequestException('Out of Stock');
+      }
+
+      if (dto.debitPoints) {
+        const balance = await this.pointsService.getBalance(dto.customerId, tx);
+        if (balance < item.pointsCost) {
+          throw new BadRequestException('Insufficient Points');
+        }
+
+        await tx.pointsLedger.create({
+          data: {
+            customerId: dto.customerId,
+            transactionType: PointTxType.REDEEM,
+            amount: -item.pointsCost,
+            description: `Resgate Manual (Débito) de Recompensa: ${item.title}`,
+            referenceId: item.id,
+          },
+        });
+      }
+
+      await tx.catalogItem.update({
+        where: { id: item.id },
+        data: {
+          stock: item.stock - 1,
+        },
+      });
+
+      const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      const code =
+        'RLM-' +
+        Array.from(randomBytes(5), (b) => alphabet[b % alphabet.length]).join('');
+
+      const expiresAt = new Date(Date.now() + dto.expirationDays * 24 * 60 * 60 * 1000);
+      const voucher = await tx.voucher.create({
+        data: {
+          code,
+          status: VoucherStatus.UNUSED,
+          customerId: dto.customerId,
+          catalogItemId: item.id,
+          expiresAt,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: dto.requesterUserId,
+          action: 'CREATE_VOUCHER_MANUAL',
+          entity: 'vouchers',
+          entityId: voucher.id,
+          metadata: { code, pointsCost: dto.debitPoints ? item.pointsCost : 0, debitPoints: dto.debitPoints },
+        },
+      });
+
+      return {
+        success: true,
+        voucherCode: code,
+        expiresAt: voucher.expiresAt,
+      };
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    });
+  }
+
   async seedCatalog() {
     const count = await this.prisma.catalogItem.count();
     if (count === 0) {

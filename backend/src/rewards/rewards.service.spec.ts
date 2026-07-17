@@ -156,3 +156,92 @@ describe('RewardsService.redeemReward — presale enforcement', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 });
+
+describe('RewardsService.createVoucherManual', () => {
+  it('cria voucher com sucesso debitando pontos do cliente', async () => {
+    const item = makeCatalogItem({ pointsCost: 50, stock: 10 });
+    const { service, txMock } = makeService({ item, balance: 100 });
+    txMock.customer = {
+      findUnique: jest.fn().mockResolvedValue({ id: 'c1', fullName: 'John Doe' }),
+    };
+
+    const result = await service.createVoucherManual({
+      customerId: 'c1',
+      catalogItemId: 'item-1',
+      debitPoints: true,
+      expirationDays: 30,
+      requesterUserId: 'admin-1',
+    });
+
+    expect(result.voucherCode).toBeDefined();
+    expect(txMock.catalogItem.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'item-1' },
+      data: { stock: 9 },
+    }));
+    expect(txMock.pointsLedger.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        amount: -50,
+        transactionType: PointTxType.REDEEM,
+      }),
+    }));
+  });
+
+  it('cria voucher com sucesso como cortesia (sem debitar pontos)', async () => {
+    const item = makeCatalogItem({ pointsCost: 50, stock: 10 });
+    const { service, txMock } = makeService({ item, balance: 10 });
+    txMock.customer = {
+      findUnique: jest.fn().mockResolvedValue({ id: 'c1', fullName: 'John Doe' }),
+    };
+
+    const result = await service.createVoucherManual({
+      customerId: 'c1',
+      catalogItemId: 'item-1',
+      debitPoints: false,
+      expirationDays: 90,
+      requesterUserId: 'admin-1',
+    });
+
+    expect(result.voucherCode).toBeDefined();
+    expect(txMock.pointsLedger.create).not.toHaveBeenCalled();
+    expect(txMock.catalogItem.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'item-1' },
+      data: { stock: 9 },
+    }));
+  });
+
+  it('lança erro se o item do catálogo estiver fora de estoque', async () => {
+    const item = makeCatalogItem({ pointsCost: 50, stock: 0 });
+    const { service, txMock } = makeService({ item });
+    txMock.customer = {
+      findUnique: jest.fn().mockResolvedValue({ id: 'c1', fullName: 'John Doe' }),
+    };
+
+    await expect(
+      service.createVoucherManual({
+        customerId: 'c1',
+        catalogItemId: 'item-1',
+        debitPoints: false,
+        expirationDays: 60,
+        requesterUserId: 'admin-1',
+      })
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('lança erro se debito de pontos for solicitado e o saldo for insuficiente', async () => {
+    const item = makeCatalogItem({ pointsCost: 50, stock: 10 });
+    const { service, txMock } = makeService({ item, balance: 20 });
+    txMock.customer = {
+      findUnique: jest.fn().mockResolvedValue({ id: 'c1', fullName: 'John Doe' }),
+    };
+
+    await expect(
+      service.createVoucherManual({
+        customerId: 'c1',
+        catalogItemId: 'item-1',
+        debitPoints: true,
+        expirationDays: 60,
+        requesterUserId: 'admin-1',
+      })
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+});
