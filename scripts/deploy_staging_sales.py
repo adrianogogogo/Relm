@@ -16,7 +16,27 @@
 import paramiko, os, sys, time
 
 HOST = '177.153.62.248'; PORT = 22; USER = 'root'
-PASS = os.environ.get('RELM_VPS_PASS') or sys.exit('defina RELM_VPS_PASS')
+
+
+# Le o .env da raiz do repo quando a variavel nao veio do ambiente. O .env esta
+# no .gitignore. Variavel de ambiente real tem prioridade (setdefault).
+# ponytail: parser minimo CHAVE=VALOR — nao vale uma dependencia nova.
+def _load_env_file(path):
+    if not os.path.exists(path):
+        return
+    with open(path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            k, v = line.split('=', 1)
+            os.environ.setdefault(k.strip(), v.strip())
+
+
+_load_env_file(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
+
+PASS = os.environ.get('RELM_VPS_PASS') or sys.exit(
+    'defina RELM_VPS_PASS (variavel de ambiente ou .env na raiz do repo)')
 ROOT = r'c:\Users\BOSS\Desktop\Relm\Relm-Care'
 BE = '/var/www/relm-careplus-staging/backend'
 WEB = '/var/www/relm-careplus-staging-web'
