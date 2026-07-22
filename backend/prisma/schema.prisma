@@ -70,6 +70,7 @@ model Customer {
   referredBy             Customer?               @relation("CustomerReferrals", fields: [referredById], references: [id])
   referrals              Customer[]              @relation("CustomerReferrals")
   warrantyClaims         WarrantyClaim[]
+  sales                  Sale[]
   benefitMemberships     BenefitMembership[]
   eventRegistrations     EventRegistration[]
   newsletterSubscription NewsletterSubscription?
@@ -119,6 +120,7 @@ model Product {
   warrantyClaims  WarrantyClaim[]
   insuranceQuotes InsuranceQuote[]
   insurancePolicies InsurancePolicy[]
+  saleItems       SaleItem[]
 
   @@index([serialNumber])
   @@index([storeId])
@@ -154,7 +156,8 @@ model Store {
   warrantyClaims  WarrantyClaim[]
   storeUsers      StoreUser[]
   serviceOrders   ServiceOrder[]
-  
+  sales           Sale[]
+
   @@index([city, state])
   @@map("stores")
 }
@@ -214,6 +217,7 @@ model User {
   // warrantyEvents WarrantyEvent[] // DEPRECATED (fase 4)
   assignedClaims WarrantyClaim[] @relation("ClaimAssignee")
   auditLogs      AuditLog[]
+  salesSold      Sale[] @relation("SaleSeller")
 
   @@index([email])
   @@index([role])
@@ -1085,4 +1089,70 @@ model CustomerAchievement {
   @@unique([customerId, achievementId])
   @@index([customerId])
   @@map("customer_achievements")
+}
+
+// ============================================
+// VENDAS (registro de venda na loja + vigência de garantia)
+// ============================================
+
+model Sale {
+  id           String   @id @default(uuid())
+  customerId   String   @map("customer_id")
+  storeId      String?  @map("store_id")
+  soldByUserId String?  @map("sold_by_user_id")
+
+  saleDate      DateTime @map("sale_date")
+  invoiceNumber String?  @map("invoice_number")
+
+  // Nota fiscal: um arquivo por venda, no disco do servidor.
+  // ponytail: disco local, igual aos anexos de garantia — trocar por S3 junto.
+  invoiceStoragePath String? @map("invoice_storage_path")
+  invoiceFileName    String? @map("invoice_file_name")
+  invoiceMimeType    String? @map("invoice_mime_type")
+
+  notes     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  store    Store?   @relation(fields: [storeId], references: [id])
+  soldBy   User?    @relation("SaleSeller", fields: [soldByUserId], references: [id])
+  items    SaleItem[]
+
+  @@index([customerId])
+  @@index([storeId])
+  @@index([saleDate])
+  @@map("sales")
+}
+
+model SaleItem {
+  id     String @id @default(uuid())
+  saleId String @map("sale_id")
+
+  // Nome comercial digitado livremente pela loja no PDV. Obrigatório.
+  // productId fica nulo até a curadoria da Relm vincular ao catálogo.
+  commercialName String  @map("commercial_name")
+  productId      String? @map("product_id")
+
+  quantity     Int      @default(1)
+  // ponytail: série não-única (digitação livre no PDV). Unicidade só depois da curadoria.
+  serialNumber String?  @map("serial_number")
+  unitPrice    Decimal? @map("unit_price") @db.Decimal(10, 2)
+
+  // Vigência: prazo em dias informado na venda; warrantyEndsAt é DERIVADO
+  // (saleDate + warrantyDays) e gravado para permitir consulta indexada.
+  warrantyDays   Int?      @map("warranty_days")
+  warrantyEndsAt DateTime? @map("warranty_ends_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sale    Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@index([saleId])
+  @@index([serialNumber])
+  @@index([productId])
+  @@index([warrantyEndsAt])
+  @@map("sale_items")
 }

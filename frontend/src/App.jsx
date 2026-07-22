@@ -42,6 +42,7 @@ import StoreCustomersPage from './pages/StoreCustomersPage';
 import StoreWarrantiesPage from './pages/StoreWarrantiesPage';
 import StoreInsurancesPage from './pages/StoreInsurancesPage';
 import StoreProductsPage from './pages/StoreProductsPage';
+import StoreSalesPage from './pages/StoreSalesPage';
 import StoreProfilePage from './pages/StoreProfilePage';
 import StoreEventsPage from './pages/StoreEventsPage';
 import StoreBenefitsPage from './pages/StoreBenefitsPage';
@@ -65,6 +66,7 @@ import PolicyDetailPage from './pages/PolicyDetailPage';
 import QuoteDetailPage from './pages/QuoteDetailPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminProductsPage from './pages/AdminProductsPage';
+import AdminCurationPage from './pages/AdminCurationPage';
 import AuditLogsPage from './pages/AuditLogsPage';
 import AdminProfilePage from './pages/AdminProfilePage';
 import AdminCatalogPage from './pages/AdminCatalogPage';
@@ -160,6 +162,7 @@ export default function App() {
             <Route path="clientes" element={<StoreCustomersPage />} />
             <Route path="pagamentos" element={<StorePaymentsPage />} />
             <Route path="garantias" element={<StoreWarrantiesPage />} />
+            <Route path="vendas" element={<StoreSalesPage />} />
             <Route path="seguros" element={<StoreInsurancesPage />} />
             <Route path="produtos" element={<StoreProductsPage />} />
             <Route path="eventos" element={<StoreEventsPage />} />
@@ -210,6 +213,11 @@ export default function App() {
             <Route path="produtos" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
                 <AdminProductsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="curadoria" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                <AdminCurationPage />
               </ProtectedRoute>
             } />
 
