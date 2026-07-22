@@ -11,6 +11,7 @@
 #   cd frontend && npm run build
 #
 import paramiko, os, sys, time
+from urllib.parse import urlsplit, unquote
 
 HOST = '177.153.62.248'; PORT = 22; USER = 'root'
 
@@ -40,8 +41,6 @@ WEB = '/var/www/relm-careplus-prod-web'
 PM2_APP = 'relm-careplus-prod-backend'
 PORT_APP = 3005
 LOCAL_DIST = os.path.join(ROOT, 'frontend', 'dist')
-# psql/pg_dump rejeitam o parametro ?schema= do Prisma — removemos o sufixo.
-DBURL = 'DB_URL=$(grep DATABASE_URL .env | cut -d= -f2- | tr -d \'"\' | sed \'s/?schema=.*//\')'
 
 
 def run(c, cmd, t=900):
@@ -74,16 +73,35 @@ if idade_min > 120:
 c = paramiko.SSHClient(); c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 c.connect(HOST, port=PORT, username=USER, password=PASS)
 
+# Conexao do Postgres extraida do .env remoto e passada via variaveis PG*.
+# NAO use `cut -d= -f2- | sed` para isso: a senha de producao tem caracteres
+# especiais e o parse quebrava a URL. O pg_dump falhava, o dump saia com 0
+# bytes e o `ls` seguinte imprimia BACKUP_OK — deploy sem backup nenhum.
+_raw, _ = run(c, "grep '^DATABASE_URL' %s/.env" % BE)
+_u = urlsplit(_raw.strip().split('=', 1)[1].strip().strip('"').strip("'").split('?')[0])
+
+
+def _q(s):
+    return "'" + str(s).replace("'", "'\\''") + "'"
+
+
+PG = 'PGHOST=%s PGPORT=%s PGUSER=%s PGPASSWORD=%s PGDATABASE=%s' % (
+    _q(_u.hostname), _q(_u.port or 5432), _q(unquote(_u.username or '')),
+    _q(unquote(_u.password or '')), _q(_u.path.lstrip('/')))
+
 ts = time.strftime('%Y%m%d-%H%M%S')
 bak = '/root/relm-backups/prod-sales-%s' % ts
 run(c, 'mkdir -p %s' % bak)
 
 # 1) BACKUP obrigatorio: banco + dist do backend + .env + web atual.
 out, _ = run(c,
-    'cd %s && %s && pg_dump "$DB_URL" -Fc -f %s/prod-db.dump && '
+    'cd %s && %s pg_dump -Fc -f %s/prod-db.dump && '
     'cp -a dist %s/backend-dist.bak 2>/dev/null; cp -a .env %s/env.bak; '
-    'cp -a %s %s/web.bak 2>/dev/null; ls -la %s/prod-db.dump && echo BACKUP_OK'
-    % (BE, DBURL, bak, bak, bak, WEB, bak, bak))
+    # -s exige arquivo NAO-VAZIO. Antes bastava o `ls` funcionar, entao um
+    # pg_dump falho de 0 bytes ainda imprimia BACKUP_OK e o deploy seguia.
+    'cp -a %s %s/web.bak 2>/dev/null; ls -la %s/prod-db.dump && '
+    '[ -s %s/prod-db.dump ] && echo BACKUP_OK'
+    % (BE, PG, bak, bak, bak, WEB, bak, bak, bak))
 say('1) backup -> %s\n%s' % (bak, out.strip()[-300:]))
 if 'BACKUP_OK' not in out:
     sys.exit('ABORTADO: backup falhou — nada foi alterado.')
@@ -105,8 +123,8 @@ out, err = run(c, 'cd %s && npx prisma migrate deploy 2>&1 | tail -8' % BE)
 say('   migrate deploy:\n%s%s' % (out, err[-300:]))
 if 'Error' in out or 'error' in err.lower():
     sys.exit('ABORTADO: migrate deploy falhou.\n'
-             'Rollback: cd %s && %s && pg_restore --clean --if-exists --no-owner -d "$DB_URL" %s/prod-db.dump'
-             % (BE, DBURL, bak))
+             'Rollback: cd %s && %s pg_restore --clean --if-exists --no-owner %s/prod-db.dump'
+             % (BE, PG, bak))
 
 # 4) generate + build + reload.
 out, err = run(c, 'cd %s && npx prisma generate 2>&1 | tail -1 && npm run build 2>&1 | tail -3' % BE)
@@ -130,14 +148,16 @@ say('6) health: %s' % out.strip())
 
 # 6a) Tabelas novas existem e respondem.
 out, _ = run(c,
-    'cd %s && %s && for t in sales sale_items; do '
-    '  psql "$DB_URL" -tAc "SELECT \'$t: \' || COUNT(*) FROM $t"; done' % (BE, DBURL))
+    # PG e um prefixo de comando (VAR=x cmd). Nao use "VAR=x; cmd": assim as
+    # variaveis nao sao exportadas e o psql nao as enxerga.
+    'cd %s && %s psql -tAc "SELECT \'sales: \' || COUNT(*) FROM sales" && '
+    '%s psql -tAc "SELECT \'sale_items: \' || COUNT(*) FROM sale_items"' % (BE, PG, PG))
 say('   tabelas novas:\n%s' % out.strip())
 
 # 6b) Indices de sale_items (a consulta por numero de serie depende deles).
 out, _ = run(c,
-    'cd %s && %s && psql "$DB_URL" -tAc '
-    '"SELECT indexname FROM pg_indexes WHERE tablename=\'sale_items\' ORDER BY 1"' % (BE, DBURL))
+    'cd %s && %s psql -tAc '
+    '"SELECT indexname FROM pg_indexes WHERE tablename=\'sale_items\' ORDER BY 1"' % (BE, PG))
 say('   indices de sale_items:\n%s' % out.strip())
 
 # 6c) PROVA do plano 009: rotas de premios/vouchers devem recusar quem nao tem
@@ -175,7 +195,7 @@ c.close()
 say('')
 say('=== DEPLOY PRODUCAO CONCLUIDO ===')
 say('Backup: %s' % bak)
-say('Rollback banco: cd %s && %s && pg_restore --clean --if-exists --no-owner -d "$DB_URL" %s/prod-db.dump' % (BE, DBURL, bak))
+say('Rollback banco: cd %s && %s pg_restore --clean --if-exists --no-owner %s/prod-db.dump' % (BE, PG, bak))
 say('Rollback web:   rm -rf %s/* && cp -a %s/web.bak/* %s/' % (WEB, bak, WEB))
 say('')
 say('VALIDAR NA MAO:')
