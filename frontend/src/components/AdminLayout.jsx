@@ -25,6 +25,7 @@ import {
   MdStorefront,
   MdAnalytics,
   MdRule,
+  MdPointOfSale,
 } from 'react-icons/md';
 import { FaWhatsapp } from 'react-icons/fa';
 
@@ -34,6 +35,12 @@ const MENU_ITEMS = [
     label: 'Dashboard',
     icon: MdDashboard,
     exact: true,
+    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'],
+  },
+  {
+    path: '/loja/vendas',
+    label: 'Cadastrar Venda',
+    icon: MdPointOfSale,
     roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'],
   },
   {

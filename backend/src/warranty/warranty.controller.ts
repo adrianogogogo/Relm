@@ -69,7 +69,7 @@ export class WarrantyController {
 
   @Get('warranty/claims')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar garantias' })
   async findAll(@Query() query: any) {

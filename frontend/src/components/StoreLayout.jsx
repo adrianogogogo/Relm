@@ -23,7 +23,7 @@ import {
 const MENU = [
   { path: '/loja/dashboard', label: 'Início', icon: MdDashboard },
   { path: '/loja/clientes', label: 'Clientes', icon: MdPeople },
-  { path: '/loja/vendas', label: 'Lançar Venda', icon: MdPointOfSale },
+  { path: '/loja/vendas', label: 'Cadastrar Venda', icon: MdPointOfSale },
   { path: '/loja/pagamentos', label: 'Pagamentos (Anuidade)', icon: MdPayments },
   { path: '/loja/garantias', label: 'Garantias', icon: MdVerifiedUser },
   { path: '/loja/oficina', label: 'Oficina / Serviços', icon: MdBuild },

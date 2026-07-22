@@ -160,6 +160,9 @@ export default function App() {
           >
             <Route path="dashboard" element={<StoreDashboard />} />
             <Route path="clientes" element={<StoreCustomersPage />} />
+            <Route path="clientes/novo" element={<CustomerFormPage />} />
+            <Route path="clientes/:id" element={<CustomerDetailPage />} />
+            <Route path="clientes/:id/editar" element={<CustomerFormPage />} />
             <Route path="pagamentos" element={<StorePaymentsPage />} />
             <Route path="garantias" element={<StoreWarrantiesPage />} />
             <Route path="vendas" element={<StoreSalesPage />} />

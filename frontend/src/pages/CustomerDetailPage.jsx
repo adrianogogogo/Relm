@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useLocation, useSearchParams, Link } from 'react-router-dom';
 import { MdLocationOn, MdEvent, MdArrowBack, MdVpnKey } from 'react-icons/md';
 import api, { insuranceAPI, customersAPI, salesAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
@@ -19,6 +19,8 @@ function warrantyStatus(warrantyEndsAt) {
 
 export default function CustomerDetailPage() {
   const { id } = useParams();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [customer, setCustomer] = useState(null);
   const [warranties, setWarranties] = useState([]);
   const [insurances, setInsurances] = useState([]);
@@ -26,21 +28,25 @@ export default function CustomerDetailPage() {
   const [stores, setStores] = useState([]);
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [showResetPassword, setShowResetPassword] = useState(false);
 
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'ADMIN_RELM';
+  const isStorePortal = location.pathname.startsWith('/loja') || user?.role === 'LOJA';
+  const backPath = isStorePortal ? '/loja/clientes' : '/admin/customers';
 
   useEffect(() => {
     fetchCustomerData();
+    const tabParam = searchParams.get('tab');
+    if (tabParam) setActiveTab(tabParam);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchCustomerData = async () => {
     try {
       setLoading(true);
-      const [customerRes, warrantiesRes, eventsRes, storesRes, insurancesRes, salesRes] = await Promise.all([
+      const results = await Promise.allSettled([
         api.get(`/customers/${id}`),
         api.get(`/warranty/claims?customerId=${id}`),
         api.get('/public/events'),
@@ -49,15 +55,21 @@ export default function CustomerDetailPage() {
         salesAPI.getAll({ customerId: id, limit: 100 }),
       ]);
 
-      setCustomer(customerRes.data);
-      setWarranties(warrantiesRes.data);
-      setEvents(eventsRes.data);
-      setStores(storesRes.data);
-      setInsurances(insurancesRes);
-      // salesAPI.getAll já devolve o corpo da resposta ({ data, total, page, limit }).
-      setSales(salesRes?.data || []);
+      const [customerRes, warrantiesRes, eventsRes, storesRes, insurancesRes, salesRes] = results;
+
+      if (customerRes.status === 'fulfilled') {
+        setCustomer(customerRes.value.data);
+      } else {
+        console.error('Erro ao carregar cliente:', customerRes.reason);
+      }
+
+      if (warrantiesRes.status === 'fulfilled') setWarranties(warrantiesRes.value.data || []);
+      if (eventsRes.status === 'fulfilled') setEvents(eventsRes.value.data || []);
+      if (storesRes.status === 'fulfilled') setStores(storesRes.value.data || []);
+      if (insurancesRes.status === 'fulfilled') setInsurances(insurancesRes.value || []);
+      if (salesRes.status === 'fulfilled') setSales(salesRes.value?.data || []);
     } catch (error) {
-      console.error('Erro ao carregar dados do cliente:', error);
+      console.error('Erro fatal ao carregar dados do cliente:', error);
     } finally {
       setLoading(false);
     }
@@ -99,7 +111,7 @@ export default function CustomerDetailPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600 dark:text-slate-400">Cliente não encontrado</p>
-          <Link to="/admin/customers" className="text-primary dark:text-primary-400 hover:underline mt-4 inline-block">
+          <Link to={backPath} className="text-primary dark:text-primary-400 hover:underline mt-4 inline-block">
             Voltar para lista de clientes
           </Link>
         </div>
@@ -114,7 +126,7 @@ export default function CustomerDetailPage() {
         <div className="flex justify-between items-start mb-8 gap-4">
           <div>
             <Link
-              to="/admin/customers"
+              to={backPath}
               className="text-primary dark:text-primary-400 hover:underline mb-2 inline-flex items-center gap-1 text-sm font-semibold"
             >
               <MdArrowBack size={16} /> Voltar para clientes
@@ -130,6 +142,12 @@ export default function CustomerDetailPage() {
             <p className="text-gray-500 dark:text-slate-400 mt-1">{customer.email}</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <Link
+              to={`/loja/vendas?customerId=${id}`}
+              className="btn bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center gap-1.5 shadow-sm"
+            >
+              + Lançar Venda
+            </Link>
             {isAdmin && (
               <button
                 type="button"
@@ -140,8 +158,8 @@ export default function CustomerDetailPage() {
               </button>
             )}
             <Link
-              to={`/admin/customers/${id}/edit`}
-              className="btn btn-primary"
+              to={isStorePortal ? `/loja/clientes/${id}/editar` : `/admin/customers/${id}/edit`}
+              className="btn btn-outline"
             >
               Editar Cliente
             </Link>

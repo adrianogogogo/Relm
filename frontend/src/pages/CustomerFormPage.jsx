@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { MdArrowBack, MdVpnKey } from 'react-icons/md';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
@@ -9,9 +9,12 @@ import AdminResetPasswordModal from '../components/AdminResetPasswordModal';
 export default function CustomerFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const isEditMode = !!id;
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'ADMIN_RELM';
+  const isStorePortal = location.pathname.startsWith('/loja') || user?.role === 'LOJA';
+  const backPath = isStorePortal ? '/loja/clientes' : '/admin/customers';
 
   const [loading, setLoading] = useState(false);
   const [stores, setStores] = useState([]);
@@ -26,14 +29,16 @@ export default function CustomerFormPage() {
     city: '',
     state: '',
     zipCode: '',
-    storeId: '',
+    storeId: isStorePortal && user?.storeId ? user.storeId : '',
     notes: '',
     active: true,
     currentTier: 'CARE',
   });
 
   useEffect(() => {
-    fetchStores();
+    if (!isStorePortal) {
+      fetchStores();
+    }
     if (isEditMode) {
       fetchCustomer();
     }
@@ -177,7 +182,7 @@ export default function CustomerFormPage() {
         alert('Cliente cadastrado com sucesso!');
       }
 
-      navigate('/admin/customers');
+      navigate(backPath);
     } catch (error) {
       console.error('Erro ao salvar cliente:', error);
       alert(error.response?.data?.message || 'Erro ao salvar cliente');
@@ -372,54 +377,58 @@ export default function CustomerFormPage() {
               </div>
             </div>
 
-            {/* Loja de Compra */}
-            <div>
-              <h2 className="font-title text-xl font-bold mb-4 text-gray-900 dark:text-slate-100">Informações de Compra</h2>
+            {/* Loja de Compra (Apenas Admin/Gerente) */}
+            {!isStorePortal && (
               <div>
-                <label className="label">
-                  Loja de Compra
-                </label>
-                <select
-                  name="storeId"
-                  value={formData.storeId}
-                  onChange={handleChange}
-                  className="input"
-                >
-                  <option value="">Selecione a loja</option>
-                  <option value="direct">Compra Direta Relm</option>
-                  {stores.map((store) => (
-                    <option key={store.id} value={store.id}>
-                      {store.tradeName} — {store.city}/{store.state}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-                  Onde o cliente adquiriu a bicicleta Relm
-                </p>
+                <h2 className="font-title text-xl font-bold mb-4 text-gray-900 dark:text-slate-100">Informações de Compra</h2>
+                <div>
+                  <label className="label">
+                    Loja de Compra
+                  </label>
+                  <select
+                    name="storeId"
+                    value={formData.storeId}
+                    onChange={handleChange}
+                    className="input"
+                  >
+                    <option value="">Selecione a loja</option>
+                    <option value="direct">Compra Direta Relm</option>
+                    {stores.map((store) => (
+                      <option key={store.id} value={store.id}>
+                        {store.tradeName} — {store.city}/{store.state}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+                    Onde o cliente adquiriu a bicicleta Relm
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Categoria de Relacionamento (Tier) */}
-            <div>
-              <h2 className="font-title text-xl font-bold mb-4 text-gray-900 dark:text-slate-100">Categoria de Relacionamento</h2>
+            {/* Categoria de Relacionamento (Tier) - Apenas Admin */}
+            {!isStorePortal && (
               <div>
-                <label className="label">
-                  Plano / Categoria
-                </label>
-                <select
-                  name="currentTier"
-                  value={formData.currentTier}
-                  onChange={handleChange}
-                  className="input"
-                >
-                  <option value="CARE">Relm Care (Base)</option>
-                  <option value="PLUS">Relm Care Plus (Premium)</option>
-                </select>
-                <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-                  Define o nível de cashback e os benefícios de suporte e oficina do cliente.
-                </p>
+                <h2 className="font-title text-xl font-bold mb-4 text-gray-900 dark:text-slate-100">Categoria de Relacionamento</h2>
+                <div>
+                  <label className="label">
+                    Plano / Categoria
+                  </label>
+                  <select
+                    name="currentTier"
+                    value={formData.currentTier}
+                    onChange={handleChange}
+                    className="input"
+                  >
+                    <option value="CARE">Relm Care (Base)</option>
+                    <option value="PLUS">Relm Care Plus (Premium)</option>
+                  </select>
+                  <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+                    Define o nível de cashback e os benefícios de suporte e oficina do cliente.
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Observações */}
             <div>
@@ -492,7 +501,7 @@ export default function CustomerFormPage() {
                 {loading ? 'Salvando...' : isEditMode ? 'Salvar Alterações' : 'Cadastrar Cliente'}
               </button>
               <Link
-                to="/admin/customers"
+                to={backPath}
                 className="btn btn-outline"
               >
                 Cancelar

@@ -36,7 +36,7 @@ export class StoresController {
   }
 
   @Get()
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'DISTRIBUIDOR')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'DISTRIBUIDOR', 'LOJA')
   findAll(
     @Query('search') search?: string,
     @Query('city') city?: string,

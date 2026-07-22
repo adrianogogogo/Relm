@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import { MdSearch, MdAdd, MdDelete, MdCheckCircle } from 'react-icons/md';
-import { salesAPI, customersAPI } from '../services/api';
+import { useSearchParams, Link } from 'react-router-dom';
+import { MdSearch, MdAdd, MdDelete, MdCheckCircle, MdPersonAdd, MdClose } from 'react-icons/md';
+import api, { salesAPI, customersAPI } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader, Button } from '../components/ui';
 
 const WARRANTY_OPTIONS = [
@@ -24,10 +25,25 @@ const emptyItem = () => ({
 const today = () => new Date().toISOString().slice(0, 10);
 
 export default function StoreSalesPage() {
+  const { user } = useAuthStore();
+  const [searchParams] = useSearchParams();
+  const paramCustomerId = searchParams.get('customerId');
+
   const [customerQuery, setCustomerQuery] = useState('');
   const [customerResults, setCustomerResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+  // Estado do Modal de Cadastro Rápido de Cliente
+  const [showQuickModal, setShowQuickModal] = useState(false);
+  const [quickLoading, setQuickLoading] = useState(false);
+  const [quickError, setQuickError] = useState('');
+  const [quickForm, setQuickForm] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    cpf: '',
+  });
 
   const [saleDate, setSaleDate] = useState(today());
   const [invoiceNumber, setInvoiceNumber] = useState('');
@@ -39,6 +55,17 @@ export default function StoreSalesPage() {
   const [errorMsg, setErrorMsg] = useState('');
 
   const debounceRef = useRef(null);
+
+  // Carrega cliente automaticamente se vier na URL (?customerId=...)
+  useEffect(() => {
+    if (paramCustomerId && !selectedCustomer) {
+      customersAPI.getOne(paramCustomerId)
+        .then((data) => {
+          if (data) setSelectedCustomer(data);
+        })
+        .catch((err) => console.error('Erro ao buscar cliente por ID:', err));
+    }
+  }, [paramCustomerId]);
 
   // Debounce busca de clientes — mesmo padrão usado em AdminVouchersPage.
   useEffect(() => {
@@ -72,6 +99,35 @@ export default function StoreSalesPage() {
   const clearCustomer = () => {
     setSelectedCustomer(null);
     setCustomerQuery('');
+  };
+
+  const handleQuickCustomerSubmit = async (e) => {
+    e.preventDefault();
+    setQuickError('');
+    if (!quickForm.fullName || !quickForm.email || !quickForm.phone) {
+      setQuickError('Nome, Email e Telefone são obrigatórios.');
+      return;
+    }
+    try {
+      setQuickLoading(true);
+      const res = await api.post('/customers', {
+        fullName: quickForm.fullName,
+        email: quickForm.email,
+        phone: quickForm.phone,
+        ...(quickForm.cpf && { cpf: quickForm.cpf }),
+        storeId: user?.storeId || undefined,
+      });
+      const newCustomer = res.data;
+      selectCustomer(newCustomer);
+      setShowQuickModal(false);
+      setQuickForm({ fullName: '', email: '', phone: '', cpf: '' });
+      setSuccessMsg(`Cliente "${newCustomer.fullName}" cadastrado e selecionado!`);
+    } catch (err) {
+      const msg = err.response?.data?.message;
+      setQuickError(Array.isArray(msg) ? msg[0] : msg || 'Erro ao cadastrar cliente.');
+    } finally {
+      setQuickLoading(false);
+    }
   };
 
   const updateItem = (index, field, value) => {
@@ -138,7 +194,7 @@ export default function StoreSalesPage() {
   return (
     <div className="py-8 px-6">
       <div className="max-w-4xl mx-auto">
-        <PageHeader title="Lançar Venda" subtitle="Registre a venda e a vigência de garantia de cada item." />
+        <PageHeader title="Cadastrar Venda" subtitle="Registre a venda e a vigência de garantia de cada item." />
 
         {successMsg && (
           <div className="mb-6 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300 p-3 rounded-lg text-sm">
@@ -157,9 +213,13 @@ export default function StoreSalesPage() {
           <Card className="p-5 space-y-2 relative">
             <div className="flex items-center justify-between">
               <h2 className="font-title text-lg font-bold text-gray-900 dark:text-slate-100">Cliente</h2>
-              <Link to="/loja/clientes" className="text-xs font-semibold text-primary dark:text-primary-400 hover:underline">
-                Cadastrar cliente novo
-              </Link>
+              <button
+                type="button"
+                onClick={() => setShowQuickModal(true)}
+                className="btn bg-primary hover:bg-primary-600 text-white font-semibold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm"
+              >
+                <MdPersonAdd className="w-4 h-4" /> + Novo Cliente
+              </button>
             </div>
 
             {selectedCustomer ? (
@@ -246,11 +306,17 @@ export default function StoreSalesPage() {
           {/* Itens */}
           <Card className="p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-title text-lg font-bold text-gray-900 dark:text-slate-100">Itens</h2>
+              <div>
+                <h2 className="font-title text-lg font-bold text-gray-900 dark:text-slate-100">Itens</h2>
+              </div>
               <Button type="button" variant="outlined" icon={MdAdd} onClick={addItem}>
                 Adicionar item
               </Button>
             </div>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800">
+              💡 <strong>Produtos fora do catálogo:</strong> Você pode digitar livremente qualquer produto ou acessório no campo "Nome comercial".
+            </p>
 
             <div className="space-y-4">
               {items.map((item, index) => (
@@ -354,6 +420,99 @@ export default function StoreSalesPage() {
           </div>
         </form>
       </div>
+
+      {/* Modal de Cadastro Rápido de Cliente */}
+      {showQuickModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-gray-100 dark:border-slate-800 space-y-5">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-3">
+              <h3 className="font-title text-xl font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+                <MdPersonAdd className="text-primary" /> Cadastrar Novo Cliente
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowQuickModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-200"
+              >
+                <MdClose className="w-6 h-6" />
+              </button>
+            </div>
+
+            {quickError && (
+              <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300 rounded-lg text-xs font-semibold">
+                {quickError}
+              </div>
+            )}
+
+            <form onSubmit={handleQuickCustomerSubmit} className="space-y-4">
+              <div>
+                <label className="label">Nome Completo <span className="text-error">*</span></label>
+                <input
+                  type="text"
+                  className="input"
+                  required
+                  placeholder="Ex: João da Silva"
+                  value={quickForm.fullName}
+                  onChange={(e) => setQuickForm({ ...quickForm, fullName: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="label">E-mail <span className="text-error">*</span></label>
+                  <input
+                    type="email"
+                    className="input"
+                    required
+                    placeholder="cliente@email.com"
+                    value={quickForm.email}
+                    onChange={(e) => setQuickForm({ ...quickForm, email: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="label">Telefone <span className="text-error">*</span></label>
+                  <input
+                    type="text"
+                    className="input"
+                    required
+                    placeholder="(11) 99999-9999"
+                    value={quickForm.phone}
+                    onChange={(e) => setQuickForm({ ...quickForm, phone: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="label">CPF (Opcional)</label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="000.000.000-00"
+                  value={quickForm.cpf}
+                  onChange={(e) => setQuickForm({ ...quickForm, cpf: e.target.value })}
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowQuickModal(false)}
+                  className="btn btn-outline text-xs"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={quickLoading}
+                  className="btn btn-primary text-xs font-bold"
+                >
+                  {quickLoading ? 'Cadastrando...' : 'Salvar e Selecionar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
