@@ -1,5 +1,6 @@
 /// <reference types="jest" />
 import { RewardsService } from './rewards.service';
+import { RewardsController } from './rewards.controller';
 import { TierLevel, PointTxType, VoucherStatus, Prisma } from '@prisma/client';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 
@@ -243,5 +244,42 @@ describe('RewardsService.createVoucherManual', () => {
         requesterUserId: 'admin-1',
       })
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+});
+
+// ── RewardsController — identidade do cliente vem do token, não do body/URL ──
+// Estes dois testes travam o IDOR: se passarem com a implementação antiga
+// (customerId lido do body/URL), o teste está errado.
+
+describe('RewardsController — IDOR guard', () => {
+  function makeController() {
+    const rewardsService: any = {
+      redeemReward: jest.fn().mockResolvedValue({ success: true, voucherCode: 'RLM-ABCDE' }),
+      getVouchers: jest.fn().mockResolvedValue([]),
+    };
+    const controller = new RewardsController(rewardsService);
+    return { controller, rewardsService };
+  }
+
+  it('redeemReward usa o customerId do token, ignorando o do body', async () => {
+    const { controller, rewardsService } = makeController();
+    const req = { user: { customerId: 'cli-token' } };
+    const dto = { customerId: 'cli-VITIMA', catalogItemId: 'item1' };
+
+    await controller.redeemReward(req, dto);
+
+    expect(rewardsService.redeemReward).toHaveBeenCalledWith({
+      customerId: 'cli-token',
+      catalogItemId: 'item1',
+    });
+  });
+
+  it('getVouchers ignora o :customerId da URL e usa o do token', async () => {
+    const { controller, rewardsService } = makeController();
+    const req = { user: { customerId: 'cli-token' } };
+
+    await controller.getVouchers(req, 'cli-VITIMA');
+
+    expect(rewardsService.getVouchers).toHaveBeenCalledWith('cli-token');
   });
 });

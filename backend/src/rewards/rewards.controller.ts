@@ -5,6 +5,7 @@ import { TierLevel } from '@prisma/client';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { CustomerJwtGuard } from '../customer-auth/customer-jwt.guard';
 
 @ApiTags('Rewards')
 @Controller('v1/rewards')
@@ -12,12 +13,21 @@ export class RewardsController {
   constructor(private readonly rewardsService: RewardsService) {}
 
   @Post('redeem')
+  @UseGuards(CustomerJwtGuard)
   @ApiOperation({ summary: 'Redeem a catalog reward item' })
-  async redeemReward(@Body() dto: { customerId: string; catalogItemId: string }) {
-    // customerTier NÃO é aceito do cliente — o tier é derivado da assinatura no service.
-    return this.rewardsService.redeemReward({ customerId: dto.customerId, catalogItemId: dto.catalogItemId });
+  async redeemReward(@Request() req: any, @Body() dto: { customerId: string; catalogItemId: string }) {
+    // customerId vem do token, nunca do body — senão qualquer um resgata em nome
+    // de qualquer cliente. O campo customerId do corpo é aceito e descartado por
+    // compatibilidade com o frontend atual.
+    return this.rewardsService.redeemReward({
+      customerId: req.user.customerId,
+      catalogItemId: dto.catalogItemId,
+    });
   }
 
+  // ponytail: catálogo permanece público — é lido pelo portal do cliente e pelo
+  // admin, que usam tokens de tipos diferentes. Sem PII e somente leitura.
+  // Se um dia precisar fechar, exigirá um guard que aceite ambos os tipos.
   @Get('catalog')
   @ApiOperation({ summary: 'Get all catalog items (optional ?tier=CARE|PLUS filters presale)' })
   async getCatalog(@Query('tier') tier?: TierLevel) {
@@ -25,6 +35,8 @@ export class RewardsController {
   }
 
   @Post('catalog')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiOperation({ summary: 'Create catalog item' })
   async createCatalogItem(
     @Body() dto: {
@@ -43,6 +55,8 @@ export class RewardsController {
   }
 
   @Patch('catalog/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiOperation({ summary: 'Update catalog item' })
   async updateCatalogItem(
     @Param('id') id: string,
@@ -65,12 +79,16 @@ export class RewardsController {
   }
 
   @Delete('catalog/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @ApiOperation({ summary: 'Inactivate catalog item' })
   async deleteCatalogItem(@Param('id') id: string) {
     return this.rewardsService.deleteCatalogItem(id);
   }
 
   @Get('vouchers')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
   @ApiOperation({ summary: 'Get all vouchers (admin view)' })
   async getAllVouchers() {
     return this.rewardsService.getAllVouchers();
@@ -96,18 +114,25 @@ export class RewardsController {
   }
 
   @Patch('vouchers/:code/use')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
   @ApiOperation({ summary: 'Mark a voucher as used' })
   async useVoucher(@Param('code') code: string) {
     return this.rewardsService.useVoucher(code);
   }
 
   @Get('vouchers/:customerId')
+  @UseGuards(CustomerJwtGuard)
   @ApiOperation({ summary: 'Get all vouchers for a customer' })
-  async getVouchers(@Param('customerId') customerId: string) {
-    return this.rewardsService.getVouchers(customerId);
+  async getVouchers(@Request() req: any, @Param('customerId') customerId: string) {
+    // O :customerId da URL é ignorado — o cliente só enxerga os próprios vouchers.
+    // ponytail: parâmetro mantido na rota só para não quebrar o frontend atual.
+    return this.rewardsService.getVouchers(req.user.customerId);
   }
 
   @Post('seed')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM')
   @ApiOperation({ summary: 'Seed rewards catalog' })
   async seedCatalog() {
     await this.rewardsService.seedCatalog();
