@@ -72,8 +72,11 @@ export class WarrantyController {
   @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar garantias' })
-  async findAll(@Query() query: any) {
-    return this.warrantyService.findAll(query);
+  async findAll(@Query() query: any, @Request() req: any) {
+    return this.warrantyService.findAll(query, {
+      requesterUserId: req.user?.userId,
+      requesterRole: req.user?.role,
+    });
   }
 
   @Get('warranty/claims/:id')

@@ -8,6 +8,7 @@ import { ProductsService } from '../products/products.service';
 import { EmailService } from '../email/email.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { maskPhone, shouldMaskFor } from '../common/utils/mask';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 
@@ -262,7 +263,10 @@ export class WarrantyService {
     };
   }
 
-  async findAll(filters: any) {
+  async findAll(
+    filters: any,
+    requester?: { requesterUserId?: string; requesterRole?: string },
+  ) {
     const where: any = {
       ...(filters.statusId && { statusId: Number(filters.statusId) }),
       ...(filters.protocol_number && {
@@ -281,7 +285,22 @@ export class WarrantyService {
       ];
     }
 
-    return this.prisma.warrantyClaim.findMany({
+    // Usuários de LOJA só podem ver garantias da própria loja.
+    if (requester?.requesterRole === 'LOJA') {
+      const user = await this.prisma.user.findUnique({
+        where: { id: requester.requesterUserId },
+      });
+      if (!user?.storeId) {
+        throw new BadRequestException('Usuário de loja sem loja vinculada.');
+      }
+      // storeId vem do usuário autenticado, nunca do query param — senão o
+      // lojista lista os chamados de qualquer loja trocando a URL.
+      where.storeId = user.storeId;
+    } else if (filters.storeId) {
+      where.storeId = filters.storeId;
+    }
+
+    const claims = await this.prisma.warrantyClaim.findMany({
       where,
       include: {
         customer: {
@@ -314,6 +333,23 @@ export class WarrantyService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    if (!shouldMaskFor(requester?.requesterRole)) {
+      return claims;
+    }
+
+    // Lojista vê o nome do cliente (precisa identificá-lo), mas o contato
+    // (telefone/email) vem mascarado — mesma regra do plano 002.
+    return claims.map((claim) => ({
+      ...claim,
+      customer: claim.customer
+        ? {
+            ...claim.customer,
+            phone: maskPhone(claim.customer.phone),
+            email: this.maskEmail(claim.customer.email),
+          }
+        : claim.customer,
+    }));
   }
 
   async findOne(id: string) {
