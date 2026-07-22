@@ -62,8 +62,15 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) | REJECTED 
 > react-hooks/exhaustive-deps` que **suprime** um warning pré-existente em vez
 > de corrigi-lo (a correção real é `useCallback` em `fetchCustomerData`);
 > (b) a migration `20260722000000_add_sales` **nunca foi aplicada a banco
-> nenhum** — aplicar em produção é passo separado, via
-> `npm run prisma:migrate:deploy`.
+> nenhum**.
+>
+> **Mergeado em `main` em 2026-07-22** (commits `fc63420` e `ed731b7`); `main`
+> ficou com 132 testes passando e ambos os builds verdes. O deploy **não** foi
+> executado: use `scripts/deploy_staging_sales.py` (STAGING primeiro, com
+> backup e rollback documentados no próprio script) e só cogite produção depois
+> de validar à mão o roteiro de 4 passos impresso no fim dele — em especial o
+> passo 4, que confirma que os guards do plano 009 não quebraram o resgate no
+> portal do cliente.
 
 ## Dependency notes
 
