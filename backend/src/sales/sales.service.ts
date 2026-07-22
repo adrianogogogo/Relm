@@ -48,6 +48,9 @@ export class SalesService {
         ...(dto.invoiceNumber !== undefined && { invoiceNumber: dto.invoiceNumber }),
         ...(dto.notes !== undefined && { notes: dto.notes }),
         items: {
+          // warrantyEndsAt é derivado (saleDate + warrantyDays) e gravado aqui.
+          // Quem criar um endpoint de edição de venda DEVE recalcular
+          // warrantyEndsAt no mesmo update — não é mantido automaticamente.
           create: dto.items.map((item) => ({
             commercialName: item.commercialName,
             ...(item.productId !== undefined && { productId: item.productId }),
