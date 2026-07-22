@@ -22,7 +22,21 @@ row when done.
 | 006  | Registrar vendas (Sale/SaleItem) + vigência de garantia por série | P1 | M | — | DONE (branch `advisor/006-sales`, revisado — não mergeado) |
 | 007  | Tela de venda na loja (PDV) + fila de curadoria de produtos | P1 | M | 006 | DONE (mesma branch, revisado — não mergeado) |
 | 008  | Aba "Compras" no cliente 360° (série + status de garantia) | P2 | S | 006, 007 (soft) | DONE (mesma branch, revisado — não mergeado) |
-| 009  | Fechar `RewardsController` (9 rotas sem autenticação + IDOR) | **P0** | S | — | DONE (branch `advisor/009-rewards-guards`, revisado — **não mergeado, mergear primeiro**) |
+| 009  | Fechar `RewardsController` (9 rotas sem autenticação + IDOR) | **P0** | S | — | DONE (mergeado em `main`, `fc63420`) |
+| 010  | Escopar `GET /warranty/claims` por loja + mascarar PII | **P0** | S | — | DONE (mergeado em `main`, revisado) |
+
+> **Execução 010 — 2026-07-22.** Regressão introduzida pelo commit `8e83e5e`
+> (que liberou `GET /warranty/claims` para `LOJA` para corrigir um 403 real na
+> tela `/loja/garantias`): como `warrantyService.findAll` **ignorava** o
+> `storeId` que `StoreWarrantiesPage.jsx:35` já enviava por query param, o
+> lojista passou a receber os chamados de **todas** as lojas, com `email` e
+> `phone` dos clientes sem máscara. Corrigido no padrão de
+> `customers.service.ts`: `storeId` vem do token (via `User.storeId`),
+> `filters.storeId` é ignorado para `LOJA`, contato mascarado por
+> `common/utils/mask.ts`, `fullName` preservado. Verificado por mim: 3 arquivos
+> em escopo, **137 testes / 15 suites**, retorno segue array (paginação continua
+> sendo o plano 004). O teste que trava a falha: lojista da `loja-A` pedindo
+> `?storeId=loja-B` continua recebendo `loja-A`.
 
 > **Execução 009 — 2026-07-22.** Branch **`advisor/009-rewards-guards`**, worktree
 > `.claude/worktrees/agent-aa0b4f594d77ed37b`, criada direto de `bc6d86d` e
