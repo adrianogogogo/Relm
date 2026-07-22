@@ -221,6 +221,24 @@ export const productsAPI = {
   getPublic: () => api.get('/public/products').then((res) => res.data),
 };
 
+export const salesAPI = {
+  getAll: (params) => api.get('/sales', { params }).then((res) => res.data),
+  getById: (id) => api.get(`/sales/${id}`).then((res) => res.data),
+  create: (data) => api.post('/sales', data).then((res) => res.data),
+  // NF: multipart.
+  uploadInvoice: (id, file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api
+      .post(`/sales/${id}/invoice`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then((res) => res.data);
+  },
+  getPendingCuration: (params) =>
+    api.get('/sales/items/pending-curation', { params }).then((res) => res.data),
+  linkItem: (itemId, productId) =>
+    api.patch(`/sales/items/${itemId}/link`, { productId }).then((res) => res.data),
+};
+
 export const bannersAPI = {
   // Public endpoints — aceita segmentação { audience, page }.
   // Sem params, o backend assume audience PUBLIC (compatibilidade com a home).
