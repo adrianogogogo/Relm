@@ -59,7 +59,7 @@ export default function StoreSalesPage() {
   // Carrega cliente automaticamente se vier na URL (?customerId=...)
   useEffect(() => {
     if (paramCustomerId && !selectedCustomer) {
-      customersAPI.getOne(paramCustomerId)
+      customersAPI.getById(paramCustomerId)
         .then((data) => {
           if (data) setSelectedCustomer(data);
         })
