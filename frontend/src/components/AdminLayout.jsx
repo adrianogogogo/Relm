@@ -24,6 +24,7 @@ import {
   MdPayments,
   MdStorefront,
   MdAnalytics,
+  MdRule,
 } from 'react-icons/md';
 import { FaWhatsapp } from 'react-icons/fa';
 
@@ -69,6 +70,12 @@ const MENU_ITEMS = [
     path: '/admin/produtos',
     label: 'Produtos',
     icon: MdPedalBike,
+    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+  },
+  {
+    path: '/admin/curadoria',
+    label: 'Curadoria de Produtos',
+    icon: MdRule,
     roles: ['ADMIN_RELM', 'GERENTE_RELM'],
   },
   {

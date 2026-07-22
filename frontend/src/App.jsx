@@ -66,6 +66,7 @@ import PolicyDetailPage from './pages/PolicyDetailPage';
 import QuoteDetailPage from './pages/QuoteDetailPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminProductsPage from './pages/AdminProductsPage';
+import AdminCurationPage from './pages/AdminCurationPage';
 import AuditLogsPage from './pages/AuditLogsPage';
 import AdminProfilePage from './pages/AdminProfilePage';
 import AdminCatalogPage from './pages/AdminCatalogPage';
@@ -212,6 +213,11 @@ export default function App() {
             <Route path="produtos" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
                 <AdminProductsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="curadoria" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                <AdminCurationPage />
               </ProtectedRoute>
             } />
 
