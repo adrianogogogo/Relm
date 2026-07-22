@@ -188,6 +188,11 @@ export default function App() {
             {/* Acessível por todos os roles do admin */}
             <Route index element={<AdminHome />} />
             <Route path="perfil" element={<AdminProfilePage />} />
+            <Route path="vendas" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA']}>
+                <StoreSalesPage />
+              </ProtectedRoute>
+            } />
             <Route path="catalogo" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
                 <AdminCatalogPage />

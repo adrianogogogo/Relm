@@ -38,7 +38,7 @@ const MENU_ITEMS = [
     roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'],
   },
   {
-    path: '/loja/vendas',
+    path: '/admin/vendas',
     label: 'Cadastrar Venda',
     icon: MdPointOfSale,
     roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'],

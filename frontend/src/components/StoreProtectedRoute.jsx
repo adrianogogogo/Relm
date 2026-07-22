@@ -4,7 +4,12 @@ import { useAuthStore } from '../store/authStore';
 export default function StoreProtectedRoute({ children }) {
   const { isAuthenticated, user } = useAuthStore();
 
-  if (!isAuthenticated || user?.userType !== 'STORE') {
+  const isAllowed =
+    user?.userType === 'STORE' ||
+    user?.role === 'LOJA' ||
+    ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'].includes(user?.role);
+
+  if (!isAuthenticated || !isAllowed) {
     return <Navigate to="/login" replace />;
   }
 
