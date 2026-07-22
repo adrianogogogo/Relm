@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Post, Body, Param, Query, UseGuards, Request,
+  Controller, Get, Post, Patch, Body, Param, Query, UseGuards, Request,
   UseInterceptors, UploadedFile, BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -11,6 +11,7 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { QuerySalesDto } from './dto/query-sales.dto';
+import { LinkSaleItemDto } from './dto/link-sale-item.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -53,6 +54,22 @@ export class SalesController {
   @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA')
   findAll(@Query() query: QuerySalesDto, @Request() req: any) {
     return this.salesService.findAll(query, req.user?.userId);
+  }
+
+  // Rota literal — precisa vir antes de qualquer rota ':id' do controller,
+  // senão o Nest casaria "items" como valor de :id.
+  @Get('items/pending-curation')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  findPendingCuration(@Query() query: any) {
+    return this.salesService.findPendingCuration(query);
+  }
+
+  @Patch('items/:itemId/link')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  linkItemToProduct(@Param('itemId') itemId: string, @Body() dto: LinkSaleItemDto) {
+    return this.salesService.linkItemToProduct(itemId, dto.productId);
   }
 
   @Get(':id')

@@ -152,4 +152,54 @@ export class SalesService {
       },
     });
   }
+
+  // Fila de curadoria: itens cujo productId ainda não foi vinculado ao
+  // catálogo pela equipe Relm. productId IS NULL já é o estado "pendente" —
+  // não existe flag separada.
+  async findPendingCuration(query: any) {
+    const page = query?.page && query.page > 0 ? Number(query.page) : 1;
+    const limit = query?.limit && query.limit > 0 ? Math.min(Number(query.limit), 100) : 20;
+
+    const where = { productId: null };
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.saleItem.findMany({
+        where,
+        include: {
+          sale: {
+            select: {
+              id: true,
+              saleDate: true,
+              customer: { select: { id: true, fullName: true } },
+              store: { select: { id: true, tradeName: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.saleItem.count({ where }),
+    ]);
+
+    return {
+      data, total, page, limit,
+    };
+  }
+
+  // Vincula a descrição livre (commercialName) de um item de venda a um
+  // produto do catálogo — é a curadoria feita pela equipe Relm.
+  async linkItemToProduct(itemId: string, productId: string) {
+    const item = await this.prisma.saleItem.findUnique({ where: { id: itemId } });
+    if (!item) {
+      throw new NotFoundException('Item de venda não encontrado');
+    }
+
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) {
+      throw new NotFoundException('Produto não encontrado');
+    }
+
+    return this.prisma.saleItem.update({ where: { id: itemId }, data: { productId } });
+  }
 }
