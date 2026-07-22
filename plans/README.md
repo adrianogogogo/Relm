@@ -15,12 +15,33 @@ row when done.
 | Plan | Title | Priority | Effort | Depends on | Status |
 |------|-------|----------|--------|------------|--------|
 | 005  | Stop duplicate auto-tasks when a stage is re-entered (rework path) | P1 | S | 001 (soft) | DONE (executor `b200d2f`, reviewed — unmerged) |
-| 001  | Establish a backend test baseline (Jest harness + first characterization specs) | P1 | M | — | TODO |
+| 001  | Establish a backend test baseline (Jest harness + first characterization specs) | P1 | M | — | REJECTED (obsoleto: 13 specs e 127 testes já existem no repo, verificado 2026-07-22) |
 | 002  | Mask CPF/phone for LOJA & DISTRIBUIDOR (LGPD) | P1 | M | 001 | DONE (executor `678e531`, reviewed, merged) |
 | 003  | Fix unified refresh for STORE (and customer) tokens | P1 | S | 001 | TODO |
 | 004  | Paginate `warranty.findAll` (bound the claims query) | P2 | S | 001 | TODO |
+| 006  | Registrar vendas (Sale/SaleItem) + vigência de garantia por série | P1 | M | — | DONE (branch `advisor/006-sales`, revisado — não mergeado) |
+| 007  | Tela de venda na loja (PDV) + fila de curadoria de produtos | P1 | M | 006 | DONE (mesma branch, revisado — não mergeado) |
+| 008  | Aba "Compras" no cliente 360° (série + status de garantia) | P2 | S | 006, 007 (soft) | DONE (mesma branch, revisado — não mergeado) |
+| 009  | Fechar `RewardsController` (9 rotas sem autenticação + IDOR) | **P0** | S | — | DONE (branch `advisor/009-rewards-guards`, revisado — **não mergeado, mergear primeiro**) |
+
+> **Execução 009 — 2026-07-22.** Branch **`advisor/009-rewards-guards`**, worktree
+> `.claude/worktrees/agent-aa0b4f594d77ed37b`, criada direto de `bc6d86d` e
+> **independente da branch de vendas** — pode e deve ser mergeada primeiro, pois
+> corrige vulnerabilidade viva em produção. Verificado por mim no worktree:
+> build exit 0, **124 testes / 14 suites**, escopo = 2 arquivos, ambos em
+> `backend/src/rewards/`, zero mudanças no frontend. Auditoria das 10 rotas:
+> 1 pública (`GET catalog`) + 2 `CustomerJwtGuard` + 7 `JwtAuthGuard+RolesGuard`.
+> Os 2 testes novos falhariam na implementação antiga (asserem `customerId` do
+> token contra um `cli-VITIMA` vindo do body/URL).
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) | REJECTED (one-line rationale)
+
+> **Reconciled 2026-07-22 at `bc6d86d`** (após a call Adriano × Murilo de
+> 22/07/2026). 001–004 seguem válidos e não endereçados. Adicionados 006–008,
+> que implementam o bloco central acordado na call: registro de venda, vigência
+> de garantia por número de série, PDV da loja com nome comercial livre,
+> curadoria posterior, e a aba de compras no cliente 360°. **006 é bloqueante
+> para 007 e 008** — nada do fluxo de venda existe hoje no schema.
 
 > **Reconciled 2026-06-23 at `9472ed4`** (after the warranty resumo / tasks /
 > attachments / auto-generation work). Re-verified: 001–004 are all still valid
@@ -28,6 +49,21 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) | REJECTED 
 > `auth.refresh`, or `warranty.findAll`). Added 005 (a bug introduced by the
 > auto-task generation). 005 is the highest leverage (real bug, small fix) —
 > recommend it first, then 001.
+
+> **Execução 006/007/008 — 2026-07-22.** Os três foram executados por um
+> executor em worktree isolado e revisados por mim (advisor). Branch
+> **`advisor/006-sales`**, worktree em
+> `.claude/worktrees/agent-a1e9a59086901f439`, rebaseada em `bc6d86d`.
+> 12 commits. Verificado no worktree: backend build exit 0, **130 testes / 15
+> suites passando**, frontend build exit 0, eslint limpo em todos os arquivos
+> tocados, escopo sem nenhum arquivo fora das listas. **Não mergeada** — a
+> decisão de merge é do operador. Dois pontos para o review humano:
+> (a) `CustomerDetailPage.jsx` ganhou um `eslint-disable-next-line
+> react-hooks/exhaustive-deps` que **suprime** um warning pré-existente em vez
+> de corrigi-lo (a correção real é `useCallback` em `fetchCustomerData`);
+> (b) a migration `20260722000000_add_sales` **nunca foi aplicada a banco
+> nenhum** — aplicar em produção é passo separado, via
+> `npm run prisma:migrate:deploy`.
 
 ## Dependency notes
 
@@ -37,7 +73,39 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) | REJECTED 
   conventions 001 documents. None of 002/003/004 depend on each other — they
   touch disjoint files and may be done in any order after 001.
 
+- 007 e 008 dependem de **006** porque o modelo `Sale`/`SaleItem` e o campo
+  `warrantyEndsAt` não existem sem ele. 008 depende de 007 apenas de forma
+  fraca (007 cria `salesAPI` no frontend; 008 sabe criá-lo sozinho se preciso).
+
 ## Considered, not yet planned (deferred — ask before planning)
+
+- ~~**🔴 `RewardsController` sem guard de autenticação**~~ → **virou o plano 009**
+  em 2026-07-22, depois de resolver o bloqueio: os chamadores foram levantados
+  por grep (`CustomerCatalogPage.jsx:36,42,48` usa `getCatalog`/`getVouchers`/
+  `redeem` com token `type: 'CUSTOMER'`, que o `JwtAuthGuard` admin rejeita —
+  por isso o fix usa `CustomerJwtGuard` nessas duas rotas e deriva o
+  `customerId` do token). Detalhe original preservado abaixo para registro:
+- **🔴 `RewardsController` sem guard de autenticação** (segurança, ALTA, esforço S)
+  — `backend/src/rewards/rewards.controller.ts` não tem `@UseGuards` na classe, e
+  o único `APP_GUARD` global é o `ThrottlerGuard` (`app.module.ts:88-92`). Só
+  `POST vouchers/manual` (l.80) está protegido. Ficam **abertos sem autenticação**:
+  `POST /v1/rewards/redeem` (l.14 — recebe `customerId` no body: qualquer um
+  queima pontos de qualquer cliente), `POST/PATCH/DELETE /v1/rewards/catalog*`
+  (l.27, 45, 67 — CRUD de prêmios), `GET /v1/rewards/vouchers` e
+  `/vouchers/:customerId` (l.73, 104 — vazamento), `PATCH /vouchers/:code/use`
+  (l.98) e `POST /v1/rewards/seed` (l.110). Correção provável: `@UseGuards(JwtAuthGuard, RolesGuard)`
+  na classe + `@Roles` por rota, com o resgate movido para guard de cliente.
+  **Peça um plano antes de mexer** — precisa confirmar quais rotas o portal do
+  cliente consome hoje, senão quebra o resgate em produção.
+- **`GET /sales/coverage?serial=` para o Help Desk** (direction, S) — trivial
+  depois do plano 006, mas o contrato de resposta com o Help Desk ainda não foi
+  fechado na call. Planejar quando houver contrato.
+- **`CatalogItem.endsAt`** (direction, S) — o catálogo de prêmios tem
+  `pointsCost`, `stock`, `active`, `presaleUntil`, `presaleTier`
+  (`schema.prisma:995-1010`), mas não a "data de término" pedida na call.
+- **`Event.bannerUrl` / `stravaUrl` / disparo por segmento** (direction, S) —
+  `Event` tem `targetRoles` (`schema.prisma:608`) mas não banner, link Strava,
+  nem gatilho de WhatsApp/e-mail.
 
 - **`WarrantyService` god service (1222 lines)** — tech-debt; split tasks /
   attachments / templates / auto-generation into focused services. M effort,
