@@ -14,6 +14,7 @@ import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { CustomersModule } from './customers/customers.module';
 import { StoresModule } from './stores/stores.module';
 import { ProductsModule } from './products/products.module';
+import { SalesModule } from './sales/sales.module';
 import { WarrantyModule } from './warranty/warranty.module';
 import { BenefitsModule } from './benefits/benefits.module';
 import { InsuranceModule } from './insurance/insurance.module';
@@ -62,6 +63,7 @@ import { CommonModule } from './common/common.module';
     CustomersModule,
     StoresModule,
     ProductsModule,
+    SalesModule,
     WarrantyModule,
     BenefitsModule,
     InsuranceModule,
