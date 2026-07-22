@@ -79,8 +79,12 @@ export class SalesService {
       where.items = { some: { serialNumber: { contains: query.serial, mode: 'insensitive' } } };
     }
 
-    // Escopo por papel: loja só vê as próprias vendas.
+    // Escopo por papel: loja só vê as próprias vendas. Sem storeId, a loja
+    // não pode ver nada (senão storeId: null bateria com vendas sem loja).
     if (user?.role === 'LOJA') {
+      if (!user.storeId) {
+        throw new BadRequestException('Usuário de loja sem loja vinculada.');
+      }
       where.storeId = user.storeId;
     }
 
@@ -121,8 +125,15 @@ export class SalesService {
 
     // Escopo por papel: loja não pode ver venda de outra loja. Não vazamos a
     // existência do registro — mesma NotFoundException do "não existe".
-    if (user?.role === 'LOJA' && sale.storeId !== user.storeId) {
-      throw new NotFoundException('Venda não encontrada');
+    // Loja sem storeId vinculado nunca pode enxergar nada (senão null === null
+    // deixaria passar vendas sem loja).
+    if (user?.role === 'LOJA') {
+      if (!user.storeId) {
+        throw new BadRequestException('Usuário de loja sem loja vinculada.');
+      }
+      if (sale.storeId !== user.storeId) {
+        throw new NotFoundException('Venda não encontrada');
+      }
     }
 
     return sale;

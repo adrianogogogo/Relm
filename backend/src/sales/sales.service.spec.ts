@@ -1,4 +1,19 @@
-import { computeWarrantyEnd } from './sales.service';
+import { BadRequestException } from '@nestjs/common';
+import { computeWarrantyEnd, SalesService } from './sales.service';
+
+describe('SalesService.findAll — escopo por loja', () => {
+  it('rejeita com BadRequestException quando usuario LOJA nao tem storeId', async () => {
+    const prisma: any = {
+      user: { findUnique: jest.fn().mockResolvedValue({ role: 'LOJA', storeId: null }) },
+      sale: { findMany: jest.fn(), count: jest.fn() },
+      $transaction: jest.fn(),
+    };
+    const service = new SalesService(prisma);
+
+    await expect(service.findAll({}, 'user1')).rejects.toThrow(BadRequestException);
+    await expect(service.findAll({}, 'user1')).rejects.toThrow('Usuário de loja sem loja vinculada.');
+  });
+});
 
 describe('computeWarrantyEnd', () => {
   it('soma o prazo em dias a data da venda', () => {
