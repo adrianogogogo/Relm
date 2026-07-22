@@ -8,12 +8,12 @@ import {
 } from '@nestjs/common';
 import { PaymentsService, PaymentActor } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { StoreJwtGuard } from '../store-auth/store-jwt.guard';
+import { StorePaymentsGuard } from './store-payments.guard';
 
 // Controlador do portal da loja. Registra pagamentos que nascem PENDING
 // (aguardando confirmação da Relm) e lista os pagamentos da própria loja.
 @Controller('store/payments')
-@UseGuards(StoreJwtGuard)
+@UseGuards(StorePaymentsGuard)
 export class StorePaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 

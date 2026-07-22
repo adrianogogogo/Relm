@@ -72,17 +72,11 @@ export class FeedAudienceGuard implements CanActivate {
 
   private resolveAudience(payload: any): 'CLIENTE' | 'LOJA' | 'DISTRIBUIDOR' | null {
     if (payload.type === 'CUSTOMER') return 'CLIENTE';
-    if (payload.type === 'STORE') return 'LOJA';
-    // Token de User (sem type): resolve pelo role.
-    if (!payload.type && payload.role === 'DISTRIBUIDOR') return 'DISTRIBUIDOR';
-    // Equipe Relm (ADMIN/GERENTE/SUPORTE) pode consumir o feed para debug;
-    // tratamos como DISTRIBUIDOR-equivalente apenas para visualização? Não.
-    // Para não vazar segmentação, equipe Relm vê tudo via /admin; aqui
-    // resolvemos os papéis de portal. Demais Users sem audience de portal:
-    if (!payload.type && payload.role) {
-      // ADMIN_RELM / GERENTE_RELM / SUPORTE_RELM / LOJA não são audiences de
-      // portal de feed; retornamos null para evitar uso indevido.
-      return null;
+    if (payload.type === 'STORE' || payload.role === 'LOJA') return 'LOJA';
+    if (payload.role === 'DISTRIBUIDOR') return 'DISTRIBUIDOR';
+    // Equipe Relm (ADMIN/GERENTE/SUPORTE) pode consumir o feed do portal
+    if (['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'].includes(payload.role)) {
+      return 'LOJA';
     }
     return null;
   }

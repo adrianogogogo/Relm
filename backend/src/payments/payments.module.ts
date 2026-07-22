@@ -10,6 +10,7 @@ import { StorePaymentsController } from './store-payments.controller';
 import { CustomerPaymentsController } from './customer-payments.controller';
 import { ManualGatewayService } from './gateway/manual-gateway.service';
 import { PAYMENT_GATEWAY } from './gateway/payment-gateway.interface';
+import { StorePaymentsGuard } from './store-payments.guard';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { PAYMENT_GATEWAY } from './gateway/payment-gateway.interface';
   ],
   providers: [
     PaymentsService,
+    StorePaymentsGuard,
     // Drop-in: para plugar um gateway real, troque a classe abaixo.
     { provide: PAYMENT_GATEWAY, useClass: ManualGatewayService },
   ],
