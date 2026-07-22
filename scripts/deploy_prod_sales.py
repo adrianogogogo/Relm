@@ -132,6 +132,25 @@ out, _ = run(c, 'curl -s -o /dev/null -w "%%{http_code}" http://localhost:%d/api
 say('     /v1/rewards/catalog (publico)      -> %s  %s'
     % (out.strip(), 'OK' if out.strip() == '200' else 'INVESTIGAR'))
 
+# 6d) PROVA do plano 010: a listagem de garantias precisa escopar por loja e
+#     mascarar o contato do cliente. O teste completo exige token de lojista,
+#     entao aqui checamos o que da para checar sozinho: se o fix chegou ao
+#     BUILD. O processo roda dist/main — se o build falhar em silencio, src
+#     fica novo e o pm2 segue servindo codigo velho e vulneravel.
+say('   fix do plano 010 presente no build (dist):')
+ok_010 = True
+for termo, desc in (('where.storeId', 'escopo por loja'), ('shouldMaskFor', 'mascara de PII')):
+    out, _ = run(c, 'grep -rc "%s" %s/dist/warranty/warranty.service.js 2>/dev/null | head -1' % (termo, BE))
+    n = out.strip() or '0'
+    marca = 'OK' if n.isdigit() and int(n) > 0 else 'AUSENTE — BUILD NAO PEGOU O FIX'
+    if marca != 'OK':
+        ok_010 = False
+    say('     %-16s (%s) -> %s ocorrencia(s)  %s' % (termo, desc, n, marca))
+if not ok_010:
+    say('     >>> ATENCAO: o codigo em producao NAO tem a correcao do plano 010.')
+    say('     >>> A listagem de garantias ainda vaza dados de outras lojas.')
+    say('     >>> Rollback: %s' % bak)
+
 c.close()
 say('')
 say('=== DEPLOY PRODUCAO CONCLUIDO ===')
@@ -145,3 +164,7 @@ say('  2. Conferir "Em garantia ate <data>" no cliente 360 (aba Compras)')
 say('  3. Logar como ADMIN -> /admin/curadoria -> vincular o item ao catalogo')
 say('  4. Logar como CLIENTE -> /cliente/resgate -> confirmar que o resgate ainda funciona')
 say('     (teste critico do plano 009 — o guard nao pode ter quebrado o portal)')
+say('  5. Logar como LOJA -> /loja/garantias -> confirmar que aparecem SO os')
+say('     chamados da propria loja e que o telefone vem mascarado, tipo')
+say('     "(11) 9****-4321". Se vier chamado de outra loja ou telefone inteiro,')
+say('     o fix do plano 010 nao esta ativo — investigue antes de seguir.')
