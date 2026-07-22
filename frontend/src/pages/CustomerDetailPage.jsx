@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MdLocationOn, MdEvent, MdArrowBack, MdVpnKey } from 'react-icons/md';
-import api, { insuranceAPI, customersAPI } from '../services/api';
+import api, { insuranceAPI, customersAPI, salesAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Card, StatusChip, StatCard } from '../components/ui';
 import AdminResetPasswordModal from '../components/AdminResetPasswordModal';
+
+// Status de garantia de uma linha de venda, derivado de warrantyEndsAt.
+// null = vendido sem garantia; passado = expirada; futuro = vigente.
+function warrantyStatus(warrantyEndsAt) {
+  if (!warrantyEndsAt) return { label: 'Sem garantia', tone: 'neutral' };
+  const end = new Date(warrantyEndsAt);
+  if (end.getTime() < Date.now()) {
+    return { label: `Expirada em ${end.toLocaleDateString('pt-BR')}`, tone: 'danger' };
+  }
+  return { label: `Em garantia até ${end.toLocaleDateString('pt-BR')}`, tone: 'success' };
+}
 
 export default function CustomerDetailPage() {
   const { id } = useParams();
@@ -13,6 +24,7 @@ export default function CustomerDetailPage() {
   const [insurances, setInsurances] = useState([]);
   const [events, setEvents] = useState([]);
   const [stores, setStores] = useState([]);
+  const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [showResetPassword, setShowResetPassword] = useState(false);
@@ -22,17 +34,19 @@ export default function CustomerDetailPage() {
 
   useEffect(() => {
     fetchCustomerData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchCustomerData = async () => {
     try {
       setLoading(true);
-      const [customerRes, warrantiesRes, eventsRes, storesRes, insurancesRes] = await Promise.all([
+      const [customerRes, warrantiesRes, eventsRes, storesRes, insurancesRes, salesRes] = await Promise.all([
         api.get(`/customers/${id}`),
         api.get(`/warranty/claims?customerId=${id}`),
         api.get('/public/events'),
         api.get('/stores'),
         insuranceAPI.getAll({ customerId: id }),
+        salesAPI.getAll({ customerId: id, limit: 100 }),
       ]);
 
       setCustomer(customerRes.data);
@@ -40,6 +54,8 @@ export default function CustomerDetailPage() {
       setEvents(eventsRes.data);
       setStores(storesRes.data);
       setInsurances(insurancesRes);
+      // salesAPI.getAll já devolve o corpo da resposta ({ data, total, page, limit }).
+      setSales(salesRes?.data || []);
     } catch (error) {
       console.error('Erro ao carregar dados do cliente:', error);
     } finally {
@@ -51,11 +67,21 @@ export default function CustomerDetailPage() {
 
   const tabs = [
     { id: 'overview', label: 'Visão Geral' },
+    { id: 'purchases', label: 'Compras' },
     { id: 'warranties', label: 'Garantias' },
     { id: 'insurances', label: 'Seguros' },
     { id: 'events', label: 'Eventos' },
     { id: 'stores', label: 'Lojas Próximas' },
   ];
+
+  // Total de itens vendidos ainda em garantia (warrantyEndsAt no futuro),
+  // somando todas as vendas do cliente.
+  const activeWarrantyItemsCount = sales.reduce(
+    (count, sale) => count + (sale.items || []).filter(
+      (item) => item.warrantyEndsAt && new Date(item.warrantyEndsAt).getTime() >= Date.now(),
+    ).length,
+    0,
+  );
 
   if (loading) {
     return (
@@ -146,7 +172,7 @@ export default function CustomerDetailPage() {
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <StatCard
                     title="Garantias Ativas"
                     value={warranties.filter((w) => w.status === 'ACTIVE').length}
@@ -158,6 +184,7 @@ export default function CustomerDetailPage() {
                     color="#4CAF50"
                   />
                   <StatCard title="Eventos Inscritos" value={0} color="#9C27B0" />
+                  <StatCard title="Produtos em Garantia" value={activeWarrantyItemsCount} color="#FF9800" />
                 </div>
 
                 <div className="bg-gray-50 dark:bg-slate-900/40 rounded-lg p-4">
@@ -183,6 +210,52 @@ export default function CustomerDetailPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Purchases Tab */}
+            {activeTab === 'purchases' && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-slate-100">Compras do Cliente</h3>
+                {sales.length === 0 ? (
+                  <p className="text-gray-500 dark:text-slate-400">Nenhuma compra registrada</p>
+                ) : (
+                  <div className="space-y-4">
+                    {sales.map((sale) => (
+                      <div key={sale.id} className="border border-gray-200 dark:border-slate-800 rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <p className="font-semibold text-gray-900 dark:text-slate-100">
+                            Venda de {new Date(sale.saleDate).toLocaleDateString('pt-BR')}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-slate-400">
+                            NF {sale.invoiceNumber || '—'}
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          {(sale.items || []).map((item) => {
+                            const status = warrantyStatus(item.warrantyEndsAt);
+                            const variant = status.tone === 'danger' ? 'error' : status.tone === 'success' ? 'success' : 'neutral';
+                            return (
+                              <div
+                                key={item.id}
+                                className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 dark:border-slate-800 pt-2 first:border-t-0 first:pt-0"
+                              >
+                                <div>
+                                  <p className="font-medium text-gray-900 dark:text-slate-100">{item.commercialName}</p>
+                                  <p className="text-xs text-gray-500 dark:text-slate-400">
+                                    Série: <span className="font-mono text-sm text-gray-600 dark:text-slate-400">{item.serialNumber || '—'}</span>
+                                    {' • '}Qtd: {item.quantity}
+                                  </p>
+                                </div>
+                                <StatusChip label={status.label} variant={variant} />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
