@@ -193,7 +193,7 @@ export default function CustomerDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <StatCard
                     title="Garantias Ativas"
-                    value={warranties.filter((w) => w.status === 'ACTIVE').length}
+                    value={warranties.filter((w) => w.statusId !== 9 && w.statusId !== 10).length}
                     color="#1565C0"
                   />
                   <StatCard
@@ -289,24 +289,24 @@ export default function CustomerDetailPage() {
                       <div key={warranty.id} className="border border-gray-200 dark:border-slate-800 rounded-lg p-4">
                         <div className="flex justify-between items-start">
                           <div>
-                            <p className="font-semibold text-gray-900 dark:text-slate-100">{warranty.productName}</p>
+                            <p className="font-semibold text-gray-900 dark:text-slate-100">
+                              {warranty.product?.model || 'Produto Relm'}
+                            </p>
                             <p className="text-sm text-gray-500 dark:text-slate-400">
                               Protocolo: {warranty.protocolNumber}
                             </p>
                             <p className="text-sm text-gray-500 dark:text-slate-400">
-                              Data de compra: {new Date(warranty.purchaseDate).toLocaleDateString('pt-BR')}
+                              Data de cadastro: {new Date(warranty.createdAt).toLocaleDateString('pt-BR')}
                             </p>
                           </div>
-                          <StatusChip
-                            label={warranty.status}
-                            variant={
-                              warranty.status === 'ACTIVE'
-                                ? 'success'
-                                : warranty.status === 'EXPIRED'
-                                ? 'neutral'
-                                : 'warning'
-                            }
-                          />
+                          {warranty.statusDef ? (
+                            <StatusChip
+                              label={warranty.statusDef.name}
+                              color={warranty.statusDef.color}
+                            />
+                          ) : (
+                            <StatusChip label="Pendente" color="#666666" />
+                          )}
                         </div>
                       </div>
                     ))}
