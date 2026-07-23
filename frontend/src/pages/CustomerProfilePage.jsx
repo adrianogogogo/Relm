@@ -2,7 +2,17 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customerPortalAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import { Card, PageHeader, Button } from '../components/ui';
+import {
+  KineticCard,
+  KineticPageHeader,
+  KineticStatCard,
+  KineticButton,
+  KineticInput,
+  StatsMarquee,
+  NoiseTexture,
+  AnimatedSection,
+} from '../components/ui/kinetic';
+import { MdLock, MdShoppingCart, MdVerifiedUser, MdCalendarToday } from 'react-icons/md';
 
 export default function CustomerProfilePage() {
   const { user } = useAuthStore();
@@ -129,6 +139,18 @@ export default function CustomerProfilePage() {
     });
   };
 
+  // Derive stats for marquee
+  const memberSince = data?.createdAt
+    ? new Date(data.createdAt).toLocaleDateString('pt-BR', { year: 'numeric', month: 'long' })
+    : null;
+
+  const marqueeItems = [
+    { value: data?.totalPurchases || '0', label: 'Compras' },
+    { value: data?.activeWarranties || '0', label: 'Garantias Ativas' },
+    ...(memberSince ? [{ value: memberSince, label: 'Cliente Desde' }] : []),
+    { value: data?.points || '0', label: 'Pontos' },
+  ];
+
   const fields = [
     { label: 'Nome completo', value: data?.fullName },
     { label: 'E-mail', value: data?.email },
@@ -141,209 +163,259 @@ export default function CustomerProfilePage() {
   ];
 
   return (
-    <div className="py-8 px-6">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <PageHeader title="Meu Perfil" subtitle="Seus dados cadastrais na Relm Care+" />
+    <div className="relative min-h-screen">
+      {/* Noise texture overlay */}
+      <NoiseTexture />
 
-        {isLoading ? (
-          <div className="flex justify-center py-16">
-            <span className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          </div>
-        ) : (
-          <>
-            {/* CARD DE INFORMAÇÕES DE PERFIL */}
-            <Card>
-              <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-100 dark:border-slate-800/60">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 dark:bg-primary-400/15 flex items-center justify-center text-2xl font-bold text-primary dark:text-primary-400 shrink-0">
-                    {data?.fullName?.charAt(0)?.toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xl font-bold text-gray-800 dark:text-slate-100 truncate">{data?.fullName}</p>
-                    <p className="text-gray-500 dark:text-slate-400 text-sm truncate">{data?.email}</p>
-                  </div>
+      <div className="py-8 px-4 md:px-8">
+        <div className="max-w-[90vw] lg:max-w-5xl mx-auto space-y-0">
+
+          {/* ── KINETIC PAGE HEADER ── */}
+          <AnimatedSection className="mb-2">
+            <KineticPageHeader
+              name={data?.fullName || 'Meu Perfil'}
+              subtitle={data?.email}
+              badge={
+                data?.createdAt
+                  ? `Cliente desde ${new Date(data.createdAt).toLocaleDateString('pt-BR')}`
+                  : null
+              }
+            />
+          </AnimatedSection>
+
+          {isLoading ? (
+            <div className="flex justify-center py-32">
+              <span className="h-10 w-10 border-2 border-primary dark:border-primary-400 border-t-transparent animate-spin" />
+            </div>
+          ) : (
+            <>
+              {/* ── STATS MARQUEE ── */}
+              <AnimatedSection delay={0.1} className="mb-8">
+                <StatsMarquee items={marqueeItems} speed={60} />
+              </AnimatedSection>
+
+              {/* ── STAT CARDS GRID ── */}
+              <AnimatedSection delay={0.2} className="mb-8">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-kinetic-border dark:bg-kinetic-border-dark">
+                  <KineticStatCard
+                    value={data?.totalPurchases || '0'}
+                    label="Compras"
+                    icon={MdShoppingCart}
+                  />
+                  <KineticStatCard
+                    value={data?.activeWarranties || '0'}
+                    label="Garantias"
+                    icon={MdVerifiedUser}
+                  />
+                  <KineticStatCard
+                    value={data?.points || '0'}
+                    label="Pontos"
+                    bgNumber="★"
+                  />
+                  <KineticStatCard
+                    value={
+                      data?.createdAt
+                        ? `${Math.floor((Date.now() - new Date(data.createdAt).getTime()) / (1000 * 60 * 60 * 24))}d`
+                        : '—'
+                    }
+                    label="Tempo de conta"
+                    icon={MdCalendarToday}
+                  />
                 </div>
-                {!isEditing && (
-                  <Button variant="outline" onClick={startEditing}>
-                    Editar Perfil
-                  </Button>
-                )}
-              </div>
+              </AnimatedSection>
 
-              {isEditing ? (
-                <form onSubmit={handleProfileSubmit} className="space-y-4">
-                  {profileError && (
-                    <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 rounded text-sm font-medium">
-                      {profileError}
-                    </div>
-                  )}
-                  {profileSuccess && (
-                    <div className="p-3 bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400 rounded text-sm font-medium">
-                      {profileSuccess}
-                    </div>
-                  )}
+              {/* ── CARD DE INFORMAÇÕES DE PERFIL ── */}
+              <AnimatedSection delay={0.3} className="mb-8">
+                <KineticCard>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 pb-6 border-b-2 border-kinetic-border dark:border-kinetic-border-dark">
+                    <h2 className="font-kinetic text-2xl md:text-3xl font-bold uppercase tracking-tighter text-kinetic-fg dark:text-kinetic-fg-dark">
+                      Dados Pessoais
+                    </h2>
+                    {!isEditing && (
+                      <KineticButton variant="outline" size="sm" onClick={startEditing} className="mt-4 sm:mt-0">
+                        Editar Perfil
+                      </KineticButton>
+                    )}
+                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nome Completo *</label>
-                      <input
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Telefone *</label>
-                      <input
-                        type="text"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100"
-                        required
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Endereço</label>
-                      <input
-                        type="text"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Cidade</label>
-                      <input
-                        type="text"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Estado</label>
-                        <input
+                  {isEditing ? (
+                    <form onSubmit={handleProfileSubmit} className="space-y-6">
+                      {profileError && (
+                        <div className="p-4 border-l-4 border-error bg-error-50 dark:bg-error/10 text-error dark:text-error-100 font-kinetic text-sm font-medium">
+                          {profileError}
+                        </div>
+                      )}
+                      {profileSuccess && (
+                        <div className="p-4 border-l-4 border-success bg-success-50 dark:bg-success/10 text-success dark:text-success-100 font-kinetic text-sm font-medium">
+                          {profileSuccess}
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                        <KineticInput
+                          label="Nome Completo"
                           type="text"
-                          value={state}
-                          onChange={(e) => setState(e.target.value)}
-                          className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          required
+                        />
+                        <KineticInput
+                          label="Telefone"
+                          type="text"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          required
+                        />
+                        <div className="sm:col-span-2">
+                          <KineticInput
+                            label="Endereço"
+                            type="text"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                          />
+                        </div>
+                        <KineticInput
+                          label="Cidade"
+                          type="text"
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                        />
+                        <div className="grid grid-cols-2 gap-6">
+                          <KineticInput
+                            label="Estado"
+                            type="text"
+                            value={state}
+                            onChange={(e) => setState(e.target.value)}
+                          />
+                          <KineticInput
+                            label="CEP"
+                            type="text"
+                            value={zipCode}
+                            onChange={(e) => setZipCode(e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3 justify-end pt-6 border-t-2 border-kinetic-border dark:border-kinetic-border-dark">
+                        <KineticButton
+                          variant="ghost"
+                          size="sm"
+                          type="button"
+                          onClick={() => setIsEditing(false)}
+                          disabled={updateProfileMutation.isLoading}
+                        >
+                          Cancelar
+                        </KineticButton>
+                        <KineticButton
+                          type="submit"
+                          size="sm"
+                          disabled={updateProfileMutation.isLoading}
+                        >
+                          {updateProfileMutation.isLoading ? 'Salvando...' : 'Salvar Alterações'}
+                        </KineticButton>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      {fields.map((f) => (
+                        <div key={f.label} className="group/field">
+                          <p className="font-kinetic text-xs uppercase tracking-widest font-medium text-kinetic-fg-muted dark:text-kinetic-fg-muted-dark mb-1">
+                            {f.label}
+                          </p>
+                          <p className="font-kinetic text-lg font-semibold text-kinetic-fg dark:text-kinetic-fg-dark group-hover/field:translate-x-2 transition-transform duration-300">
+                            {f.value || '—'}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </KineticCard>
+              </AnimatedSection>
+
+              {/* ── SEÇÃO ALTERAR SENHA ── */}
+              <AnimatedSection delay={0.4}>
+                <KineticCard>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 border-b-2 border-kinetic-border dark:border-kinetic-border-dark mb-6">
+                    <div className="flex items-center gap-3">
+                      <MdLock className="text-2xl text-primary dark:text-primary-400" />
+                      <div>
+                        <h2 className="font-kinetic text-2xl md:text-3xl font-bold uppercase tracking-tighter text-kinetic-fg dark:text-kinetic-fg-dark">
+                          Segurança
+                        </h2>
+                        <p className="font-kinetic text-sm text-kinetic-fg-muted dark:text-kinetic-fg-muted-dark">
+                          Gerencie sua senha de acesso
+                        </p>
+                      </div>
+                    </div>
+                    {!isChangingPassword && (
+                      <KineticButton variant="outline" size="sm" onClick={() => setIsChangingPassword(true)} className="mt-4 sm:mt-0">
+                        Alterar Senha
+                      </KineticButton>
+                    )}
+                  </div>
+
+                  {isChangingPassword && (
+                    <form onSubmit={handlePasswordSubmit} className="space-y-6">
+                      {passwordError && (
+                        <div className="p-4 border-l-4 border-error bg-error-50 dark:bg-error/10 text-error dark:text-error-100 font-kinetic text-sm font-medium">
+                          {passwordError}
+                        </div>
+                      )}
+                      {passwordSuccess && (
+                        <div className="p-4 border-l-4 border-success bg-success-50 dark:bg-success/10 text-success dark:text-success-100 font-kinetic text-sm font-medium">
+                          {passwordSuccess}
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                        <KineticInput
+                          label="Senha Atual"
+                          type="password"
+                          value={oldPassword}
+                          onChange={(e) => setOldPassword(e.target.value)}
+                          required
+                        />
+                        <KineticInput
+                          label="Nova Senha"
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          required
+                        />
+                        <KineticInput
+                          label="Confirmar Nova Senha"
+                          type="password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
                         />
                       </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">CEP</label>
-                        <input
-                          type="text"
-                          value={zipCode}
-                          onChange={(e) => setZipCode(e.target.value)}
-                          className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100"
-                        />
+
+                      <div className="flex gap-3 justify-end pt-6 border-t-2 border-kinetic-border dark:border-kinetic-border-dark">
+                        <KineticButton
+                          variant="ghost"
+                          size="sm"
+                          type="button"
+                          onClick={() => setIsChangingPassword(false)}
+                          disabled={updatePasswordMutation.isLoading}
+                        >
+                          Cancelar
+                        </KineticButton>
+                        <KineticButton
+                          type="submit"
+                          size="sm"
+                          disabled={updatePasswordMutation.isLoading}
+                        >
+                          {updatePasswordMutation.isLoading ? 'Salvando...' : 'Salvar Nova Senha'}
+                        </KineticButton>
                       </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 justify-end pt-4 border-t border-gray-100 dark:border-slate-800/60">
-                    <Button variant="ghost" type="button" onClick={() => setIsEditing(false)} disabled={updateProfileMutation.isLoading}>
-                      Cancelar
-                    </Button>
-                    <Button type="submit" disabled={updateProfileMutation.isLoading}>
-                      {updateProfileMutation.isLoading ? 'Salvando...' : 'Salvar Alterações'}
-                    </Button>
-                  </div>
-                </form>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {fields.map((f) => (
-                    <div key={f.label}>
-                      <p className="text-xs text-gray-400 dark:text-slate-500 uppercase font-semibold mb-1">{f.label}</p>
-                      <p className="text-gray-800 dark:text-slate-200">{f.value || '—'}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {data?.createdAt && !isEditing && (
-                <p className="text-xs text-gray-400 dark:text-slate-500 mt-6 pt-4 border-t border-gray-100 dark:border-slate-800/60">
-                  Cliente desde {new Date(data.createdAt).toLocaleDateString('pt-BR')}
-                </p>
-              )}
-            </Card>
-
-            {/* SEÇÃO ALTERAR SENHA */}
-            <Card>
-              <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-slate-800/60 mb-4">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-800 dark:text-slate-200">Segurança da Conta</h3>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">Gerencie sua senha de acesso</p>
-                </div>
-                {!isChangingPassword && (
-                  <Button variant="outline" onClick={() => setIsChangingPassword(true)}>
-                    Alterar Senha
-                  </Button>
-                )}
-              </div>
-
-              {isChangingPassword && (
-                <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                  {passwordError && (
-                    <div className="p-3 bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 rounded text-sm font-medium">
-                      {passwordError}
-                    </div>
+                    </form>
                   )}
-                  {passwordSuccess && (
-                    <div className="p-3 bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400 rounded text-sm font-medium">
-                      {passwordSuccess}
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Senha Atual</label>
-                      <input
-                        type="password"
-                        value={oldPassword}
-                        onChange={(e) => setOldPassword(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Nova Senha</label>
-                      <input
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Confirmar Nova Senha</label>
-                      <input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-md dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 justify-end pt-4 border-t border-gray-100 dark:border-slate-800/60">
-                    <Button variant="ghost" type="button" onClick={() => setIsChangingPassword(false)} disabled={updatePasswordMutation.isLoading}>
-                      Cancelar
-                    </Button>
-                    <Button type="submit" disabled={updatePasswordMutation.isLoading}>
-                      {updatePasswordMutation.isLoading ? 'Salvando...' : 'Salvar Nova Senha'}
-                    </Button>
-                  </div>
-                </form>
-              )}
-            </Card>
-          </>
-        )}
+                </KineticCard>
+              </AnimatedSection>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

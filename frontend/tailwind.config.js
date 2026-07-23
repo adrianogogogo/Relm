@@ -10,6 +10,7 @@ export default {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
         title: ['"Plus Jakarta Sans"', 'sans-serif'],
+        kinetic: ['"Space Grotesk"', 'sans-serif'],
       },
       colors: {
         // Cor de marca (azul corporativo do design system) — ancorada em #1565C0
@@ -78,6 +79,21 @@ export default {
         surface: '#ffffff',      // fundo de cards/superfícies (claro)
         'app-dark': '#0a1929',   // fundo escuro da aplicação
         'surface-dark': '#0d2137', // superfície escura (mesmo tom do topo da sidebar)
+        // Kinetic Typography tokens
+        kinetic: {
+          bg: '#f8fafc',           // fundo claro das seções kinetic
+          'bg-dark': '#09090B',    // fundo escuro (rich black)
+          accent: '#42a5f5',       // accent cinético light (primary-400)
+          'accent-dark': '#64b5f6',// accent cinético dark (primary-300)
+          muted: '#e2e8f0',        // elementos decorativos light
+          'muted-dark': '#27272A', // elementos decorativos dark (zinc-800)
+          border: '#cbd5e1',       // bordas light (slate-300)
+          'border-dark': '#3F3F46',// bordas dark (zinc-700)
+          fg: '#0f172a',           // foreground light (slate-900)
+          'fg-dark': '#FAFAFA',    // foreground dark (off-white)
+          'fg-muted': '#64748b',   // texto secundário light (slate-500)
+          'fg-muted-dark': '#A1A1AA', // texto secundário dark (zinc-400)
+        },
       },
       backgroundImage: {
         'sidebar-gradient': 'linear-gradient(180deg, #0d2137 0%, #1a3a5c 100%)',
@@ -86,7 +102,17 @@ export default {
       boxShadow: {
         card: '0 2px 12px rgba(0,0,0,0.06)',
       },
+      keyframes: {
+        'marquee-scroll': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+      },
+      animation: {
+        'marquee-scroll': 'marquee-scroll 20s linear infinite',
+      },
     },
   },
   plugins: [],
 }
+

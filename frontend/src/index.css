@@ -44,6 +44,30 @@
   .label {
     @apply block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2;
   }
+
+  /* ── Kinetic Typography component classes ── */
+  .kinetic-card {
+    @apply bg-white dark:bg-kinetic-bg-dark border-2 border-kinetic-border dark:border-kinetic-border-dark
+           rounded-none p-8 transition-all duration-300 relative overflow-hidden;
+  }
+
+  .kinetic-card-hover:hover {
+    @apply bg-primary dark:bg-primary-400 border-primary dark:border-primary-400;
+  }
+
+  .kinetic-input {
+    @apply w-full bg-transparent border-0 border-b-2 border-kinetic-border dark:border-kinetic-border-dark
+           rounded-none px-0 py-3 font-kinetic text-xl md:text-2xl font-bold
+           text-kinetic-fg dark:text-kinetic-fg-dark
+           placeholder:text-kinetic-muted dark:placeholder:text-kinetic-muted-dark
+           focus:outline-none focus:border-primary dark:focus:border-primary-400
+           transition-colors duration-200;
+  }
+
+  .kinetic-label {
+    @apply block font-kinetic text-xs font-medium uppercase tracking-widest
+           text-kinetic-fg-muted dark:text-kinetic-fg-muted-dark mb-2;
+  }
 }
 
 @layer utilities {
