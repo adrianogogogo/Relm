@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useSidebarStore } from '../store/sidebarStore';
@@ -24,89 +25,126 @@ import {
   MdStorefront,
   MdAnalytics,
   MdRule,
-  MdPointOfSale,
-  MdReceiptLong,
+  MdSettings,
+  MdExpandMore,
+  MdExpandLess,
 } from 'react-icons/md';
 import { FaWhatsapp } from 'react-icons/fa';
 
-const MENU_ITEMS = [
+const MENU_SECTIONS = [
   {
-    path: '/admin',
-    label: 'Dashboard',
-    icon: MdDashboard,
-    exact: true,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
+    title: 'Operacional',
+    items: [
+      {
+        path: '/admin',
+        label: 'Dashboard',
+        icon: MdDashboard,
+        exact: true,
+        roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
+      },
+      {
+        path: '/admin/customers',
+        label: 'Clientes',
+        icon: MdPeople,
+        roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
+      },
+      {
+        path: '/admin/stores',
+        label: 'Lojas',
+        icon: MdStore,
+        roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
+      },
+      {
+        path: '/admin/pagamentos',
+        label: 'Pagamentos (Anuidade)',
+        icon: MdPayments,
+        roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+      },
+      {
+        path: '/admin/insurances',
+        label: 'Cotações de Seguro',
+        icon: MdDescription,
+        roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
+      },
+    ],
   },
   {
-    path: '/admin/catalogo',
-    label: 'Catálogo Prêmios',
-    icon: MdStars,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+    title: 'Catálogo & Clube',
+    items: [
+      {
+        path: '/admin/catalogo',
+        label: 'Catálogo Prêmios',
+        icon: MdStars,
+        roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+      },
+      {
+        path: '/admin/vouchers',
+        label: 'Vouchers Resgatados',
+        icon: MdReceipt,
+        roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
+      },
+      {
+        path: '/admin/produtos',
+        label: 'Produtos',
+        icon: MdPedalBike,
+        roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+      },
+      {
+        path: '/admin/curadoria',
+        label: 'Curadoria de Produtos',
+        icon: MdRule,
+        roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+      },
+      {
+        path: '/admin/relatorios-clube',
+        label: 'Relatórios do Clube',
+        icon: MdAnalytics,
+        roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+      },
+    ],
   },
   {
-    path: '/admin/vouchers',
-    label: 'Vouchers Resgatados',
-    icon: MdReceipt,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
+    title: 'Conteúdo & Engajamento',
+    items: [
+      {
+        path: '/admin/events',
+        label: 'Eventos',
+        icon: MdEvent,
+        roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
+      },
+      {
+        path: '/admin/benefits',
+        label: 'Benefícios',
+        icon: MdCardGiftcard,
+        roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
+      },
+      {
+        path: '/admin/meus-eventos',
+        label: 'Eventos',
+        icon: MdEvent,
+        roles: ['DISTRIBUIDOR'],
+      },
+      {
+        path: '/admin/meus-beneficios',
+        label: 'Benefícios',
+        icon: MdCardGiftcard,
+        roles: ['DISTRIBUIDOR'],
+      },
+    ],
   },
-  {
-    path: '/admin/customers',
-    label: 'Clientes',
-    icon: MdPeople,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
-  },
-  {
-    path: '/admin/stores',
-    label: 'Lojas',
-    icon: MdStore,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
-  },
-  {
-    path: '/admin/produtos',
-    label: 'Produtos',
-    icon: MdPedalBike,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
-  },
-  {
-    path: '/admin/curadoria',
-    label: 'Curadoria de Produtos',
-    icon: MdRule,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
-  },
-  {
-    path: '/admin/events',
-    label: 'Eventos',
-    icon: MdEvent,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
-  },
-  {
-    path: '/admin/benefits',
-    label: 'Benefícios',
-    icon: MdCardGiftcard,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
-  },
-  {
-    path: '/admin/meus-eventos',
-    label: 'Eventos',
-    icon: MdEvent,
-    roles: ['DISTRIBUIDOR'],
-  },
-  {
-    path: '/admin/meus-beneficios',
-    label: 'Benefícios',
-    icon: MdCardGiftcard,
-    roles: ['DISTRIBUIDOR'],
-  },
-  {
-    path: '/admin/pagamentos',
-    label: 'Pagamentos (Anuidade)',
-    icon: MdPayments,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
-  },
+];
+
+const CONFIG_ITEMS = [
   {
     path: '/admin/whatsapp',
     label: 'WhatsApp',
     icon: FaWhatsapp,
+    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+  },
+  {
+    path: '/admin/banners',
+    label: 'Banners',
+    icon: MdImage,
     roles: ['ADMIN_RELM', 'GERENTE_RELM'],
   },
   {
@@ -116,22 +154,10 @@ const MENU_ITEMS = [
     roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
   },
   {
-    path: '/admin/relatorios-clube',
-    label: 'Relatórios do Clube',
-    icon: MdAnalytics,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
-  },
-  {
-    path: '/admin/insurances',
-    label: 'Cotações de Seguro',
-    icon: MdDescription,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
-  },
-  {
-    path: '/admin/banners',
-    label: 'Banners',
-    icon: MdImage,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+    path: '/admin/club-settings',
+    label: 'Regras do Clube',
+    icon: MdSettings,
+    roles: ['ADMIN_RELM'],
   },
   {
     path: '/admin/users',
@@ -152,14 +178,38 @@ export default function AdminLayout() {
   const { user, logout } = useAuthStore();
   const { collapsed, toggle } = useSidebarStore();
 
-  const visibleItems = MENU_ITEMS.filter((item) =>
+  const visibleSections = MENU_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => item.roles.includes(user?.role)),
+  })).filter((section) => section.items.length > 0);
+
+  const visibleConfigItems = CONFIG_ITEMS.filter((item) =>
     item.roles.includes(user?.role)
   );
+
+  const isConfigActive = visibleConfigItems.some((item) =>
+    location.pathname.startsWith(item.path)
+  );
+
+  const [isConfigOpen, setIsConfigOpen] = useState(isConfigActive);
+
+  useEffect(() => {
+    if (isConfigActive) {
+      setIsConfigOpen(true);
+    }
+  }, [location.pathname, isConfigActive]);
 
   const isActive = (item) =>
     item.exact
       ? location.pathname === item.path
       : location.pathname.startsWith(item.path);
+
+  const allItems = [
+    ...MENU_SECTIONS.flatMap((s) => s.items),
+    ...CONFIG_ITEMS,
+  ];
+
+  const currentActiveItem = allItems.find((m) => isActive(m));
 
   return (
     <div className="flex min-h-screen bg-app dark:bg-app-dark transition-colors duration-300">
@@ -206,30 +256,101 @@ export default function AdminLayout() {
         )}
 
         {/* Menu — item ativo destacado com bg-white/10 + realce primary, inativos translúcidos */}
-        <nav className={`flex-1 overflow-y-auto py-4 ${collapsed ? 'px-2' : 'px-3'} space-y-1`}>
-          {visibleItems.map((item) => {
-            const active = isActive(item);
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                title={collapsed ? item.label : undefined}
-                className={`flex items-center gap-3 ${
+        <nav className={`flex-1 overflow-y-auto py-4 ${collapsed ? 'px-2' : 'px-3'} space-y-4`}>
+          {visibleSections.map((section, idx) => (
+            <div key={section.title || idx} className="space-y-1">
+              {!collapsed && section.title && (
+                <p className="px-3 text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-1">
+                  {section.title}
+                </p>
+              )}
+              {section.items.map((item) => {
+                const active = isActive(item);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    title={collapsed ? item.label : undefined}
+                    className={`flex items-center gap-3 ${
+                      collapsed ? 'justify-center px-2' : 'px-3'
+                    } py-2.5 rounded-lg transition-all text-sm border-l-4 ${
+                      active
+                        ? 'bg-white/10 text-white font-semibold border-l-primary-300'
+                        : 'text-white/75 font-normal border-l-transparent hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <item.icon
+                      size={20}
+                      className={`shrink-0 ${active ? 'text-white' : 'text-white/65'}`}
+                    />
+                    {!collapsed && <span className="truncate">{item.label}</span>}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+
+          {/* Grupo de Configurações */}
+          {visibleConfigItems.length > 0 && (
+            <div className="pt-2 border-t border-white/10 space-y-1">
+              {!collapsed && (
+                <p className="px-3 text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-1">
+                  Sistema
+                </p>
+              )}
+              <button
+                onClick={() => setIsConfigOpen(!isConfigOpen)}
+                title={collapsed ? 'Configurações' : undefined}
+                className={`flex items-center justify-between w-full ${
                   collapsed ? 'justify-center px-2' : 'px-3'
                 } py-2.5 rounded-lg transition-all text-sm border-l-4 ${
-                  active
+                  isConfigActive
                     ? 'bg-white/10 text-white font-semibold border-l-primary-300'
                     : 'text-white/75 font-normal border-l-transparent hover:bg-white/5 hover:text-white'
                 }`}
               >
-                <item.icon
-                  size={20}
-                  className={`shrink-0 ${active ? 'text-white' : 'text-white/65'}`}
-                />
-                {!collapsed && <span className="truncate">{item.label}</span>}
-              </Link>
-            );
-          })}
+                <div className="flex items-center gap-3 min-w-0">
+                  <MdSettings
+                    size={20}
+                    className={`shrink-0 ${isConfigActive ? 'text-white' : 'text-white/65'}`}
+                  />
+                  {!collapsed && <span className="truncate">Configurações</span>}
+                </div>
+                {!collapsed && (
+                  isConfigOpen ? <MdExpandLess size={18} className="text-white/70" /> : <MdExpandMore size={18} className="text-white/70" />
+                )}
+              </button>
+
+              {/* Sub-itens de Configurações */}
+              {(isConfigOpen || collapsed) && (
+                <div className={`${collapsed ? 'space-y-1' : 'pl-4 space-y-1 mt-1 border-l border-white/10 ml-4'}`}>
+                  {visibleConfigItems.map((item) => {
+                    const active = isActive(item);
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        title={collapsed ? item.label : undefined}
+                        className={`flex items-center gap-3 ${
+                          collapsed ? 'justify-center px-2' : 'px-3'
+                        } py-2 rounded-lg transition-all text-sm border-l-4 ${
+                          active
+                            ? 'bg-white/15 text-white font-semibold border-l-primary-300'
+                            : 'text-white/70 font-normal border-l-transparent hover:bg-white/5 hover:text-white'
+                        }`}
+                      >
+                        <item.icon
+                          size={18}
+                          className={`shrink-0 ${active ? 'text-white' : 'text-white/60'}`}
+                        />
+                        {!collapsed && <span className="truncate">{item.label}</span>}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </nav>
 
         {/* Rodapé: versão + logout */}
@@ -263,7 +384,7 @@ export default function AdminLayout() {
             <span>Área Administrativa</span>
             <span>/</span>
             <span className="font-semibold text-gray-800 dark:text-slate-200">
-              {MENU_ITEMS.find((m) => isActive(m))?.label || 'Painel'}
+              {currentActiveItem?.label || 'Painel'}
             </span>
           </div>
 
