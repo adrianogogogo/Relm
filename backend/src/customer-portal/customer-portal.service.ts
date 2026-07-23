@@ -108,6 +108,34 @@ export class CustomerPortalService {
     });
   }
 
+  // Compras do cliente (vendas registradas pela loja) com a vigência de
+  // garantia de cada item. warrantyEndsAt já vem gravado (saleDate + prazo);
+  // o tempo restante é calculado no frontend a partir dele.
+  async getPurchases(customerId: string) {
+    return this.prisma.sale.findMany({
+      where: { customerId },
+      orderBy: { saleDate: 'desc' },
+      select: {
+        id: true,
+        saleDate: true,
+        invoiceNumber: true,
+        notes: true,
+        store: { select: { id: true, tradeName: true } },
+        items: {
+          select: {
+            id: true,
+            commercialName: true,
+            quantity: true,
+            serialNumber: true,
+            unitPrice: true,
+            warrantyDays: true,
+            warrantyEndsAt: true,
+          },
+        },
+      },
+    });
+  }
+
   async getInsuranceQuotes(customerId: string) {
     return this.prisma.insuranceQuote.findMany({
       where: { customerId },

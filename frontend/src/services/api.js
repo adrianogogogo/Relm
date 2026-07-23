@@ -298,6 +298,7 @@ export const customerPortalAPI = {
   updateProfile: (data) => api.put('/customer-portal/profile', data).then((res) => res.data),
   updatePassword: (data) => api.put('/customer-portal/password', data).then((res) => res.data),
   getWarranties: () => api.get('/customer-portal/warranties').then((res) => res.data),
+  getPurchases: () => api.get('/customer-portal/purchases').then((res) => res.data),
   getInsuranceQuotes: () => api.get('/customer-portal/insurance-quotes').then((res) => res.data),
   getInsurancePolicies: () => api.get('/customer-portal/insurance-policies').then((res) => res.data),
   // Wave 9 — cliente aceita/recusa uma cotação COTADA

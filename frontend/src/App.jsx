@@ -32,6 +32,7 @@ import CustomerBenefitsPage from './pages/CustomerBenefitsPage';
 import CustomerInsurancePage from './pages/CustomerInsurancePage';
 import CustomerProfilePage from './pages/CustomerProfilePage';
 import CustomerWorkshopPage from './pages/CustomerWorkshopPage';
+import CustomerPurchasesPage from './pages/CustomerPurchasesPage';
 import CustomerCatalogPage from './pages/CustomerCatalogPage';
 import CustomerSubscriptionPage from './pages/CustomerSubscriptionPage';
 import CustomerRankingPage from './pages/CustomerRankingPage';
@@ -137,6 +138,7 @@ export default function App() {
             }
           >
             <Route path="dashboard" element={<CustomerDashboard />} />
+            <Route path="compras" element={<CustomerPurchasesPage />} />
             <Route path="assinatura" element={<CustomerSubscriptionPage />} />
             <Route path="garantias" element={<CustomerWarrantiesPage />} />
             <Route path="eventos" element={<CustomerEventsPage />} />

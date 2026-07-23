@@ -7,7 +7,6 @@ import BannerCarousel from './BannerCarousel';
 import { getBannerTargetForPath } from '../config/bannerTargets';
 import {
   MdDashboard,
-  MdVerifiedUser,
   MdEvent,
   MdCardGiftcard,
   MdDescription,
@@ -19,10 +18,12 @@ import {
   MdWorkspacePremium,
   MdEmojiEvents,
   MdStorefront,
+  MdShoppingBag,
 } from 'react-icons/md';
 
 const MENU = [
   { path: '/cliente/dashboard', label: 'Início', icon: MdDashboard },
+  { path: '/cliente/compras', label: 'Minhas Compras', icon: MdShoppingBag },
   { path: '/cliente/assinatura', label: 'Minha Assinatura', icon: MdWorkspacePremium },
   { path: '/cliente/oficina', label: 'Oficina / Revisões', icon: MdBuild },
   { path: '/cliente/resgate', label: 'Resgatar Prêmios', icon: MdCardGiftcard },

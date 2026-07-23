@@ -36,6 +36,11 @@ export class CustomerPortalController {
     return this.customerPortalService.getWarranties(req.user.customerId);
   }
 
+  @Get('purchases')
+  getPurchases(@Request() req: any) {
+    return this.customerPortalService.getPurchases(req.user.customerId);
+  }
+
   @Get('insurance-quotes')
   getInsuranceQuotes(@Request() req: any) {
     return this.customerPortalService.getInsuranceQuotes(req.user.customerId);
