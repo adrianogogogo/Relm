@@ -7,7 +7,6 @@ import { getBannerTargetForPath } from '../config/bannerTargets';
 import {
   MdDashboard,
   MdPeople,
-  MdVerifiedUser,
   MdDescription,
   MdInventory2,
   MdEvent,
@@ -18,12 +17,14 @@ import {
   MdBuild,
   MdPayments,
   MdPointOfSale,
+  MdReceiptLong,
 } from 'react-icons/md';
 
 const MENU = [
   { path: '/loja/dashboard', label: 'Início', icon: MdDashboard },
   { path: '/loja/clientes', label: 'Clientes', icon: MdPeople },
   { path: '/loja/vendas', label: 'Cadastrar Venda', icon: MdPointOfSale },
+  { path: '/loja/vendas-lista', label: 'Minhas Vendas', icon: MdReceiptLong },
   { path: '/loja/pagamentos', label: 'Pagamentos (Anuidade)', icon: MdPayments },
   { path: '/loja/oficina', label: 'Oficina / Serviços', icon: MdBuild },
   { path: '/loja/seguros', label: 'Cotações de Seguro', icon: MdDescription },

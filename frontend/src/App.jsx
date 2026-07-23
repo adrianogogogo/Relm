@@ -44,6 +44,7 @@ import StoreWarrantiesPage from './pages/StoreWarrantiesPage';
 import StoreInsurancesPage from './pages/StoreInsurancesPage';
 import StoreProductsPage from './pages/StoreProductsPage';
 import StoreSalesPage from './pages/StoreSalesPage';
+import StoreSalesListPage from './pages/StoreSalesListPage';
 import StoreProfilePage from './pages/StoreProfilePage';
 import StoreEventsPage from './pages/StoreEventsPage';
 import StoreBenefitsPage from './pages/StoreBenefitsPage';
@@ -168,6 +169,7 @@ export default function App() {
             <Route path="pagamentos" element={<StorePaymentsPage />} />
             <Route path="garantias" element={<StoreWarrantiesPage />} />
             <Route path="vendas" element={<StoreSalesPage />} />
+            <Route path="vendas-lista" element={<StoreSalesListPage />} />
             <Route path="seguros" element={<StoreInsurancesPage />} />
             <Route path="produtos" element={<StoreProductsPage />} />
             <Route path="eventos" element={<StoreEventsPage />} />
