@@ -68,6 +68,57 @@
     @apply block font-kinetic text-xs font-medium uppercase tracking-widest
            text-kinetic-fg-muted dark:text-kinetic-fg-muted-dark mb-2;
   }
+
+  /* ── KINETIC PORTAL GLOBAL SCOPE OVERRIDES ── */
+  .kinetic-portal h1,
+  .kinetic-portal h2,
+  .kinetic-portal h3,
+  .kinetic-portal h4 {
+    font-family: 'Space Grotesk', sans-serif !important;
+    text-transform: uppercase;
+    letter-spacing: -0.03em;
+  }
+
+  .kinetic-portal .card {
+    border-radius: 0px !important;
+    border-width: 2px !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: none !important;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .dark .kinetic-portal .card {
+    background-color: #09090B !important;
+    border-color: #3F3F46 !important;
+  }
+
+  .kinetic-portal .btn,
+  .kinetic-portal button:not(.btn-unstyled) {
+    border-radius: 0px !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  .kinetic-portal input,
+  .kinetic-portal select,
+  .kinetic-portal textarea {
+    border-radius: 0px !important;
+    font-family: 'Space Grotesk', sans-serif !important;
+  }
+
+  .kinetic-portal table th {
+    font-family: 'Space Grotesk', sans-serif !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.75rem;
+  }
+
+  .kinetic-portal .badge,
+  .kinetic-portal [class*="rounded-full"] {
+    border-radius: 0px !important;
+  }
 }
 
 @layer utilities {

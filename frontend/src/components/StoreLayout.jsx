@@ -4,6 +4,7 @@ import { useSidebarStore } from '../store/sidebarStore';
 import TopBarChrome from './TopBarChrome';
 import BannerCarousel from './BannerCarousel';
 import { getBannerTargetForPath } from '../config/bannerTargets';
+import { NoiseTexture, StatsMarquee } from './ui/kinetic';
 import {
   MdDashboard,
   MdPeople,
@@ -47,19 +48,26 @@ export default function StoreLayout() {
 
   const isActive = (path) => location.pathname.startsWith(path);
 
+  const marqueeItems = [
+    { value: user?.store?.tradeName?.toUpperCase() || 'LOJA PARCEIRA', label: 'PORTAL LOJISTA' },
+    { value: 'SISTEMA DE VENDAS', label: 'PAINEL ATIVO' },
+    { value: 'GARANTIA RELM', label: 'GESTÃO UNIFICADA' },
+  ];
+
   return (
-    <div className="flex min-h-screen bg-app dark:bg-app-dark transition-colors duration-300">
-      {/* Sidebar — §8.1: gradiente vertical #0d2137 → #1a3a5c, recolhível 260↔70px */}
+    <div className="kinetic-portal relative flex min-h-screen bg-app dark:bg-app-dark transition-colors duration-300">
+      <NoiseTexture />
+      {/* Sidebar — Kinetic Brutalist */}
       <aside
         className={`${
           collapsed ? 'w-[70px]' : 'w-64'
-        } bg-sidebar-gradient text-white flex flex-col shrink-0 shadow-[4px_0_20px_rgba(0,0,0,0.15)] z-20 transition-[width] duration-300`}
+        } bg-sidebar-gradient text-white flex flex-col shrink-0 border-r-2 border-white/10 z-20 transition-[width] duration-300`}
       >
         {/* Logo + toggle */}
         <div
           className={`${
             collapsed ? 'px-2 justify-center' : 'px-6 justify-between'
-          } py-5 border-b border-white/10 min-h-[72px] flex items-center gap-2`}
+          } py-5 border-b-2 border-white/10 min-h-[72px] flex items-center gap-2`}
         >
           {!collapsed && (
             <Link to="/" className="block">
@@ -68,7 +76,7 @@ export default function StoreLayout() {
           )}
           <button
             onClick={toggle}
-            className="p-1.5 rounded-lg text-white/75 hover:bg-white/10 hover:text-white transition-colors shrink-0"
+            className="p-1.5 text-white/75 hover:bg-white/10 hover:text-white transition-colors shrink-0 rounded-none border border-white/20"
             title={collapsed ? 'Expandir menu' : 'Recolher menu'}
             aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}
           >
@@ -76,15 +84,15 @@ export default function StoreLayout() {
           </button>
         </div>
 
-        {/* User Info — oculto quando colapsado */}
+        {/* User Info */}
         {!collapsed && (
-          <div className="px-6 py-4 border-b border-white/10">
+          <div className="px-6 py-4 border-b-2 border-white/10 font-kinetic">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm shrink-0">
+              <div className="w-9 h-9 border-2 border-white/30 bg-white/10 flex items-center justify-center text-white font-bold text-sm shrink-0 rounded-none">
                 {user?.name?.charAt(0)?.toUpperCase() || 'L'}
               </div>
               <div className="min-w-0">
-                <p className="font-semibold text-sm text-white truncate">{user?.name}</p>
+                <p className="font-bold text-sm text-white uppercase tracking-tight truncate">{user?.name}</p>
                 <p className="text-xs text-white/60 truncate">
                   {user?.store?.tradeName || user?.email}
                 </p>
@@ -93,8 +101,8 @@ export default function StoreLayout() {
           </div>
         )}
 
-        {/* Menu — item ativo destacado com bg-white/10 + realce primary, inativos translúcidos */}
-        <nav className={`flex-1 overflow-y-auto py-4 ${collapsed ? 'px-2' : 'px-3'} space-y-1`}>
+        {/* Menu */}
+        <nav className={`flex-1 overflow-y-auto py-4 ${collapsed ? 'px-2' : 'px-3'} space-y-1 font-kinetic`}>
           {MENU.map((item) => {
             const active = isActive(item.path);
             return (
@@ -104,10 +112,10 @@ export default function StoreLayout() {
                 title={collapsed ? item.label : undefined}
                 className={`flex items-center gap-3 ${
                   collapsed ? 'justify-center px-2' : 'px-3'
-                } py-2.5 rounded-lg transition-all text-sm border-l-4 ${
+                } py-2.5 transition-all text-xs font-bold uppercase tracking-tight border-l-4 ${
                   active
-                    ? 'bg-white/10 text-white font-semibold border-l-primary-300'
-                    : 'text-white/75 font-normal border-l-transparent hover:bg-white/5 hover:text-white'
+                    ? 'bg-white/15 text-white border-l-primary-300 shadow-none'
+                    : 'text-white/75 border-l-transparent hover:bg-white/10 hover:text-white'
                 }`}
               >
                 <item.icon
@@ -120,11 +128,11 @@ export default function StoreLayout() {
           })}
         </nav>
 
-        {/* Rodapé: versão + logout */}
-        <div className="border-t border-white/10">
+        {/* Rodapé */}
+        <div className="border-t-2 border-white/10 font-kinetic">
           {!collapsed && (
-            <div className="px-6 py-3 flex items-center gap-2 text-xs text-white/60">
-              <span className="w-2 h-2 rounded-full bg-success inline-block" />
+            <div className="px-6 py-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/60">
+              <span className="w-2 h-2 bg-success inline-block" />
               <span>Relm Care+ — v1</span>
             </div>
           )}
@@ -134,7 +142,7 @@ export default function StoreLayout() {
               title={collapsed ? 'Sair' : undefined}
               className={`flex items-center gap-3 w-full ${
                 collapsed ? 'justify-center px-2' : 'px-3'
-              } py-2 rounded-lg text-white/75 hover:bg-white/10 hover:text-white transition-colors text-sm`}
+              } py-2 text-white/75 hover:bg-white/15 hover:text-white transition-colors text-xs font-bold uppercase tracking-tight rounded-none border border-white/20`}
             >
               <MdLogout size={20} />
               {!collapsed && <span>Sair</span>}
@@ -145,12 +153,12 @@ export default function StoreLayout() {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-h-screen overflow-auto min-w-0">
-        {/* Topbar — §8.2: fundo claro/surface, border-b, sem sombra */}
-        <header className="h-16 border-b border-gray-200 dark:border-slate-800/60 bg-surface dark:bg-surface-dark px-6 flex items-center justify-between shrink-0 transition-colors duration-300">
-          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400">
+        {/* Topbar */}
+        <header className="h-16 border-b-2 border-gray-200 dark:border-slate-800 bg-surface dark:bg-surface-dark px-6 flex items-center justify-between shrink-0 transition-colors duration-300 font-kinetic">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-gray-500 dark:text-slate-400 font-bold">
             <span>Portal da Loja</span>
             <span>/</span>
-            <span className="font-semibold text-gray-800 dark:text-slate-200">
+            <span className="font-bold text-gray-800 dark:text-slate-200">
               {MENU.find((m) => isActive(m.path))?.label || 'Painel'}
             </span>
           </div>
@@ -164,8 +172,10 @@ export default function StoreLayout() {
           />
         </header>
 
+        {/* Layout Top Marquee */}
+        <StatsMarquee items={marqueeItems} speed={40} className="py-2.5 border-b-2 border-primary/20" />
+
         <div className="flex-1 bg-app dark:bg-app-dark transition-colors duration-300">
-          {/* Banner segmentado da página atual (some quando não há banner alvo) */}
           <BannerCarousel {...getBannerTargetForPath(location.pathname)} />
           <Outlet />
         </div>
