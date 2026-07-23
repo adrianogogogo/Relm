@@ -35,19 +35,7 @@ const MENU_ITEMS = [
     label: 'Dashboard',
     icon: MdDashboard,
     exact: true,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'],
-  },
-  {
-    path: '/admin/vendas',
-    label: 'Cadastrar Venda',
-    icon: MdPointOfSale,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'],
-  },
-  {
-    path: '/admin/vendas-lista',
-    label: 'Minhas Vendas',
-    icon: MdReceiptLong,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'],
+    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
   },
   {
     path: '/admin/catalogo',
@@ -65,13 +53,13 @@ const MENU_ITEMS = [
     path: '/admin/customers',
     label: 'Clientes',
     icon: MdPeople,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'],
+    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
   },
   {
     path: '/admin/stores',
     label: 'Lojas',
     icon: MdStore,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR'],
+    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
   },
   {
     path: '/admin/produtos',
@@ -98,7 +86,6 @@ const MENU_ITEMS = [
     roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
   },
   {
-    // Telas view-only de feed para o Distribuidor (não dão acesso à gestão).
     path: '/admin/meus-eventos',
     label: 'Eventos',
     icon: MdEvent,
@@ -138,13 +125,13 @@ const MENU_ITEMS = [
     path: '/admin/insurances',
     label: 'Cotações de Seguro',
     icon: MdDescription,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'],
+    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
   },
   {
     path: '/admin/banners',
     label: 'Banners',
     icon: MdImage,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
+    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
   },
   {
     path: '/admin/users',
