@@ -69,36 +69,95 @@
            text-kinetic-fg-muted dark:text-kinetic-fg-muted-dark mb-2;
   }
 
-  /* ── KINETIC PORTAL GLOBAL SCOPE OVERRIDES ── */
+  /* ── KINETIC PORTAL GLOBAL SCOPE OVERRIDES (PURE SPEC) ── */
+  .kinetic-portal,
+  .kinetic-portal * {
+    font-family: 'Space Grotesk', sans-serif !important;
+  }
+
   .kinetic-portal h1,
   .kinetic-portal h2,
   .kinetic-portal h3,
-  .kinetic-portal h4 {
-    font-family: 'Space Grotesk', sans-serif !important;
-    text-transform: uppercase;
-    letter-spacing: -0.03em;
+  .kinetic-portal h4,
+  .kinetic-portal h5,
+  .kinetic-portal h6 {
+    text-transform: uppercase !important;
+    letter-spacing: -0.03em !important;
+    font-weight: 700 !important;
   }
 
   .kinetic-portal .card {
     border-radius: 0px !important;
     border-width: 2px !important;
-    border-color: #cbd5e1 !important;
+    border-color: #000000 !important;
     box-shadow: none !important;
-    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .kinetic-portal .card:hover {
+    background-color: #DFE104 !important;
+    border-color: #DFE104 !important;
+    color: #000000 !important;
+  }
+
+  .kinetic-portal .card:hover * {
+    color: #000000 !important;
   }
 
   .dark .kinetic-portal .card {
     background-color: #09090B !important;
     border-color: #3F3F46 !important;
+    color: #FAFAFA !important;
+  }
+
+  .dark .kinetic-portal .card:hover {
+    background-color: #DFE104 !important;
+    border-color: #DFE104 !important;
+    color: #000000 !important;
+  }
+
+  .dark .kinetic-portal .card:hover * {
+    color: #000000 !important;
   }
 
   .kinetic-portal .btn,
   .kinetic-portal button:not(.btn-unstyled) {
     border-radius: 0px !important;
-    font-family: 'Space Grotesk', sans-serif !important;
-    text-transform: uppercase;
-    letter-spacing: -0.02em;
-    font-weight: 700;
+    border-width: 2px !important;
+    text-transform: uppercase !important;
+    letter-spacing: -0.02em !important;
+    font-weight: 700 !important;
+    transition: all 0.2s ease !important;
+  }
+
+  .kinetic-portal .btn-primary {
+    background-color: #DFE104 !important;
+    border-color: #DFE104 !important;
+    color: #000000 !important;
+  }
+
+  .kinetic-portal .btn-primary:hover {
+    background-color: #c9cb00 !important;
+    border-color: #c9cb00 !important;
+    transform: scale(1.03);
+  }
+
+  .kinetic-portal .btn-outline {
+    background-color: transparent !important;
+    border-color: #000000 !important;
+    color: #000000 !important;
+  }
+
+  .dark .kinetic-portal .btn-outline {
+    border-color: #3F3F46 !important;
+    color: #FAFAFA !important;
+  }
+
+  .kinetic-portal .btn-outline:hover,
+  .dark .kinetic-portal .btn-outline:hover {
+    background-color: #DFE104 !important;
+    border-color: #DFE104 !important;
+    color: #000000 !important;
   }
 
   .kinetic-portal input,
@@ -106,13 +165,21 @@
   .kinetic-portal textarea {
     border-radius: 0px !important;
     font-family: 'Space Grotesk', sans-serif !important;
+    border-width: 0 0 2px 0 !important;
+    background-color: transparent !important;
+  }
+
+  .kinetic-portal input:focus,
+  .kinetic-portal select:focus,
+  .kinetic-portal textarea:focus {
+    border-color: #DFE104 !important;
   }
 
   .kinetic-portal table th {
     font-family: 'Space Grotesk', sans-serif !important;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-size: 0.75rem;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    font-size: 0.75rem !important;
   }
 
   .kinetic-portal .badge,

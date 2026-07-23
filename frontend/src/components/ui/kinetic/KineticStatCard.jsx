@@ -34,25 +34,25 @@ export default function KineticStatCard({
       </span>
 
       {/* Conteúdo principal */}
-      <div className="relative z-10">
+      <div className="relative z-10 font-kinetic">
         {Icon && (
-          <div className="mb-3 text-primary dark:text-primary-400 group-hover:text-white dark:group-hover:text-kinetic-bg-dark transition-colors duration-300">
+          <div className="mb-3 text-[#09090B] dark:text-[#DFE104] group-hover:text-black transition-colors duration-200">
             <Icon size={24} />
           </div>
         )}
         <p
           className="font-kinetic text-5xl md:text-7xl font-bold leading-none tracking-tighter
-                     text-kinetic-fg dark:text-kinetic-fg-dark
-                     group-hover:text-white dark:group-hover:text-kinetic-bg-dark
-                     transition-colors duration-300"
+                     text-[#09090B] dark:text-[#FAFAFA]
+                     group-hover:text-black
+                     transition-colors duration-200"
         >
           {value}
         </p>
         <p
-          className="mt-2 font-kinetic text-xs uppercase tracking-widest font-medium
-                     text-kinetic-fg-muted dark:text-kinetic-fg-muted-dark
-                     group-hover:text-white/80 dark:group-hover:text-kinetic-bg-dark/80
-                     transition-colors duration-300"
+          className="mt-2 font-kinetic text-xs uppercase tracking-widest font-bold
+                     text-slate-600 dark:text-zinc-400
+                     group-hover:text-black
+                     transition-colors duration-200"
         >
           {label}
         </p>

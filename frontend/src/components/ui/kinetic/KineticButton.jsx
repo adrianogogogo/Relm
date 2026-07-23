@@ -17,16 +17,16 @@ const SIZE_CLASSES = {
 };
 
 const VARIANT_CLASSES = {
-  primary: `bg-primary dark:bg-primary-400 text-white dark:text-kinetic-bg-dark
+  primary: `bg-[#DFE104] text-black
             hover:scale-105 active:scale-95
-            border-2 border-primary dark:border-primary-400`,
-  outline: `bg-transparent text-kinetic-fg dark:text-kinetic-fg-dark
-            border-2 border-kinetic-border dark:border-kinetic-border-dark
-            hover:bg-kinetic-fg hover:text-white dark:hover:bg-kinetic-fg-dark dark:hover:text-kinetic-bg-dark
-            hover:border-kinetic-fg dark:hover:border-kinetic-fg-dark`,
-  ghost: `bg-transparent text-kinetic-fg dark:text-kinetic-fg-dark
+            border-2 border-[#DFE104]`,
+  outline: `bg-transparent text-slate-900 dark:text-[#FAFAFA]
+            border-2 border-black dark:border-[#3F3F46]
+            hover:bg-[#DFE104] hover:text-black dark:hover:bg-[#DFE104] dark:hover:text-black
+            hover:border-[#DFE104] dark:hover:border-[#DFE104]`,
+  ghost: `bg-transparent text-slate-900 dark:text-[#FAFAFA]
           border-2 border-transparent
-          hover:text-primary dark:hover:text-primary-400`,
+          hover:text-[#DFE104] dark:hover:text-[#DFE104]`,
 };
 
 export default function KineticButton({

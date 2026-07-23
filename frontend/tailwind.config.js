@@ -79,19 +79,19 @@ export default {
         surface: '#ffffff',      // fundo de cards/superfícies (claro)
         'app-dark': '#0a1929',   // fundo escuro da aplicação
         'surface-dark': '#0d2137', // superfície escura (mesmo tom do topo da sidebar)
-        // Kinetic Typography tokens
+        // Kinetic Typography tokens (Pure High-Energy spec)
         kinetic: {
-          bg: '#f8fafc',           // fundo claro das seções kinetic
+          bg: '#f8fafc',           // fundo claro
           'bg-dark': '#09090B',    // fundo escuro (rich black)
-          accent: '#42a5f5',       // accent cinético light (primary-400)
-          'accent-dark': '#64b5f6',// accent cinético dark (primary-300)
+          accent: '#DFE104',       // amarelo ácido puro
+          'accent-dark': '#DFE104',// amarelo ácido puro
           muted: '#e2e8f0',        // elementos decorativos light
           'muted-dark': '#27272A', // elementos decorativos dark (zinc-800)
-          border: '#cbd5e1',       // bordas light (slate-300)
+          border: '#000000',       // bordas solidadas light
           'border-dark': '#3F3F46',// bordas dark (zinc-700)
-          fg: '#0f172a',           // foreground light (slate-900)
+          fg: '#09090B',           // foreground light (black)
           'fg-dark': '#FAFAFA',    // foreground dark (off-white)
-          'fg-muted': '#64748b',   // texto secundário light (slate-500)
+          'fg-muted': '#475569',   // texto secundário light
           'fg-muted-dark': '#A1A1AA', // texto secundário dark (zinc-400)
         },
       },

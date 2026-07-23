@@ -44,7 +44,7 @@ export default function StatsMarquee({ items = [], speed = 60, className = '' })
   if (prefersReducedMotion) {
     return (
       <div
-        className={`w-full py-4 px-6 bg-primary dark:bg-primary-400 text-white dark:text-kinetic-bg-dark overflow-hidden ${className}`}
+        className={`w-full py-4 px-6 bg-[#DFE104] text-black overflow-hidden font-kinetic ${className}`}
       >
         <div className="flex flex-wrap items-center justify-center gap-4">
           {items.map((item, i) => (
@@ -64,7 +64,7 @@ export default function StatsMarquee({ items = [], speed = 60, className = '' })
 
   return (
     <div
-      className={`w-full py-4 bg-primary dark:bg-primary-400 text-white dark:text-kinetic-bg-dark overflow-hidden ${className}`}
+      className={`w-full py-4 bg-[#DFE104] text-black overflow-hidden font-kinetic ${className}`}
     >
       <Marquee speed={speed} gradient={false} autoFill>
         {items.map(renderItem)}
