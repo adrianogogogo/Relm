@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   MdTrendingUp, MdGroup, MdStars, MdLoop, MdCancel, MdShare, MdInfoOutline,
@@ -98,13 +99,15 @@ function ErrorBanner({ message }) {
 // ─── main page ────────────────────────────────────────────────────────────────
 
 export default function AdminClubReportsPage() {
+  const [months, setMonths] = useState(12);
+
   const { data: liability, isLoading: loadingLiability, error: errLiability } = useQuery({
     queryKey: ['club-points-liability'],
     queryFn: clubReportsAPI.getPointsLiability,
   });
   const { data: revenue, isLoading: loadingRevenue, error: errRevenue } = useQuery({
-    queryKey: ['club-revenue'],
-    queryFn: clubReportsAPI.getRevenue,
+    queryKey: ['club-revenue', months],
+    queryFn: () => clubReportsAPI.getRevenue(months),
   });
   const { data: funnel, isLoading: loadingFunnel, error: errFunnel } = useQuery({
     queryKey: ['club-funnel'],
@@ -117,11 +120,27 @@ export default function AdminClubReportsPage() {
     <div className="py-8 px-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[var(--color-text)]">Relatórios do Clube</h1>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-            Um resumo simples de como está o clube de assinaturas Relm Care e Care Plus.
-          </p>
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--color-text)]">Relatórios do Clube</h1>
+            <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+              Um resumo simples de como está o clube de assinaturas Relm Care e Care Plus.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <label htmlFor="period-select" className="text-sm font-medium text-[var(--color-text-secondary)]">Período:</label>
+            <select
+              id="period-select"
+              value={months}
+              onChange={(e) => setMonths(Number(e.target.value))}
+              className="select select-bordered bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text)] text-sm rounded-lg focus:ring-primary focus:border-primary p-2 h-10 min-h-10 font-medium"
+            >
+              <option value={3}>Últimos 3 meses</option>
+              <option value={6}>Últimos 6 meses</option>
+              <option value={12}>Últimos 12 meses</option>
+              <option value={24}>Últimos 24 meses</option>
+            </select>
+          </div>
         </div>
 
         {errLiability && <ErrorBanner message={errLiability.message} />}
@@ -136,7 +155,7 @@ export default function AdminClubReportsPage() {
               Hoje o clube tem{' '}
               <strong>{fmtNum(revenue.activePlus)} assinantes pagantes (Plus)</strong> e{' '}
               <strong>{fmtNum(revenue.activeCare)} membros no plano gratuito (Care)</strong>.
-              {' '}Nos últimos 12 meses entrou, em média,{' '}
+              {' '}Nos últimos {months} meses entrou, em média,{' '}
               <strong>{fmtBrl(revenue.mrrEquivalent)} por mês</strong>.
               {revenue.renewalRate != null && (
                 <>
@@ -153,7 +172,7 @@ export default function AdminClubReportsPage() {
           <StatCard
             label="Receita média por mês"
             value={isLoading ? '…' : fmtBrl(revenue?.mrrEquivalent)}
-            sub="Média dos últimos 12 meses"
+            sub={`Média dos últimos ${months} meses`}
             hint="Quanto o clube arrecada, em média, a cada mês com as assinaturas."
             icon={MdTrendingUp}
             color="#1565C0"
@@ -179,7 +198,7 @@ export default function AdminClubReportsPage() {
             value={isLoading ? '…' : fmtPct(revenue?.renewalRate)}
             sub={
               revenue
-                ? `${fmtNum(revenue.renewedCount)} de ${fmtNum(revenue.expiredPlusLast12mo)} que venceram`
+                ? `${fmtNum(revenue.renewedCount)} de ${fmtNum(revenue.expiredPlusPeriod)} que venceram`
                 : undefined
             }
             hint="Entre os que chegaram ao fim do plano, quantos voltaram a pagar. Quanto maior, melhor."
@@ -207,7 +226,7 @@ export default function AdminClubReportsPage() {
         {/* ── Receita mês a mês ── */}
         <Section
           title="Quanto entrou, mês a mês"
-          intro="Total pago pelos assinantes em cada um dos últimos 12 meses (anuidades e upgrades para o Plus)."
+          intro={`Total pago pelos assinantes em cada um dos últimos ${months} meses (anuidades e upgrades para o Plus).`}
         >
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden shadow-sm">
             {loadingRevenue ? (
@@ -235,12 +254,12 @@ export default function AdminClubReportsPage() {
                 </tbody>
                 <tfoot>
                   <tr className="bg-[var(--color-bg)] border-t-2 border-[var(--color-border)]">
-                    <td className="px-4 py-3 font-bold text-[var(--color-text)]">Total no período</td>
+                    <td className="px-4 py-3 font-bold text-[var(--color-text)]">Total no período ({months} meses)</td>
                     <td className="px-4 py-3 text-right font-bold text-[var(--color-text)]">
                       {fmtNum(revenue?.monthlyRevenue?.reduce((s, m) => s + m.paymentCount, 0))}
                     </td>
                     <td className="px-4 py-3 text-right font-bold text-[var(--color-text)]">
-                      {fmtBrl(revenue?.totalRevenueLast12mo)}
+                      {fmtBrl(revenue?.totalRevenue)}
                     </td>
                   </tr>
                 </tfoot>

@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -35,11 +35,12 @@ export class ReportsController {
     return this.reportsService.getClubPointsLiability();
   }
 
-  /** Receita mensal (últimos 12 meses), MRR, renovações e churn. */
+  /** Receita mensal, MRR, renovações e churn. */
   @Get('club/revenue')
   @Roles('ADMIN_RELM', 'GERENTE_RELM')
-  getClubRevenue() {
-    return this.reportsService.getClubRevenue();
+  getClubRevenue(@Query('months') months?: string) {
+    const monthsNum = months ? parseInt(months, 10) : 12;
+    return this.reportsService.getClubRevenue(monthsNum);
   }
 
   /** Funil de origens dos membros, upgrades e indicações. */

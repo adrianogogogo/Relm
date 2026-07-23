@@ -396,8 +396,8 @@ export const adminUsersAPI = {
 export const clubReportsAPI = {
   getPointsLiability: () =>
     api.get('/reports/club/points-liability').then((res) => res.data),
-  getRevenue: () =>
-    api.get('/reports/club/revenue').then((res) => res.data),
+  getRevenue: (months) =>
+    api.get('/reports/club/revenue', { params: { months } }).then((res) => res.data),
   getFunnel: () =>
     api.get('/reports/club/funnel').then((res) => res.data),
 };

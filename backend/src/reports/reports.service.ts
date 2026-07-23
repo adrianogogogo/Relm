@@ -163,26 +163,26 @@ export class ReportsService {
   }
 
   /**
-   * Receita mensal: últimos 12 meses de pagamentos CONFIRMED,
+   * Receita mensal: últimos X meses de pagamentos CONFIRMED,
    * taxa de renovação e churn de assinantes PLUS.
    */
-  async getClubRevenue() {
+  async getClubRevenue(months = 12) {
     const now = new Date();
-    const twelveMonthsAgo = new Date(now);
-    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+    const monthsAgo = new Date(now);
+    monthsAgo.setMonth(monthsAgo.getMonth() - months);
 
-    // Pagamentos confirmados nos últimos 12 meses
+    // Pagamentos confirmados nos últimos X meses
     const confirmedPayments = await this.prisma.payment.findMany({
       where: {
         status: PaymentStatus.CONFIRMED,
-        paidAt: { gte: twelveMonthsAgo },
+        paidAt: { gte: monthsAgo },
       },
       select: { amount: true, paidAt: true },
     });
 
     // Agrupamento mensal
     const monthMap = new Map<string, { count: number; totalBrl: number }>();
-    for (let i = 11; i >= 0; i--) {
+    for (let i = months - 1; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       monthMap.set(toYearMonth(d), { count: 0, totalBrl: 0 });
     }
@@ -201,8 +201,8 @@ export class ReportsService {
       totalBrl: v.totalBrl,
     }));
 
-    const totalRevenueLast12mo = monthlyRevenue.reduce((s, m) => s + m.totalBrl, 0);
-    const mrrEquivalent = +(totalRevenueLast12mo / 12).toFixed(2);
+    const totalRevenue = monthlyRevenue.reduce((s, m) => s + m.totalBrl, 0);
+    const mrrEquivalent = +(totalRevenue / months).toFixed(2);
 
     // Assinantes ativos
     const [activePlus, activeCare] = await Promise.all([
@@ -214,13 +214,13 @@ export class ReportsService {
       }),
     ]);
 
-    // Taxa de renovação: assinaturas PLUS que expiraram nos últimos 12 meses
+    // Taxa de renovação: assinaturas PLUS que expiraram nos últimos X meses
     // e tiveram um pagamento CONFIRMED em até 30 dias após a expiração.
     const expiredPlus = await this.prisma.subscription.findMany({
       where: {
         tier: TierLevel.PLUS,
         status: { in: [SubStatus.EXPIRED, SubStatus.DOWNGRADED] },
-        expiresAt: { gte: twelveMonthsAgo, lte: now },
+        expiresAt: { gte: monthsAgo, lte: now },
       },
       select: { customerId: true, expiresAt: true },
     });
@@ -256,7 +256,8 @@ export class ReportsService {
 
     return {
       monthlyRevenue,
-      totalRevenueLast12mo: +totalRevenueLast12mo.toFixed(2),
+      totalRevenue: +totalRevenue.toFixed(2),
+      totalRevenueLast12mo: +totalRevenue.toFixed(2), // Mantido para retrocompatibilidade
       mrrEquivalent,
       activePlus,
       activeCare,
