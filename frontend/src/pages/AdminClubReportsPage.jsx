@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { MdTrendingUp, MdGroup, MdStars, MdLoop, MdBarChart, MdShare } from 'react-icons/md';
+import {
+  MdTrendingUp, MdGroup, MdStars, MdLoop, MdCancel, MdShare, MdInfoOutline,
+} from 'react-icons/md';
 import { clubReportsAPI } from '../services/api';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -20,47 +22,60 @@ function fmtNum(value) {
 }
 
 function monthLabel(ym) {
-  // ym = 'YYYY-MM'
   const [year, month] = ym.split('-');
   const date = new Date(Number(year), Number(month) - 1, 1);
   return date.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
 }
 
+// "68%" -> "cerca de 7 em cada 10" — jeito humano de ler uma porcentagem.
+function outOfTen(pct) {
+  if (pct == null) return null;
+  const n = Math.round(pct / 10);
+  return `cerca de ${n} em cada 10`;
+}
+
 // ─── subcomponents ────────────────────────────────────────────────────────────
 
-function StatCard({ label, value, sub, icon: Icon, color = '#183757' }) {
+// Card de indicador: rótulo em linguagem simples, número grande, um detalhe
+// secundário e uma frase curta explicando o que aquilo significa.
+function StatCard({ label, value, sub, hint, icon: Icon, color = '#183757' }) {
   return (
-    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 flex items-start gap-4 shadow-sm">
-      <div
-        className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center text-white text-2xl"
-        style={{ background: color }}
-      >
-        <Icon />
+    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 shadow-sm flex flex-col gap-3">
+      <div className="flex items-start gap-4">
+        <div
+          className="flex-shrink-0 w-11 h-11 rounded-lg flex items-center justify-center text-white text-xl"
+          style={{ background: color }}
+        >
+          <Icon />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm text-[var(--color-text-secondary)] font-medium">{label}</p>
+          <p className="text-2xl font-bold text-[var(--color-text)] leading-tight">{value}</p>
+          {sub && <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{sub}</p>}
+        </div>
       </div>
-      <div className="min-w-0">
-        <p className="text-xs text-[var(--color-text-secondary)] font-medium uppercase tracking-wide truncate">
-          {label}
+      {hint && (
+        <p className="text-xs text-[var(--color-text-secondary)] leading-snug border-t border-[var(--color-border)] pt-2">
+          {hint}
         </p>
-        <p className="text-2xl font-bold text-[var(--color-text)] leading-tight">{value}</p>
-        {sub && (
-          <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{sub}</p>
-        )}
-      </div>
+      )}
     </div>
   );
 }
 
-function SectionTitle({ children }) {
+function Section({ title, intro, children }) {
   return (
-    <h2 className="text-base font-semibold text-[var(--color-text)] mb-3 mt-8 flex items-center gap-2">
+    <section className="mt-10">
+      <h2 className="text-lg font-semibold text-[var(--color-text)]">{title}</h2>
+      {intro && <p className="text-sm text-[var(--color-text-secondary)] mt-1 mb-4 max-w-2xl">{intro}</p>}
       {children}
-    </h2>
+    </section>
   );
 }
 
 function TableSkeleton({ rows = 4, cols = 3 }) {
   return (
-    <div className="animate-pulse space-y-2">
+    <div className="animate-pulse space-y-2 p-6">
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="flex gap-4">
           {Array.from({ length: cols }).map((_, j) => (
@@ -74,7 +89,7 @@ function TableSkeleton({ rows = 4, cols = 3 }) {
 
 function ErrorBanner({ message }) {
   return (
-    <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
+    <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm mb-4">
       Erro ao carregar dados: {message}
     </div>
   );
@@ -83,29 +98,15 @@ function ErrorBanner({ message }) {
 // ─── main page ────────────────────────────────────────────────────────────────
 
 export default function AdminClubReportsPage() {
-  const {
-    data: liability,
-    isLoading: loadingLiability,
-    error: errLiability,
-  } = useQuery({
+  const { data: liability, isLoading: loadingLiability, error: errLiability } = useQuery({
     queryKey: ['club-points-liability'],
     queryFn: clubReportsAPI.getPointsLiability,
   });
-
-  const {
-    data: revenue,
-    isLoading: loadingRevenue,
-    error: errRevenue,
-  } = useQuery({
+  const { data: revenue, isLoading: loadingRevenue, error: errRevenue } = useQuery({
     queryKey: ['club-revenue'],
     queryFn: clubReportsAPI.getRevenue,
   });
-
-  const {
-    data: funnel,
-    isLoading: loadingFunnel,
-    error: errFunnel,
-  } = useQuery({
+  const { data: funnel, isLoading: loadingFunnel, error: errFunnel } = useQuery({
     queryKey: ['club-funnel'],
     queryFn: clubReportsAPI.getFunnel,
   });
@@ -117,268 +118,251 @@ export default function AdminClubReportsPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[var(--color-text)]">
-            Relatórios do Clube
-          </h1>
+          <h1 className="text-2xl font-bold text-[var(--color-text)]">Relatórios do Clube</h1>
           <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-            Indicadores financeiros e operacionais do clube de assinatura RELM Care/Plus.
+            Um resumo simples de como está o clube de assinaturas Relm Care e Care Plus.
           </p>
         </div>
 
-        {/* ── Erros ── */}
         {errLiability && <ErrorBanner message={errLiability.message} />}
         {errRevenue && <ErrorBanner message={errRevenue.message} />}
         {errFunnel && <ErrorBanner message={errFunnel.message} />}
 
-        {/* ── Stat cards principais ── */}
+        {/* ── Resumo em texto (linguagem humana) ── */}
+        {!isLoading && revenue && (
+          <div className="rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)] p-5 mb-8 flex gap-3">
+            <MdInfoOutline className="text-[var(--color-primary,#1565C0)] text-xl flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-[var(--color-text)] leading-relaxed">
+              Hoje o clube tem{' '}
+              <strong>{fmtNum(revenue.activePlus)} assinantes pagantes (Plus)</strong> e{' '}
+              <strong>{fmtNum(revenue.activeCare)} membros no plano gratuito (Care)</strong>.
+              {' '}Nos últimos 12 meses entrou, em média,{' '}
+              <strong>{fmtBrl(revenue.mrrEquivalent)} por mês</strong>.
+              {revenue.renewalRate != null && (
+                <>
+                  {' '}Dos assinantes cujo plano venceu,{' '}
+                  <strong>{outOfTen(revenue.renewalRate)}</strong> renovaram.
+                </>
+              )}
+            </p>
+          </div>
+        )}
+
+        {/* ── Indicadores principais ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard
-            label="Passivo de Pontos (R$)"
-            value={isLoading ? '…' : fmtBrl(liability?.liabilityBrl)}
-            sub={liability ? `${fmtNum(liability.totalActivePoints)} pts ativos` : undefined}
-            icon={MdStars}
-            color="#183757"
-          />
-          <StatCard
-            label="MRR Equivalente"
+            label="Receita média por mês"
             value={isLoading ? '…' : fmtBrl(revenue?.mrrEquivalent)}
-            sub="Média mensal dos últimos 12 meses"
+            sub="Média dos últimos 12 meses"
+            hint="Quanto o clube arrecada, em média, a cada mês com as assinaturas."
             icon={MdTrendingUp}
             color="#1565C0"
           />
           <StatCard
-            label="Assinantes PLUS Ativos"
+            label="Assinantes pagantes (Plus)"
             value={isLoading ? '…' : fmtNum(revenue?.activePlus)}
-            sub={revenue ? `${fmtNum(revenue.activeCare)} CARE ativos` : undefined}
+            sub={revenue ? `+ ${fmtNum(revenue.activeCare)} no plano gratuito (Care)` : undefined}
+            hint="Pessoas que hoje pagam a assinatura Plus e têm o clube ativo."
             icon={MdGroup}
             color="#2E7D32"
           />
           <StatCard
-            label="Taxa de Renovação"
+            label="Prêmios a resgatar"
+            value={isLoading ? '…' : fmtBrl(liability?.liabilityBrl)}
+            sub={liability ? `${fmtNum(liability.totalActivePoints)} pontos acumulados` : undefined}
+            hint="Valor em reais que os clientes ainda podem trocar pelos pontos que já juntaram."
+            icon={MdStars}
+            color="#183757"
+          />
+          <StatCard
+            label="Renovaram a assinatura"
             value={isLoading ? '…' : fmtPct(revenue?.renewalRate)}
             sub={
               revenue
-                ? `${fmtNum(revenue.renewedCount)} de ${fmtNum(revenue.expiredPlusLast12mo)} expirados renovaram`
+                ? `${fmtNum(revenue.renewedCount)} de ${fmtNum(revenue.expiredPlusLast12mo)} que venceram`
                 : undefined
             }
+            hint="Entre os que chegaram ao fim do plano, quantos voltaram a pagar. Quanto maior, melhor."
             icon={MdLoop}
-            color="#F57C00"
+            color="#2E7D32"
           />
           <StatCard
-            label="Churn (PLUS)"
+            label="Não renovaram"
             value={isLoading ? '…' : fmtPct(revenue?.churnRate)}
-            sub={revenue ? `${fmtNum(revenue.churnCount)} não renovaram` : undefined}
-            icon={MdBarChart}
+            sub={revenue ? `${fmtNum(revenue.churnCount)} deixaram de pagar` : undefined}
+            hint="Entre os que venceram, quantos não renovaram. É o oposto do indicador ao lado."
+            icon={MdCancel}
             color="#C62828"
           />
           <StatCard
-            label="Indicações Concluídas"
+            label="Indicações que deram certo"
             value={isLoading ? '…' : fmtNum(funnel?.completedReferrals)}
-            sub={funnel ? `${fmtNum(funnel.totalReferrals)} total de indicações` : undefined}
+            sub={funnel ? `de ${fmtNum(funnel.totalReferrals)} indicações feitas` : undefined}
+            hint="Amigos indicados por clientes que acabaram virando membros do clube."
             icon={MdShare}
             color="#6A1B9A"
           />
         </div>
 
-        {/* ── Receita mensal ── */}
-        <SectionTitle>Receita Mensal — Últimos 12 Meses</SectionTitle>
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden shadow-sm">
-          {loadingRevenue ? (
-            <div className="p-6">
+        {/* ── Receita mês a mês ── */}
+        <Section
+          title="Quanto entrou, mês a mês"
+          intro="Total pago pelos assinantes em cada um dos últimos 12 meses (anuidades e upgrades para o Plus)."
+        >
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden shadow-sm">
+            {loadingRevenue ? (
               <TableSkeleton rows={6} cols={3} />
-            </div>
-          ) : errRevenue ? null : (
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="bg-[var(--color-bg)] border-b border-[var(--color-border)]">
-                  <th className="text-left px-4 py-3 font-semibold text-[var(--color-text-secondary)]">
-                    Mês
-                  </th>
-                  <th className="text-right px-4 py-3 font-semibold text-[var(--color-text-secondary)]">
-                    Pagamentos
-                  </th>
-                  <th className="text-right px-4 py-3 font-semibold text-[var(--color-text-secondary)]">
-                    Total (R$)
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {(revenue?.monthlyRevenue ?? []).map((row, i) => (
-                  <tr
-                    key={row.month}
-                    className={`border-b border-[var(--color-border)] last:border-0 ${
-                      i % 2 === 0 ? '' : 'bg-[var(--color-bg)]'
-                    }`}
-                  >
-                    <td className="px-4 py-3 text-[var(--color-text)] font-medium">
-                      {monthLabel(row.month)}
+            ) : errRevenue ? null : (
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-[var(--color-bg)] border-b border-[var(--color-border)]">
+                    <th className="text-left px-4 py-3 font-semibold text-[var(--color-text-secondary)]">Mês</th>
+                    <th className="text-right px-4 py-3 font-semibold text-[var(--color-text-secondary)]">Nº de pagamentos</th>
+                    <th className="text-right px-4 py-3 font-semibold text-[var(--color-text-secondary)]">Valor recebido</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(revenue?.monthlyRevenue ?? []).map((row, i) => (
+                    <tr
+                      key={row.month}
+                      className={`border-b border-[var(--color-border)] last:border-0 ${i % 2 === 0 ? '' : 'bg-[var(--color-bg)]'}`}
+                    >
+                      <td className="px-4 py-3 text-[var(--color-text)] font-medium">{monthLabel(row.month)}</td>
+                      <td className="px-4 py-3 text-right text-[var(--color-text)]">{fmtNum(row.paymentCount)}</td>
+                      <td className="px-4 py-3 text-right text-[var(--color-text)] font-semibold">{fmtBrl(row.totalBrl)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-[var(--color-bg)] border-t-2 border-[var(--color-border)]">
+                    <td className="px-4 py-3 font-bold text-[var(--color-text)]">Total no período</td>
+                    <td className="px-4 py-3 text-right font-bold text-[var(--color-text)]">
+                      {fmtNum(revenue?.monthlyRevenue?.reduce((s, m) => s + m.paymentCount, 0))}
                     </td>
-                    <td className="px-4 py-3 text-right text-[var(--color-text)]">
-                      {fmtNum(row.paymentCount)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-[var(--color-text)] font-semibold">
-                      {fmtBrl(row.totalBrl)}
+                    <td className="px-4 py-3 text-right font-bold text-[var(--color-text)]">
+                      {fmtBrl(revenue?.totalRevenueLast12mo)}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="bg-[var(--color-bg)] border-t-2 border-[var(--color-border)]">
-                  <td className="px-4 py-3 font-bold text-[var(--color-text)]">Total</td>
-                  <td className="px-4 py-3 text-right font-bold text-[var(--color-text)]">
-                    {fmtNum(revenue?.monthlyRevenue?.reduce((s, m) => s + m.paymentCount, 0))}
-                  </td>
-                  <td className="px-4 py-3 text-right font-bold text-[var(--color-text)]">
-                    {fmtBrl(revenue?.totalRevenueLast12mo)}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          )}
-        </div>
+                </tfoot>
+              </table>
+            )}
+          </div>
+        </Section>
 
-        {/* ── Funil de origens ── */}
-        <SectionTitle>Origem dos Membros</SectionTitle>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {loadingFunnel ? (
-            <div className="col-span-2 p-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl">
-              <TableSkeleton rows={4} cols={2} />
-            </div>
-          ) : errFunnel ? null : (
-            <>
-              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden shadow-sm">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="bg-[var(--color-bg)] border-b border-[var(--color-border)]">
-                      <th className="text-left px-4 py-3 font-semibold text-[var(--color-text-secondary)]">
-                        Origem
-                      </th>
-                      <th className="text-right px-4 py-3 font-semibold text-[var(--color-text-secondary)]">
-                        Membros
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[
-                      {
-                        label: 'Compra de bike (PLUS)',
-                        value: funnel?.memberOrigins?.plusViaBikePurchase,
-                      },
-                      {
-                        label: 'Indicação → PLUS',
-                        value: funnel?.memberOrigins?.plusViaReferral,
-                      },
-                      {
-                        label: 'Indicação → CARE',
-                        value: funnel?.memberOrigins?.careViaReferral,
-                      },
-                      {
-                        label: 'Orgânico CARE',
-                        value: funnel?.memberOrigins?.careOrganic,
-                      },
-                    ].map((row, i) => (
-                      <tr
-                        key={row.label}
-                        className={`border-b border-[var(--color-border)] last:border-0 ${
-                          i % 2 === 0 ? '' : 'bg-[var(--color-bg)]'
-                        }`}
-                      >
-                        <td className="px-4 py-3 text-[var(--color-text)]">{row.label}</td>
-                        <td className="px-4 py-3 text-right font-semibold text-[var(--color-text)]">
-                          {fmtNum(row.value)}
-                        </td>
+        {/* ── Origem dos membros ── */}
+        <Section
+          title="De onde vêm os membros"
+          intro="Como cada membro chegou ao clube — se comprando uma bike, por indicação de um amigo ou por conta própria."
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {loadingFunnel ? (
+              <div className="col-span-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl">
+                <TableSkeleton rows={4} cols={2} />
+              </div>
+            ) : errFunnel ? null : (
+              <>
+                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden shadow-sm">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="bg-[var(--color-bg)] border-b border-[var(--color-border)]">
+                        <th className="text-left px-4 py-3 font-semibold text-[var(--color-text-secondary)]">Como entrou</th>
+                        <th className="text-right px-4 py-3 font-semibold text-[var(--color-text-secondary)]">Membros</th>
                       </tr>
-                    ))}
-                    <tr className="bg-[var(--color-bg)] border-t-2 border-[var(--color-border)]">
-                      <td className="px-4 py-3 font-bold text-[var(--color-text)]">Total</td>
-                      <td className="px-4 py-3 text-right font-bold text-[var(--color-text)]">
-                        {fmtNum(funnel?.totalSubscriptions)}
+                    </thead>
+                    <tbody>
+                      {[
+                        { label: 'Ganhou o Plus ao comprar uma bike', value: funnel?.memberOrigins?.plusViaBikePurchase },
+                        { label: 'Virou Plus por indicação', value: funnel?.memberOrigins?.plusViaReferral },
+                        { label: 'Virou Care por indicação', value: funnel?.memberOrigins?.careViaReferral },
+                        { label: 'Entrou no Care por conta própria', value: funnel?.memberOrigins?.careOrganic },
+                      ].map((row, i) => (
+                        <tr
+                          key={row.label}
+                          className={`border-b border-[var(--color-border)] last:border-0 ${i % 2 === 0 ? '' : 'bg-[var(--color-bg)]'}`}
+                        >
+                          <td className="px-4 py-3 text-[var(--color-text)]">{row.label}</td>
+                          <td className="px-4 py-3 text-right font-semibold text-[var(--color-text)]">{fmtNum(row.value)}</td>
+                        </tr>
+                      ))}
+                      <tr className="bg-[var(--color-bg)] border-t-2 border-[var(--color-border)]">
+                        <td className="px-4 py-3 font-bold text-[var(--color-text)]">Total de membros</td>
+                        <td className="px-4 py-3 text-right font-bold text-[var(--color-text)]">{fmtNum(funnel?.totalSubscriptions)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden shadow-sm">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="bg-[var(--color-bg)] border-b border-[var(--color-border)]">
+                        <th className="text-left px-4 py-3 font-semibold text-[var(--color-text-secondary)]">Movimento no clube</th>
+                        <th className="text-right px-4 py-3 font-semibold text-[var(--color-text-secondary)]">Quantidade</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { label: 'Pagamentos confirmados (entradas e renovações)', value: funnel?.upgradesAndRenewals },
+                        { label: 'Indicações que viraram membro', value: funnel?.completedReferrals },
+                        { label: 'Indicações ainda em aberto', value: funnel?.pendingReferrals },
+                      ].map((row, i) => (
+                        <tr
+                          key={row.label}
+                          className={`border-b border-[var(--color-border)] last:border-0 ${i % 2 === 0 ? '' : 'bg-[var(--color-bg)]'}`}
+                        >
+                          <td className="px-4 py-3 text-[var(--color-text)]">{row.label}</td>
+                          <td className="px-4 py-3 text-right font-semibold text-[var(--color-text)]">{fmtNum(row.value)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {funnel?.note && (
+                    <p className="px-4 py-3 text-xs text-[var(--color-text-secondary)] border-t border-[var(--color-border)] italic">
+                      {funnel.note}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </Section>
+
+        {/* ── Pontos acumulados ── */}
+        <Section
+          title="Pontos acumulados pelos clientes"
+          intro="Os clientes juntam pontos e podem trocar por prêmios. Enquanto não trocam, esse valor fica reservado — é como um 'vale' que o clube ainda pode ter que honrar."
+        >
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
+            {loadingLiability ? (
+              <TableSkeleton rows={3} cols={2} />
+            ) : errLiability ? null : (
+              <table className="min-w-full text-sm">
+                <tbody>
+                  {[
+                    { label: 'Total de pontos acumulados pelos clientes', value: fmtNum(liability?.totalActivePoints) },
+                    { label: 'Quanto vale cada ponto', value: fmtBrl(liability?.pointValueBrl) },
+                    { label: 'Valor total dos pontos a resgatar', value: fmtBrl(liability?.liabilityBrl), strong: true },
+                    { label: 'Clientes que têm pontos', value: fmtNum(liability?.customersWithPoints) },
+                    {
+                      label: 'Números atualizados em',
+                      value: liability?.computedAt ? new Date(liability.computedAt).toLocaleString('pt-BR') : '—',
+                    },
+                  ].map((row, i) => (
+                    <tr
+                      key={row.label}
+                      className={`border-b border-[var(--color-border)] last:border-0 ${i % 2 === 0 ? '' : 'bg-[var(--color-bg)]'}`}
+                    >
+                      <td className="px-4 py-3 text-[var(--color-text-secondary)]">{row.label}</td>
+                      <td className={`px-4 py-3 text-right font-semibold text-[var(--color-text)] ${row.strong ? 'text-base' : ''}`}>
+                        {row.value}
                       </td>
                     </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl overflow-hidden shadow-sm">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="bg-[var(--color-bg)] border-b border-[var(--color-border)]">
-                      <th className="text-left px-4 py-3 font-semibold text-[var(--color-text-secondary)]">
-                        Métrica de Conversão
-                      </th>
-                      <th className="text-right px-4 py-3 font-semibold text-[var(--color-text-secondary)]">
-                        Qtd
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[
-                      { label: 'Upgrades / Renovações (pagamentos confirmados)', value: funnel?.upgradesAndRenewals },
-                      { label: 'Indicações concluídas', value: funnel?.completedReferrals },
-                      { label: 'Indicações pendentes', value: funnel?.pendingReferrals },
-                    ].map((row, i) => (
-                      <tr
-                        key={row.label}
-                        className={`border-b border-[var(--color-border)] last:border-0 ${
-                          i % 2 === 0 ? '' : 'bg-[var(--color-bg)]'
-                        }`}
-                      >
-                        <td className="px-4 py-3 text-[var(--color-text)]">{row.label}</td>
-                        <td className="px-4 py-3 text-right font-semibold text-[var(--color-text)]">
-                          {fmtNum(row.value)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {funnel?.note && (
-                  <p className="px-4 py-3 text-xs text-[var(--color-text-secondary)] border-t border-[var(--color-border)] italic">
-                    {funnel.note}
-                  </p>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* ── Passivo de pontos — detalhe ── */}
-        <SectionTitle>Passivo de Pontos — Detalhe</SectionTitle>
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-sm overflow-hidden">
-          {loadingLiability ? (
-            <div className="p-6">
-              <TableSkeleton rows={3} cols={2} />
-            </div>
-          ) : errLiability ? null : (
-            <table className="min-w-full text-sm">
-              <tbody>
-                {[
-                  { label: 'Pontos ativos totais', value: fmtNum(liability?.totalActivePoints) },
-                  { label: 'Valor do ponto (R$)', value: fmtBrl(liability?.pointValueBrl) },
-                  { label: 'Passivo total em BRL', value: fmtBrl(liability?.liabilityBrl) },
-                  { label: 'Clientes com pontos', value: fmtNum(liability?.customersWithPoints) },
-                  {
-                    label: 'Calculado em',
-                    value: liability?.computedAt
-                      ? new Date(liability.computedAt).toLocaleString('pt-BR')
-                      : '—',
-                  },
-                ].map((row, i) => (
-                  <tr
-                    key={row.label}
-                    className={`border-b border-[var(--color-border)] last:border-0 ${
-                      i % 2 === 0 ? '' : 'bg-[var(--color-bg)]'
-                    }`}
-                  >
-                    <td className="px-4 py-3 text-[var(--color-text-secondary)]">{row.label}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-[var(--color-text)]">
-                      {row.value}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </Section>
       </div>
     </div>
   );
