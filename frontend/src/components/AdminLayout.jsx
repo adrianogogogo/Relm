@@ -6,7 +6,6 @@ import BannerCarousel from './BannerCarousel';
 import { getBannerTargetForPath } from '../config/bannerTargets';
 import {
   MdDashboard,
-  MdVerifiedUser,
   MdPeople,
   MdStore,
   MdEvent,
@@ -26,6 +25,7 @@ import {
   MdAnalytics,
   MdRule,
   MdPointOfSale,
+  MdReceiptLong,
 } from 'react-icons/md';
 import { FaWhatsapp } from 'react-icons/fa';
 
@@ -41,6 +41,12 @@ const MENU_ITEMS = [
     path: '/admin/vendas',
     label: 'Cadastrar Venda',
     icon: MdPointOfSale,
+    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'],
+  },
+  {
+    path: '/admin/vendas-lista',
+    label: 'Minhas Vendas',
+    icon: MdReceiptLong,
     roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA'],
   },
   {

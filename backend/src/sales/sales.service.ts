@@ -94,6 +94,7 @@ export class SalesService {
         include: {
           items: true,
           customer: { select: { id: true, fullName: true } },
+          store: { select: { id: true, tradeName: true } },
         },
         orderBy: { saleDate: 'desc' },
         skip: (page - 1) * limit,

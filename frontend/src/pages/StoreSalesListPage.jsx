@@ -1,63 +1,41 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { MdAdd, MdReceiptLong } from 'react-icons/md';
 import { salesAPI } from '../services/api';
-import { Card, PageHeader, StatusChip, Button } from '../components/ui';
+import { Card, PageHeader, Button } from '../components/ui';
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const brl = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-// Formata uma quantidade de dias em pt-BR legível (anos / meses / dias).
-function formatDuration(days) {
-  if (days == null) return null;
-  const d = Math.abs(days);
-  if (d === 0) return 'hoje';
-  const years = Math.floor(d / 365);
-  const months = Math.floor((d % 365) / 30);
-  const rest = d % 30;
-  const parts = [];
-  if (years) parts.push(`${years} ano${years > 1 ? 's' : ''}`);
-  if (months) parts.push(`${months} ${months > 1 ? 'meses' : 'mês'}`);
-  if (!years && rest) parts.push(`${rest} dia${rest > 1 ? 's' : ''}`);
-  return parts.join(' e ') || `${d} dias`;
-}
-
-// Garantia de um item, derivada de warrantyEndsAt + saleDate.
-function warrantyInfo(item, saleDate) {
-  if (!item.warrantyEndsAt) return { hasWarranty: false };
-  const end = new Date(item.warrantyEndsAt);
-  const start = saleDate ? new Date(saleDate) : null;
-  const now = Date.now();
-
-  const totalDays = item.warrantyDays
-    ?? (start ? Math.round((end.getTime() - start.getTime()) / DAY_MS) : null);
-  const remainingDays = Math.round((end.getTime() - now) / DAY_MS);
-  const expired = remainingDays < 0;
-  const elapsed = start ? Math.max(0, now - start.getTime()) : 0;
-  const totalMs = start ? end.getTime() - start.getTime() : 0;
-  const percentUsed = totalMs > 0 ? Math.min(100, Math.max(0, (elapsed / totalMs) * 100)) : 0;
-
-  return { hasWarranty: true, end, totalDays, remainingDays, expired, percentUsed };
-}
+// Total da venda = soma de (valor unitário × quantidade) de cada item.
+const saleTotal = (sale) =>
+  (sale.items || []).reduce((sum, it) => sum + Number(it.unitPrice || 0) * (it.quantity || 1), 0);
 
 export default function StoreSalesListPage() {
-  // O backend escopa /sales pela loja do usuário (LOJA) automaticamente —
-  // esta lista só mostra as vendas da própria loja.
+  const location = useLocation();
+  const isAdmin = location.pathname.startsWith('/admin');
+  const detailBase = isAdmin ? '/admin/customers' : '/loja/clientes';
+  const createPath = isAdmin ? '/admin/vendas' : '/loja/vendas';
+
+  // O backend escopa /sales pela loja quando o perfil é LOJA; para os perfis
+  // RELM (admin/gestor/suporte) retorna as vendas de todas as lojas.
   const { data, isLoading } = useQuery({
-    queryKey: ['store-sales'],
+    queryKey: ['sales-list', isAdmin],
     queryFn: () => salesAPI.getAll({ limit: 100 }),
   });
   const sales = data?.data || [];
 
   return (
     <div className="py-8 px-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between gap-3 mb-6">
           <PageHeader
             title="Minhas Vendas"
-            subtitle="Vendas registradas pela sua loja e a garantia restante de cada produto."
+            subtitle={isAdmin
+              ? 'Vendas registradas por todas as lojas. Clique no cliente para ver os itens e a garantia.'
+              : 'Vendas da sua loja. Clique no cliente para ver os itens e a garantia restante.'}
             className="mb-0"
           />
-          <Link to="/loja/vendas">
+          <Link to={createPath}>
             <Button icon={MdAdd}>Cadastrar Venda</Button>
           </Link>
         </div>
@@ -69,88 +47,57 @@ export default function StoreSalesListPage() {
             <div className="flex flex-col items-center text-center py-8 gap-2">
               <MdReceiptLong size={40} className="text-gray-300 dark:text-slate-600" />
               <p className="text-gray-500 dark:text-slate-400">Nenhuma venda registrada ainda.</p>
-              <Link to="/loja/vendas" className="text-primary dark:text-primary-400 hover:underline text-sm font-semibold">
+              <Link to={createPath} className="text-primary dark:text-primary-400 hover:underline text-sm font-semibold">
                 Cadastrar a primeira venda
               </Link>
             </div>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {sales.map((sale) => (
-              <Card key={sale.id}>
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <p className="font-semibold text-gray-900 dark:text-slate-100">
-                      {sale.customer?.id ? (
-                        <Link to={`/loja/clientes/${sale.customer.id}`} className="hover:underline text-primary dark:text-primary-400">
-                          {sale.customer.fullName}
-                        </Link>
-                      ) : (sale.customer?.fullName || 'Cliente')}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-slate-400">
-                      Venda de {new Date(sale.saleDate).toLocaleDateString('pt-BR')}
-                    </p>
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">NF {sale.invoiceNumber || '—'}</p>
-                </div>
-                <div className="space-y-3">
-                  {(sale.items || []).map((item) => {
-                    const w = warrantyInfo(item, sale.saleDate);
-                    let chipLabel = 'Sem garantia';
-                    let variant = 'neutral';
-                    if (w.hasWarranty) {
-                      if (w.expired) {
-                        chipLabel = `Vencida há ${formatDuration(w.remainingDays)}`;
-                        variant = 'error';
-                      } else if (w.remainingDays <= 30) {
-                        chipLabel = `Vence em ${formatDuration(w.remainingDays)}`;
-                        variant = 'warning';
-                      } else {
-                        chipLabel = `Faltam ${formatDuration(w.remainingDays)}`;
-                        variant = 'success';
-                      }
-                    }
-                    return (
-                      <div
-                        key={item.id}
-                        className="border-t border-gray-100 dark:border-slate-800 pt-3 first:border-t-0 first:pt-0"
-                      >
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-slate-100">{item.commercialName}</p>
-                            <p className="text-xs text-gray-500 dark:text-slate-400">
-                              Série: <span className="font-mono text-sm text-gray-600 dark:text-slate-400">{item.serialNumber || '—'}</span>
-                              {' • '}Qtd: {item.quantity}
-                            </p>
-                          </div>
-                          <StatusChip label={chipLabel} variant={variant} />
-                        </div>
-                        {w.hasWarranty && (
-                          <div className="mt-2">
-                            <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-500 dark:text-slate-400">
-                              {w.totalDays != null && (
-                                <span>Garantia: <span className="font-medium text-gray-700 dark:text-slate-300">{formatDuration(w.totalDays)}</span></span>
-                              )}
-                              <span>
-                                {w.expired ? 'Venceu em ' : 'Vence em '}
-                                <span className="font-medium text-gray-700 dark:text-slate-300">{w.end.toLocaleDateString('pt-BR')}</span>
-                              </span>
-                            </div>
-                            <div className="mt-1.5 h-1.5 w-full rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
-                              <div
-                                className={`h-full rounded-full ${w.expired ? 'bg-red-500' : w.remainingDays <= 30 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                                style={{ width: `${Math.round(w.percentUsed)}%` }}
-                              />
-                            </div>
-                          </div>
+          <Card className="p-0 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-slate-400 border-b border-gray-200 dark:border-slate-800">
+                    <th className="px-4 py-3 font-semibold">Cliente</th>
+                    <th className="px-4 py-3 font-semibold">Loja</th>
+                    <th className="px-4 py-3 font-semibold">Data</th>
+                    <th className="px-4 py-3 font-semibold text-center">Itens</th>
+                    <th className="px-4 py-3 font-semibold text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                  {sales.map((sale) => (
+                    <tr key={sale.id} className="hover:bg-gray-50 dark:hover:bg-slate-900/40 transition-colors">
+                      <td className="px-4 py-3">
+                        {sale.customer?.id ? (
+                          <Link
+                            to={`${detailBase}/${sale.customer.id}?tab=purchases`}
+                            className="font-medium text-primary dark:text-primary-400 hover:underline"
+                          >
+                            {sale.customer.fullName}
+                          </Link>
+                        ) : (
+                          <span className="font-medium text-gray-900 dark:text-slate-100">
+                            {sale.customer?.fullName || '—'}
+                          </span>
                         )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-            ))}
-          </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-slate-300">{sale.store?.tradeName || '—'}</td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-slate-300">
+                        {new Date(sale.saleDate).toLocaleDateString('pt-BR')}
+                      </td>
+                      <td className="px-4 py-3 text-center text-gray-600 dark:text-slate-300">
+                        {(sale.items || []).length}
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-slate-100">
+                        {brl(saleTotal(sale))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         )}
       </div>
     </div>
