@@ -116,7 +116,13 @@ export class AuthService {
     if (user && user.active) {
       const valid = await bcrypt.compare(password, user.passwordHash);
       if (valid) {
-        const payload = { sub: user.id, email: user.email, role: user.role, userType: user.role };
+        const payload = {
+          sub: user.id,
+          email: user.email,
+          role: user.role,
+          storeId: user.storeId,
+          userType: user.role,
+        };
         const accessToken = this.jwtService.sign(payload);
         const refreshToken = this.jwtService.sign(payload, {
           secret: this.config.get('JWT_REFRESH_SECRET'),
@@ -136,6 +142,7 @@ export class AuthService {
             name: user.name,
             email: user.email,
             role: user.role,
+            storeId: user.storeId,
             userType: user.role as string,
           },
         };

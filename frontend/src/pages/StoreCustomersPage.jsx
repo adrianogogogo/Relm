@@ -7,13 +7,14 @@ import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader, Button } from '../components/ui';
 
 export default function StoreCustomersPage() {
-  const storeId = useAuthStore((state) => state.user?.storeId);
+  const user = useAuthStore((state) => state.user);
+  const storeId = user?.storeId;
   const [search, setSearch] = useState('');
 
   const { data: customersResponse, isLoading } = useQuery({
-    queryKey: ['store-customers', storeId],
+    queryKey: ['store-customers', storeId, user?.id],
     queryFn: () => customersAPI.getAll({ storeId, pageSize: 200 }),
-    enabled: !!storeId,
+    enabled: !!user,
   });
 
   // O endpoint agora retorna { data, total, page, pageSize } (paginado).
