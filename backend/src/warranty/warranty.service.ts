@@ -272,6 +272,7 @@ export class WarrantyService {
       ...(filters.protocol_number && {
         protocolNumber: { contains: filters.protocol_number },
       }),
+      ...(filters.customerId && { customerId: filters.customerId }),
     };
 
     // Busca textual livre: protocolo, nome/email do cliente ou serial do produto.
@@ -285,7 +286,7 @@ export class WarrantyService {
       ];
     }
 
-    // Usuários de LOJA/STORE só podem ver garantias da própria loja.
+    // Usuários de LOJA/STORE só podem ver garantias da própria loja ou de seus clientes vinculados.
     const isLoja = requester?.requesterRole === 'LOJA' || requester?.requesterRole === 'STORE';
     if (isLoja) {
       let storeId: string | null = null;
@@ -310,8 +311,16 @@ export class WarrantyService {
       if (!storeId) {
         throw new BadRequestException('Usuário de loja sem loja vinculada.');
       }
-      // storeId vem do usuário autenticado, nunca do query param
-      where.storeId = storeId;
+      
+      // A loja vê garantias associadas diretamente a ela OU de seus clientes vinculados
+      where.AND = [
+        {
+          OR: [
+            { storeId: storeId },
+            { customer: { storeId: storeId } }
+          ]
+        }
+      ];
     } else if (filters.storeId) {
       where.storeId = filters.storeId;
     }
