@@ -161,7 +161,6 @@ export default function CustomerDashboard() {
   const points = pointsData?.balance || 0;
 
   const metrics = [
-    { label: 'Garantias', value: warranties.length, icon: MdVerifiedUser, color: isPlus ? '#D4AF37' : '#1565C0', link: '/cliente/garantias' },
     { label: 'Eventos', value: events.length, icon: MdEvent, color: isPlus ? '#D4AF37' : '#2d3a4a', link: '/cliente/eventos' },
     { label: 'Vantagens', value: benefits.length, icon: MdCardGiftcard, color: isPlus ? '#D4AF37' : '#9C27B0', link: '/cliente/vantagens' },
     { label: isPlus ? 'Meus Pontos' : 'Cotações', value: isPlus ? points : quotes.length, icon: isPlus ? MdCardGiftcard : MdDescription, color: isPlus ? '#D4AF37' : '#FF9800', link: isPlus ? '/cliente/vantagens' : '/cliente/seguros' },
@@ -190,7 +189,7 @@ export default function CustomerDashboard() {
         )}
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {metrics.map((card) => (
             <Link key={card.label} to={card.link} className="block group">
               <StatCard
@@ -205,33 +204,7 @@ export default function CustomerDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Garantias recentes */}
-          <Card>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-title text-lg font-bold text-gray-900 dark:text-slate-100">Garantias Recentes</h2>
-              <Link to="/cliente/garantias" className="text-primary dark:text-primary-400 text-sm hover:underline">
-                Ver todas →
-              </Link>
-            </div>
-            {warranties.length === 0 ? (
-              <p className="text-gray-400 dark:text-slate-500 text-sm">Nenhuma garantia registrada.</p>
-            ) : (
-              <div className="space-y-3">
-                {warranties.slice(0, 3).map((w) => (
-                  <div key={w.id} className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-3 last:border-b-0">
-                    <div>
-                      <p className="font-semibold text-sm text-gray-800 dark:text-slate-200">{w.protocolNumber}</p>
-                      <p className="text-xs text-gray-500 dark:text-slate-400">{w.product?.model}</p>
-                    </div>
-                    <StatusChip
-                      label={WARRANTY_STATUS_LABEL[w.status] || w.status}
-                      variant={WARRANTY_STATUS_VARIANT[w.status] || 'neutral'}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
+
 
           {/* Próximos eventos */}
           <Card>
@@ -292,9 +265,6 @@ export default function CustomerDashboard() {
           <Card>
             <h2 className="font-title text-lg font-bold text-gray-900 dark:text-slate-100 mb-4">Ações Rápidas</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Link to="/garantia" className="btn btn-outline justify-start">
-                <MdVerifiedUser size={18} /> Registrar garantia
-              </Link>
               <Link to="/seguro" className="btn btn-outline justify-start">
                 <MdDescription size={18} /> Cotação de seguro
               </Link>
