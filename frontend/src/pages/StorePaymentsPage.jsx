@@ -23,7 +23,8 @@ function formatBRL(value) {
 
 export default function StorePaymentsPage() {
   const queryClient = useQueryClient();
-  const storeId = useAuthStore((state) => state.user?.storeId);
+  const user = useAuthStore((state) => state.user);
+  const storeId = user?.storeId;
 
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerFilter, setCustomerFilter] = useState('');
@@ -38,9 +39,9 @@ export default function StorePaymentsPage() {
   const feeUnconfigured = !feeAmount || Number(feeAmount) <= 0;
 
   const { data: customersResponse } = useQuery({
-    queryKey: ['store-payment-customers', storeId],
+    queryKey: ['store-payment-customers', storeId, user?.id],
     queryFn: () => customersAPI.getAll({ storeId, pageSize: 200 }),
-    enabled: !!storeId,
+    enabled: !!user,
     select: (res) => (Array.isArray(res) ? res : res?.data ?? []),
   });
   const allCustomers = customersResponse || [];
@@ -52,9 +53,39 @@ export default function StorePaymentsPage() {
     return allCustomers.filter(
       (c) =>
         c.fullName?.toLowerCase().includes(q) ||
-        c.email?.toLowerCase().includes(q),
+        c.email?.toLowerCase().includes(q) ||
+        c.cpf?.includes(q) ||
+        c.phone?.includes(q)
     );
   }, [allCustomers, customerFilter]);
+
+  const selectedCustomerObj = useMemo(
+    () => allCustomers.find((c) => c.id === selectedCustomer),
+    [allCustomers, selectedCustomer]
+  );
+
+  const handleFilterChange = (val) => {
+    setCustomerFilter(val);
+    const q = val.toLowerCase().trim();
+    if (!q) {
+      setSelectedCustomer(null);
+      return;
+    }
+    const matches = allCustomers.filter(
+      (c) =>
+        c.fullName?.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q) ||
+        c.cpf?.includes(q) ||
+        c.phone?.includes(q)
+    );
+    if (matches.length === 1) {
+      setSelectedCustomer(matches[0].id);
+    } else if (matches.length > 0 && (!selectedCustomer || !matches.some((c) => c.id === selectedCustomer))) {
+      setSelectedCustomer(matches[0].id);
+    } else if (matches.length === 0) {
+      setSelectedCustomer(null);
+    }
+  };
 
   const { data: payments = [], isLoading } = useQuery({
     queryKey: ['store-payments'],
@@ -144,10 +175,7 @@ export default function StorePaymentsPage() {
                   type="text"
                   placeholder="Digite nome ou e-mail para filtrar..."
                   value={customerFilter}
-                  onChange={(e) => {
-                    setCustomerFilter(e.target.value);
-                    setSelectedCustomer(null);
-                  }}
+                  onChange={(e) => handleFilterChange(e.target.value)}
                   className="input pl-10"
                 />
               </div>
@@ -166,6 +194,18 @@ export default function StorePaymentsPage() {
                   </option>
                 ))}
               </select>
+
+              {selectedCustomerObj && (
+                <div className="mt-3 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 rounded-lg text-xs flex items-center justify-between text-emerald-900 dark:text-emerald-200">
+                  <div>
+                    <p className="font-bold text-sm">{selectedCustomerObj.fullName}</p>
+                    <p className="text-emerald-700 dark:text-emerald-400">{selectedCustomerObj.email}</p>
+                  </div>
+                  <span className="font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 px-2.5 py-1 rounded-full border border-emerald-300 dark:border-emerald-800 shrink-0">
+                    Cliente Selecionado ✓
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>
