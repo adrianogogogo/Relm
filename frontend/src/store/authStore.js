@@ -23,17 +23,18 @@ function readUser() {
 function getDashboardPath(user) {
   if (!user) return '/login';
 
-  switch (user.userType) {
+  if (user.userType === 'STORE' || user.role === 'LOJA') {
+    return '/loja/dashboard';
+  }
+
+  switch (user.userType || user.role) {
     case 'CUSTOMER':
       return '/cliente/dashboard';
-    case 'STORE':
-      return '/loja/dashboard';
     case 'DISTRIBUIDOR':
       return '/admin/stores';
     case 'ADMIN_RELM':
     case 'GERENTE_RELM':
     case 'SUPORTE_RELM':
-    case 'LOJA':
       return '/admin';
     default:
       return '/admin';

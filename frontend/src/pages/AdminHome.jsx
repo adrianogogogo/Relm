@@ -10,6 +10,10 @@ import AdminDashboard from './AdminDashboard';
 export default function AdminHome() {
   const user = useAuthStore((state) => state.user);
 
+  if (user?.role === 'LOJA' || user?.userType === 'STORE') {
+    return <Navigate to="/loja/dashboard" replace />;
+  }
+
   if (user?.role === 'DISTRIBUIDOR') {
     return <Navigate to="/admin/stores" replace />;
   }
