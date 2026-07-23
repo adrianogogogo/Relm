@@ -6,15 +6,40 @@ import { useAuthStore } from '../store/authStore';
 import { Card, StatusChip, StatCard } from '../components/ui';
 import AdminResetPasswordModal from '../components/AdminResetPasswordModal';
 
-// Status de garantia de uma linha de venda, derivado de warrantyEndsAt.
-// null = vendido sem garantia; passado = expirada; futuro = vigente.
-function warrantyStatus(warrantyEndsAt) {
-  if (!warrantyEndsAt) return { label: 'Sem garantia', tone: 'neutral' };
-  const end = new Date(warrantyEndsAt);
-  if (end.getTime() < Date.now()) {
-    return { label: `Expirada em ${end.toLocaleDateString('pt-BR')}`, tone: 'danger' };
-  }
-  return { label: `Em garantia até ${end.toLocaleDateString('pt-BR')}`, tone: 'success' };
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Formata uma quantidade de dias em pt-BR legível (anos / meses / dias).
+function formatDuration(days) {
+  if (days == null) return null;
+  const d = Math.abs(days);
+  if (d === 0) return 'hoje';
+  const years = Math.floor(d / 365);
+  const months = Math.floor((d % 365) / 30);
+  const rest = d % 30;
+  const parts = [];
+  if (years) parts.push(`${years} ano${years > 1 ? 's' : ''}`);
+  if (months) parts.push(`${months} ${months > 1 ? 'meses' : 'mês'}`);
+  if (!years && rest) parts.push(`${rest} dia${rest > 1 ? 's' : ''}`);
+  return parts.join(' e ') || `${d} dias`;
+}
+
+// Garantia de uma linha de venda, derivada de warrantyEndsAt + saleDate.
+// null = vendido sem garantia. Retorna duração total, tempo restante e % consumida.
+function warrantyInfo(item, saleDate) {
+  if (!item.warrantyEndsAt) return { hasWarranty: false };
+  const end = new Date(item.warrantyEndsAt);
+  const start = saleDate ? new Date(saleDate) : null;
+  const now = Date.now();
+
+  const totalDays = item.warrantyDays
+    ?? (start ? Math.round((end.getTime() - start.getTime()) / DAY_MS) : null);
+  const remainingDays = Math.round((end.getTime() - now) / DAY_MS);
+  const expired = remainingDays < 0;
+  const elapsed = start ? Math.max(0, now - start.getTime()) : 0;
+  const totalMs = start ? end.getTime() - start.getTime() : 0;
+  const percentUsed = totalMs > 0 ? Math.min(100, Math.max(0, (elapsed / totalMs) * 100)) : 0;
+
+  return { hasWarranty: true, end, totalDays, remainingDays, expired, percentUsed };
 }
 
 export default function CustomerDetailPage() {
@@ -243,23 +268,59 @@ export default function CustomerDetailPage() {
                             NF {sale.invoiceNumber || '—'}
                           </p>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           {(sale.items || []).map((item) => {
-                            const status = warrantyStatus(item.warrantyEndsAt);
-                            const variant = status.tone === 'danger' ? 'error' : status.tone === 'success' ? 'success' : 'neutral';
+                            const w = warrantyInfo(item, sale.saleDate);
+                            // Chip de status: sem garantia (neutro), vencida (erro),
+                            // vencendo em <=30 dias (aviso) ou vigente (sucesso).
+                            let chipLabel = 'Sem garantia';
+                            let variant = 'neutral';
+                            if (w.hasWarranty) {
+                              if (w.expired) {
+                                chipLabel = `Vencida há ${formatDuration(w.remainingDays)}`;
+                                variant = 'error';
+                              } else if (w.remainingDays <= 30) {
+                                chipLabel = `Vence em ${formatDuration(w.remainingDays)}`;
+                                variant = 'warning';
+                              } else {
+                                chipLabel = `Faltam ${formatDuration(w.remainingDays)}`;
+                                variant = 'success';
+                              }
+                            }
                             return (
                               <div
                                 key={item.id}
-                                className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 dark:border-slate-800 pt-2 first:border-t-0 first:pt-0"
+                                className="border-t border-gray-100 dark:border-slate-800 pt-3 first:border-t-0 first:pt-0"
                               >
-                                <div>
-                                  <p className="font-medium text-gray-900 dark:text-slate-100">{item.commercialName}</p>
-                                  <p className="text-xs text-gray-500 dark:text-slate-400">
-                                    Série: <span className="font-mono text-sm text-gray-600 dark:text-slate-400">{item.serialNumber || '—'}</span>
-                                    {' • '}Qtd: {item.quantity}
-                                  </p>
+                                <div className="flex flex-wrap items-start justify-between gap-2">
+                                  <div>
+                                    <p className="font-medium text-gray-900 dark:text-slate-100">{item.commercialName}</p>
+                                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                                      Série: <span className="font-mono text-sm text-gray-600 dark:text-slate-400">{item.serialNumber || '—'}</span>
+                                      {' • '}Qtd: {item.quantity}
+                                    </p>
+                                  </div>
+                                  <StatusChip label={chipLabel} variant={variant} />
                                 </div>
-                                <StatusChip label={status.label} variant={variant} />
+                                {w.hasWarranty && (
+                                  <div className="mt-2">
+                                    <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-500 dark:text-slate-400">
+                                      {w.totalDays != null && (
+                                        <span>Garantia: <span className="font-medium text-gray-700 dark:text-slate-300">{formatDuration(w.totalDays)}</span></span>
+                                      )}
+                                      <span>
+                                        {w.expired ? 'Venceu em ' : 'Vence em '}
+                                        <span className="font-medium text-gray-700 dark:text-slate-300">{w.end.toLocaleDateString('pt-BR')}</span>
+                                      </span>
+                                    </div>
+                                    <div className="mt-1.5 h-1.5 w-full rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
+                                      <div
+                                        className={`h-full rounded-full ${w.expired ? 'bg-red-500' : w.remainingDays <= 30 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                        style={{ width: `${Math.round(w.percentUsed)}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
