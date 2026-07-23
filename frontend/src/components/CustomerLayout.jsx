@@ -24,7 +24,6 @@ import {
 const MENU = [
   { path: '/cliente/dashboard', label: 'Início', icon: MdDashboard },
   { path: '/cliente/assinatura', label: 'Minha Assinatura', icon: MdWorkspacePremium },
-  { path: '/cliente/garantias', label: 'Minhas Garantias', icon: MdVerifiedUser },
   { path: '/cliente/oficina', label: 'Oficina / Revisões', icon: MdBuild },
   { path: '/cliente/resgate', label: 'Resgatar Prêmios', icon: MdCardGiftcard },
   { path: '/cliente/eventos', label: 'Meus Eventos', icon: MdEvent },

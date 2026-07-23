@@ -342,7 +342,6 @@ export default function StoreDetailPage() {
           {/* Coluna lateral — stats */}
           <div className="space-y-4">
             <StatCard title="Clientes" value={store._count?.customers ?? 0} icon={MdPeople} color="#1565C0" />
-            <StatCard title="Garantias" value={store._count?.warrantyClaims ?? 0} icon={MdVerifiedUser} color="#4CAF50" />
             <StatCard title="Produtos" value={store._count?.products ?? 0} icon={MdInventory2} color="#9C27B0" />
 
             <Card className="p-5">

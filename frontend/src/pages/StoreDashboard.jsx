@@ -66,13 +66,6 @@ const StoreDashboard = () => {
       link: '/loja/clientes',
     },
     {
-      label: 'Garantias',
-      value: warranties?.length || 0,
-      icon: MdVerifiedUser,
-      color: '#4CAF50',
-      link: '/loja/garantias',
-    },
-    {
       label: 'Seguros',
       value: insurances?.length || 0,
       icon: MdDescription,
@@ -83,7 +76,6 @@ const StoreDashboard = () => {
 
   const quickActions = [
     { to: '/loja/clientes/novo', label: 'Novo Cliente', icon: MdPeople, color: '#1565C0' },
-    { to: '/loja/garantias', label: 'Ver Garantias', icon: MdVerifiedUser, color: '#4CAF50' },
     { to: '/loja/seguros', label: 'Ver Seguros', icon: MdDescription, color: '#9C27B0' },
     { to: '/loja/produtos', label: 'Produtos', icon: MdInventory2, color: '#FF9800' },
   ];
@@ -104,12 +96,12 @@ const StoreDashboard = () => {
         />
 
         {/* KPIs */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
           {stats.map((stat) => (
             <Link key={stat.label} to={stat.link} className="block group">
               <StatCard
                 title={stat.label}
-                value={loadingCustomers || loadingWarranties ? '...' : stat.value}
+                value={loadingCustomers ? '...' : stat.value}
                 icon={stat.icon}
                 color={stat.color}
                 className="h-full group-hover:shadow-md transition-shadow"
@@ -123,7 +115,7 @@ const StoreDashboard = () => {
           <h2 className="font-title text-xl font-bold mb-4 text-gray-900 dark:text-slate-100">
             Ações Rápidas
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {quickActions.map((action) => (
               <Link
                 key={action.to}
@@ -142,44 +134,7 @@ const StoreDashboard = () => {
           </div>
         </Card>
 
-        {/* Recent Activity */}
-        <Card>
-          <h2 className="font-title text-xl font-bold mb-4 text-gray-900 dark:text-slate-100">
-            Atividade Recente
-          </h2>
-          {loadingWarranties ? (
-            <p className="text-gray-500 dark:text-slate-400">Carregando...</p>
-          ) : warranties && warranties.length > 0 ? (
-            <div className="space-y-3">
-              {warranties.slice(0, 5).map((warranty) => (
-                <div
-                  key={warranty.id}
-                  className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-3 last:border-b-0"
-                >
-                  <div>
-                    <p className="font-semibold text-gray-800 dark:text-slate-100">
-                      Garantia #{warranty.protocolNumber}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <StatusChip
-                      label={STATUS_LABEL[warranty.status] || warranty.status}
-                      variant={STATUS_VARIANT[warranty.status] || 'neutral'}
-                    />
-                    <Link
-                      to={`/loja/garantias/${warranty.id}`}
-                      className="text-primary dark:text-primary-400 text-xs hover:underline"
-                    >
-                      Ver detalhes →
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 dark:text-slate-400">Nenhuma atividade recente</p>
-          )}
-        </Card>
+
       </div>
     </div>
   );
