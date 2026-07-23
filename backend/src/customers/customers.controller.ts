@@ -47,12 +47,16 @@ export class CustomersController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
   ) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    const userRole = req.user?.role || req.user?.type || req.user?.userType;
+    const storeIdFromToken = req.user?.storeId;
+
     return this.customersService.findAll({
       search,
-      storeId,
+      storeId: storeId || storeIdFromToken,
       active: active === 'true' ? true : active === 'false' ? false : undefined,
-      requesterUserId: req.user?.userId,
-      requesterRole: req.user?.role,
+      requesterUserId: userId,
+      requesterRole: userRole,
       page: page ? parseInt(page, 10) : undefined,
       pageSize: pageSize ? parseInt(pageSize, 10) : undefined,
     });
@@ -61,9 +65,12 @@ export class CustomersController {
   @Get(':id')
   @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA')
   findOne(@Request() req: any, @Param('id') id: string) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    const userRole = req.user?.role || req.user?.type || req.user?.userType;
+
     return this.customersService.findOne(id, {
-      requesterUserId: req.user?.userId,
-      requesterRole: req.user?.role,
+      requesterUserId: userId,
+      requesterRole: userRole,
     });
   }
 

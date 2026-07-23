@@ -130,13 +130,12 @@ export class CustomersService {
       ];
     }
 
-    // Usuários de LOJA só podem ver clientes da própria loja.
-    // O storeId é forçado a partir do token (ignorando o query param).
-    if (filters?.requesterRole === 'LOJA') {
+    const isLoja = filters?.requesterRole === 'LOJA' || filters?.requesterRole === 'STORE';
+    if (isLoja) {
       const requesterStoreId = await this.getRequesterStoreId(
         filters.requesterUserId,
+        filters.storeId,
       );
-      // Loja sem storeId vinculado não pode ver nenhum cliente.
       if (!requesterStoreId) {
         return { data: [], total: 0, page, pageSize };
       }
@@ -246,8 +245,8 @@ export class CustomersService {
       throw new NotFoundException('Cliente não encontrado');
     }
 
-    // Usuários de LOJA só podem acessar clientes da própria loja.
-    if (requester?.requesterRole === 'LOJA') {
+    const isLoja = requester?.requesterRole === 'LOJA' || requester?.requesterRole === 'STORE';
+    if (isLoja) {
       const requesterStoreId = await this.getRequesterStoreId(
         requester.requesterUserId,
       );
@@ -261,11 +260,13 @@ export class CustomersService {
     return this.formatCustomer(customer, requester?.requesterRole);
   }
 
-  // Busca o storeId vinculado ao usuário (token de LOJA) a partir do banco,
-  // já que o storeId não está presente no payload do JWT.
   private async getRequesterStoreId(
     userId?: string,
+    directStoreId?: string,
   ): Promise<string | null> {
+    if (directStoreId) {
+      return directStoreId;
+    }
     if (!userId) {
       return null;
     }
@@ -273,7 +274,13 @@ export class CustomersService {
       where: { id: userId },
       select: { storeId: true },
     });
-    return user?.storeId ?? null;
+    if (user?.storeId) return user.storeId;
+
+    const storeUser = await this.prisma.storeUser.findUnique({
+      where: { id: userId },
+      select: { storeId: true },
+    });
+    return storeUser?.storeId ?? null;
   }
 
   async update(id: string, updateCustomerDto: UpdateCustomerDto) {
