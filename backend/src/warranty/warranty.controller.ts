@@ -73,9 +73,11 @@ export class WarrantyController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar garantias' })
   async findAll(@Query() query: any, @Request() req: any) {
+    const userId = req.user?.userId || req.user?.id || req.user?.sub;
+    const userRole = req.user?.role || req.user?.type || req.user?.userType;
     return this.warrantyService.findAll(query, {
-      requesterUserId: req.user?.userId,
-      requesterRole: req.user?.role,
+      requesterUserId: userId,
+      requesterRole: userRole,
     });
   }
 

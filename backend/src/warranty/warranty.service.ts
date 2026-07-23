@@ -285,17 +285,33 @@ export class WarrantyService {
       ];
     }
 
-    // Usuários de LOJA só podem ver garantias da própria loja.
-    if (requester?.requesterRole === 'LOJA') {
-      const user = await this.prisma.user.findUnique({
-        where: { id: requester.requesterUserId },
-      });
-      if (!user?.storeId) {
+    // Usuários de LOJA/STORE só podem ver garantias da própria loja.
+    const isLoja = requester?.requesterRole === 'LOJA' || requester?.requesterRole === 'STORE';
+    if (isLoja) {
+      let storeId: string | null = null;
+      if (requester.requesterUserId) {
+        const user = await this.prisma.user.findUnique({
+          where: { id: requester.requesterUserId },
+          select: { storeId: true },
+        });
+        if (user?.storeId) {
+          storeId = user.storeId;
+        } else {
+          const storeUser = await this.prisma.storeUser.findUnique({
+            where: { id: requester.requesterUserId },
+            select: { storeId: true },
+          });
+          if (storeUser?.storeId) {
+            storeId = storeUser.storeId;
+          }
+        }
+      }
+
+      if (!storeId) {
         throw new BadRequestException('Usuário de loja sem loja vinculada.');
       }
-      // storeId vem do usuário autenticado, nunca do query param — senão o
-      // lojista lista os chamados de qualquer loja trocando a URL.
-      where.storeId = user.storeId;
+      // storeId vem do usuário autenticado, nunca do query param
+      where.storeId = storeId;
     } else if (filters.storeId) {
       where.storeId = filters.storeId;
     }
