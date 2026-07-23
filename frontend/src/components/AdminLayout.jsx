@@ -56,12 +56,6 @@ const MENU_ITEMS = [
     roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
   },
   {
-    path: '/admin/warranties',
-    label: 'Garantias',
-    icon: MdVerifiedUser,
-    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
-  },
-  {
     path: '/admin/customers',
     label: 'Clientes',
     icon: MdPeople,

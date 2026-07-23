@@ -25,7 +25,6 @@ const MENU = [
   { path: '/loja/clientes', label: 'Clientes', icon: MdPeople },
   { path: '/loja/vendas', label: 'Cadastrar Venda', icon: MdPointOfSale },
   { path: '/loja/pagamentos', label: 'Pagamentos (Anuidade)', icon: MdPayments },
-  { path: '/loja/garantias', label: 'Garantias', icon: MdVerifiedUser },
   { path: '/loja/oficina', label: 'Oficina / Serviços', icon: MdBuild },
   { path: '/loja/seguros', label: 'Cotações de Seguro', icon: MdDescription },
   { path: '/loja/produtos', label: 'Produtos', icon: MdInventory2 },

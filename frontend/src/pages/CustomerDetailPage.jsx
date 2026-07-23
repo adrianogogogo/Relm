@@ -80,7 +80,6 @@ export default function CustomerDetailPage() {
   const tabs = [
     { id: 'overview', label: 'Visão Geral' },
     { id: 'purchases', label: 'Compras' },
-    { id: 'warranties', label: 'Garantias' },
     { id: 'insurances', label: 'Seguros' },
     { id: 'events', label: 'Eventos' },
     { id: 'stores', label: 'Lojas Próximas' },
@@ -190,12 +189,7 @@ export default function CustomerDetailPage() {
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <StatCard
-                    title="Garantias Ativas"
-                    value={warranties.filter((w) => w.statusId !== 9 && w.statusId !== 10).length}
-                    color="#1565C0"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <StatCard
                     title="Seguros Ativos"
                     value={insurances.filter((i) => i.status === 'ACTIVE').length}
