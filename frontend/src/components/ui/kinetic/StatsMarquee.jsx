@@ -24,16 +24,16 @@ export default function StatsMarquee({ items = [], speed = 60, className = '' })
   if (!items.length) return null;
 
   const separator = (
-    <span className="mx-6 text-sm text-[#183757] dark:text-[#2196F3] font-bold select-none" aria-hidden="true">///</span>
+    <span className="mx-6 text-sm text-[#0A1929] dark:text-[#2196F3] font-bold select-none" aria-hidden="true">///</span>
   );
 
   const renderItem = (item, i) => (
     <span key={i} className="inline-flex items-center gap-3 mx-4">
-      <span className="w-2 h-2 rounded-full bg-[#183757] dark:bg-[#2196F3] shadow-[0_0_8px_rgba(24,55,87,0.8)] dark:shadow-[0_0_8px_rgba(33,150,243,0.8)]" />
-      <span className="font-mono text-lg md:text-xl font-bold tracking-tight text-[#2d3436] dark:text-[#f0f2f5]">
+      <span className="w-2 h-2 rounded-full bg-[#0A1929] dark:bg-[#2196F3] shadow-[0_0_8px_rgba(10,25,41,0.8)] dark:shadow-[0_0_8px_rgba(33,150,243,0.8)]" />
+      <span className="font-mono text-lg md:text-xl font-bold tracking-tight text-[#0A1929] dark:text-[#f0f2f5]">
         {item.value}
       </span>
-      <span className="font-mono text-xs uppercase tracking-widest font-bold text-[#4a5568] dark:text-[#a0aec0]">
+      <span className="font-mono text-xs uppercase tracking-widest font-bold text-[#1e3a5f] dark:text-[#a0aec0]">
         {item.label}
       </span>
       {separator}
@@ -43,16 +43,16 @@ export default function StatsMarquee({ items = [], speed = 60, className = '' })
   if (prefersReducedMotion) {
     return (
       <div
-        className={`w-full py-3.5 px-6 bg-[#e0e5ec] dark:bg-[#1c2128] text-[#2d3436] dark:text-[#f0f2f5] font-mono shadow-[inset_3px_3px_6px_#babecc,inset_-3px_-3px_6px_#ffffff] dark:shadow-[inset_3px_3px_6px_#12161b,inset_-3px_-3px_6px_#262c35] rounded-xl border border-white/40 dark:border-white/10 overflow-hidden ${className}`}
+        className={`w-full py-3.5 px-6 bg-[#e0e5ec] dark:bg-[#1c2128] text-[#0A1929] dark:text-[#f0f2f5] font-mono shadow-[inset_3px_3px_6px_#babecc,inset_-3px_-3px_6px_#ffffff] dark:shadow-[inset_3px_3px_6px_#12161b,inset_-3px_-3px_6px_#262c35] rounded-xl border border-white/40 dark:border-white/10 overflow-hidden ${className}`}
       >
         <div className="flex flex-wrap items-center justify-center gap-6">
           {items.map((item, i) => (
             <span key={i} className="inline-flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#183757] dark:bg-[#2196F3]" />
-              <span className="font-mono text-base font-bold text-[#2d3436] dark:text-[#f0f2f5]">
+              <span className="w-2 h-2 rounded-full bg-[#0A1929] dark:bg-[#2196F3]" />
+              <span className="font-mono text-base font-bold text-[#0A1929] dark:text-[#f0f2f5]">
                 {item.value}
               </span>
-              <span className="font-mono text-xs uppercase tracking-widest font-bold text-[#4a5568] dark:text-[#a0aec0]">
+              <span className="font-mono text-xs uppercase tracking-widest font-bold text-[#1e3a5f] dark:text-[#a0aec0]">
                 {item.label}
               </span>
             </span>

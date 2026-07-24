@@ -44,8 +44,8 @@ export default function Header() {
                   to={item.path}
                   className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
                     active
-                      ? 'bg-[#183757] dark:bg-[#2196F3] text-white shadow-[3px_3px_6px_rgba(24,55,87,0.35),-2px_-2px_4px_rgba(255,255,255,0.6)] dark:shadow-[3px_3px_6px_rgba(33,150,243,0.35)] translate-y-[1px]'
-                      : 'bg-[#e0e5ec] dark:bg-[#1c2128] text-[#4a5568] dark:text-[#a0aec0] shadow-[3px_3px_6px_#babecc,-3px_-3px_6px_#ffffff] dark:shadow-[3px_3px_6px_#12161b,-3px_-3px_6px_#262c35] hover:text-[#183757] dark:hover:text-[#2196F3]'
+                      ? 'bg-[#0A1929] dark:bg-[#2196F3] text-white shadow-[3px_3px_6px_rgba(10,25,41,0.4),-2px_-2px_4px_rgba(255,255,255,0.6)] dark:shadow-[3px_3px_6px_rgba(33,150,243,0.35)] translate-y-[1px]'
+                      : 'bg-[#e0e5ec] dark:bg-[#1c2128] text-[#0A1929] dark:text-[#a0aec0] shadow-[3px_3px_6px_#babecc,-3px_-3px_6px_#ffffff] dark:shadow-[3px_3px_6px_#12161b,-3px_-3px_6px_#262c35] hover:text-[#183757] dark:hover:text-[#2196F3]'
                   }`}
                 >
                   {item.label}
@@ -58,11 +58,11 @@ export default function Header() {
           <div className="flex items-center space-x-3">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-xl bg-[#e0e5ec] dark:bg-[#1c2128] text-[#183757] dark:text-[#2196F3] shadow-[3px_3px_6px_#babecc,-3px_-3px_6px_#ffffff] dark:shadow-[3px_3px_6px_#12161b,-3px_-3px_6px_#262c35] active:translate-y-[2px] transition-all"
+              className="p-2 rounded-xl bg-[#e0e5ec] dark:bg-[#1c2128] text-[#0A1929] dark:text-[#2196F3] shadow-[3px_3px_6px_#babecc,-3px_-3px_6px_#ffffff] dark:shadow-[3px_3px_6px_#12161b,-3px_-3px_6px_#262c35] active:translate-y-[2px] transition-all"
               title={theme === 'dark' ? 'Mudar para Modo Claro' : 'Mudar para Modo Escuro'}
               aria-label="Alternar tema"
             >
-              {theme === 'dark' ? <MdLightMode size={18} className="text-[#2196F3]" /> : <MdDarkMode size={18} className="text-[#183757]" />}
+              {theme === 'dark' ? <MdLightMode size={18} className="text-[#2196F3]" /> : <MdDarkMode size={18} className="text-[#0A1929]" />}
             </button>
             {isAuthenticated ? (
               <>

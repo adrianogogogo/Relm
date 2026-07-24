@@ -46,14 +46,14 @@ export default function KineticStatCard({
       {/* Conteúdo principal */}
       <div className="relative z-10">
         {Icon && (
-          <div className="mb-3 text-[#183757] dark:text-[#2196F3] p-2.5 w-11 h-11 rounded-xl bg-[#e0e5ec] dark:bg-[#1c2128] shadow-[inset_2px_2px_5px_#babecc,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_2px_2px_5px_#12161b,inset_-2px_-2px_5px_#262c35] flex items-center justify-center">
+          <div className="mb-3 text-[#0A1929] dark:text-[#2196F3] p-2.5 w-11 h-11 rounded-xl bg-[#e0e5ec] dark:bg-[#1c2128] shadow-[inset_2px_2px_5px_#babecc,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_2px_2px_5px_#12161b,inset_-2px_-2px_5px_#262c35] flex items-center justify-center">
             <Icon size={22} />
           </div>
         )}
-        <p className="font-mono text-4xl md:text-5xl font-bold leading-none tracking-tight text-[#2d3436] dark:text-[#f0f2f5]">
+        <p className="font-mono text-4xl md:text-5xl font-bold leading-none tracking-tight text-[#0A1929] dark:text-[#f0f2f5]">
           {value}
         </p>
-        <p className="mt-2 font-mono text-xs uppercase tracking-widest font-bold text-[#4a5568] dark:text-[#a0aec0]">
+        <p className="mt-2 font-mono text-xs uppercase tracking-widest font-bold text-[#1e3a5f] dark:text-[#a0aec0]">
           {label}
         </p>
       </div>

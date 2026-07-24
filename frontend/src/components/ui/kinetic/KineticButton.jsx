@@ -18,18 +18,18 @@ const SIZE_CLASSES = {
 };
 
 const VARIANT_CLASSES = {
-  primary: `bg-[#183757] text-white font-bold
-            shadow-[4px_4px_10px_rgba(24,55,87,0.35),-2px_-2px_6px_rgba(255,255,255,0.6)]
-            hover:bg-[#15314e] hover:-translate-y-0.5
-            active:translate-y-[2px] active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.25),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
+  primary: `bg-[#0A1929] dark:bg-[#2196F3] text-white font-bold
+            shadow-[4px_4px_10px_rgba(10,25,41,0.4),-2px_-2px_6px_rgba(255,255,255,0.6)] dark:shadow-[4px_4px_10px_rgba(33,150,243,0.35)]
+            hover:bg-[#183757] dark:hover:bg-[#1e88e5] hover:-translate-y-0.5
+            active:translate-y-[2px] active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.3),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
             border border-white/20`,
-  outline: `bg-[#e0e5ec] text-[#2d3436] font-bold
-            shadow-[4px_4px_8px_#babecc,-4px_-4px_8px_#ffffff]
-            hover:text-[#183757] hover:shadow-[6px_6px_12px_#babecc,-6px_-6px_12px_#ffffff]
+  outline: `bg-[#e0e5ec] dark:bg-[#1c2128] text-[#0A1929] dark:text-[#f0f2f5] font-bold
+            shadow-[4px_4px_8px_#babecc,-4px_-4px_8px_#ffffff] dark:shadow-[4px_4px_8px_#12161b,-4px_-4px_8px_#262c35]
+            hover:text-[#183757] dark:hover:text-[#2196F3] hover:shadow-[6px_6px_12px_#babecc,-6px_-6px_12px_#ffffff] dark:hover:shadow-[6px_6px_12px_#12161b,-6px_-6px_12px_#262c35]
             active:translate-y-[2px] active:shadow-[inset_4px_4px_8px_#babecc,inset_-4px_-4px_8px_#ffffff]
-            border border-white/50`,
-  ghost: `bg-transparent text-[#2d3436] font-bold
-          hover:bg-[#d1d9e6]/50 hover:text-[#183757]
+            border border-white/50 dark:border-white/10`,
+  ghost: `bg-transparent text-[#0A1929] dark:text-[#f0f2f5] font-bold
+          hover:bg-[#d1d9e6]/50 dark:hover:bg-[#262c35] hover:text-[#183757] dark:hover:text-[#2196F3]
           active:translate-y-[2px]`,
 };
 
