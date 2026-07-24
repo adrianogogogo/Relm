@@ -89,6 +89,17 @@ export default {
           highlight: '#ffffff',     // Neumorphic light half
           'border-dark': '#a3b1c6',
         },
+        // Kinetic Typography tokens (perfis Cliente/Loja) — antes indefinidos,
+        // o que anulava os pares dark: e deixava o texto invisivel no dark.
+        'kinetic-fg': '#0A1929',
+        'kinetic-fg-dark': '#f0f2f5',
+        'kinetic-fg-muted': '#1e3a5f',
+        'kinetic-fg-muted-dark': '#a0aec0',
+        'kinetic-border': '#babecc',
+        'kinetic-border-dark': '#262c35',
+        'kinetic-bg-dark': '#1c2128',
+        'kinetic-muted': '#a3b1c6',
+        'kinetic-muted-dark': '#5a6472',
       },
       backgroundImage: {
         'sidebar-gradient': 'linear-gradient(180deg, #0d2137 0%, #1a3a5c 100%)',

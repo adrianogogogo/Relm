@@ -85,13 +85,18 @@
     font-family: 'Inter', sans-serif !important;
     font-weight: 800 !important;
     letter-spacing: -0.02em !important;
-    color: #0A1929 !important;
   }
 
-  .kinetic-portal p,
-  .kinetic-portal span,
-  .kinetic-portal label {
+  /* Cor de texto padrao do portal — baixa especificidade via :where() para que
+     utilitarios explicitos (sidebar, cards, tokens kinetic dark:) sempre vencam.
+     Corrige texto invisivel: navy #0A1929 sobre o chassi escuro no dark e sobre
+     a sidebar #0A1929 no light. Nao inclui `span` (inline) para preservar a cor
+     herdada de links/botoes — ex.: rotulos do menu lateral. */
+  .kinetic-portal :where(h1, h2, h3, h4, h5, h6, p, label) {
     color: #0A1929;
+  }
+  .dark .kinetic-portal :where(h1, h2, h3, h4, h5, h6, p, label) {
+    color: #f0f2f5;
   }
 
   .kinetic-portal .text-muted,
