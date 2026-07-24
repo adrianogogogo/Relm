@@ -62,7 +62,7 @@ function PartnerCard({ partner }) {
       {/* Benefit highlight */}
       <div className={`rounded-lg p-2.5 text-xs ${locked
         ? 'bg-gray-50 dark:bg-slate-900/40 border border-gray-200 dark:border-slate-800 text-gray-400 dark:text-slate-500 select-none blur-[1px]'
-        : 'bg-purple-50 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/60 text-purple-800 dark:text-purple-300 font-medium'
+        : 'bg-[#0A1929]/10 dark:bg-[#2196F3]/20 border border-[#183757]/30 text-[#0A1929] dark:text-[#2196F3] font-medium'
       }`}>
         {locked ? '••••••••••••••••••' : partner.benefit}
       </div>
@@ -85,7 +85,7 @@ function PartnerCard({ partner }) {
             href={partner.link}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-purple-600 dark:text-purple-400 font-semibold underline flex items-center gap-1"
+            className="text-xs text-[#0A1929] dark:text-[#2196F3] font-semibold underline flex items-center gap-1"
           >
             Visitar <MdOpenInNew size={13} />
           </a>
@@ -132,8 +132,8 @@ export default function CustomerPartnersPage() {
                 onClick={() => setActiveCategory(cat)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border ${
                   activeCategory === cat
-                    ? 'bg-purple-600 text-white border-purple-600'
-                    : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-slate-400 border-gray-200 dark:border-slate-700 hover:border-purple-400 hover:text-purple-600'
+                    ? 'bg-[#0A1929] dark:bg-[#2196F3] text-white border-[#0A1929]'
+                    : 'bg-white dark:bg-slate-900 text-gray-600 dark:text-slate-400 border-gray-200 dark:border-slate-700 hover:border-[#183757] hover:text-[#0A1929] dark:hover:text-[#2196F3]'
                 }`}
               >
                 {Icon && <Icon size={13} />}

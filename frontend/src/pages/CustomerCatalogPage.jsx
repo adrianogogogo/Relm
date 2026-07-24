@@ -91,19 +91,19 @@ export default function CustomerCatalogPage() {
         />
 
         {/* Balance Card */}
-        <div className="bg-gradient-to-r from-purple-700 to-indigo-800 rounded-xl p-6 text-white mb-6 shadow-md flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="bg-[#0A1929] dark:bg-[#1c2128] border border-[#183757] rounded-2xl p-6 text-white mb-6 shadow-[6px_6px_14px_rgba(10,25,41,0.4)] flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-full">
-              <MdStars className="w-8 h-8 text-yellow-300" />
+            <div className="p-3 bg-[#2196F3]/20 rounded-full">
+              <MdStars className="w-8 h-8 text-[#2196F3]" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wider text-purple-200 font-semibold">Meu Saldo Atual</p>
-              <h2 className="text-3xl font-black font-title">{balance} <span className="text-lg font-normal text-purple-100">pontos</span></h2>
+              <p className="text-xs uppercase tracking-wider text-slate-300 font-semibold">Meu Saldo Atual</p>
+              <h2 className="text-3xl font-black font-title text-white">{balance} <span className="text-lg font-normal text-slate-300">pontos</span></h2>
             </div>
           </div>
           <div className="text-right text-xs opacity-90">
-            <p className="font-bold">{isPlus ? 'Acúmulo Turbo 2.0x Ativo ⚡' : 'Plano Gratuito: Acúmulo Padrão 1.0x'}</p>
-            <p className="text-[10px] text-purple-200 mt-1">Pontos válidos por 365 dias a partir da transação.</p>
+            <p className="font-bold text-white">{isPlus ? 'Acúmulo Turbo 2.0x Ativo ⚡' : 'Plano Gratuito: Acúmulo Padrão 1.0x'}</p>
+            <p className="text-[10px] text-slate-300 mt-1">Pontos válidos por 365 dias a partir da transação.</p>
           </div>
         </div>
 
@@ -116,8 +116,8 @@ export default function CustomerCatalogPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Catalog Grid */}
           <div className="lg:col-span-2 space-y-4">
-            <h3 className="font-title font-bold text-lg text-gray-900 dark:text-slate-100 mb-2 flex items-center gap-2">
-              <MdCardGiftcard className="text-purple-500" /> Vitrine de Recompensas
+            <h3 className="font-title font-bold text-lg text-[#0A1929] dark:text-slate-100 mb-2 flex items-center gap-2">
+              <MdCardGiftcard className="text-[#0A1929] dark:text-[#2196F3]" /> Vitrine de Recompensas
             </h3>
 
             {loadingCatalog ? (
@@ -138,10 +138,8 @@ export default function CustomerCatalogPage() {
                   const isPresalePlus = inPresale && item.presaleTier === 'PLUS' && !isPlus;
                   return (
                     <Card key={item.id} className={`flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden ${isPresalePlus ? 'ring-1 ring-amber-400/60' : ''}`}>
-                      {/* Badge pré-venda */}
                       {inPresale && (
-                        <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold mb-2 w-fit ${isPresalePlus ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'}`}>
-                          {isPresalePlus ? <MdLock size={12} /> : <MdTimer size={12} />}
+                        <div className="bg-amber-500 text-white text-[10px] font-bold uppercase tracking-wider py-1 px-3 text-center">
                           {isPresalePlus
                             ? `Pré-venda exclusiva PLUS — ${daysLeft}d restantes`
                             : `Pré-venda — ${daysLeft}d restantes`}
@@ -150,9 +148,9 @@ export default function CustomerCatalogPage() {
 
                       <div className="space-y-2">
                         <div className="flex justify-between items-start">
-                          <h4 className="font-title font-bold text-gray-900 dark:text-slate-100 text-base">{item.title}</h4>
-                          <span className="px-2.5 py-1 bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 rounded-full font-bold text-xs shrink-0 flex items-center gap-1">
-                            <MdStars className="text-amber-500" /> {item.pointsCost} pts
+                          <h4 className="font-title font-bold text-[#0A1929] dark:text-slate-100 text-base">{item.title}</h4>
+                          <span className="px-2.5 py-1 bg-[#0A1929]/10 dark:bg-[#2196F3]/20 text-[#0A1929] dark:text-[#2196F3] rounded-full font-bold text-xs shrink-0 flex items-center gap-1">
+                            <MdStars className="text-[#2196F3]" /> {item.pointsCost} pts
                           </span>
                         </div>
                         <p className="text-xs text-gray-600 dark:text-slate-400 line-clamp-2">{item.description}</p>
@@ -188,8 +186,8 @@ export default function CustomerCatalogPage() {
 
           {/* Active Vouchers & History */}
           <div className="lg:col-span-1 space-y-4">
-            <h3 className="font-title font-bold text-lg text-gray-900 dark:text-slate-100 mb-2 flex items-center gap-2">
-              <MdOutlineHistory className="text-purple-500" /> Meus Vouchers
+            <h3 className="font-title font-bold text-lg text-[#0A1929] dark:text-slate-100 mb-2 flex items-center gap-2">
+              <MdOutlineHistory className="text-[#0A1929] dark:text-[#2196F3]" /> Meus Vouchers
             </h3>
 
             {loadingVouchers ? (
@@ -213,11 +211,11 @@ export default function CustomerCatalogPage() {
                           ? 'bg-gray-100 dark:bg-slate-900/20 border-gray-200 dark:border-slate-800/40 opacity-60'
                           : isExpired
                           ? 'bg-rose-50/50 dark:bg-rose-950/10 border-rose-100 dark:border-rose-950/40 opacity-70'
-                          : 'bg-white dark:bg-slate-900/40 border-purple-100 dark:border-slate-800'
+                          : 'bg-white dark:bg-slate-900/40 border-[#183757]/30 dark:border-slate-800'
                       }`}
                     >
                       <div className="flex justify-between items-start gap-1">
-                        <span className="font-bold text-gray-800 dark:text-slate-200">
+                        <span className="font-bold text-[#0A1929] dark:text-slate-200">
                           {v.catalogItem?.title}
                         </span>
                         <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
@@ -232,7 +230,7 @@ export default function CustomerCatalogPage() {
                       </div>
 
                       {!isUsed && !isExpired && (
-                        <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/60 p-2 rounded text-center my-1 select-all font-mono font-bold text-sm tracking-wider text-purple-700 dark:text-purple-300">
+                        <div className="bg-[#0A1929]/10 dark:bg-[#2196F3]/20 border border-[#183757]/30 p-2 rounded text-center my-1 select-all font-mono font-bold text-sm tracking-wider text-[#0A1929] dark:text-[#2196F3]">
                           {v.code}
                         </div>
                       )}
@@ -280,7 +278,7 @@ export default function CustomerCatalogPage() {
               <p className="text-sm text-gray-600 dark:text-slate-400">
                 Apresente o código abaixo na loja física para retirar a sua recompensa:
               </p>
-              <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900 p-3 rounded font-mono font-black text-2xl tracking-wider text-purple-700 dark:text-purple-300 select-all">
+              <div className="bg-[#0A1929]/10 dark:bg-[#2196F3]/20 border border-[#183757]/30 p-3 rounded font-mono font-black text-2xl tracking-wider text-[#0A1929] dark:text-[#2196F3] select-all">
                 {generatedVoucher.voucherCode}
               </div>
               <p className="text-[10px] text-gray-500">

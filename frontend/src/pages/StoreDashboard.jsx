@@ -62,22 +62,22 @@ const StoreDashboard = () => {
       label: 'Clientes',
       value: customersTotal,
       icon: MdPeople,
-      color: '#1565C0',
+      color: '#0A1929',
       link: '/loja/clientes',
     },
     {
       label: 'Seguros',
       value: insurances?.length || 0,
       icon: MdDescription,
-      color: '#9C27B0',
+      color: '#2196F3',
       link: '/loja/seguros',
     },
   ];
 
   const quickActions = [
-    { to: '/loja/clientes/novo', label: 'Novo Cliente', icon: MdPeople, color: '#1565C0' },
-    { to: '/loja/seguros', label: 'Ver Seguros', icon: MdDescription, color: '#9C27B0' },
-    { to: '/loja/produtos', label: 'Produtos', icon: MdInventory2, color: '#FF9800' },
+    { to: '/loja/clientes/novo', label: 'Novo Cliente', icon: MdPeople, color: '#0A1929' },
+    { to: '/loja/seguros', label: 'Ver Seguros', icon: MdDescription, color: '#183757' },
+    { to: '/loja/produtos', label: 'Produtos', icon: MdInventory2, color: '#2196F3' },
   ];
 
   return (

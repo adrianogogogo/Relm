@@ -48,7 +48,7 @@ export default function CustomerSubscriptionPage() {
             <div className="flex items-center gap-3">
               <div
                 className="w-12 h-12 rounded-full flex items-center justify-center text-white"
-                style={{ backgroundColor: isPlus ? '#D4AF37' : '#1565C0' }}
+                style={{ backgroundColor: isPlus ? '#D4AF37' : '#0A1929' }}
               >
                 <MdWorkspacePremium size={26} />
               </div>

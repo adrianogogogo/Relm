@@ -33,7 +33,7 @@ export default function CustomerBenefitsPage() {
             {benefits.map((b) => (
               <Card key={b.id} className="hover:shadow-md transition-shadow group">
                 <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-500 shrink-0">
+                  <div className="p-3 rounded-lg bg-[#0A1929]/10 dark:bg-[#2196F3]/20 text-[#0A1929] dark:text-[#2196F3] shrink-0">
                     <MdCardGiftcard className="w-6 h-6" />
                   </div>
                   <div className="flex-1 min-w-0">

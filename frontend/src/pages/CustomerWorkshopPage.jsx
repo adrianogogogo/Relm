@@ -135,14 +135,14 @@ export default function CustomerWorkshopPage() {
         />
 
         {/* Tier Info Card */}
-        <div className={`rounded-xl p-5 mb-6 text-white ${isPlus ? 'bg-gradient-to-r from-amber-500 to-yellow-600' : 'bg-gradient-to-r from-teal-500 to-emerald-600'}`}>
+        <div className="bg-[#0A1929] dark:bg-[#1c2128] border border-[#183757] rounded-2xl p-5 mb-6 text-white shadow-[6px_6px_14px_rgba(10,25,41,0.4)]">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-full shrink-0">
-              {isPlus ? <MdBuild className="w-6 h-6 text-yellow-100" /> : <MdDirectionsBike className="w-6 h-6 text-teal-100" />}
+            <div className="p-3 bg-[#2196F3]/20 rounded-full shrink-0">
+              {isPlus ? <MdBuild className="w-6 h-6 text-[#2196F3]" /> : <MdDirectionsBike className="w-6 h-6 text-[#2196F3]" />}
             </div>
             <div>
-              <h4 className="font-bold text-lg">{isPlus ? 'Você é membro Care Plus! 🌟' : 'Você é membro Care (Gratuito)'}</h4>
-              <p className="text-sm opacity-90">
+              <h4 className="font-bold text-lg text-white">{isPlus ? 'Você é membro Care Plus! 🌟' : 'Você é membro Care (Gratuito)'}</h4>
+              <p className="text-sm text-slate-300">
                 {isPlus
                   ? 'Você tem direito a agendamento prioritário de oficina, revisões completas ilimitadas e serviço de busca e entrega (leva-e-traz) grátis!'
                   : `Você tem direito a ${careQuota} Revisão(ões) Básica(s) por ano civil. Upgrades de serviços e logística de leva-e-traz estão bloqueados (disponíveis apenas no Care Plus).`}
@@ -224,7 +224,7 @@ export default function CustomerWorkshopPage() {
                   </option>
                 </select>
                 {!isPlus && (
-                  <p className="text-xs text-purple-500 mt-1 flex items-center gap-1">
+                  <p className="text-xs text-[#0A1929] dark:text-[#2196F3] font-semibold mt-1 flex items-center gap-1">
                     <MdLock className="inline" /> Serviços bloqueados são exclusivos do Care Plus.
                   </p>
                 )}
@@ -266,7 +266,7 @@ export default function CustomerWorkshopPage() {
                 <input
                   type="checkbox"
                   id="deliveryRequest"
-                  className="rounded border-gray-300 text-amber-500 focus:ring-amber-500 h-4 w-4 disabled:opacity-50"
+                  className="rounded border-gray-300 text-[#0A1929] focus:ring-[#0A1929] h-4 w-4 disabled:opacity-50"
                   checked={deliveryRequest}
                   onChange={(e) => setDeliveryRequest(e.target.checked)}
                   disabled={!isPlus}
@@ -275,9 +275,9 @@ export default function CustomerWorkshopPage() {
                   htmlFor="deliveryRequest"
                   className={`text-sm select-none flex items-center gap-1.5 ${!isPlus ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 dark:text-slate-300 font-medium'}`}
                 >
-                  <MdLocalShipping className={isPlus ? 'text-amber-500' : 'text-gray-400'} />
+                  <MdLocalShipping className={isPlus ? 'text-[#0A1929] dark:text-[#2196F3]' : 'text-gray-400'} />
                   Solicitar busca e entrega em meu endereço
-                  {!isPlus && <span className="text-xs text-purple-500 font-bold flex items-center gap-0.5"><MdLock /> (Exclusivo Plus)</span>}
+                  {!isPlus && <span className="text-xs text-[#0A1929] dark:text-[#2196F3] font-bold flex items-center gap-0.5"><MdLock /> (Exclusivo Plus)</span>}
                 </label>
               </div>
 
