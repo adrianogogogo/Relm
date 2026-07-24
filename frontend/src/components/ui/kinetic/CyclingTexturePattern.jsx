@@ -8,7 +8,7 @@ import React from 'react';
 export default function CyclingTexturePattern({ className = '' }) {
   return (
     <div
-      className={`pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-[0.07] mix-blend-multiply select-none ${className}`}
+      className={`pointer-events-none fixed inset-0 -z-10 overflow-hidden opacity-[0.08] select-none ${className}`}
       aria-hidden="true"
     >
       <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
