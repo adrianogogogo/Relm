@@ -140,9 +140,10 @@ export default function AdminVouchersPage() {
 
   // Filter vouchers
   const filteredVouchers = vouchers.filter((v) => {
-    const codeMatch = v.code.toLowerCase().includes(searchTerm.toLowerCase());
-    const customerMatch = v.customer?.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const itemMatch = v.catalogItem?.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const q = searchTerm.toLowerCase();
+    const codeMatch = v.code?.toLowerCase().includes(q);
+    const customerMatch = v.customer?.fullName?.toLowerCase().includes(q);
+    const itemMatch = v.catalogItem?.title?.toLowerCase().includes(q);
     return codeMatch || customerMatch || itemMatch;
   });
 
@@ -250,7 +251,7 @@ export default function AdminVouchersPage() {
                           <td className="p-4 font-mono font-bold tracking-wider text-purple-700 dark:text-purple-300">
                             {v.code}
                           </td>
-                          <td className="p-4">{v.customer?.name}</td>
+                          <td className="p-4">{v.customer?.fullName}</td>
                           <td className="p-4">{v.catalogItem?.title}</td>
                           <td className="p-4">{formatDate(v.expiresAt)}</td>
                           <td className="p-4">
