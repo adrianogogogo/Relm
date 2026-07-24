@@ -6,3 +6,4 @@ export { default as KineticInput } from './KineticInput';
 export { default as StatsMarquee } from './StatsMarquee';
 export { default as NoiseTexture } from './NoiseTexture';
 export { default as AnimatedSection } from './AnimatedSection';
+export { default as CyclingTexturePattern } from './CyclingTexturePattern';

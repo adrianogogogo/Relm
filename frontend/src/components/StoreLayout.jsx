@@ -4,7 +4,7 @@ import { useSidebarStore } from '../store/sidebarStore';
 import TopBarChrome from './TopBarChrome';
 import BannerCarousel from './BannerCarousel';
 import { getBannerTargetForPath } from '../config/bannerTargets';
-import { NoiseTexture, StatsMarquee } from './ui/kinetic';
+import { NoiseTexture, StatsMarquee, CyclingTexturePattern } from './ui/kinetic';
 import {
   MdDashboard,
   MdPeople,
@@ -57,6 +57,7 @@ export default function StoreLayout() {
   return (
     <div className="kinetic-portal relative flex min-h-screen bg-[#e0e5ec] text-[#2d3436] transition-colors duration-300">
       <NoiseTexture />
+      <CyclingTexturePattern />
       {/* Sidebar — Painel de Controle Industrial Neumórfico (Chassis Level 0) */}
       <aside
         className={`${
