@@ -9,6 +9,7 @@ import CustomerLayout from './components/CustomerLayout';
 import CustomerProtectedRoute from './components/CustomerProtectedRoute';
 import StoreProtectedRoute from './components/StoreProtectedRoute';
 import StoreLayout from './components/StoreLayout';
+import { useThemeStore } from './store/themeStore';
 import { NoiseTexture } from './components/ui/kinetic';
 
 // Public pages
