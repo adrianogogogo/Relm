@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointTxType, TierLevel, PointsLedger } from '@prisma/client';
@@ -84,6 +84,35 @@ export class PointsService {
       },
     });
     this.logger.log(`Credited ${points} points to customer ${customerId} (${description})`);
+    return entry;
+  }
+
+  /** Atribuição manual de pontos pelo Administrador. */
+  async grantPointsByAdmin(customerId: string, amount: number, description?: string) {
+    const customer = await this.prisma.customer.findUnique({ where: { id: customerId } });
+    if (!customer) {
+      throw new NotFoundException('Cliente não encontrado');
+    }
+
+    const desc = description?.trim() || 'Crédito bônus atribuído pelo Administrador Relm';
+    const entry = await this.earnPoints(customerId, amount, desc);
+
+    // Cria notificação interna para o cliente se a tabela de notificações existir
+    try {
+      await this.prisma.notification.create({
+        data: {
+          recipientType: 'USER',
+          recipientId: customerId,
+          type: 'POINTS_GRANTED',
+          title: 'Você recebeu pontos bônus! 🌟',
+          message: `Foram creditados ${amount} pontos na sua conta. Motivo: ${desc}`,
+          link: '/cliente/resgate',
+        },
+      });
+    } catch (e) {
+      // Ignora silenciosamente se o Schema de notificação for exclusivo de User/StoreUser
+    }
+
     return entry;
   }
 

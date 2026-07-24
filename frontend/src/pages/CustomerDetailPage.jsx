@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useLocation, useSearchParams, Link } from 'react-router-dom';
-import { MdLocationOn, MdEvent, MdArrowBack, MdVpnKey } from 'react-icons/md';
+import { MdLocationOn, MdEvent, MdArrowBack, MdVpnKey, MdCardGiftcard } from 'react-icons/md';
 import api, { insuranceAPI, customersAPI, salesAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Card, StatusChip, StatCard } from '../components/ui';
 import AdminResetPasswordModal from '../components/AdminResetPasswordModal';
+import AdminGrantPointsModal from '../components/AdminGrantPointsModal';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -55,6 +56,7 @@ export default function CustomerDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showGrantPoints, setShowGrantPoints] = useState(false);
 
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'ADMIN_RELM';
@@ -173,13 +175,22 @@ export default function CustomerDetailPage() {
               + Lançar Venda
             </Link>
             {isAdmin && (
-              <button
-                type="button"
-                onClick={() => setShowResetPassword(true)}
-                className="btn btn-outline"
-              >
-                <MdVpnKey className="w-4 h-4" /> Redefinir senha
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowGrantPoints(true)}
+                  className="btn bg-[#0A1929] dark:bg-[#2196F3] hover:bg-[#183757] dark:hover:bg-[#1e88e5] text-white font-bold flex items-center gap-1.5 shadow-sm"
+                >
+                  <MdCardGiftcard className="w-4 h-4 text-amber-400" /> Atribuir Pontos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowResetPassword(true)}
+                  className="btn btn-outline"
+                >
+                  <MdVpnKey className="w-4 h-4" /> Redefinir senha
+                </button>
+              </>
             )}
             <Link
               to={isStorePortal ? `/loja/clientes/${id}/editar` : `/admin/customers/${id}/edit`}
@@ -499,6 +510,15 @@ export default function CustomerDetailPage() {
           userName={customer.fullName}
           onSubmit={(password) => customersAPI.resetPassword(id, password)}
           onClose={() => setShowResetPassword(false)}
+        />
+      )}
+
+      {showGrantPoints && (
+        <AdminGrantPointsModal
+          customerId={id}
+          customerName={customer.fullName}
+          onClose={() => setShowGrantPoints(false)}
+          onSuccess={() => fetchCustomerData()}
         />
       )}
     </div>

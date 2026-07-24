@@ -318,6 +318,10 @@ export const customerPortalAPI = {
   getReferral: () => api.get('/customer-portal/referral').then((res) => res.data),
 };
 
+export const pointsAPI = {
+  grantByAdmin: (data) => api.post('/v1/points/admin/grant', data).then((res) => res.data),
+};
+
 // ── Gamificação (Wave 4) ──────────────────────────────────────────────────────
 
 export const gamificationAPI = {

@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { MdDelete, MdPeople, MdHowToReg, MdVerifiedUser, MdEventAvailable, MdAdd, MdUploadFile, MdDownload } from 'react-icons/md';
+import { MdDelete, MdPeople, MdHowToReg, MdVerifiedUser, MdEventAvailable, MdAdd, MdUploadFile, MdDownload, MdCardGiftcard } from 'react-icons/md';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader, StatusChip, StatCard, Button } from '../components/ui';
 import { readSheetRows, cell, downloadTemplate } from '../utils/sheetImport';
+import AdminGrantPointsModal from '../components/AdminGrantPointsModal';
 
 export default function CustomersPage() {
   const { user } = useAuthStore();
@@ -16,6 +17,7 @@ export default function CustomersPage() {
   const [filterStore, setFilterStore] = useState('');
   const [stores, setStores] = useState([]);
   const [importing, setImporting] = useState(false);
+  const [selectedCustomerForPoints, setSelectedCustomerForPoints] = useState(null);
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -256,15 +258,24 @@ export default function CustomersPage() {
                         {new Date(customer.createdAt).toLocaleDateString('pt-BR')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-4">
+                        <div className="flex items-center justify-end gap-3">
                           <Link to={`/admin/customers/${customer.id}`} className="text-primary dark:text-primary-400 hover:underline font-semibold">
                             Ver Detalhes
                           </Link>
                           {canManage && (
-                             <Link to={`/admin/customers/${customer.id}/edit`} className="text-gray-600 dark:text-slate-300 hover:underline">
-                               Editar
-                             </Link>
-                           )}
+                            <>
+                              <button
+                                onClick={() => setSelectedCustomerForPoints(customer)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700 text-xs font-bold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all"
+                                title="Atribuir pontos bônus"
+                              >
+                                <MdCardGiftcard size={14} /> +Pontos
+                              </button>
+                              <Link to={`/admin/customers/${customer.id}/edit`} className="text-gray-600 dark:text-slate-300 hover:underline">
+                                Editar
+                              </Link>
+                            </>
+                          )}
                           {isAdmin && (
                             <button
                               onClick={() => handleDelete(customer)}
@@ -284,6 +295,15 @@ export default function CustomersPage() {
           )}
         </Card>
       </div>
+
+      {selectedCustomerForPoints && (
+        <AdminGrantPointsModal
+          customerId={selectedCustomerForPoints.id}
+          customerName={selectedCustomerForPoints.fullName}
+          onClose={() => setSelectedCustomerForPoints(null)}
+          onSuccess={() => fetchCustomers()}
+        />
+      )}
     </div>
   );
 }
