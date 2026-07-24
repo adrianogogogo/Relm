@@ -30,8 +30,8 @@ export class CustomerAuthService {
   async register(dto: CustomerRegisterDto) {
     const invoiceNormalized = dto.invoiceNumber.trim().toUpperCase();
 
-    // Verifica se a nota fiscal existe em algum produto ou garantia
-    const [productMatch, warrantyMatch] = await Promise.all([
+    // Verifica se a nota fiscal existe em algum produto, garantia ou venda registrada por loja
+    const [productMatch, warrantyMatch, saleMatch] = await Promise.all([
       this.prisma.product.findFirst({
         where: {
           purchaseInvoiceNumber: {
@@ -48,9 +48,17 @@ export class CustomerAuthService {
           },
         },
       }),
+      this.prisma.sale.findFirst({
+        where: {
+          invoiceNumber: {
+            equals: invoiceNormalized,
+            mode: 'insensitive',
+          },
+        },
+      }),
     ]);
 
-    if (!productMatch && !warrantyMatch) {
+    if (!productMatch && !warrantyMatch && !saleMatch) {
       throw new BadRequestException(
         'Nota fiscal não encontrada. Verifique o número e tente novamente.',
       );

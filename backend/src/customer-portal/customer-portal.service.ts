@@ -110,10 +110,25 @@ export class CustomerPortalService {
 
   // Compras do cliente (vendas registradas pela loja) com a vigência de
   // garantia de cada item. warrantyEndsAt já vem gravado (saleDate + prazo);
-  // o tempo restante é calculado no frontend a partir dele.
+  // o tempo restante é calculated no frontend a partir dele.
   async getPurchases(customerId: string) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { id: true, email: true, cpf: true },
+    });
+
+    if (!customer) {
+      return [];
+    }
+
     return this.prisma.sale.findMany({
-      where: { customerId },
+      where: {
+        OR: [
+          { customerId: customer.id },
+          ...(customer.email ? [{ customer: { email: { equals: customer.email, mode: 'insensitive' as const } } }] : []),
+          ...(customer.cpf ? [{ customer: { cpf: customer.cpf } }] : []),
+        ],
+      },
       orderBy: { saleDate: 'desc' },
       select: {
         id: true,
