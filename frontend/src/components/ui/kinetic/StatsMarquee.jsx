@@ -2,9 +2,8 @@ import Marquee from 'react-fast-marquee';
 import { useEffect, useState } from 'react';
 
 /**
- * StatsMarquee — faixa animada infinita com estatísticas do perfil.
- * Usa react-fast-marquee para scroll GPU-accelerated.
- * Respeita prefers-reduced-motion (exibe grid estático como fallback).
+ * StatsMarquee — Visor de Telemetria Industrial Recuado (Level -1).
+ * Faixa técnica em JetBrains Mono com ranhuras neumórficas afundadas e leds Safety Orange.
  *
  * Props:
  *  - items: Array<{ value: string|number, label: string }>
@@ -25,34 +24,35 @@ export default function StatsMarquee({ items = [], speed = 60, className = '' })
   if (!items.length) return null;
 
   const separator = (
-    <span className="mx-6 text-2xl opacity-40 select-none" aria-hidden="true">◆</span>
+    <span className="mx-6 text-sm text-[#ff4757] font-bold select-none" aria-hidden="true">///</span>
   );
 
   const renderItem = (item, i) => (
-    <span key={i} className="inline-flex items-baseline gap-3 mx-4">
-      <span className="font-kinetic text-2xl md:text-3xl font-bold tracking-tighter">
+    <span key={i} className="inline-flex items-center gap-3 mx-4">
+      <span className="w-2 h-2 rounded-full bg-[#ff4757] shadow-[0_0_8px_rgba(255,71,87,0.8)]" />
+      <span className="font-mono text-lg md:text-xl font-bold tracking-tight text-[#2d3436]">
         {item.value}
       </span>
-      <span className="font-kinetic text-xs md:text-sm uppercase tracking-widest font-medium opacity-80">
+      <span className="font-mono text-xs uppercase tracking-widest font-bold text-[#4a5568]">
         {item.label}
       </span>
       {separator}
     </span>
   );
 
-  // Fallback estático para prefers-reduced-motion
   if (prefersReducedMotion) {
     return (
       <div
-        className={`w-full py-4 px-6 bg-[#2196F3] text-white overflow-hidden font-kinetic ${className}`}
+        className={`w-full py-3.5 px-6 bg-[#e0e5ec] text-[#2d3436] font-mono shadow-[inset_3px_3px_6px_#babecc,inset_-3px_-3px_6px_#ffffff] rounded-xl border border-white/40 overflow-hidden ${className}`}
       >
-        <div className="flex flex-wrap items-center justify-center gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-6">
           {items.map((item, i) => (
-            <span key={i} className="inline-flex items-baseline gap-2">
-              <span className="font-kinetic text-xl font-bold tracking-tighter">
+            <span key={i} className="inline-flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#ff4757]" />
+              <span className="font-mono text-base font-bold text-[#2d3436]">
                 {item.value}
               </span>
-              <span className="font-kinetic text-xs uppercase tracking-widest font-medium opacity-80">
+              <span className="font-mono text-xs uppercase tracking-widest font-bold text-[#4a5568]">
                 {item.label}
               </span>
             </span>
@@ -64,7 +64,7 @@ export default function StatsMarquee({ items = [], speed = 60, className = '' })
 
   return (
     <div
-      className={`w-full py-4 bg-[#2196F3] text-white overflow-hidden font-kinetic ${className}`}
+      className={`w-full py-3.5 bg-[#e0e5ec] text-[#2d3436] font-mono shadow-[inset_3px_3px_6px_#babecc,inset_-3px_-3px_6px_#ffffff] rounded-xl border border-white/40 overflow-hidden ${className}`}
     >
       <Marquee speed={speed} gradient={false} autoFill>
         {items.map(renderItem)}

@@ -11,9 +11,9 @@ export default {
         sans: ['Inter', 'sans-serif'],
         title: ['"Plus Jakarta Sans"', 'sans-serif'],
         kinetic: ['"Space Grotesk"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
       },
       colors: {
-        // Cor de marca (azul corporativo do design system) — ancorada em #1565C0
         primary: {
           DEFAULT: '#183757',
           50: '#e3f2fd',
@@ -27,7 +27,6 @@ export default {
           800: '#0e1f32',
           900: '#091522',
         },
-        // Slate escuro (secundário do design system)
         secondary: {
           DEFAULT: '#2d3a4a',
           50: '#eceff2',
@@ -41,7 +40,6 @@ export default {
           800: '#1a252f',
           900: '#121a22',
         },
-        // Tokens semânticos de status — permitem bg-success/20, text-success, etc.
         success: {
           DEFAULT: '#4CAF50',
           50: '#e8f5e9',
@@ -74,25 +72,22 @@ export default {
           600: '#1e88e5',
           700: '#1976d2',
         },
-        // Superfícies / fundos
-        app: '#f0f4f8',          // fundo claro da aplicação
-        surface: '#ffffff',      // fundo de cards/superfícies (claro)
-        'app-dark': '#0a1929',   // fundo escuro da aplicação
-        'surface-dark': '#0d2137', // superfície escura (mesmo tom do topo da sidebar)
-        // Kinetic Typography tokens (Solid Blue Spec - No Gradients)
-        kinetic: {
-          bg: '#f8fafc',           // fundo claro
-          'bg-dark': '#09090B',    // fundo escuro
-          accent: '#2196F3',       // azul elétrico vibrante
-          'accent-dark': '#2196F3',// azul elétrico vibrante
-          muted: '#e2e8f0',        // elementos decorativos light
-          'muted-dark': '#1e293b', // elementos decorativos dark
-          border: '#0D2137',       // bordas solidadas light (navy)
-          'border-dark': '#334155',// bordas dark
-          fg: '#0D2137',           // foreground light (navy)
-          'fg-dark': '#FAFAFA',    // foreground dark (off-white)
-          'fg-muted': '#475569',   // texto secundário light
-          'fg-muted-dark': '#94a3b8', // texto secundário dark
+        app: '#f0f4f8',
+        surface: '#ffffff',
+        'app-dark': '#0a1929',
+        'surface-dark': '#0d2137',
+        // Industrial Skeuomorphism Tokens
+        industrial: {
+          bg: '#e0e5ec',            // Chassis Level 0 (mid-tone cool grey)
+          panel: '#f0f2f5',         // Raised panel surface
+          muted: '#d1d9e6',         // Sunken recessed areas
+          accent: '#ff4757',        // Safety Orange / Braun Red
+          'accent-hover': '#ff6b81',
+          text: '#2d3436',          // Dark charcoal ink
+          'text-muted': '#4a5568',    // Darker slate grey for labels
+          border: '#babecc',        // Neumorphic shadow half
+          highlight: '#ffffff',     // Neumorphic light half
+          'border-dark': '#a3b1c6',
         },
       },
       backgroundImage: {
@@ -101,6 +96,12 @@ export default {
       },
       boxShadow: {
         card: '0 2px 12px rgba(0,0,0,0.06)',
+        'neumorphic-card': '8px 8px 16px #babecc, -8px -8px 16px #ffffff',
+        'neumorphic-floating': '12px 12px 24px #babecc, -12px -12px 24px #ffffff, inset 1px 1px 0 rgba(255,255,255,0.5)',
+        'neumorphic-recessed': 'inset 4px 4px 8px #babecc, inset -4px -4px 8px #ffffff',
+        'neumorphic-pressed': 'inset 6px 6px 12px #babecc, inset -6px -6px 12px #ffffff',
+        'led-glow': '0 0 10px 2px rgba(255, 71, 87, 0.6)',
+        'led-glow-green': '0 0 10px 2px rgba(34, 197, 94, 0.8)',
       },
       keyframes: {
         'marquee-scroll': {

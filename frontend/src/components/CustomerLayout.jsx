@@ -43,80 +43,64 @@ export default function CustomerLayout() {
   const isPlus = user?.currentTier === 'PLUS';
 
   const marqueeItems = [
-    { value: 'RELM CARE+', label: isPlus ? 'MEMBRO PLUS' : 'MEMBRO PADRÃO' },
-    { value: user?.name?.toUpperCase() || 'CLIENTE', label: 'CONTA ATIVA' },
-    { value: 'GARANTIA', label: 'COBERTURA TOTAL' },
+    { value: 'RELM CARE+', label: isPlus ? 'MÓDULO PLUS ATIVO' : 'SISTEMA PADRÃO' },
+    { value: user?.name?.toUpperCase() || 'CLIENTE', label: 'OPERACIONAL' },
+    { value: 'GARANTIA', label: 'TELEMETRIA OK' },
   ];
 
   return (
-    <div className="kinetic-portal relative flex min-h-screen bg-app dark:bg-app-dark transition-colors duration-300">
+    <div className="kinetic-portal relative flex min-h-screen bg-[#e0e5ec] text-[#2d3436] transition-colors duration-300">
       <NoiseTexture />
-      {isPlus && (
-        <style>{`
-          .text-primary, .text-primary-400, .text-primary-500, .text-primary-600, .border-l-primary-300 {
-            color: #D4AF37 !important;
-            border-color: #D4AF37 !important;
-          }
-          .btn-outline {
-            border-color: #D4AF37 !important;
-            color: #D4AF37 !important;
-          }
-          .btn-outline:hover {
-            background-color: #D4AF37 !important;
-            color: #ffffff !important;
-          }
-          .bg-primary, .btn-primary, .bg-primary-300, .bg-primary-500, .bg-primary-600 {
-            background-color: #D4AF37 !important;
-          }
-          .hover\\:bg-primary-600:hover, .btn-primary:hover {
-            background-color: #C5A028 !important;
-          }
-        `}</style>
-      )}
-      {/* Sidebar — Kinetic Brutalist (Solid Blue - No Gradient) */}
+      {/* Sidebar — Painel de Controle Industrial Neumórfico (Chassis Level 0) */}
       <aside
         className={`${
-          collapsed ? 'w-[70px]' : 'w-64'
-        } bg-[#0d2137] text-white flex flex-col shrink-0 border-r-2 border-white/10 z-20 transition-[width] duration-300`}
+          collapsed ? 'w-[76px]' : 'w-64'
+        } bg-[#e0e5ec] text-[#2d3436] flex flex-col shrink-0 border-r border-white/60 shadow-[8px_0_16px_#babecc] z-20 transition-[width] duration-300`}
       >
-        {/* Logo + toggle */}
+        {/* Logo + toggle + Status LED */}
         <div
           className={`${
-            collapsed ? 'px-2 justify-center' : 'px-6 justify-between'
-          } py-5 border-b-2 border-white/10 min-h-[72px] flex items-center gap-2`}
+            collapsed ? 'px-2 justify-center' : 'px-5 justify-between'
+          } py-4 border-b border-[#babecc]/40 min-h-[72px] flex items-center gap-2`}
         >
           {!collapsed && (
-            <Link to="/" className="block">
-              <img src="/logo-white.png" alt="Relm Care+" className="h-8 w-auto" />
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link to="/" className="block">
+                <img src="/logo-white.png" alt="Relm Care+" className="h-8 w-auto filter invert brightness-0" />
+              </Link>
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#d1d9e6] shadow-[inset_1px_1px_3px_#babecc,inset_-1px_-1px_3px_#ffffff]">
+                <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
+                <span className="font-mono text-[10px] font-bold text-[#4a5568]">PWR</span>
+              </div>
+            </div>
           )}
           <button
             onClick={toggle}
-            className="p-1.5 text-white/75 hover:bg-white/10 hover:text-white transition-colors shrink-0 rounded-none border border-white/20"
-            title={collapsed ? 'Expandir menu' : 'Recolher menu'}
-            aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}
+            className="p-2 text-[#4a5568] hover:text-[#ff4757] transition-colors shrink-0 rounded-xl bg-[#e0e5ec] shadow-[3px_3px_6px_#babecc,-3px_-3px_6px_#ffffff] active:shadow-[inset_2px_2px_4px_#babecc,inset_-2px_-2px_4px_#ffffff]"
+            title={collapsed ? 'Expandir painel' : 'Recolher painel'}
+            aria-label={collapsed ? 'Expandir painel' : 'Recolher painel'}
           >
-            {collapsed ? <MdChevronRight size={22} /> : <MdChevronLeft size={22} />}
+            {collapsed ? <MdChevronRight size={20} /> : <MdChevronLeft size={20} />}
           </button>
         </div>
 
-        {/* User Info */}
+        {/* User Info Housing */}
         {!collapsed && (
-          <div className="px-6 py-4 border-b-2 border-white/10 font-kinetic">
+          <div className="mx-3 my-3 p-3 rounded-xl bg-[#e0e5ec] shadow-[inset_3px_3px_6px_#babecc,inset_-3px_-3px_6px_#ffffff] border border-white/40 font-mono">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 border-2 border-white/30 bg-white/10 flex items-center justify-center text-white font-bold text-sm shrink-0 rounded-none">
+              <div className="w-9 h-9 rounded-lg bg-[#ff4757] flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-[2px_2px_4px_rgba(166,50,60,0.4)]">
                 {user?.name?.charAt(0)?.toUpperCase() || 'C'}
               </div>
               <div className="min-w-0">
-                <p className="font-bold text-sm text-white uppercase tracking-tight truncate">{user?.name}</p>
-                <p className="text-xs text-white/60 truncate">{user?.email}</p>
+                <p className="font-bold text-xs text-[#2d3436] uppercase tracking-tight truncate">{user?.name}</p>
+                <p className="text-[10px] text-[#4a5568] truncate font-medium">{user?.email}</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Menu */}
-        <nav className={`flex-1 overflow-y-auto py-4 ${collapsed ? 'px-2' : 'px-3'} space-y-1 font-kinetic`}>
+        {/* Menu — Teclas Mecânicas 3D Empilhadas */}
+        <nav className={`flex-1 overflow-y-auto py-3 ${collapsed ? 'px-2' : 'px-3'} space-y-2 font-sans`}>
           {MENU.map((item) => {
             const active = location.pathname === item.path;
             return (
@@ -125,16 +109,16 @@ export default function CustomerLayout() {
                 to={item.path}
                 title={collapsed ? item.label : undefined}
                 className={`flex items-center gap-3 ${
-                  collapsed ? 'justify-center px-2' : 'px-3'
-                } py-2.5 transition-all text-xs font-bold uppercase tracking-tight border-l-4 ${
+                  collapsed ? 'justify-center px-2' : 'px-3.5'
+                } py-2.5 rounded-xl transition-all text-xs font-bold uppercase tracking-wider ${
                   active
-                    ? 'bg-white/15 text-white border-l-primary-300 shadow-none'
-                    : 'text-white/75 border-l-transparent hover:bg-white/10 hover:text-white'
+                    ? 'bg-[#ff4757] text-white shadow-[3px_3px_6px_rgba(166,50,60,0.35),-2px_-2px_4px_rgba(255,255,255,0.6)] translate-y-[1px]'
+                    : 'bg-[#e0e5ec] text-[#4a5568] shadow-[4px_4px_8px_#babecc,-4px_-4px_8px_#ffffff] hover:text-[#ff4757] hover:shadow-[6px_6px_10px_#babecc,-6px_-6px_10px_#ffffff]'
                 }`}
               >
                 <item.icon
-                  size={20}
-                  className={`shrink-0 ${active ? 'text-white' : 'text-white/65'}`}
+                  size={18}
+                  className={`shrink-0 ${active ? 'text-white' : 'text-[#4a5568] group-hover:text-[#ff4757]'}`}
                 />
                 {!collapsed && <span className="truncate">{item.label}</span>}
               </Link>
@@ -142,38 +126,39 @@ export default function CustomerLayout() {
           })}
         </nav>
 
-        {/* Rodapé */}
-        <div className="border-t-2 border-white/10 font-kinetic">
+        {/* Rodapé: Telemetria & Interruptor de Saída */}
+        <div className="border-t border-[#babecc]/40 p-3 font-mono">
           {!collapsed && (
-            <div className="px-6 py-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/60">
-              <span className="w-2 h-2 bg-success inline-block" />
-              <span>Relm Care+ — v1</span>
+            <div className="px-3 py-2 mb-2 flex items-center justify-between text-[10px] text-[#4a5568] font-bold rounded-lg bg-[#d1d9e6]/50 shadow-[inset_1px_1px_3px_#babecc]">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
+                <span>RELM CARE+ SYS</span>
+              </span>
+              <span>v1.0</span>
             </div>
           )}
-          <div className={`${collapsed ? 'px-2 pt-3' : 'px-3'} pb-4`}>
-            <button
-              onClick={logout}
-              title={collapsed ? 'Sair' : undefined}
-              className={`flex items-center gap-3 w-full ${
-                collapsed ? 'justify-center px-2' : 'px-3'
-              } py-2 text-white/75 hover:bg-white/15 hover:text-white transition-colors text-xs font-bold uppercase tracking-tight rounded-none border border-white/20`}
-            >
-              <MdLogout size={20} />
-              {!collapsed && <span>Sair</span>}
-            </button>
-          </div>
+          <button
+            onClick={logout}
+            title={collapsed ? 'Sair' : undefined}
+            className={`flex items-center gap-3 w-full ${
+              collapsed ? 'justify-center px-2' : 'px-3.5'
+            } py-2.5 text-[#ff4757] font-bold uppercase tracking-wider text-xs rounded-xl bg-[#e0e5ec] shadow-[3px_3px_6px_#babecc,-3px_-3px_6px_#ffffff] hover:shadow-[5px_5px_8px_#babecc,-5px_-5px_8px_#ffffff] active:translate-y-[2px] active:shadow-[inset_3px_3px_6px_#babecc,inset_-3px_-3px_6px_#ffffff] transition-all`}
+          >
+            <MdLogout size={18} />
+            {!collapsed && <span>DESCONECTAR</span>}
+          </button>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-h-screen overflow-auto min-w-0">
-        {/* Topbar */}
-        <header className="h-16 border-b-2 border-gray-200 dark:border-slate-800 bg-surface dark:bg-surface-dark px-6 flex items-center justify-between shrink-0 transition-colors duration-300 font-kinetic">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-gray-500 dark:text-slate-400 font-bold">
-            <span>Área do Cliente</span>
-            <span>/</span>
-            <span className="font-bold text-gray-800 dark:text-slate-200">
-              {MENU.find((m) => m.path === location.pathname)?.label || 'Painel'}
+      <main className="flex-1 flex flex-col min-h-screen overflow-auto min-w-0 bg-[#e0e5ec]">
+        {/* Topbar Industrial */}
+        <header className="h-16 border-b border-[#babecc]/40 bg-[#e0e5ec] px-6 flex items-center justify-between shrink-0 transition-colors duration-300 font-mono shadow-[0_4px_8px_rgba(0,0,0,0.04)]">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-[#4a5568] font-bold">
+            <span>PAINEL CLIENTE</span>
+            <span>///</span>
+            <span className="font-bold text-[#ff4757]">
+              {MENU.find((m) => m.path === location.pathname)?.label || 'PAINEL'}
             </span>
           </div>
 
@@ -188,9 +173,11 @@ export default function CustomerLayout() {
         </header>
 
         {/* Layout Top Marquee */}
-        <StatsMarquee items={marqueeItems} speed={40} className="py-2.5 border-b-2 border-primary/20" />
+        <div className="px-6 pt-4">
+          <StatsMarquee items={marqueeItems} speed={40} />
+        </div>
 
-        <div className="flex-1 bg-app dark:bg-app-dark transition-colors duration-300">
+        <div className="flex-1 bg-[#e0e5ec] p-4 md:p-6">
           <BannerCarousel {...getBannerTargetForPath(location.pathname)} />
           <Outlet />
         </div>

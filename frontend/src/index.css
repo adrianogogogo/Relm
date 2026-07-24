@@ -69,122 +69,108 @@
            text-kinetic-fg-muted dark:text-kinetic-fg-muted-dark mb-2;
   }
 
-  /* ── KINETIC PORTAL GLOBAL SCOPE OVERRIDES (SOLID BLUE SPEC - NO GRADIENTS) ── */
-  .kinetic-portal,
-  .kinetic-portal * {
-    font-family: 'Space Grotesk', sans-serif !important;
+  /* ── INDUSTRIAL SKEUOMORPHISM GLOBAL SCOPE OVERRIDES ── */
+  .kinetic-portal {
+    background-color: #e0e5ec !important;
+    color: #2d3436 !important;
+    font-family: 'Inter', sans-serif !important;
   }
 
   .kinetic-portal h1,
   .kinetic-portal h2,
   .kinetic-portal h3,
-  .kinetic-portal h4,
-  .kinetic-portal h5,
-  .kinetic-portal h6 {
-    text-transform: uppercase !important;
-    letter-spacing: -0.03em !important;
-    font-weight: 700 !important;
+  .kinetic-portal h4 {
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+    color: #2d3436 !important;
   }
 
   .kinetic-portal .card {
-    border-radius: 0px !important;
-    border-width: 2px !important;
-    border-color: #0D2137 !important;
-    box-shadow: none !important;
-    transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    background-color: #e0e5ec !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(255, 255, 255, 0.6) !important;
+    box-shadow: 8px 8px 16px #babecc, -8px -8px 16px #ffffff !important;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
   }
 
   .kinetic-portal .card:hover {
-    background-color: #2196F3 !important;
-    border-color: #2196F3 !important;
-    color: #FFFFFF !important;
-  }
-
-  .kinetic-portal .card:hover * {
-    color: #FFFFFF !important;
-  }
-
-  .dark .kinetic-portal .card {
-    background-color: #09090B !important;
-    border-color: #334155 !important;
-    color: #FAFAFA !important;
-  }
-
-  .dark .kinetic-portal .card:hover {
-    background-color: #2196F3 !important;
-    border-color: #2196F3 !important;
-    color: #FFFFFF !important;
-  }
-
-  .dark .kinetic-portal .card:hover * {
-    color: #FFFFFF !important;
+    box-shadow: 12px 12px 24px #babecc, -12px -12px 24px #ffffff !important;
+    transform: translateY(-2px) !important;
   }
 
   .kinetic-portal .btn,
   .kinetic-portal button:not(.btn-unstyled) {
-    border-radius: 0px !important;
-    border-width: 2px !important;
-    text-transform: uppercase !important;
-    letter-spacing: -0.02em !important;
+    border-radius: 10px !important;
+    font-family: 'Inter', sans-serif !important;
     font-weight: 700 !important;
-    transition: all 0.2s ease !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    transition: all 0.15s ease !important;
   }
 
   .kinetic-portal .btn-primary {
-    background-color: #2196F3 !important;
-    border-color: #2196F3 !important;
-    color: #FFFFFF !important;
+    background-color: #ff4757 !important;
+    border-color: #ff4757 !important;
+    color: #ffffff !important;
+    box-shadow: 4px 4px 10px rgba(166, 50, 60, 0.35), -2px -2px 6px rgba(255, 255, 255, 0.6) !important;
   }
 
   .kinetic-portal .btn-primary:hover {
-    background-color: #1E88E5 !important;
-    border-color: #1E88E5 !important;
-    transform: scale(1.03);
+    background-color: #ff6b81 !important;
+    transform: translateY(-1px) !important;
+  }
+
+  .kinetic-portal .btn-primary:active,
+  .kinetic-portal .btn-outline:active {
+    transform: translateY(2px) !important;
+    box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.25), inset -4px -4px 8px rgba(255, 255, 255, 0.5) !important;
   }
 
   .kinetic-portal .btn-outline {
-    background-color: transparent !important;
-    border-color: #0D2137 !important;
-    color: #0D2137 !important;
+    background-color: #e0e5ec !important;
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    color: #2d3436 !important;
+    box-shadow: 4px 4px 8px #babecc, -4px -4px 8px #ffffff !important;
   }
 
-  .dark .kinetic-portal .btn-outline {
-    border-color: #334155 !important;
-    color: #FAFAFA !important;
-  }
-
-  .kinetic-portal .btn-outline:hover,
-  .dark .kinetic-portal .btn-outline:hover {
-    background-color: #2196F3 !important;
-    border-color: #2196F3 !important;
-    color: #FFFFFF !important;
+  .kinetic-portal .btn-outline:hover {
+    color: #ff4757 !important;
+    box-shadow: 6px 6px 12px #babecc, -6px -6px 12px #ffffff !important;
   }
 
   .kinetic-portal input,
   .kinetic-portal select,
   .kinetic-portal textarea {
-    border-radius: 0px !important;
-    font-family: 'Space Grotesk', sans-serif !important;
-    border-width: 0 0 2px 0 !important;
-    background-color: transparent !important;
+    border-radius: 10px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    background-color: #e0e5ec !important;
+    border: none !important;
+    box-shadow: inset 4px 4px 8px #babecc, inset -4px -4px 8px #ffffff !important;
+    color: #2d3436 !important;
+    padding: 12px 16px !important;
   }
 
   .kinetic-portal input:focus,
   .kinetic-portal select:focus,
   .kinetic-portal textarea:focus {
-    border-color: #2196F3 !important;
+    box-shadow: inset 4px 4px 8px #babecc, inset -4px -4px 8px #ffffff, 0 0 0 2px #ff4757 !important;
+    outline: none !important;
   }
 
   .kinetic-portal table th {
-    font-family: 'Space Grotesk', sans-serif !important;
+    font-family: 'JetBrains Mono', monospace !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
+    letter-spacing: 0.08em !important;
     font-size: 0.75rem !important;
+    color: #4a5568 !important;
   }
 
-  .kinetic-portal .badge,
-  .kinetic-portal [class*="rounded-full"] {
-    border-radius: 0px !important;
+  .kinetic-portal .badge {
+    border-radius: 6px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
   }
 }
 
