@@ -33,6 +33,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { EngagementModule } from './engagement/engagement.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { PartnersModule } from './partners/partners.module';
+import { ClubSettingsModule } from './club-settings/club-settings.module';
 import { HealthController } from './health.controller';
 import { CommonModule } from './common/common.module';
 @Module({
@@ -82,6 +83,7 @@ import { CommonModule } from './common/common.module';
     EngagementModule,
     GamificationModule,
     PartnersModule,
+    ClubSettingsModule,
   ],
   controllers: [HealthController],
   providers: [

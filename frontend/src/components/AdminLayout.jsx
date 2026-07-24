@@ -157,7 +157,7 @@ const CONFIG_ITEMS = [
     path: '/admin/club-settings',
     label: 'Regras do Clube',
     icon: MdSettings,
-    roles: ['ADMIN_RELM'],
+    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
   },
   {
     path: '/admin/users',

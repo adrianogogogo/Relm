@@ -81,6 +81,7 @@ import AdminWhatsAppPage from './pages/AdminWhatsAppPage';
 import AdminPartnersPage from './pages/AdminPartnersPage';
 import AdminClubReportsPage from './pages/AdminClubReportsPage';
 import CustomerPartnersPage from './pages/CustomerPartnersPage';
+import AdminClubSettingsPage from './pages/AdminClubSettingsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -311,6 +312,11 @@ export default function App() {
             <Route path="relatorios-clube" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
                 <AdminClubReportsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="club-settings" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                <AdminClubSettingsPage />
               </ProtectedRoute>
             } />
             {/* Feed view-only do Distribuidor (não acessa a gestão de eventos/benefícios) */}

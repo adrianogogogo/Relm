@@ -253,6 +253,11 @@ export const bannersAPI = {
   delete: (id) => api.delete(`/banners/${id}`).then((res) => res.data),
 };
 
+export const clubSettingsAPI = {
+  get: () => api.get('/club-settings').then((res) => res.data),
+  update: (data) => api.put('/club-settings', data).then((res) => res.data),
+};
+
 // ── Notificações (equipe Relm + loja) ─────────────────────────────────────────
 // Usa a instância `api` autenticada (token unificado em relm_access_token).
 // O backend resolve o recipiente (User vs StoreUser) a partir do token.
