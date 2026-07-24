@@ -172,6 +172,67 @@
     text-transform: uppercase !important;
     letter-spacing: 0.05em !important;
   }
+
+  /* ── Industrial Skeuomorphism — Dark Mode Chassis (#1c2128) ── */
+  .dark .kinetic-portal,
+  .dark.kinetic-portal {
+    background-color: #1c2128 !important;
+    color: #f0f2f5 !important;
+  }
+
+  .dark .kinetic-portal .card,
+  .dark .kinetic-portal .kinetic-card {
+    background-color: #1c2128 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 8px 8px 16px #12161b, -8px -8px 16px #262c35 !important;
+    color: #f0f2f5 !important;
+  }
+
+  .dark .kinetic-portal .card:hover,
+  .dark .kinetic-portal .kinetic-card:hover {
+    box-shadow: 12px 12px 24px #12161b, -12px -12px 24px #262c35 !important;
+  }
+
+  .dark .kinetic-portal .btn-primary {
+    background-color: #2196F3 !important;
+    border-color: #2196F3 !important;
+    color: #ffffff !important;
+    box-shadow: 4px 4px 10px rgba(33, 150, 243, 0.35), -2px -2px 6px rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .dark .kinetic-portal .btn-primary:hover {
+    background-color: #1e88e5 !important;
+  }
+
+  .dark .kinetic-portal .btn-outline {
+    background-color: #1c2128 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #f0f2f5 !important;
+    box-shadow: 4px 4px 8px #12161b, -4px -4px 8px #262c35 !important;
+  }
+
+  .dark .kinetic-portal .btn-outline:hover {
+    color: #2196F3 !important;
+    box-shadow: 6px 6px 12px #12161b, -6px -6px 12px #262c35 !important;
+  }
+
+  .dark .kinetic-portal input,
+  .dark .kinetic-portal select,
+  .dark .kinetic-portal textarea {
+    background-color: #1c2128 !important;
+    box-shadow: inset 4px 4px 8px #12161b, inset -4px -4px 8px #262c35 !important;
+    color: #f0f2f5 !important;
+  }
+
+  .dark .kinetic-portal input:focus,
+  .dark .kinetic-portal select:focus,
+  .dark .kinetic-portal textarea:focus {
+    box-shadow: inset 4px 4px 8px #12161b, inset -4px -4px 8px #262c35, 0 0 0 2px #2196F3 !important;
+  }
+
+  .dark .kinetic-portal table th {
+    color: #a0aec0 !important;
+  }
 }
 
 @layer utilities {

@@ -125,14 +125,14 @@ export default function TopBarChrome({
 
   return (
     <div className="flex items-center gap-2">
-      {/* Toggle de tema */}
+      {/* Toggle de tema 3D Neumórfico */}
       <button
         onClick={toggleTheme}
-        className="p-2 rounded-lg bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300 transition-all"
-        title="Alternar tema"
+        className="p-2 rounded-xl bg-[#e0e5ec] dark:bg-[#1c2128] text-[#183757] dark:text-[#2196F3] shadow-[3px_3px_6px_#babecc,-3px_-3px_6px_#ffffff] dark:shadow-[3px_3px_6px_#12161b,-3px_-3px_6px_#262c35] active:translate-y-[2px] transition-all"
+        title={theme === 'dark' ? 'Mudar para Modo Claro' : 'Mudar para Modo Escuro'}
         aria-label="Alternar tema"
       >
-        {theme === 'dark' ? <MdLightMode size={20} /> : <MdDarkMode size={20} />}
+        {theme === 'dark' ? <MdLightMode size={18} className="text-[#2196F3]" /> : <MdDarkMode size={18} className="text-[#183757]" />}
       </button>
 
       {/* Sino de notificações */}
