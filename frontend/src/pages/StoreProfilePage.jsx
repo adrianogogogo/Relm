@@ -115,7 +115,7 @@ export default function StoreProfilePage() {
           <AnimatedSection delay={0.4}>
             <KineticCard>
               <div className="flex items-start gap-4">
-                <div className="shrink-0 p-2.5 w-11 h-11 rounded-xl bg-[#d1d9e6] dark:bg-[#171b21] shadow-[inset_4px_4px_8px_#babecc,inset_-4px_-4px_8px_#ffffff] dark:shadow-[inset_4px_4px_8px_#0d1013,inset_-4px_-4px_8px_#262c35] flex items-center justify-center text-[#0A1929] dark:text-[#2196F3]">
+                <div className="shrink-0 p-2.5 w-11 h-11 rounded-xl bg-[#ccd3dd] dark:bg-[#171b21] shadow-[inset_7px_7px_12px_#8a92a0,inset_-6px_-6px_12px_#ffffff] dark:shadow-[inset_7px_7px_12px_#0a0d11,inset_-6px_-6px_12px_#2e353f] flex items-center justify-center text-[#0A1929] dark:text-[#2196F3]">
                   <MdInfo size={22} />
                 </div>
                 <div>
