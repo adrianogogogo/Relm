@@ -122,12 +122,12 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
             <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
-            <Route path="/garantia" element={<WarrantyPage />} />
+            <Route path="/garantia" element={<Navigate to="/" replace />} />
             <Route path="/vantagens" element={<BenefitsPage />} />
             <Route path="/eventos" element={<EventsPage />} />
             <Route path="/seguro" element={<InsurancePage />} />
             <Route path="/newsletter" element={<NewsletterPage />} />
-            <Route path="/validar-garantia/:token" element={<ValidateWarrantyPage />} />
+            <Route path="/validar-garantia/:token" element={<Navigate to="/" replace />} />
           </Route>
 
           {/* ── Customer portal ──────────────────────────────────────────── */}
@@ -143,7 +143,7 @@ export default function App() {
             <Route path="dashboard" element={<CustomerDashboard />} />
             <Route path="compras" element={<CustomerPurchasesPage />} />
             <Route path="assinatura" element={<CustomerSubscriptionPage />} />
-            <Route path="garantias" element={<CustomerWarrantiesPage />} />
+            <Route path="garantias" element={<Navigate to="/cliente/dashboard" replace />} />
             <Route path="eventos" element={<CustomerEventsPage />} />
             <Route path="vantagens" element={<CustomerBenefitsPage />} />
             <Route path="seguros" element={<CustomerInsurancePage />} />
@@ -169,7 +169,7 @@ export default function App() {
             <Route path="clientes/:id" element={<CustomerDetailPage />} />
             <Route path="clientes/:id/editar" element={<CustomerFormPage />} />
             <Route path="pagamentos" element={<StorePaymentsPage />} />
-            <Route path="garantias" element={<StoreWarrantiesPage />} />
+            <Route path="garantias" element={<Navigate to="/loja/dashboard" replace />} />
             <Route path="vendas" element={<StoreSalesPage />} />
             <Route path="vendas-lista" element={<StoreSalesListPage />} />
             <Route path="seguros" element={<StoreInsurancesPage />} />
@@ -241,11 +241,7 @@ export default function App() {
             } />
 
             {/* Apenas Relm (não Distribuidor) */}
-            <Route path="warranties" element={
-              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
-                <WarrantiesPage />
-              </ProtectedRoute>
-            } />
+            <Route path="warranties" element={<Navigate to="/admin" replace />} />
             <Route path="customers/new" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM']}>
                 <CustomerFormPage />

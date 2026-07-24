@@ -10,7 +10,6 @@ export default function Header() {
 
   const navItems = [
     { path: '/', label: 'Início' },
-    { path: '/garantia', label: 'Garantia' },
     { path: '/vantagens', label: 'Vantagens' },
     { path: '/eventos', label: 'Eventos' },
     { path: '/seguro', label: 'Seguro' },

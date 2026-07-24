@@ -14,13 +14,6 @@ export default function HomePage() {
 
   const features = [
     {
-      icon: MdVerifiedUser,
-      title: 'Garantias',
-      description:
-        'Gerencie solicitações de garantia com rastreamento completo de status.',
-      link: '/garantia',
-    },
-    {
       icon: MdCardGiftcard,
       title: 'Clube de Vantagens',
       description:
@@ -66,7 +59,7 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
@@ -112,7 +105,7 @@ export default function HomePage() {
               Pronto para começar?
             </h2>
             <p className="text-base md:text-lg text-[#4a5568] mb-8 font-medium max-w-xl mx-auto">
-              Tenha acesso completo ao sistema de garantias, vantagens exclusivas e muito mais.
+              Tenha acesso completo ao sistema de vantagens exclusivas, seguros, eventos e muito mais.
             </p>
             <Link to="/login" className="inline-block">
               <KineticButton variant="primary" size="lg">
