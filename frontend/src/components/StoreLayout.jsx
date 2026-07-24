@@ -4,6 +4,7 @@ import { useSidebarStore } from '../store/sidebarStore';
 import TopBarChrome from './TopBarChrome';
 import BannerCarousel from './BannerCarousel';
 import { getBannerTargetForPath } from '../config/bannerTargets';
+import { bgForPath } from '../config/cyclingBackgrounds';
 import { NoiseTexture, StatsMarquee } from './ui/kinetic';
 import {
   MdDashboard,
@@ -184,9 +185,17 @@ export default function StoreLayout() {
           <StatsMarquee items={marqueeItems} speed={40} />
         </div>
 
-        <div className="flex-1 bg-[#e0e5ec] dark:bg-[#1c2128] p-4 md:p-6">
-          <BannerCarousel {...getBannerTargetForPath(location.pathname)} />
-          <Outlet />
+        <div className="relative flex-1 bg-[#e0e5ec] dark:bg-[#1c2128] p-4 md:p-6">
+          {/* Fundo real de ciclismo, translucido, atras do conteudo da pagina */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-[0.08] dark:opacity-[0.13]"
+            style={{ backgroundImage: `url(${bgForPath(location.pathname)})` }}
+          />
+          <div className="relative z-10">
+            <BannerCarousel {...getBannerTargetForPath(location.pathname)} />
+            <Outlet />
+          </div>
         </div>
       </main>
     </div>
