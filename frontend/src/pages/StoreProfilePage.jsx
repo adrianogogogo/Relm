@@ -115,7 +115,9 @@ export default function StoreProfilePage() {
           <AnimatedSection delay={0.4}>
             <KineticCard>
               <div className="flex items-start gap-4">
-                <MdInfo className="text-2xl text-primary dark:text-primary-400 shrink-0 mt-0.5" />
+                <div className="shrink-0 p-2.5 w-11 h-11 rounded-xl bg-[#e0e5ec] dark:bg-[#1c2128] shadow-[inset_2px_2px_5px_#babecc,inset_-2px_-2px_5px_#ffffff] dark:shadow-[inset_2px_2px_5px_#12161b,inset_-2px_-2px_5px_#262c35] flex items-center justify-center text-[#0A1929] dark:text-[#2196F3]">
+                  <MdInfo size={22} />
+                </div>
                 <div>
                   <h3 className="font-kinetic text-lg font-bold uppercase tracking-tighter text-kinetic-fg dark:text-kinetic-fg-dark mb-1">
                     Alterar Senha
