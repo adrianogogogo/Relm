@@ -81,8 +81,8 @@ export default {
           bg: '#e0e5ec',            // Chassis Level 0 (mid-tone cool grey)
           panel: '#f0f2f5',         // Raised panel surface
           muted: '#d1d9e6',         // Sunken recessed areas
-          accent: '#ff4757',        // Safety Orange / Braun Red
-          'accent-hover': '#ff6b81',
+          accent: '#183757',        // Relm Navy Blue
+          'accent-hover': '#15314e',
           text: '#2d3436',          // Dark charcoal ink
           'text-muted': '#4a5568',    // Darker slate grey for labels
           border: '#babecc',        // Neumorphic shadow half
@@ -100,7 +100,7 @@ export default {
         'neumorphic-floating': '12px 12px 24px #babecc, -12px -12px 24px #ffffff, inset 1px 1px 0 rgba(255,255,255,0.5)',
         'neumorphic-recessed': 'inset 4px 4px 8px #babecc, inset -4px -4px 8px #ffffff',
         'neumorphic-pressed': 'inset 6px 6px 12px #babecc, inset -6px -6px 12px #ffffff',
-        'led-glow': '0 0 10px 2px rgba(255, 71, 87, 0.6)',
+        'led-glow': '0 0 10px 2px rgba(24, 55, 87, 0.6)',
         'led-glow-green': '0 0 10px 2px rgba(34, 197, 94, 0.8)',
       },
       keyframes: {

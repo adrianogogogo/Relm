@@ -24,12 +24,12 @@ export default function StatsMarquee({ items = [], speed = 60, className = '' })
   if (!items.length) return null;
 
   const separator = (
-    <span className="mx-6 text-sm text-[#ff4757] font-bold select-none" aria-hidden="true">///</span>
+    <span className="mx-6 text-sm text-[#183757] font-bold select-none" aria-hidden="true">///</span>
   );
 
   const renderItem = (item, i) => (
     <span key={i} className="inline-flex items-center gap-3 mx-4">
-      <span className="w-2 h-2 rounded-full bg-[#ff4757] shadow-[0_0_8px_rgba(255,71,87,0.8)]" />
+      <span className="w-2 h-2 rounded-full bg-[#183757] shadow-[0_0_8px_rgba(24,55,87,0.8)]" />
       <span className="font-mono text-lg md:text-xl font-bold tracking-tight text-[#2d3436]">
         {item.value}
       </span>
@@ -48,7 +48,7 @@ export default function StatsMarquee({ items = [], speed = 60, className = '' })
         <div className="flex flex-wrap items-center justify-center gap-6">
           {items.map((item, i) => (
             <span key={i} className="inline-flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#ff4757]" />
+              <span className="w-2 h-2 rounded-full bg-[#183757]" />
               <span className="font-mono text-base font-bold text-[#2d3436]">
                 {item.value}
               </span>

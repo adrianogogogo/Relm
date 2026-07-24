@@ -82,7 +82,7 @@ export default function StoreLayout() {
           )}
           <button
             onClick={toggle}
-            className="p-2 text-[#4a5568] hover:text-[#ff4757] transition-colors shrink-0 rounded-xl bg-[#e0e5ec] shadow-[3px_3px_6px_#babecc,-3px_-3px_6px_#ffffff] active:shadow-[inset_2px_2px_4px_#babecc,inset_-2px_-2px_4px_#ffffff]"
+            className="p-2 text-[#4a5568] hover:text-[#183757] transition-colors shrink-0 rounded-xl bg-[#e0e5ec] shadow-[3px_3px_6px_#babecc,-3px_-3px_6px_#ffffff] active:shadow-[inset_2px_2px_4px_#babecc,inset_-2px_-2px_4px_#ffffff]"
             title={collapsed ? 'Expandir painel' : 'Recolher painel'}
             aria-label={collapsed ? 'Expandir painel' : 'Recolher painel'}
           >
@@ -94,7 +94,7 @@ export default function StoreLayout() {
         {!collapsed && (
           <div className="mx-3 my-3 p-3 rounded-xl bg-[#e0e5ec] shadow-[inset_3px_3px_6px_#babecc,inset_-3px_-3px_6px_#ffffff] border border-white/40 font-mono">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-[#ff4757] flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-[2px_2px_4px_rgba(166,50,60,0.4)]">
+              <div className="w-9 h-9 rounded-lg bg-[#183757] flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-[2px_2px_4px_rgba(24,55,87,0.4)]">
                 {user?.name?.charAt(0)?.toUpperCase() || 'L'}
               </div>
               <div className="min-w-0">
@@ -120,13 +120,13 @@ export default function StoreLayout() {
                   collapsed ? 'justify-center px-2' : 'px-3.5'
                 } py-2.5 rounded-xl transition-all text-xs font-bold uppercase tracking-wider ${
                   active
-                    ? 'bg-[#ff4757] text-white shadow-[3px_3px_6px_rgba(166,50,60,0.35),-2px_-2px_4px_rgba(255,255,255,0.6)] translate-y-[1px]'
-                    : 'bg-[#e0e5ec] text-[#4a5568] shadow-[4px_4px_8px_#babecc,-4px_-4px_8px_#ffffff] hover:text-[#ff4757] hover:shadow-[6px_6px_10px_#babecc,-6px_-6px_10px_#ffffff]'
+                    ? 'bg-[#183757] text-white shadow-[3px_3px_6px_rgba(24,55,87,0.35),-2px_-2px_4px_rgba(255,255,255,0.6)] translate-y-[1px]'
+                    : 'bg-[#e0e5ec] text-[#4a5568] shadow-[4px_4px_8px_#babecc,-4px_-4px_8px_#ffffff] hover:text-[#183757] hover:shadow-[6px_6px_10px_#babecc,-6px_-6px_10px_#ffffff]'
                 }`}
               >
                 <item.icon
                   size={18}
-                  className={`shrink-0 ${active ? 'text-white' : 'text-[#4a5568] group-hover:text-[#ff4757]'}`}
+                  className={`shrink-0 ${active ? 'text-white' : 'text-[#4a5568] group-hover:text-[#183757]'}`}
                 />
                 {!collapsed && <span className="truncate">{item.label}</span>}
               </Link>
@@ -150,7 +150,7 @@ export default function StoreLayout() {
             title={collapsed ? 'Sair' : undefined}
             className={`flex items-center gap-3 w-full ${
               collapsed ? 'justify-center px-2' : 'px-3.5'
-            } py-2.5 text-[#ff4757] font-bold uppercase tracking-wider text-xs rounded-xl bg-[#e0e5ec] shadow-[3px_3px_6px_#babecc,-3px_-3px_6px_#ffffff] hover:shadow-[5px_5px_8px_#babecc,-5px_-5px_8px_#ffffff] active:translate-y-[2px] active:shadow-[inset_3px_3px_6px_#babecc,inset_-3px_-3px_6px_#ffffff] transition-all`}
+            } py-2.5 text-[#183757] font-bold uppercase tracking-wider text-xs rounded-xl bg-[#e0e5ec] shadow-[3px_3px_6px_#babecc,-3px_-3px_6px_#ffffff] hover:shadow-[5px_5px_8px_#babecc,-5px_-5px_8px_#ffffff] active:translate-y-[2px] active:shadow-[inset_3px_3px_6px_#babecc,inset_-3px_-3px_6px_#ffffff] transition-all`}
           >
             <MdLogout size={18} />
             {!collapsed && <span>DESCONECTAR</span>}
@@ -165,7 +165,7 @@ export default function StoreLayout() {
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-[#4a5568] font-bold">
             <span>PORTAL LOJA</span>
             <span>///</span>
-            <span className="font-bold text-[#ff4757]">
+            <span className="font-bold text-[#183757]">
               {MENU.find((m) => isActive(m.path))?.label || 'PAINEL'}
             </span>
           </div>

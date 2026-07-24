@@ -1,7 +1,7 @@
 /**
  * KineticButton — Botão Físico 3D (Physical Key §3).
  * Triggers táteis com elevação neumórfica, afundamento tátil ao clicar (active:translate-y-[2px])
- * e cor de acionamento Safety Orange (#ff4757).
+ * e cor de acionamento Azul Relm (#183757).
  *
  * Props:
  *  - variant: 'primary' (Safety Orange) | 'outline' (Chassis) | 'ghost'
@@ -18,18 +18,18 @@ const SIZE_CLASSES = {
 };
 
 const VARIANT_CLASSES = {
-  primary: `bg-[#ff4757] text-white font-bold
-            shadow-[4px_4px_10px_rgba(166,50,60,0.35),-2px_-2px_6px_rgba(255,255,255,0.6)]
-            hover:bg-[#ff6b81] hover:-translate-y-0.5
+  primary: `bg-[#183757] text-white font-bold
+            shadow-[4px_4px_10px_rgba(24,55,87,0.35),-2px_-2px_6px_rgba(255,255,255,0.6)]
+            hover:bg-[#15314e] hover:-translate-y-0.5
             active:translate-y-[2px] active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.25),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
             border border-white/20`,
   outline: `bg-[#e0e5ec] text-[#2d3436] font-bold
             shadow-[4px_4px_8px_#babecc,-4px_-4px_8px_#ffffff]
-            hover:text-[#ff4757] hover:shadow-[6px_6px_12px_#babecc,-6px_-6px_12px_#ffffff]
+            hover:text-[#183757] hover:shadow-[6px_6px_12px_#babecc,-6px_-6px_12px_#ffffff]
             active:translate-y-[2px] active:shadow-[inset_4px_4px_8px_#babecc,inset_-4px_-4px_8px_#ffffff]
             border border-white/50`,
   ghost: `bg-transparent text-[#2d3436] font-bold
-          hover:bg-[#d1d9e6]/50 hover:text-[#ff4757]
+          hover:bg-[#d1d9e6]/50 hover:text-[#183757]
           active:translate-y-[2px]`,
 };
 
