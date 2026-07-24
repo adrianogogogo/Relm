@@ -35,7 +35,7 @@ export default function StatCard({
         </div>
         {Icon && (
           <div
-            className="shrink-0 rounded-lg p-2.5"
+            className="stat-icon-box shrink-0 rounded-lg p-2.5"
             style={{ backgroundColor: `${color}26`, color }}
           >
             <Icon size={22} />

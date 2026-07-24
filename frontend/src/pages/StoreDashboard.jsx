@@ -123,7 +123,7 @@ const StoreDashboard = () => {
                 className="flex items-center gap-3 px-4 py-3 rounded-lg border border-gray-200 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors"
               >
                 <span
-                  className="shrink-0 rounded-lg p-2"
+                  className="stat-icon-box shrink-0 rounded-lg p-2"
                   style={{ backgroundColor: `${action.color}26`, color: action.color }}
                 >
                   <action.icon size={18} />

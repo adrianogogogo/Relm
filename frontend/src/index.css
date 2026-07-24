@@ -195,6 +195,21 @@
     color: #0A1929 !important;
   }
 
+  /* Icones de KPI/acoes em baixo relevo (poco) — igual aos perfis — em TODAS as
+     paginas dos portais Cliente/Loja. Escopado ao .kinetic-portal, entao o Admin
+     (fora do portal) mantem o box chapado. O !important sobrepoe o style inline. */
+  .kinetic-portal .stat-icon-box {
+    background-color: #ccd3dd !important;
+    color: #0A1929 !important;
+    border-radius: 12px !important;
+    box-shadow: inset 7px 7px 12px #8a92a0, inset -6px -6px 12px #ffffff !important;
+  }
+  .dark .kinetic-portal .stat-icon-box {
+    background-color: #171b21 !important;
+    color: #2196F3 !important;
+    box-shadow: inset 7px 7px 12px #0a0d11, inset -6px -6px 12px #2e353f !important;
+  }
+
   /* ── Industrial Skeuomorphism — Dark Mode Chassis (#1c2128) ── */
   .dark .kinetic-portal,
   .dark.kinetic-portal {
