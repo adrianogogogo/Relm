@@ -10,6 +10,7 @@ import CustomerProtectedRoute from './components/CustomerProtectedRoute';
 import StoreProtectedRoute from './components/StoreProtectedRoute';
 import StoreLayout from './components/StoreLayout';
 import { useThemeStore } from './store/themeStore';
+import { NoiseTexture, CyclingTexturePattern } from './components/ui/kinetic';
 
 // Public pages
 import HomePage from './pages/HomePage';
@@ -93,9 +94,11 @@ const queryClient = new QueryClient({
 
 function PublicLayout() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="kinetic-portal relative flex flex-col min-h-screen bg-[#e0e5ec] text-[#2d3436] transition-colors duration-300">
+      <NoiseTexture />
+      <CyclingTexturePattern />
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 relative z-10">
         <Outlet />
       </main>
       <Footer />

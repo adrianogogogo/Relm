@@ -17,29 +17,38 @@ export default function Header() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="bg-primary shadow-lg sticky top-0 z-50">
-      <nav className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="block shrink-0">
-            <img src="/logo-white.png" alt="Relm Care+" className="h-9 w-auto" />
-          </Link>
+    <header className="bg-[#e0e5ec] border-b border-[#babecc]/50 shadow-[0_4px_12px_#babecc] sticky top-0 z-50 font-sans transition-colors duration-300">
+      <nav className="container mx-auto px-4 py-3.5">
+        <div className="flex items-center justify-between gap-4">
+          {/* Logo + LED Status */}
+          <div className="flex items-center gap-3">
+            <Link to="/" className="block shrink-0">
+              <img src="/logo-white.png" alt="Relm Care+" className="h-9 w-auto filter invert brightness-0" />
+            </Link>
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#d1d9e6] shadow-[inset_1px_1px_3px_#babecc,inset_-1px_-1px_3px_#ffffff] font-mono text-[10px] font-bold text-[#4a5568]">
+              <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
+              <span>SYS ONLINE</span>
+            </div>
+          </div>
 
-          {/* Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`px-4 py-2 rounded-lg transition-all ${
-                  isActive(item.path)
-                    ? 'bg-header-active font-semibold'
-                    : 'text-white hover:bg-primary-600'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+          {/* Navigation — Teclas 3D Neumórficas */}
+          <div className="hidden md:flex items-center space-x-2">
+            {navItems.map((item) => {
+              const active = isActive(item.path);
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150 ${
+                    active
+                      ? 'bg-[#183757] text-white shadow-[3px_3px_6px_rgba(24,55,87,0.35),-2px_-2px_4px_rgba(255,255,255,0.6)] translate-y-[1px]'
+                      : 'bg-[#e0e5ec] text-[#4a5568] shadow-[3px_3px_6px_#babecc,-3px_-3px_6px_#ffffff] hover:text-[#183757] hover:shadow-[5px_5px_8px_#babecc,-5px_-5px_8px_#ffffff]'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </div>
 
           {/* Auth buttons */}
@@ -48,32 +57,32 @@ export default function Header() {
               <>
                 <Link
                   to={getDashboardPath()}
-                  className="hidden md:block px-4 py-2 rounded-lg bg-header-active font-semibold hover:bg-primary-50 dark:hover:bg-secondary-600 transition-all"
+                  className="px-4 py-2 rounded-xl bg-[#183757] text-white text-xs font-bold uppercase tracking-wider shadow-[3px_3px_6px_rgba(24,55,87,0.35),-2px_-2px_4px_rgba(255,255,255,0.6)] active:translate-y-[2px] transition-all"
                 >
                   Dashboard
                 </Link>
                 <button
                   onClick={logout}
-                  className="px-4 py-2 rounded-lg border-2 border-white text-white hover:bg-white hover:text-primary transition-all font-semibold"
+                  className="px-4 py-2 rounded-xl bg-[#e0e5ec] text-[#183757] text-xs font-bold uppercase tracking-wider shadow-[3px_3px_6px_#babecc,-3px_-3px_6px_#ffffff] hover:shadow-[5px_5px_8px_#babecc,-5px_-5px_8px_#ffffff] active:translate-y-[2px] transition-all"
                 >
                   Sair
                 </button>
-                <div className="hidden md:block text-white text-sm">
-                  <p className="font-semibold">{user?.name}</p>
-                  <p className="text-xs text-primary-100">{user?.userType}</p>
+                <div className="hidden lg:block text-[#2d3436] text-right font-mono">
+                  <p className="font-bold text-xs uppercase tracking-tight">{user?.name}</p>
+                  <p className="text-[10px] text-[#4a5568]">{user?.userType}</p>
                 </div>
               </>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <Link
                   to="/login"
-                  className="px-4 py-2 rounded-lg bg-header-active font-semibold hover:bg-primary-50 dark:hover:bg-secondary-600 transition-all text-sm"
+                  className="px-4.5 py-2 rounded-xl bg-[#183757] text-white text-xs font-bold uppercase tracking-wider shadow-[3px_3px_6px_rgba(24,55,87,0.35),-2px_-2px_4px_rgba(255,255,255,0.6)] active:translate-y-[2px] transition-all"
                 >
                   Entrar
                 </Link>
                 <Link
                   to="/cliente/cadastro"
-                  className="px-4 py-2 rounded-lg border-2 border-white text-white font-semibold hover:bg-header-active transition-all text-sm"
+                  className="px-4 py-2 rounded-xl bg-[#e0e5ec] text-[#2d3436] text-xs font-bold uppercase tracking-wider shadow-[3px_3px_6px_#babecc,-3px_-3px_6px_#ffffff] hover:text-[#183757] hover:shadow-[5px_5px_8px_#babecc,-5px_-5px_8px_#ffffff] active:translate-y-[2px] transition-all"
                 >
                   Criar conta
                 </Link>
@@ -83,20 +92,23 @@ export default function Header() {
         </div>
 
         {/* Mobile menu */}
-        <div className="md:hidden mt-4 flex flex-wrap gap-2">
-          {navItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`px-3 py-1 rounded-lg text-sm transition-all ${
-                isActive(item.path)
-                  ? 'bg-header-active font-semibold'
-                  : 'text-white hover:bg-primary-600'
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
+        <div className="md:hidden mt-3 flex flex-wrap gap-2 pt-2 border-t border-[#babecc]/40">
+          {navItems.map((item) => {
+            const active = isActive(item.path);
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all ${
+                  active
+                    ? 'bg-[#183757] text-white shadow-[2px_2px_4px_rgba(24,55,87,0.35)]'
+                    : 'bg-[#e0e5ec] text-[#4a5568] shadow-[2px_2px_4px_#babecc,-2px_-2px_4px_#ffffff]'
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </div>
       </nav>
     </header>
