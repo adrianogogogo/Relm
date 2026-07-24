@@ -31,11 +31,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#e0e5ec] text-[#2d3436] flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[#0A1929] text-[#e2e8f0] flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full">
-        {/* Logo + LED Status */}
+        {/* Logo branco + LED Status */}
         <div className="text-center mb-8">
-          <img src="/logo-white.png" alt="Relm Care+" className="h-14 w-auto mx-auto filter invert brightness-0 mb-3" />
+          <img src="/logo-white.png" alt="Relm Care+" className="h-14 w-auto mx-auto mb-3" />
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d1d9e6] shadow-[inset_1px_1px_3px_#babecc,inset_-1px_-1px_3px_#ffffff] font-mono text-[10px] font-bold text-[#4a5568]">
             <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
             <span>SISTEMA DE AUTENTICAÇÃO ONLINE</span>
