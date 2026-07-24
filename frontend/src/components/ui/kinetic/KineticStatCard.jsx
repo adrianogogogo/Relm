@@ -36,22 +36,22 @@ export default function KineticStatCard({
       {/* Conteúdo principal */}
       <div className="relative z-10 font-kinetic">
         {Icon && (
-          <div className="mb-3 text-[#09090B] dark:text-[#DFE104] group-hover:text-black transition-colors duration-200">
+          <div className="mb-3 text-[#2196F3] group-hover:text-white transition-colors duration-200">
             <Icon size={24} />
           </div>
         )}
         <p
           className="font-kinetic text-5xl md:text-7xl font-bold leading-none tracking-tighter
-                     text-[#09090B] dark:text-[#FAFAFA]
-                     group-hover:text-black
+                     text-[#0D2137] dark:text-[#FAFAFA]
+                     group-hover:text-white
                      transition-colors duration-200"
         >
           {value}
         </p>
         <p
           className="mt-2 font-kinetic text-xs uppercase tracking-widest font-bold
-                     text-slate-600 dark:text-zinc-400
-                     group-hover:text-black
+                     text-slate-600 dark:text-slate-400
+                     group-hover:text-white
                      transition-colors duration-200"
         >
           {label}

@@ -73,11 +73,11 @@ export default function CustomerLayout() {
           }
         `}</style>
       )}
-      {/* Sidebar — Kinetic Brutalist */}
+      {/* Sidebar — Kinetic Brutalist (Solid Blue - No Gradient) */}
       <aside
         className={`${
           collapsed ? 'w-[70px]' : 'w-64'
-        } bg-sidebar-gradient text-white flex flex-col shrink-0 border-r-2 border-white/10 z-20 transition-[width] duration-300`}
+        } bg-[#0d2137] text-white flex flex-col shrink-0 border-r-2 border-white/10 z-20 transition-[width] duration-300`}
       >
         {/* Logo + toggle */}
         <div

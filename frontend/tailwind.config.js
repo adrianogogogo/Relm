@@ -79,20 +79,20 @@ export default {
         surface: '#ffffff',      // fundo de cards/superfícies (claro)
         'app-dark': '#0a1929',   // fundo escuro da aplicação
         'surface-dark': '#0d2137', // superfície escura (mesmo tom do topo da sidebar)
-        // Kinetic Typography tokens (Pure High-Energy spec)
+        // Kinetic Typography tokens (Solid Blue Spec - No Gradients)
         kinetic: {
           bg: '#f8fafc',           // fundo claro
-          'bg-dark': '#09090B',    // fundo escuro (rich black)
-          accent: '#DFE104',       // amarelo ácido puro
-          'accent-dark': '#DFE104',// amarelo ácido puro
+          'bg-dark': '#09090B',    // fundo escuro
+          accent: '#2196F3',       // azul elétrico vibrante
+          'accent-dark': '#2196F3',// azul elétrico vibrante
           muted: '#e2e8f0',        // elementos decorativos light
-          'muted-dark': '#27272A', // elementos decorativos dark (zinc-800)
-          border: '#000000',       // bordas solidadas light
-          'border-dark': '#3F3F46',// bordas dark (zinc-700)
-          fg: '#09090B',           // foreground light (black)
+          'muted-dark': '#1e293b', // elementos decorativos dark
+          border: '#0D2137',       // bordas solidadas light (navy)
+          'border-dark': '#334155',// bordas dark
+          fg: '#0D2137',           // foreground light (navy)
           'fg-dark': '#FAFAFA',    // foreground dark (off-white)
           'fg-muted': '#475569',   // texto secundário light
-          'fg-muted-dark': '#A1A1AA', // texto secundário dark (zinc-400)
+          'fg-muted-dark': '#94a3b8', // texto secundário dark
         },
       },
       backgroundImage: {
