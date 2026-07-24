@@ -116,12 +116,12 @@ export default function StoreLayout() {
                 key={item.path}
                 to={item.path}
                 title={collapsed ? item.label : undefined}
-                className={`flex items-center gap-3 ${
+                className={`group flex items-center gap-3 ${
                   collapsed ? 'justify-center px-2' : 'px-3.5'
                 } py-2.5 rounded-xl transition-all text-xs font-bold uppercase tracking-wider ${
                   active
                     ? 'bg-[#2196F3] text-white shadow-[3px_3px_6px_rgba(33,150,243,0.35)] translate-y-[1px]'
-                    : 'bg-[#0A1929] text-[#94a3b8] shadow-[4px_4px_8px_#050c14,-4px_-4px_8px_#10263e] hover:text-white hover:shadow-[6px_6px_10px_#050c14,-6px_-6px_10px_#10263e]'
+                    : 'bg-[#0A1929] text-[#e2e8f0] shadow-[4px_4px_8px_#050c14,-4px_-4px_8px_#10263e] hover:text-white hover:bg-[#10263e] hover:shadow-[6px_6px_10px_#050c14,-6px_-6px_10px_#10263e]'
                 }`}
               >
                 <item.icon

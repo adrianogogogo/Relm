@@ -161,9 +161,9 @@ export default function CustomerDashboard() {
   const points = pointsData?.balance || 0;
 
   const metrics = [
-    { label: 'Eventos', value: events.length, icon: MdEvent, color: isPlus ? '#D4AF37' : '#2d3a4a', link: '/cliente/eventos' },
-    { label: 'Vantagens', value: benefits.length, icon: MdCardGiftcard, color: isPlus ? '#D4AF37' : '#9C27B0', link: '/cliente/vantagens' },
-    { label: isPlus ? 'Meus Pontos' : 'Cotações', value: isPlus ? points : quotes.length, icon: isPlus ? MdCardGiftcard : MdDescription, color: isPlus ? '#D4AF37' : '#FF9800', link: isPlus ? '/cliente/vantagens' : '/cliente/seguros' },
+    { label: 'Eventos', value: events.length, icon: MdEvent, color: isPlus ? '#D4AF37' : '#0A1929', link: '/cliente/eventos' },
+    { label: 'Vantagens', value: benefits.length, icon: MdCardGiftcard, color: isPlus ? '#D4AF37' : '#183757', link: '/cliente/vantagens' },
+    { label: isPlus ? 'Meus Pontos' : 'Cotações', value: isPlus ? points : quotes.length, icon: isPlus ? MdCardGiftcard : MdDescription, color: isPlus ? '#D4AF37' : '#2196F3', link: isPlus ? '/cliente/vantagens' : '/cliente/seguros' },
   ];
 
   return (
@@ -177,12 +177,12 @@ export default function CustomerDashboard() {
 
         {/* Upgrade Banner for CARE */}
         {!isPlus && (
-          <div className="bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg p-6 mb-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="bg-[#0A1929] dark:bg-[#1c2128] border border-[#183757] text-white rounded-2xl p-6 mb-6 shadow-[6px_6px_14px_rgba(10,25,41,0.4)] flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
-              <h3 className="font-bold text-lg">Faça o upgrade para o Relm Care Plus! 🚴✨</h3>
-              <p className="text-sm opacity-90">Ganhe {plusEnt?.pointsMultiplier ?? 2}x pontos, agendamento prioritário na oficina e Concierge VIP no WhatsApp.</p>
+              <h3 className="font-bold text-lg text-white">Faça o upgrade para o Relm Care Plus! 🚴✨</h3>
+              <p className="text-sm text-slate-300">Ganhe {plusEnt?.pointsMultiplier ?? 2}x pontos, agendamento prioritário na oficina e Concierge VIP no WhatsApp.</p>
             </div>
-            <Link to="/cliente/assinatura" className="btn bg-white text-teal-600 hover:bg-gray-100 border-none font-semibold shrink-0">
+            <Link to="/cliente/assinatura" className="px-5 py-2.5 rounded-xl bg-[#2196F3] text-white hover:bg-[#1e88e5] font-bold text-xs uppercase tracking-wider shadow-[3px_3px_6px_rgba(33,150,243,0.4)] transition-all shrink-0">
               Quero ser Plus
             </Link>
           </div>
@@ -246,7 +246,7 @@ export default function CustomerDashboard() {
                 {benefits.slice(0, 3).map((b) => (
                   <div key={b.id} className="border-b border-gray-100 dark:border-slate-800 pb-3 last:border-b-0">
                     <p className="font-semibold text-sm text-gray-800 dark:text-slate-200 flex items-center gap-1.5">
-                      <MdCardGiftcard size={16} className="text-purple-500 shrink-0" /> {b.title}
+                      <MdCardGiftcard size={16} className="text-[#0A1929] dark:text-[#2196F3] shrink-0" /> {b.title}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-slate-400 line-clamp-1 mt-1">{b.description}</p>
                   </div>
