@@ -326,8 +326,17 @@ export default function StoreServicesSection({ storeId, isAdmin = false }) {
               >
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-bold text-slate-900 dark:text-white">{name}</h4>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                    <div>
+                      <span className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider mb-1 ${
+                        service.masterService?.category === 'Conveniências & Hub do Ciclista'
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
+                          : 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-300'
+                      }`}>
+                        {service.masterService?.category === 'Conveniências & Hub do Ciclista' ? '🌟 Conveniência & Hub' : (service.masterService?.category || 'Oficina')}
+                      </span>
+                      <h4 className="font-bold text-slate-900 dark:text-white">{name}</h4>
+                    </div>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-300 shrink-0">
                       <MdAccessTime className="h-3.5 w-3.5" />
                       {service.estimatedMinutes} min
                     </span>

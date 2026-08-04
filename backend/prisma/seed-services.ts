@@ -3,7 +3,7 @@ import { PrismaClient, PlusCoverageRule } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🛠️ Atualizando Catálogo Mestre de Serviços (Inspiração Casa TRI e Oficinas Especializadas)...');
+  console.log('🛠️ Atualizando Catálogo Mestre de Serviços (Oficinas Especializadas + Conveniências & Hub do Ciclista)...');
 
   const masterServicesData = [
     // 1. Revisões Periódicas
@@ -143,6 +143,71 @@ async function main() {
       plusRule: PlusCoverageRule.FREE,
       plusDiscountPercent: null,
     },
+
+    // 7. Conveniências & Hub do Ciclista
+    {
+      name: "Uso de Ducha & Vestiário (Park 'n Shower)",
+      description: "Acesso a vestiário privativo com chuveiro quente, toalhas higienizadas, secador e armário rotativo para você se trocar em segurança após o pedal.",
+      category: 'Conveniências & Hub do Ciclista',
+      defaultEstimatedMinutes: 30,
+      defaultPrice: 25,
+      plusRule: PlusCoverageRule.FREE,
+      plusDiscountPercent: null,
+    },
+    {
+      name: 'Guarda-Bike Seguro (Day Use)',
+      description: 'Estacionamento interno monitorado 24h com apólice de seguro contra roubo e furto enquanto você trabalha ou faz reuniões na região.',
+      category: 'Conveniências & Hub do Ciclista',
+      defaultEstimatedMinutes: 720,
+      defaultPrice: 20,
+      plusRule: PlusCoverageRule.FREE,
+      plusDiscountPercent: null,
+    },
+    {
+      name: 'Pit Stop, Calibragem & Ferramentas Self-Service',
+      description: 'Ponto aberto com compressor de precisão, bomba de alta pressão, suporte de manutenção e ferramentas para regulagens rápidas de cortesia.',
+      category: 'Conveniências & Hub do Ciclista',
+      defaultEstimatedMinutes: 15,
+      defaultPrice: 0,
+      plusRule: PlusCoverageRule.FREE,
+      plusDiscountPercent: null,
+    },
+    {
+      name: 'Espaço Lounge & Bike Café (Hidratação & Convivência)',
+      description: 'Lounge climatizado com Wi-Fi ultra-rápido, café espresso gourmet cortesia, água gelada e ilha de hidratação isotônica.',
+      category: 'Conveniências & Hub do Ciclista',
+      defaultEstimatedMinutes: 30,
+      defaultPrice: 15,
+      plusRule: PlusCoverageRule.FREE,
+      plusDiscountPercent: null,
+    },
+    {
+      name: 'Ponto de Recarga Rápida para E-Bikes',
+      description: 'Estação de recarga elétrica com fontes de alta amperagem compatíveis com baterias Shimano, Bosch, Specialized, Mahle e universais.',
+      category: 'Conveniências & Hub do Ciclista',
+      defaultEstimatedMinutes: 60,
+      defaultPrice: 15,
+      plusRule: PlusCoverageRule.FREE,
+      plusDiscountPercent: null,
+    },
+    {
+      name: 'Socorro Mecânico Emergencial (Resgate em Trânsito)',
+      description: 'Atendimento de socorro e resgate na cidade com veículo de apoio da loja em caso de quebra de corrente, pneu rasgado ou imprevistos.',
+      category: 'Conveniências & Hub do Ciclista',
+      defaultEstimatedMinutes: 60,
+      defaultPrice: 90,
+      plusRule: PlusCoverageRule.FREE,
+      plusDiscountPercent: null,
+    },
+    {
+      name: 'Empréstimo & Aluguel de Mala-Bike e Racks de Carro',
+      description: 'Empréstimo de mala-bike rígida para viagens aéreas ou suporte de engate/teto transbike para transporte seguro de bicicletas em carros.',
+      category: 'Conveniências & Hub do Ciclista',
+      defaultEstimatedMinutes: 1440,
+      defaultPrice: 120,
+      plusRule: PlusCoverageRule.DISCOUNT_PERCENT,
+      plusDiscountPercent: 50,
+    },
   ];
 
   const createdMasters: any[] = [];
@@ -204,7 +269,7 @@ async function main() {
     }
   }
 
-  console.log(`✅ ${createdMasters.length} Serviços Mestres vinculados com sucesso às ${stores.length} lojas parceiras!\n`);
+  console.log(`✅ ${createdMasters.length} Serviços Mestres (Oficina + Conveniências) vinculados com sucesso às ${stores.length} lojas parceiras!\n`);
 }
 
 main()
