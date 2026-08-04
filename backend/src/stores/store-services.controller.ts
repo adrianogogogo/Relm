@@ -28,6 +28,8 @@ export class StoreServicesController {
   }
 
   @Get('stores/:storeId/services')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR', 'CLIENTE')
   findStoreServices(
     @Param('storeId') storeId: string,
     @Query('active') active?: string,
@@ -37,13 +39,15 @@ export class StoreServicesController {
   }
 
   @Get('stores/services/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR', 'CLIENTE')
   findOne(@Param('id') id: string) {
     return this.storeServicesService.findOne(id);
   }
 
   @Post('stores/:storeId/services')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR')
   upsertStoreService(
     @Param('storeId') storeId: string,
     @Body() dto: UpsertStoreServiceDto,
@@ -53,7 +57,7 @@ export class StoreServicesController {
 
   @Patch('stores/services/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR')
   updateStoreService(
     @Param('id') id: string,
     @Body() dto: UpdateStoreServiceDto,
@@ -63,7 +67,7 @@ export class StoreServicesController {
 
   @Delete('stores/services/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'LOJA')
   removeStoreService(@Param('id') id: string) {
     return this.storeServicesService.remove(id);
   }
