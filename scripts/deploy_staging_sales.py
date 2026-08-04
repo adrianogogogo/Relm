@@ -82,12 +82,12 @@ bak = '/root/relm-backups/staging-sales-%s' % ts
 run(c, 'mkdir -p %s' % bak)
 
 # 1) BACKUP obrigatorio: banco + dist do backend + .env + web atual.
-out, _ = run(c,
+out, err = run(c,
     'cd %s && %s && pg_dump "$DB_URL" -Fc -f %s/staging-db.dump && '
     'cp -a dist %s/backend-dist.bak 2>/dev/null; cp -a .env %s/env.bak; '
     'cp -a %s %s/web.bak 2>/dev/null; ls -la %s/staging-db.dump && echo BACKUP_OK'
     % (BE, DBURL, bak, bak, bak, WEB, bak, bak))
-say('1) backup -> %s\n%s' % (bak, out.strip()[-300:]))
+say('1) backup -> %s\nOUT: %s\nERR: %s' % (bak, out.strip()[-300:], err.strip()[-300:]))
 if 'BACKUP_OK' not in out:
     sys.exit('ABORTADO: backup falhou — nada foi alterado.')
 
