@@ -253,6 +253,9 @@ export default function StoreServicesSection({ storeId, isAdmin = false }) {
   const queryClient = useQueryClient();
   const [selectedStoreService, setSelectedStoreService] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('TODAS');
+  const [plusRuleFilter, setPlusRuleFilter] = useState('ALL'); // 'ALL' | 'FREE' | 'DISCOUNT'
 
   const { data: storeServices = [], isLoading } = useQuery({
     queryKey: ['store-services', storeId],
@@ -271,6 +274,39 @@ export default function StoreServicesSection({ storeId, isAdmin = false }) {
   const deleteMutation = useMutation({
     mutationFn: (id) => storeServicesAPI.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['store-services', storeId] }),
+  });
+
+  // Extract unique categories from store's services
+  const availableCategories = [
+    'TODAS',
+    ...Array.from(
+      new Set(
+        storeServices
+          .map((s) => s.masterService?.category)
+          .filter(Boolean)
+      )
+    ),
+  ];
+
+  const filteredStoreServices = storeServices.filter((service) => {
+    const name = service.displayName || service.masterService?.name || '';
+    const desc = service.displayDescription || service.masterService?.description || '';
+    const category = service.masterService?.category || 'Oficina';
+
+    const matchesSearch =
+      name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      category.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesCategory =
+      selectedCategory === 'TODAS' || category === selectedCategory;
+
+    const matchesPlusRule =
+      plusRuleFilter === 'ALL' ||
+      (plusRuleFilter === 'FREE' && service.plusRule === 'FREE') ||
+      (plusRuleFilter === 'DISCOUNT' && service.plusRule !== 'FREE');
+
+    return matchesSearch && matchesCategory && matchesPlusRule;
   });
 
   return (
@@ -300,15 +336,96 @@ export default function StoreServicesSection({ storeId, isAdmin = false }) {
         )}
       </div>
 
+      {/* Interactive Filter Bar */}
+      {storeServices.length > 0 && (
+        <div className="space-y-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="🔍 Buscar por serviço ou palavra-chave..."
+              className="w-full max-w-sm rounded-lg border border-slate-300 bg-white p-2 text-xs focus:border-cyan-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            />
+
+            {/* Plus Rule Toggle */}
+            <div className="flex items-center gap-1 rounded-lg bg-white p-1 shadow-sm dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
+              <button
+                onClick={() => setPlusRuleFilter('ALL')}
+                className={`rounded px-2.5 py-1 font-semibold transition-all ${
+                  plusRuleFilter === 'ALL'
+                    ? 'bg-cyan-600 text-white'
+                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                }`}
+              >
+                Todos
+              </button>
+              <button
+                onClick={() => setPlusRuleFilter('FREE')}
+                className={`rounded px-2.5 py-1 font-semibold transition-all ${
+                  plusRuleFilter === 'FREE'
+                    ? 'bg-emerald-600 text-white'
+                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                }`}
+              >
+                ✨ Gratuitos no Plus
+              </button>
+              <button
+                onClick={() => setPlusRuleFilter('DISCOUNT')}
+                className={`rounded px-2.5 py-1 font-semibold transition-all ${
+                  plusRuleFilter === 'DISCOUNT'
+                    ? 'bg-amber-600 text-white'
+                    : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                }`}
+              >
+                🏷️ Com Desconto
+              </button>
+            </div>
+          </div>
+
+          {/* Category Pills */}
+          <div className="flex flex-wrap items-center gap-1 pt-1">
+            {availableCategories.map((cat) => {
+              const isSelected = selectedCategory === cat;
+              const count =
+                cat === 'TODAS'
+                  ? storeServices.length
+                  : storeServices.filter((s) => s.masterService?.category === cat).length;
+
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all ${
+                    isSelected
+                      ? 'bg-cyan-600 text-white font-bold'
+                      : 'bg-white text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
+                  }`}
+                >
+                  <span>{cat === 'TODAS' ? 'Todas' : cat}</span>
+                  <span className={`text-[10px] opacity-80 ${isSelected ? 'font-bold' : ''}`}>
+                    ({count})
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="py-6 text-center text-sm text-slate-400">Carregando serviços...</div>
       ) : storeServices.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-700">
           Nenhum serviço cadastrado para esta loja.
         </div>
+      ) : filteredStoreServices.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-700">
+          Nenhum serviço encontrado com os filtros selecionados.
+        </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {storeServices.map((service) => {
+          {filteredStoreServices.map((service) => {
             const name = service.displayName || service.masterService?.name || 'Serviço';
             const desc =
               service.displayDescription ||

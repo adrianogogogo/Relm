@@ -34,6 +34,8 @@ export default function CustomerWorkshopPage() {
 
   const [storeId, setStoreId] = useState(location.state?.storeId || '');
   const [storeServiceId, setStoreServiceId] = useState(location.state?.storeServiceId || '');
+  const [serviceSearch, setServiceSearch] = useState('');
+  const [serviceCategoryFilter, setServiceCategoryFilter] = useState('TODAS');
   const [bikeModel, setBikeModel] = useState('');
   const [serviceType, setServiceType] = useState('REVISION_BASIC');
   const [scheduledFor, setScheduledFor] = useState('');
@@ -218,29 +220,81 @@ export default function CustomerWorkshopPage() {
               </div>
 
               {storeId && storeServices.length > 0 && (
-                <div>
-                  <label className="label">Serviços Cadastrados nesta Loja</label>
+                <div className="space-y-2">
+                  <label className="label font-bold text-slate-800 dark:text-white flex items-center justify-between">
+                    <span>Serviços & Conveniências da Loja</span>
+                    <span className="text-xs font-normal text-slate-500">
+                      ({storeServices.length} disponíveis)
+                    </span>
+                  </label>
+
+                  {/* Filter controls */}
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={serviceSearch}
+                      onChange={(e) => setServiceSearch(e.target.value)}
+                      placeholder="🔍 Filtrar por nome ou palavra-chave..."
+                      className="w-full sm:w-auto flex-1 rounded-lg border border-slate-300 bg-white p-2 text-xs focus:border-cyan-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    />
+
+                    <select
+                      value={serviceCategoryFilter}
+                      onChange={(e) => setServiceCategoryFilter(e.target.value)}
+                      className="rounded-lg border border-slate-300 bg-white p-2 text-xs focus:border-cyan-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    >
+                      <option value="TODAS">Todas as Categorias</option>
+                      {Array.from(
+                        new Set(
+                          storeServices
+                            .map((s) => s.masterService?.category)
+                            .filter(Boolean)
+                        )
+                      ).map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   <select
                     className="input border-cyan-500 bg-cyan-50/30 dark:bg-slate-800"
                     value={storeServiceId}
                     onChange={(e) => setStoreServiceId(e.target.value)}
                   >
                     <option value="">Selecione um serviço específico da loja...</option>
-                    {storeServices.map((ss) => {
-                      const name = ss.displayName || ss.masterService?.name;
-                      const priceCare = ss.priceCare ?? Number(ss.price);
-                      const pricePlus = ss.calculatedPlusPrice;
-                      const badge =
-                        ss.plusRule === 'FREE'
-                          ? '⭐ Gratuito no Plus'
-                          : `⭐ Plus: R$ ${pricePlus.toFixed(2)}`;
+                    {storeServices
+                      .filter((ss) => {
+                        const name = ss.displayName || ss.masterService?.name || '';
+                        const desc = ss.displayDescription || ss.masterService?.description || '';
+                        const cat = ss.masterService?.category || '';
 
-                      return (
-                        <option key={ss.id} value={ss.id}>
-                          {name} — Care: R$ {priceCare.toFixed(2)} | {badge} ({ss.estimatedMinutes} min)
-                        </option>
-                      );
-                    })}
+                        const matchesSearch =
+                          name.toLowerCase().includes(serviceSearch.toLowerCase()) ||
+                          desc.toLowerCase().includes(serviceSearch.toLowerCase()) ||
+                          cat.toLowerCase().includes(serviceSearch.toLowerCase());
+
+                        const matchesCat =
+                          serviceCategoryFilter === 'TODAS' || cat === serviceCategoryFilter;
+
+                        return matchesSearch && matchesCat;
+                      })
+                      .map((ss) => {
+                        const name = ss.displayName || ss.masterService?.name;
+                        const priceCare = ss.priceCare ?? Number(ss.price);
+                        const pricePlus = ss.calculatedPlusPrice;
+                        const badge =
+                          ss.plusRule === 'FREE'
+                            ? '⭐ Gratuito no Plus'
+                            : `⭐ Plus: R$ ${pricePlus.toFixed(2)}`;
+
+                        return (
+                          <option key={ss.id} value={ss.id}>
+                            {name} — Care: R$ {priceCare.toFixed(2)} | {badge} ({ss.estimatedMinutes} min)
+                          </option>
+                        );
+                      })}
                   </select>
                 </div>
               )}

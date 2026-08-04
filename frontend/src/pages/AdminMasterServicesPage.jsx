@@ -11,6 +11,7 @@ const CATEGORY_OPTIONS = [
   'Suspensão & Amortecedores',
   'Ergonomia & Biomecânica',
   'Logística & E-Bikes',
+  'Conveniências & Hub do Ciclista',
   'Outro',
 ];
 
@@ -30,7 +31,7 @@ function MasterServiceModal({ service, onClose }) {
       ? {
           name: service.name,
           description: service.description || '',
-          category: service.category || 'Revisão',
+          category: service.category || 'Revisões Periódicas',
           defaultEstimatedMinutes: service.defaultEstimatedMinutes || 60,
           active: service.active,
         }
@@ -169,6 +170,7 @@ export default function AdminMasterServicesPage() {
   const [selectedService, setSelectedService] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('TODAS');
 
   const { data: masterServices = [], isLoading } = useQuery({
     queryKey: ['admin-master-services'],
@@ -180,10 +182,19 @@ export default function AdminMasterServicesPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-master-services'] }),
   });
 
-  const filteredServices = masterServices.filter((s) =>
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (s.category && s.category.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const categories = ['TODAS', ...CATEGORY_OPTIONS];
+
+  const filteredServices = masterServices.filter((s) => {
+    const matchesSearch =
+      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (s.description && s.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (s.category && s.category.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const matchesCategory =
+      selectedCategory === 'TODAS' || s.category === selectedCategory;
+
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="space-y-6">
@@ -203,14 +214,54 @@ export default function AdminMasterServicesPage() {
         }
       />
 
-      <div className="flex items-center gap-4">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Buscar por nome ou categoria..."
-          className="w-full max-w-sm rounded-xl border border-slate-300 bg-white p-2.5 text-sm focus:border-cyan-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-        />
+      {/* Filter Bar */}
+      <div className="space-y-3 rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="🔍 Buscar por nome, palavra-chave ou descrição..."
+            className="w-full max-w-md rounded-xl border border-slate-300 bg-slate-50 p-2.5 text-sm focus:border-cyan-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+          />
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+            Exibindo <span className="text-cyan-600 dark:text-cyan-400 font-bold">{filteredServices.length}</span> de {masterServices.length} serviços
+          </span>
+        </div>
+
+        {/* Category Pills */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-2">
+          {categories.map((cat) => {
+            const count =
+              cat === 'TODAS'
+                ? masterServices.length
+                : masterServices.filter((s) => s.category === cat).length;
+            const isSelected = selectedCategory === cat;
+
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-all ${
+                  isSelected
+                    ? 'bg-cyan-600 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
+                }`}
+              >
+                <span>{cat === 'TODAS' ? 'Todas as Categorias' : cat}</span>
+                <span
+                  className={`rounded-full px-1.5 py-0.2 text-[10px] ${
+                    isSelected
+                      ? 'bg-white/20 text-white'
+                      : 'bg-slate-200 text-slate-600 dark:bg-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {isLoading ? (
