@@ -28,6 +28,7 @@ import {
   MdSettings,
   MdExpandMore,
   MdExpandLess,
+  MdBuild,
 } from 'react-icons/md';
 import { FaWhatsapp } from 'react-icons/fa';
 
@@ -71,6 +72,12 @@ const MENU_SECTIONS = [
   {
     title: 'Catálogo & Clube',
     items: [
+      {
+        path: '/admin/master-services',
+        label: 'Catálogo de Serviços',
+        icon: MdBuild,
+        roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+      },
       {
         path: '/admin/catalogo',
         label: 'Catálogo Prêmios',

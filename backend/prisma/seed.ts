@@ -564,6 +564,66 @@ Acesse o catálogo completo em PDF: [link]
 
   console.log(`✅ Badges criados\n`);
 
+  // ============================================
+  // 17. Master Services e Store Services
+  // ============================================
+  console.log('🛠️ Criando Catálogo Mestre de Serviços e Serviços da Loja...');
+
+  const masterServicesData = [
+    { name: 'Revisão Básica', description: 'Regulagem de marchas, freios, reaperto geral e checagem de folgas.', category: 'Revisão', defaultEstimatedMinutes: 60 },
+    { name: 'Revisão Completa', description: 'Desmontagem total, limpeza ultra-sônica de transmissão, lubrificação de rolamentos, centragem de rodas e regulagem fina.', category: 'Revisão', defaultEstimatedMinutes: 180 },
+    { name: 'Diagnóstico Técnico Especializado', description: 'Análise computadorizada e inspeção técnica detalhada de transmissão eletrônica e suspensão.', category: 'Diagnóstico', defaultEstimatedMinutes: 45 },
+    { name: 'Lavagem & Lubrificação de Alta Performance', description: 'Lavagem ecológica com desengraxante biodegradável e lubrificação com cera cerâmica.', category: 'Limpeza', defaultEstimatedMinutes: 45 },
+    { name: 'Bike Fitting Ergonômico', description: 'Ajuste biomecânico completo da postura do ciclista na bike.', category: 'Fitting', defaultEstimatedMinutes: 120 },
+    { name: 'Alinhamento & Centragem de Rodas', description: 'Alinhamento com tensiômetro de raios e nivelamento de aro.', category: 'Manutenção', defaultEstimatedMinutes: 45 },
+  ];
+
+  const createdMasters: any[] = [];
+  for (const ms of masterServicesData) {
+    let existing = await prisma.masterService.findFirst({ where: { name: ms.name } });
+    if (!existing) {
+      existing = await prisma.masterService.create({ data: ms });
+    }
+    createdMasters.push(existing);
+  }
+
+  // Vincular serviços às lojas cadastradas no seed
+  const stores = await prisma.store.findMany();
+  for (const s of stores) {
+    for (const ms of createdMasters) {
+      const price = ms.name.includes('Completa') ? 250 : ms.name.includes('Fitting') ? 350 : ms.name.includes('Básica') ? 120 : 80;
+      const plusRule = ms.name.includes('Básica') || ms.name.includes('Diagnóstico') ? 'FREE' : ms.name.includes('Completa') ? 'DISCOUNT_PERCENT' : 'FREE';
+      const plusDiscountPercent = plusRule === 'DISCOUNT_PERCENT' ? 20 : null;
+
+      await prisma.storeService.upsert({
+        where: {
+          storeId_masterServiceId: {
+            storeId: s.id,
+            masterServiceId: ms.id,
+          },
+        },
+        update: {
+          price,
+          plusRule: plusRule as any,
+          plusDiscountPercent,
+          estimatedMinutes: ms.defaultEstimatedMinutes,
+          active: true,
+        },
+        create: {
+          storeId: s.id,
+          masterServiceId: ms.id,
+          price,
+          plusRule: plusRule as any,
+          plusDiscountPercent,
+          estimatedMinutes: ms.defaultEstimatedMinutes,
+          active: true,
+        },
+      });
+    }
+  }
+
+  console.log(`✅ ${createdMasters.length} Serviços Mestres e Serviços das Lojas criados com sucesso\n`);
+
   console.log('✅ Seed concluído com sucesso! 🎉\n');
 }
 

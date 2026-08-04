@@ -36,6 +36,8 @@ import { PartnersModule } from './partners/partners.module';
 import { ClubSettingsModule } from './club-settings/club-settings.module';
 import { HealthController } from './health.controller';
 import { CommonModule } from './common/common.module';
+import { MasterServicesModule } from './master-services/master-services.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -63,6 +65,7 @@ import { CommonModule } from './common/common.module';
     AuditLogsModule,
     CustomersModule,
     StoresModule,
+    MasterServicesModule,
     ProductsModule,
     SalesModule,
     WarrantyModule,

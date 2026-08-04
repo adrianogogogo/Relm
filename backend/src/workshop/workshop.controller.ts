@@ -58,6 +58,7 @@ export class WorkshopController {
       storeId: string;
       bikeModel: string;
       serviceType: ServiceType;
+      storeServiceId?: string;
       scheduledFor: Date;
       deliveryRequest?: boolean;
       pickupAddress?: string;

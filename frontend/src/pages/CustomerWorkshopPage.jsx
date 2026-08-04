@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
-import { workshopAPI, storesAPI } from '../services/api';
+import { workshopAPI, storesAPI, storeServicesAPI } from '../services/api';
 import { useEntitlements } from '../hooks/useEntitlements';
 import { Card, PageHeader, Button, StatusChip } from '../components/ui';
-import { MdEvent, MdBuild, MdDirectionsBike, MdLocalShipping, MdLock } from 'react-icons/md';
+import { MdEvent, MdBuild, MdDirectionsBike, MdLocalShipping, MdLock, MdStar, MdAccessTime } from 'react-icons/md';
 
 const LOGISTICS_STEPS = [
   { key: 'COLETA_AGENDADA', label: 'Coleta agendada' },
@@ -24,13 +25,15 @@ const SERVICE_LABELS = {
 };
 
 export default function CustomerWorkshopPage() {
+  const location = useLocation();
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const isPlus = user?.currentTier === 'PLUS';
   const { care: careEnt } = useEntitlements();
   const careQuota = careEnt?.freeBasicRevisionsPerYear ?? 1;
 
-  const [storeId, setStoreId] = useState('');
+  const [storeId, setStoreId] = useState(location.state?.storeId || '');
+  const [storeServiceId, setStoreServiceId] = useState(location.state?.storeServiceId || '');
   const [bikeModel, setBikeModel] = useState('');
   const [serviceType, setServiceType] = useState('REVISION_BASIC');
   const [scheduledFor, setScheduledFor] = useState('');
@@ -46,7 +49,6 @@ export default function CustomerWorkshopPage() {
     enabled: !!user?.id,
   });
   const allowanceItems = allowance?.items || [];
-  const allowanceByType = Object.fromEntries(allowanceItems.map((i) => [i.serviceType, i]));
   const isBuscaEntrega = serviceType === 'BUSCA_ENTREGA';
 
   // Fetch available slots
@@ -61,6 +63,28 @@ export default function CustomerWorkshopPage() {
     queryKey: ['public-stores'],
     queryFn: () => storesAPI.getPublicStores(),
   });
+
+  // Fetch store services for selected store
+  const { data: storeServices = [], isLoading: loadingStoreServices } = useQuery({
+    queryKey: ['public-store-services', storeId],
+    queryFn: () => storeServicesAPI.getPublicByStore(storeId),
+    enabled: !!storeId,
+  });
+
+  // Selected store service detail
+  const selectedStoreService = storeServices.find((s) => s.id === storeServiceId);
+
+  // Auto-sync serviceType when storeServiceId is picked
+  useEffect(() => {
+    if (selectedStoreService?.masterService?.category) {
+      const cat = selectedStoreService.masterService.category.toLowerCase();
+      if (cat.includes('completa')) setServiceType('REVISION_COMPLETE');
+      else if (cat.includes('básica') || cat.includes('revisão')) setServiceType('REVISION_BASIC');
+      else if (cat.includes('diagnóstico')) setServiceType('DIAGNOSTIC');
+      else if (cat.includes('limpeza')) setServiceType('LAVAGEM_LUBRIFICACAO');
+      else if (cat.includes('fitting')) setServiceType('BIKE_FITTING');
+    }
+  }, [selectedStoreService]);
 
   // Fetch my active service orders
   const { data: orders = [], isLoading: loadingOrders } = useQuery({
@@ -78,6 +102,7 @@ export default function CustomerWorkshopPage() {
       setSuccessMsg('Revisão agendada com sucesso!');
       setErrorMsg('');
       setStoreId('');
+      setStoreServiceId('');
       setBikeModel('');
       setServiceType('REVISION_BASIC');
       setScheduledFor('');
@@ -107,6 +132,7 @@ export default function CustomerWorkshopPage() {
     bookMutation.mutate({
       customerId: user.id,
       storeId,
+      storeServiceId: storeServiceId || undefined,
       bikeModel,
       serviceType,
       scheduledFor: new Date(scheduledFor),
@@ -176,7 +202,10 @@ export default function CustomerWorkshopPage() {
                 <select
                   className="input"
                   value={storeId}
-                  onChange={(e) => setStoreId(e.target.value)}
+                  onChange={(e) => {
+                    setStoreId(e.target.value);
+                    setStoreServiceId('');
+                  }}
                   disabled={loadingStores}
                 >
                   <option value="">Selecione uma loja...</option>
@@ -187,6 +216,65 @@ export default function CustomerWorkshopPage() {
                   ))}
                 </select>
               </div>
+
+              {storeId && storeServices.length > 0 && (
+                <div>
+                  <label className="label">Serviços Cadastrados nesta Loja</label>
+                  <select
+                    className="input border-cyan-500 bg-cyan-50/30 dark:bg-slate-800"
+                    value={storeServiceId}
+                    onChange={(e) => setStoreServiceId(e.target.value)}
+                  >
+                    <option value="">Selecione um serviço específico da loja...</option>
+                    {storeServices.map((ss) => {
+                      const name = ss.displayName || ss.masterService?.name;
+                      const priceCare = ss.priceCare ?? Number(ss.price);
+                      const pricePlus = ss.calculatedPlusPrice;
+                      const badge =
+                        ss.plusRule === 'FREE'
+                          ? '⭐ Gratuito no Plus'
+                          : `⭐ Plus: R$ ${pricePlus.toFixed(2)}`;
+
+                      return (
+                        <option key={ss.id} value={ss.id}>
+                          {name} — Care: R$ {priceCare.toFixed(2)} | {badge} ({ss.estimatedMinutes} min)
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
+
+              {selectedStoreService && (
+                <div className="rounded-xl border border-cyan-200 bg-cyan-50/50 p-4 text-xs dark:border-cyan-900/50 dark:bg-cyan-950/20 space-y-2">
+                  <div className="flex items-center justify-between font-bold text-slate-900 dark:text-white">
+                    <span className="text-sm">{selectedStoreService.displayName}</span>
+                    <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
+                      <MdAccessTime className="h-4 w-4" /> {selectedStoreService.estimatedMinutes} minutos
+                    </span>
+                  </div>
+
+                  <p className="text-slate-600 dark:text-slate-300">
+                    {selectedStoreService.displayDescription}
+                  </p>
+
+                  <div className="flex items-center justify-between font-medium pt-1">
+                    <span className="text-slate-700 dark:text-slate-300">
+                      Valor Care: R$ {(selectedStoreService.priceCare ?? Number(selectedStoreService.price)).toFixed(2)}
+                    </span>
+                    <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                      <MdStar className="h-4 w-4" />
+                      {isPlus
+                        ? selectedStoreService.plusRule === 'FREE'
+                          ? 'Seu Valor no Plus: GRATUITO'
+                          : `Seu Valor no Plus: R$ ${selectedStoreService.calculatedPlusPrice.toFixed(2)}`
+                        : selectedStoreService.plusRule === 'FREE'
+                        ? 'Gratuito para assinantes Relm Plus'
+                        : `R$ ${selectedStoreService.calculatedPlusPrice.toFixed(2)} para assinantes Plus`}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="label">Modelo da Bicicleta *</label>
@@ -201,7 +289,7 @@ export default function CustomerWorkshopPage() {
               </div>
 
               <div>
-                <label className="label">Tipo de Serviço *</label>
+                <label className="label font-semibold">Categoria Geral do Serviço *</label>
                 <select
                   className="input"
                   value={serviceType}
@@ -322,13 +410,18 @@ export default function CustomerWorkshopPage() {
                       <StatusChip status={o.status} />
                     </div>
                     <p className="text-gray-500 dark:text-slate-400">
-                      {SERVICE_LABELS[o.serviceType] || o.serviceType}
+                      {o.storeService?.customName || o.storeService?.masterService?.name || SERVICE_LABELS[o.serviceType] || o.serviceType}
                     </p>
+                    {o.priceCharged !== null && o.priceCharged !== undefined && (
+                      <p className="text-xs font-bold text-cyan-600 dark:text-cyan-400">
+                        {Number(o.priceCharged) === 0 ? 'Valor: GRATUITO (Relm Plus)' : `Valor: R$ ${Number(o.priceCharged).toFixed(2)}`}
+                      </p>
+                    )}
                     <p className="text-gray-600 dark:text-slate-300 font-medium">
                       📅 {formatDate(o.scheduledFor)}
                     </p>
                     <p className="text-gray-500 dark:text-slate-400 italic">
-                      📍 {o.store?.name}
+                      📍 {o.store?.tradeName || o.store?.name}
                     </p>
                     {o.deliveryRequest && o.serviceType !== 'BUSCA_ENTREGA' && (
                       <div className="flex items-center gap-1 text-amber-500 font-semibold text-[10px]">

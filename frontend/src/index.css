@@ -73,7 +73,11 @@
   .kinetic-portal {
     background-color: #e0e5ec !important;
     color: #0A1929 !important;
-    font-family: 'Inter', sans-serif !important;
+    /* Fonte-base = Space Grotesk (mesma da pagina "Meu Perfil"). Titulos (h1-h6),
+       botoes e inputs mantem suas proprias regras abaixo (Inter / JetBrains Mono),
+       entao apenas o texto descritivo/labels/valores herda Space Grotesk — unificando
+       todas as paginas dos portais Cliente/Loja com o visual do perfil. */
+    font-family: 'Space Grotesk', sans-serif !important;
   }
 
   .kinetic-portal h1,

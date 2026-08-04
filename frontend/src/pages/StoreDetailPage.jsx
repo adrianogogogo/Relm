@@ -10,6 +10,7 @@ import {
 } from 'react-icons/md';
 import { Card, StatusChip, StatCard } from '../components/ui';
 import AdminResetPasswordModal from '../components/AdminResetPasswordModal';
+import StoreServicesSection from '../components/StoreServicesSection';
 
 const ROLE_LABEL = {
   ADMIN_RELM: 'Admin Relm',
@@ -188,6 +189,9 @@ export default function StoreDetailPage() {
                 )}
               </div>
             </Card>
+
+            {/* Serviços da Loja */}
+            <StoreServicesSection storeId={id} isAdmin={canEdit} />
 
             {/* Usuários vinculados */}
             {store.users && store.users.length > 0 && (

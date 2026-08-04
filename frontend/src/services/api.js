@@ -421,3 +421,24 @@ export const whatsappAPI = {
   broadcast: (data) =>
     api.post('/whatsapp/broadcast', data).then((res) => res.data),
 };
+
+// ── Master & Store Services API ─────────────────────────────────────────────
+
+export const masterServicesAPI = {
+  getPublic: () => api.get('/master-services/public').then((res) => res.data),
+  getAll: (active) => api.get('/master-services', { params: { active } }).then((res) => res.data),
+  getById: (id) => api.get(`/master-services/${id}`).then((res) => res.data),
+  create: (data) => api.post('/master-services', data).then((res) => res.data),
+  update: (id, data) => api.patch(`/master-services/${id}`, data).then((res) => res.data),
+  delete: (id) => api.delete(`/master-services/${id}`).then((res) => res.data),
+};
+
+export const storeServicesAPI = {
+  getPublicByStore: (storeId) => api.get(`/public/stores/${storeId}/services`).then((res) => res.data),
+  getByStore: (storeId, active) => api.get(`/stores/${storeId}/services`, { params: { active } }).then((res) => res.data),
+  getById: (id) => api.get(`/stores/services/${id}`).then((res) => res.data),
+  upsert: (storeId, data) => api.post(`/stores/${storeId}/services`, data).then((res) => res.data),
+  update: (id, data) => api.patch(`/stores/services/${id}`, data).then((res) => res.data),
+  delete: (id) => api.delete(`/stores/services/${id}`).then((res) => res.data),
+};
+

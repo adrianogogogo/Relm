@@ -82,6 +82,7 @@ import AdminPartnersPage from './pages/AdminPartnersPage';
 import AdminClubReportsPage from './pages/AdminClubReportsPage';
 import CustomerPartnersPage from './pages/CustomerPartnersPage';
 import AdminClubSettingsPage from './pages/AdminClubSettingsPage';
+import AdminMasterServicesPage from './pages/AdminMasterServicesPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -317,6 +318,11 @@ export default function App() {
             <Route path="club-settings" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
                 <AdminClubSettingsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="master-services" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                <AdminMasterServicesPage />
               </ProtectedRoute>
             } />
             {/* Feed view-only do Distribuidor (não acessa a gestão de eventos/benefícios) */}

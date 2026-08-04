@@ -157,6 +157,7 @@ model Store {
   storeUsers      StoreUser[]
   serviceOrders   ServiceOrder[]
   sales           Sale[]
+  storeServices   StoreService[]
 
   @@index([city, state])
   @@map("stores")
@@ -828,6 +829,12 @@ enum PointTxType {
   EXPIRE
 }
 
+enum PlusCoverageRule {
+  FREE
+  DISCOUNT_PERCENT
+  FIXED_PRICE
+}
+
 enum ServiceType {
   REVISION_BASIC
   REVISION_COMPLETE
@@ -955,8 +962,12 @@ model ServiceOrder {
   customer        Customer      @relation(fields: [customerId], references: [id])
   storeId         String        @map("store_id")
   store           Store         @relation(fields: [storeId], references: [id])
+  storeServiceId  String?       @map("store_service_id")
+  storeService    StoreService? @relation(fields: [storeServiceId], references: [id])
   bikeModel       String        @map("bike_model")
   serviceType     ServiceType   @default(REVISION_BASIC) @map("service_type")
+  priceCharged    Decimal?      @map("price_charged") @db.Decimal(10, 2)
+  estimatedMinutes Int?         @map("estimated_minutes")
   priority        PriorityLevel
   deliveryRequest Boolean       @default(false) @map("delivery_request")
   scheduledFor    DateTime      @map("scheduled_for")
@@ -968,7 +979,47 @@ model ServiceOrder {
   logisticsStatus LogisticsStatus? @map("logistics_status")
 
   @@index([customerId, serviceType, createdAt])
+  @@index([storeServiceId])
   @@map("service_orders")
+}
+
+model MasterService {
+  id                      String   @id @default(uuid())
+  name                    String
+  description             String?  @db.Text
+  category                String?
+  defaultEstimatedMinutes Int      @default(60) @map("default_estimated_minutes")
+  active                  Boolean  @default(true)
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  storeServices StoreService[]
+
+  @@map("master_services")
+}
+
+model StoreService {
+  id                  String           @id @default(uuid())
+  storeId             String           @map("store_id")
+  store               Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  masterServiceId     String           @map("master_service_id")
+  masterService       MasterService    @relation(fields: [masterServiceId], references: [id], onDelete: Cascade)
+  customName          String?          @map("custom_name")
+  customDescription   String?          @map("custom_description") @db.Text
+  price               Decimal          @db.Decimal(10, 2)
+  plusRule            PlusCoverageRule @default(FREE) @map("plus_rule")
+  plusDiscountPercent Int?             @map("plus_discount_percent")
+  plusPrice           Decimal?         @map("plus_price") @db.Decimal(10, 2)
+  estimatedMinutes    Int              @default(60) @map("estimated_minutes")
+  active              Boolean          @default(true)
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+
+  serviceOrders ServiceOrder[]
+
+  @@unique([storeId, masterServiceId])
+  @@index([storeId, active])
+  @@map("store_services")
 }
 
 // ============================================

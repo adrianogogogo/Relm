@@ -143,6 +143,7 @@ export class WorkshopService {
     storeId: string;
     bikeModel: string;
     serviceType: ServiceType;
+    storeServiceId?: string;
     scheduledFor: Date;
     deliveryRequest?: boolean;
     pickupAddress?: string;
@@ -163,6 +164,36 @@ export class WorkshopService {
       : PriorityLevel.STANDARD;
 
     const isBuscaEntrega = dto.serviceType === ServiceType.BUSCA_ENTREGA;
+
+    // Se informou storeServiceId, buscar detalhes do serviço da loja
+    let priceCharged: number | null = null;
+    let estimatedMinutes: number | null = null;
+
+    if (dto.storeServiceId) {
+      const storeService = await this.prisma.storeService.findUnique({
+        where: { id: dto.storeServiceId },
+      });
+
+      if (storeService) {
+        estimatedMinutes = storeService.estimatedMinutes;
+        const basePrice = Number(storeService.price);
+
+        if (tier === TierLevel.PLUS) {
+          if (storeService.plusRule === 'FREE') {
+            priceCharged = 0;
+          } else if (storeService.plusRule === 'DISCOUNT_PERCENT') {
+            const discount = storeService.plusDiscountPercent || 0;
+            priceCharged = Math.max(0, basePrice * (1 - discount / 100));
+          } else if (storeService.plusRule === 'FIXED_PRICE') {
+            priceCharged = Number(storeService.plusPrice ?? basePrice);
+          } else {
+            priceCharged = basePrice;
+          }
+        } else {
+          priceCharged = basePrice;
+        }
+      }
+    }
 
     // Diagnóstico continua gateado por completeRevision (sem cota).
     if (!ent.completeRevision && dto.serviceType === ServiceType.DIAGNOSTIC) {
@@ -224,8 +255,11 @@ export class WorkshopService {
         data: {
           customerId: dto.customerId,
           storeId: dto.storeId,
+          storeServiceId: dto.storeServiceId || null,
           bikeModel: dto.bikeModel,
           serviceType: dto.serviceType,
+          priceCharged: priceCharged !== null ? priceCharged : null,
+          estimatedMinutes: estimatedMinutes !== null ? estimatedMinutes : null,
           priority,
           deliveryRequest: isBuscaEntrega || (ent.delivery ? !!dto.deliveryRequest : false),
           pickupAddress: isBuscaEntrega ? dto.pickupAddress?.trim() : null,
@@ -258,7 +292,12 @@ export class WorkshopService {
   async getCustomerOrders(customerId: string) {
     return this.prisma.serviceOrder.findMany({
       where: { customerId },
-      include: { store: true },
+      include: {
+        store: true,
+        storeService: {
+          include: { masterService: true },
+        },
+      },
       orderBy: { scheduledFor: 'desc' },
     });
   }
@@ -270,7 +309,12 @@ export class WorkshopService {
   async getStoreOrders(storeId: string) {
     const orders = await this.prisma.serviceOrder.findMany({
       where: { storeId },
-      include: { customer: true },
+      include: {
+        customer: true,
+        storeService: {
+          include: { masterService: true },
+        },
+      },
       orderBy: { scheduledFor: 'desc' },
     });
 
