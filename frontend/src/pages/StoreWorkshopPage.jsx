@@ -30,10 +30,14 @@ const LOGISTICS_LABELS = {
   ENTREGUE: 'Entregue',
 };
 
+import { useState } from 'react';
+import StoreServicesSection from '../components/StoreServicesSection';
+
 export default function StoreWorkshopPage() {
   const user = useAuthStore((state) => state.user);
   const storeId = user?.storeId;
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState('orders'); // 'orders' | 'services'
 
   // Fetch store-specific service orders
   const { data: orders = [], isLoading } = useQuery({
@@ -78,10 +82,36 @@ export default function StoreWorkshopPage() {
       <div className="max-w-6xl mx-auto">
         <PageHeader
           title="Oficina / Serviços"
-          subtitle="Gerencie os agendamentos, revisões e andamento dos serviços de manutenção"
+          subtitle="Gerencie os agendamentos, revisões e tabela de serviços e conveniências da unidade"
         />
 
-        {isLoading ? (
+        {/* Tab Navigation */}
+        <div className="mb-6 flex gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`rounded-lg px-4 py-2 text-sm font-bold transition-all ${
+              activeTab === 'orders'
+                ? 'bg-cyan-600 text-white shadow-md'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+            }`}
+          >
+            📋 Agendamentos & Ordens ({orders.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('services')}
+            className={`rounded-lg px-4 py-2 text-sm font-bold transition-all ${
+              activeTab === 'services'
+                ? 'bg-cyan-600 text-white shadow-md'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+            }`}
+          >
+            🛠️ Serviços & Conveniências Oferecidos
+          </button>
+        </div>
+
+        {activeTab === 'services' ? (
+          <StoreServicesSection storeId={storeId} isAdmin={true} />
+        ) : isLoading ? (
           <div className="flex justify-center py-16">
             <span className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           </div>

@@ -321,7 +321,7 @@ export default function App() {
               </ProtectedRoute>
             } />
             <Route path="master-services" element={
-              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR']}>
                 <AdminMasterServicesPage />
               </ProtectedRoute>
             } />

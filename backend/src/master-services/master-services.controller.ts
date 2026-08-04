@@ -29,7 +29,7 @@ export class MasterServicesController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR')
   findAll(@Query('active') active?: string) {
     const onlyActive = active === 'true';
     return this.masterServicesService.findAll(onlyActive);
