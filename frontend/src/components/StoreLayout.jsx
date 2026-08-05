@@ -20,6 +20,7 @@ import {
   MdPayments,
   MdPointOfSale,
   MdReceiptLong,
+  MdStorefront,
 } from 'react-icons/md';
 
 const MENU = [
