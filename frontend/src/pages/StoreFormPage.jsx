@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { MdArrowBack } from 'react-icons/md';
+import { MdArrowBack, MdUploadFile, MdDelete } from 'react-icons/md';
 import { storesAPI } from '../services/api';
+import { fileToLogoDataUrl } from '../utils/imageUpload';
 import { Card } from '../components/ui';
 
 export default function StoreFormPage() {
@@ -29,6 +30,19 @@ export default function StoreFormPage() {
   });
 
   const [errors, setErrors] = useState({});
+  const logoFileRef = useRef(null);
+
+  const handleLogoFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // permite reenviar o mesmo arquivo
+    if (!file) return;
+    try {
+      const dataUrl = await fileToLogoDataUrl(file);
+      setFormData((prev) => ({ ...prev, logoUrl: dataUrl }));
+    } catch (err) {
+      alert(err.message || 'Falha ao processar imagem.');
+    }
+  };
 
   // Carregar dados da loja para edição
   const { data: store, isLoading: isLoadingStore } = useQuery({
@@ -287,18 +301,58 @@ export default function StoreFormPage() {
 
               <div>
                 <label htmlFor="logoUrl" className="label">
-                  URL da Logomarca (Imagem PNG / JPG / SVG)
+                  Logomarca da Loja (Imagem PNG / JPG / SVG)
                 </label>
-                <input
-                  type="url"
-                  id="logoUrl"
-                  name="logoUrl"
-                  value={formData.logoUrl}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="https://sualoja.com.br/logo.png"
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">Link público da imagem do logo para exibição no portal do cliente</p>
+                <div className="flex items-start gap-3">
+                  {formData.logoUrl && (
+                    <div className="h-16 w-16 shrink-0 rounded-xl border border-gray-200 dark:border-slate-700 bg-white flex items-center justify-center overflow-hidden p-1">
+                      <img
+                        src={formData.logoUrl}
+                        alt="Logo"
+                        className="h-full w-full object-contain"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1 space-y-2">
+                    <input
+                      type="text"
+                      id="logoUrl"
+                      name="logoUrl"
+                      value={formData.logoUrl?.startsWith('data:') ? '' : formData.logoUrl}
+                      onChange={handleChange}
+                      className="input"
+                      placeholder={formData.logoUrl?.startsWith('data:') ? '✔ Imagem enviada' : 'https://sualoja.com.br/logo.png'}
+                      disabled={formData.logoUrl?.startsWith('data:')}
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => logoFileRef.current?.click()}
+                        className="btn btn-outline btn-sm flex items-center gap-2"
+                      >
+                        <MdUploadFile /> Enviar imagem
+                      </button>
+                      {formData.logoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData((prev) => ({ ...prev, logoUrl: '' }))}
+                          className="btn btn-outline btn-sm flex items-center gap-2 text-error"
+                        >
+                          <MdDelete /> Remover
+                        </button>
+                      )}
+                      <input
+                        ref={logoFileRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                        className="hidden"
+                        onChange={handleLogoFile}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">Cole um link público ou envie a imagem (fica salva no sistema). Exibida no portal do cliente.</p>
               </div>
             </div>
           </div>

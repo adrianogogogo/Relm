@@ -1,11 +1,18 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Logos enviados pelo usuário chegam como data URI base64 no campo logoUrl.
+  // O default do body-parser (~100kb) estoura, então elevamos para 5mb.
+  // O frontend já redimensiona/comprime antes de enviar (ver utils/imageUpload).
+  app.use(json({ limit: '5mb' }));
+  app.use(urlencoded({ limit: '5mb', extended: true }));
 
   // Cabeçalhos de segurança HTTP (C-02).
   // A API serve apenas JSON, não HTML, então o CSP padrão do Helmet é

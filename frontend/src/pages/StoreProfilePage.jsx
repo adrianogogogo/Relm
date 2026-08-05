@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { storesAPI } from '../services/api';
+import { fileToLogoDataUrl } from '../utils/imageUpload';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   KineticCard,
@@ -10,7 +11,7 @@ import {
   NoiseTexture,
   AnimatedSection,
 } from '../components/ui/kinetic';
-import { MdStorefront, MdPeople, MdLocationOn, MdInfo, MdImage, MdSave, MdCheckCircle } from 'react-icons/md';
+import { MdStorefront, MdPeople, MdLocationOn, MdInfo, MdImage, MdSave, MdCheckCircle, MdUploadFile, MdDelete } from 'react-icons/md';
 
 /**
  * Perfil do lojista logado — inclui dados da loja e gerenciador de Logomarca Oficial.
@@ -22,6 +23,18 @@ export default function StoreProfilePage() {
 
   const [logoUrl, setLogoUrl] = useState(store?.logoUrl || '');
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const logoFileRef = useRef(null);
+
+  const handleLogoFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // permite reenviar o mesmo arquivo
+    if (!file) return;
+    try {
+      setLogoUrl(await fileToLogoDataUrl(file));
+    } catch (err) {
+      alert(err.message || 'Falha ao processar imagem.');
+    }
+  };
 
   useEffect(() => {
     if (store?.logoUrl) {
@@ -179,15 +192,41 @@ export default function StoreProfilePage() {
                     {/* URL Input field */}
                     <div className="md:col-span-2 space-y-3">
                       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                        URL da Imagem do Logo (PNG, JPG ou SVG)
+                        Link da imagem OU envie um arquivo (PNG, JPG, WebP ou SVG)
                       </label>
                       <input
-                        type="url"
-                        value={logoUrl}
+                        type="text"
+                        value={logoUrl.startsWith('data:') ? '' : logoUrl}
                         onChange={(e) => setLogoUrl(e.target.value)}
-                        placeholder="https://sualoja.com.br/logo.png"
-                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        placeholder={logoUrl.startsWith('data:') ? '✔ Imagem enviada' : 'https://sualoja.com.br/logo.png'}
+                        disabled={logoUrl.startsWith('data:')}
+                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:disabled:bg-slate-900"
                       />
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => logoFileRef.current?.click()}
+                          className="flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                        >
+                          <MdUploadFile className="h-4 w-4" /> Enviar imagem
+                        </button>
+                        {logoUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setLogoUrl('')}
+                            className="flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                          >
+                            <MdDelete className="h-4 w-4" /> Remover
+                          </button>
+                        )}
+                        <input
+                          ref={logoFileRef}
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                          className="hidden"
+                          onChange={handleLogoFile}
+                        />
+                      </div>
                       <p className="text-[11px] text-slate-500">
                         Recomendado: Imagem quadrada (ex: 200x200px) com fundo transparente ou branco.
                       </p>
