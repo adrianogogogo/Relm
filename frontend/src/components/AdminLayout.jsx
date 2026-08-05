@@ -74,7 +74,7 @@ const MENU_SECTIONS = [
     items: [
       {
         path: '/admin/master-services',
-        label: 'Catálogo de Serviços',
+        label: 'Catálogo de Serviços & Conveniências',
         icon: MdBuild,
         roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR'],
       },

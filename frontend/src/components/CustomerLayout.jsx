@@ -26,9 +26,9 @@ import {
 const MENU = [
   { path: '/cliente/dashboard', label: 'Início', icon: MdDashboard },
   { path: '/cliente/compras', label: 'Minhas Compras', icon: MdShoppingBag },
-  { path: '/cliente/lojas', label: 'Rede de Lojas & Hubs', icon: MdStorefront },
+  { path: '/cliente/lojas', label: 'Lojas & Conveniências', icon: MdStorefront },
   { path: '/cliente/assinatura', label: 'Minha Assinatura', icon: MdWorkspacePremium },
-  { path: '/cliente/oficina', label: 'Oficina / Revisões', icon: MdBuild },
+  { path: '/cliente/oficina', label: 'Oficina & Manutenção', icon: MdBuild },
   { path: '/cliente/resgate', label: 'Resgatar Prêmios', icon: MdCardGiftcard },
   { path: '/cliente/eventos', label: 'Meus Eventos', icon: MdEvent },
   { path: '/cliente/vantagens', label: 'Vantagens', icon: MdCardGiftcard },
