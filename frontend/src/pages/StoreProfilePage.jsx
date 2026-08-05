@@ -35,6 +35,9 @@ const STATES = [
  */
 export default function StoreProfilePage() {
   const { user, setUser } = useAuthStore();
+  const store = user?.store;
+  const queryClient = useQueryClient();
+
   // Busca os dados completos e atualizados da própria loja via GET /api/store/profile
   const { data: ownStore } = useQuery({
     queryKey: ['own-store-profile'],
