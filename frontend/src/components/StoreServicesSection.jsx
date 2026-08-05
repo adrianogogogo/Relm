@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { storeServicesAPI, masterServicesAPI } from '../services/api';
 import { Card, Button } from './ui';
 import ConvenienceDetailModal from './ConvenienceDetailModal';
+import { getServicePlusInfo } from '../pages/CustomerStoresPage';
 import {
   MdBuild,
   MdAccessTime,
@@ -467,27 +468,28 @@ export default function StoreServicesSection({ storeId, isAdmin = false }) {
                   </p>
 
                   <div className="mt-3 rounded-lg bg-slate-50 p-2.5 text-xs space-y-1.5 dark:bg-slate-900/50">
-                    <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-                      <span>Cliente Care:</span>
-                      <span className="font-bold text-slate-900 dark:text-white">
-                        R$ {priceCare.toFixed(2)}
-                      </span>
-                    </div>
+                    {(() => {
+                      const info = getServicePlusInfo(service);
+                      return (
+                        <>
+                          <div className="flex items-center justify-between text-slate-700 dark:text-slate-300 font-semibold">
+                            <span>Cliente Care:</span>
+                            <span className="font-bold text-slate-900 dark:text-white">
+                              R$ {info.priceCare.toFixed(2)}
+                            </span>
+                          </div>
 
-                    <div className="flex items-center justify-between text-amber-600 dark:text-amber-400 font-semibold">
-                      <span className="flex items-center gap-1">
-                        <MdStar className="h-4 w-4" /> Relm Plus:
-                      </span>
-                      <span>
-                        {service.plusRule === 'FREE' ? (
-                          <span className="rounded bg-emerald-100 px-2 py-0.5 font-bold text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300">
-                            GRATUITO
-                          </span>
-                        ) : (
-                          `R$ ${calculatedPlusPrice.toFixed(2)}`
-                        )}
-                      </span>
-                    </div>
+                          <div className="flex items-center justify-between font-bold">
+                            <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                              <MdStar className="h-4 w-4" /> Relm Plus:
+                            </span>
+                            <span className={info.plusRule === 'FREE' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>
+                              {info.badgeText}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 

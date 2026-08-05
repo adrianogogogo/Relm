@@ -6,6 +6,7 @@ import { workshopAPI, storesAPI, storeServicesAPI } from '../services/api';
 import { useEntitlements } from '../hooks/useEntitlements';
 import { Card, PageHeader, Button, StatusChip } from '../components/ui';
 import ConvenienceDetailModal from '../components/ConvenienceDetailModal';
+import { getServicePlusInfo } from './CustomerStoresPage';
 import { MdEvent, MdBuild, MdDirectionsBike, MdLocalShipping, MdLock, MdStar, MdAccessTime, MdInfoOutline } from 'react-icons/md';
 
 const LOGISTICS_STEPS = [
@@ -284,16 +285,11 @@ export default function CustomerWorkshopPage() {
                       })
                       .map((ss) => {
                         const name = ss.displayName || ss.masterService?.name;
-                        const priceCare = ss.priceCare ?? Number(ss.price);
-                        const pricePlus = ss.calculatedPlusPrice;
-                        const badge =
-                          ss.plusRule === 'FREE'
-                            ? '⭐ Gratuito no Plus'
-                            : `⭐ Plus: R$ ${pricePlus.toFixed(2)}`;
+                        const info = getServicePlusInfo(ss);
 
                         return (
                           <option key={ss.id} value={ss.id}>
-                            {name} — Care: R$ {priceCare.toFixed(2)} | {badge} ({ss.estimatedMinutes} min)
+                            {name} — Care: R$ {info.priceCare.toFixed(2)} | {info.badgeText} ({ss.estimatedMinutes} min)
                           </option>
                         );
                       })}
@@ -314,21 +310,20 @@ export default function CustomerWorkshopPage() {
                     {selectedStoreService.displayDescription}
                   </p>
 
-                  <div className="flex items-center justify-between font-medium pt-1">
-                    <span className="text-slate-700 dark:text-slate-300">
-                      Valor Care: R$ {(selectedStoreService.priceCare ?? Number(selectedStoreService.price)).toFixed(2)}
-                    </span>
-                    <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
-                      <MdStar className="h-4 w-4" />
-                      {isPlus
-                        ? selectedStoreService.plusRule === 'FREE'
-                          ? 'Seu Valor no Plus: GRATUITO'
-                          : `Seu Valor no Plus: R$ ${selectedStoreService.calculatedPlusPrice.toFixed(2)}`
-                        : selectedStoreService.plusRule === 'FREE'
-                        ? 'Gratuito para assinantes Relm Plus'
-                        : `R$ ${selectedStoreService.calculatedPlusPrice.toFixed(2)} para assinantes Plus`}
-                    </span>
-                  </div>
+                  {(() => {
+                    const info = getServicePlusInfo(selectedStoreService);
+                    return (
+                      <div className="flex items-center justify-between font-medium pt-1">
+                        <span className="text-slate-700 dark:text-slate-300">
+                          Valor Care: R$ {info.priceCare.toFixed(2)}
+                        </span>
+                        <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                          <MdStar className="h-4 w-4" />
+                          {info.badgeText} {info.savingsText}
+                        </span>
+                      </div>
+                    );
+                  })()}
 
                   <button
                     type="button"

@@ -40,6 +40,47 @@ function getHaversineDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+// Helper para calcular e formatar as informacoes de preco do Relm Plus
+export function getServicePlusInfo(service) {
+  const priceCare = Number(service.priceCare ?? service.price ?? service.defaultPrice ?? 0);
+  const plusRule = service.plusRule || service.masterService?.plusRule || 'FREE';
+  const pct = service.plusDiscountPercent ?? service.masterService?.plusDiscountPercent ?? (plusRule === 'FREE' ? 100 : 20);
+
+  let pricePlus = 0;
+  if (plusRule === 'FREE') {
+    pricePlus = 0;
+  } else if (plusRule === 'DISCOUNT_PERCENT') {
+    pricePlus = service.calculatedPlusPrice !== undefined
+      ? Number(service.calculatedPlusPrice)
+      : priceCare * (1 - pct / 100);
+  } else if (plusRule === 'FIXED_PRICE') {
+    pricePlus = Number(service.plusPrice ?? 0);
+  }
+
+  const savings = Math.max(0, priceCare - pricePlus);
+
+  let badgeText = '';
+  if (plusRule === 'FREE') {
+    badgeText = 'Plus: GRATUITO (100% OFF)';
+  } else if (plusRule === 'DISCOUNT_PERCENT') {
+    badgeText = `Plus: R$ ${pricePlus.toFixed(2)} (${pct}% OFF)`;
+  } else {
+    badgeText = `Plus: R$ ${pricePlus.toFixed(2)}`;
+  }
+
+  const savingsText = savings > 0 ? `(Economize R$ ${savings.toFixed(2)})` : null;
+
+  return {
+    priceCare,
+    plusRule,
+    pct,
+    pricePlus,
+    savings,
+    badgeText,
+    savingsText,
+  };
+}
+
 const CONVENIENCE_FILTER_OPTIONS = [
   { id: 'ALL', label: 'Todas as Lojas' },
   { id: 'DUCHA', label: '🚿 Ducha & Vestiário', keyword: 'ducha' },
@@ -142,7 +183,7 @@ function StoreModal({ store, user, onClose, onSelectStoreForBooking, onOpenConve
                 {conveniences.map((s) => {
                   const name = s.masterService?.name || 'Conveniência';
                   const desc = s.masterService?.description || '';
-                  const isFree = s.plusRule === 'FREE';
+                  const info = getServicePlusInfo(s);
 
                   return (
                     <div
@@ -156,19 +197,20 @@ function StoreModal({ store, user, onClose, onSelectStoreForBooking, onOpenConve
                         </h5>
                         <span
                           className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                            isFree
+                            info.plusRule === 'FREE'
                               ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300'
                               : 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300'
                           }`}
                         >
-                          {isFree ? 'FREE no Plus' : 'Desconto Plus'}
+                          {info.badgeText}
                         </span>
                       </div>
                       <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
                         {desc}
                       </p>
-                      <div className="mt-2 flex items-center text-[10px] font-bold text-amber-700 dark:text-amber-400 underline">
-                        ℹ️ Ver Ficha Técnica & Insumos Inclusos
+                      <div className="mt-2 flex items-center justify-between text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                        <span className="underline">ℹ️ Ver Ficha Técnica & Insumos Inclusos</span>
+                        {info.savingsText && <span className="text-emerald-600 font-extrabold">{info.savingsText}</span>}
                       </div>
                     </div>
                   );
@@ -179,9 +221,14 @@ function StoreModal({ store, user, onClose, onSelectStoreForBooking, onOpenConve
 
           {/* Workshop Services Section */}
           <div>
-            <h4 className="mb-3 flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
-              <MdBuild className="h-5 w-5 text-cyan-600" />
-              Serviços de Oficina & Manutenção ({workshopServices.length})
+            <h4 className="mb-3 flex items-center justify-between text-base font-bold text-slate-900 dark:text-white">
+              <span className="flex items-center gap-2">
+                <MdBuild className="h-5 w-5 text-cyan-600" />
+                Serviços de Oficina & Manutenção ({workshopServices.length})
+              </span>
+              <span className="text-xs font-normal text-cyan-600 dark:text-cyan-400">
+                Clique em qualquer serviço para ver a Ficha Técnica
+              </span>
             </h4>
 
             {workshopServices.length === 0 ? (
@@ -192,33 +239,47 @@ function StoreModal({ store, user, onClose, onSelectStoreForBooking, onOpenConve
               <div className="grid gap-3 sm:grid-cols-2">
                 {workshopServices.map((s) => {
                   const name = s.masterService?.name || 'Serviço';
-                  const priceCare = s.price ? Number(s.price) : 0;
-                  const isFree = s.plusRule === 'FREE';
+                  const desc = s.masterService?.description || '';
+                  const info = getServicePlusInfo(s);
 
                   return (
                     <div
                       key={s.id}
-                      className="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-3 text-xs dark:border-slate-700 dark:bg-slate-800/80"
+                      onClick={() => onOpenConvenienceDetail(s, store)}
+                      className="cursor-pointer group flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-3 text-xs shadow-xs hover:border-cyan-500 hover:bg-cyan-50/30 dark:border-slate-700 dark:bg-slate-800/80 dark:hover:border-cyan-500 transition-all"
                     >
                       <div>
-                        <div className="flex items-center justify-between font-bold text-slate-900 dark:text-white">
-                          <span>{name}</span>
-                          <span className="text-slate-500 text-[10px] font-normal flex items-center gap-0.5">
+                        <div className="flex items-center justify-between font-bold text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400">
+                          <span className="flex items-center gap-1">
+                            {name} <MdInfoOutline className="h-4 w-4 text-cyan-500 opacity-80" />
+                          </span>
+                          <span className="text-slate-500 text-[10px] font-normal flex items-center gap-0.5 shrink-0">
                             <MdAccessTime className="h-3 w-3" /> {s.estimatedMinutes} min
                           </span>
                         </div>
                         <p className="mt-1 text-slate-500 dark:text-slate-400 line-clamp-2">
-                          {s.masterService?.description}
+                          {desc}
                         </p>
                       </div>
 
-                      <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-2 dark:border-slate-700 font-semibold">
-                        <span className="text-slate-600 dark:text-slate-400">
-                          Care: R$ {priceCare.toFixed(2)}
-                        </span>
-                        <span className="text-amber-600 dark:text-amber-400 font-bold">
-                          {isFree ? 'Plus: GRATUITO' : 'Plus: Desconto Especiais'}
-                        </span>
+                      <div className="mt-3 space-y-1.5 border-t border-slate-100 pt-2 dark:border-slate-700">
+                        <div className="flex items-center justify-between font-semibold">
+                          <span className="text-slate-600 dark:text-slate-400">
+                            Care: R$ {info.priceCare.toFixed(2)}
+                          </span>
+                          <span className={`font-extrabold ${info.plusRule === 'FREE' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                            {info.badgeText}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[10px] font-bold text-cyan-700 dark:text-cyan-400 pt-0.5">
+                          <span className="underline">ℹ️ Ver Ficha Técnica & Procedimentos</span>
+                          {info.savingsText && (
+                            <span className="text-emerald-600 dark:text-emerald-400 font-extrabold bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded">
+                              {info.savingsText}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -261,7 +322,7 @@ export default function CustomerStoresPage() {
   const [selectedConvenienceFilter, setSelectedConvenienceFilter] = useState('ALL');
   const [selectedStoreModal, setSelectedStoreModal] = useState(null);
 
-  // Convenience detail modal state
+  // Convenience / Service detail modal state
   const [selectedConvenienceDetail, setSelectedConvenienceDetail] = useState(null); // { service, store }
 
   const { data: stores = [], isLoading } = useQuery({
@@ -543,7 +604,7 @@ export default function CustomerStoresPage() {
         />
       )}
 
-      {/* Modal Detalhes da Conveniência */}
+      {/* Modal Detalhes da Conveniência / Serviço de Oficina */}
       {selectedConvenienceDetail && (
         <ConvenienceDetailModal
           service={selectedConvenienceDetail.service}
