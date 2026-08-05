@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { storesAPI } from '../services/api';
 import { fileToLogoDataUrl } from '../utils/imageUpload';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   KineticCard,
   KineticPageHeader,
