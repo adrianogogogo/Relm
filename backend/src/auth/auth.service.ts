@@ -219,6 +219,7 @@ export class AuthService {
               tradeName: storeUser.store.tradeName,
               city: storeUser.store.city,
               state: storeUser.store.state,
+              logoUrl: storeUser.store.logoUrl,
             },
           },
         };

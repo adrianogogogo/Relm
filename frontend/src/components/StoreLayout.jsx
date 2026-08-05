@@ -97,8 +97,17 @@ export default function StoreLayout() {
         {!collapsed && (
           <div className="mx-3 my-3 p-3 rounded-xl bg-[#0A1929] shadow-[inset_3px_3px_6px_#050c14,inset_-3px_-3px_6px_#10263e] border border-white/10 font-mono">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-[#2196F3] flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-[0_0_10px_rgba(33,150,243,0.5)]">
-                {user?.name?.charAt(0)?.toUpperCase() || 'L'}
+              <div className="w-9 h-9 rounded-lg bg-[#2196F3] flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden shadow-[0_0_10px_rgba(33,150,243,0.5)]">
+                {user?.store?.logoUrl ? (
+                  <img
+                    src={user.store.logoUrl}
+                    alt={user?.store?.tradeName || 'Logo'}
+                    className="w-full h-full object-contain bg-white"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                ) : (
+                  user?.name?.charAt(0)?.toUpperCase() || 'L'
+                )}
               </div>
               <div className="min-w-0">
                 <p className="font-bold text-xs text-[#f0f2f5] uppercase tracking-tight truncate">{user?.name}</p>

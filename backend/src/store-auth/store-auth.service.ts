@@ -64,6 +64,7 @@ export class StoreAuthService {
           tradeName: storeUser.store.tradeName,
           city: storeUser.store.city,
           state: storeUser.store.state,
+          logoUrl: storeUser.store.logoUrl,
         },
       },
     };
