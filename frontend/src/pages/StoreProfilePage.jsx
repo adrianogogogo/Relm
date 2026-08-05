@@ -149,9 +149,13 @@ export default function StoreProfilePage() {
     },
   });
 
+  // O salvamento usa /store/profile (storeId vem do token), então basta haver
+  // um vínculo de loja — via user.store (StoreUser) OU user.storeId (tabela User).
+  const hasStore = !!(store?.id || user?.storeId);
+
   const handleSaveLogo = (e) => {
     e.preventDefault();
-    if (!store?.id) {
+    if (!hasStore) {
       alert('Nenhuma loja vinculada ao seu usuário.');
       return;
     }
@@ -160,7 +164,7 @@ export default function StoreProfilePage() {
 
   const handleSaveStoreData = (e) => {
     e.preventDefault();
-    if (!store?.id) {
+    if (!hasStore) {
       alert('Nenhuma loja vinculada ao seu usuário.');
       return;
     }

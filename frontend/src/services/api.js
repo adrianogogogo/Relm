@@ -205,7 +205,8 @@ export const storesAPI = {
   create: (data) => api.post('/stores', data).then((res) => res.data),
   bulkCreate: (stores) => api.post('/stores/bulk', { stores }).then((res) => res.data),
   update: (id, data) => api.patch(`/stores/${id}`, data).then((res) => res.data),
-  // Auto-serviço do portal da loja: edita a própria loja (storeId vem do token).
+  // Auto-serviço do portal da loja: consulta e edita a própria loja (storeId vem do token).
+  getOwnProfile: () => api.get('/store/profile').then((res) => res.data),
   updateOwnProfile: (data) => api.patch('/store/profile', data).then((res) => res.data),
   delete: (id) => api.delete(`/stores/${id}`).then((res) => res.data),
   // Busca pública (sem autenticação)

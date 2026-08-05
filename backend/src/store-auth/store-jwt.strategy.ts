@@ -21,7 +21,14 @@ export class StoreJwtStrategy extends PassportStrategy(Strategy, 'store-jwt') {
   }
 
   async validate(payload: any) {
-    if (payload.type !== 'STORE') {
+    // Dois tipos de login de loja são válidos aqui:
+    //  - StoreUser: token com type/userType 'STORE'
+    //  - Usuário da tabela User vinculado a uma loja: role 'LOJA' + storeId
+    // Ambos só operam sobre a PRÓPRIA loja (storeId do token), então é seguro.
+    const isStoreUser =
+      payload.type === 'STORE' || payload.userType === 'STORE';
+    const isUserLoja = payload.role === 'LOJA' && !!payload.storeId;
+    if ((!isStoreUser && !isUserLoja) || !payload.storeId) {
       throw new UnauthorizedException();
     }
     return {
