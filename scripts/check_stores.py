@@ -1,5 +1,6 @@
 import paramiko
 import os
+import sys
 
 def _load_env_file(path):
     if not os.path.exists(path): return
@@ -17,18 +18,24 @@ c = paramiko.SSHClient()
 c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 c.connect('177.153.62.248', 22, 'root', PASS)
 
-def query(sql):
-    cmd = f"PGPASSWORD='Relm@2026!Secure' psql -h localhost -U relm_user -d relm_careplus_prod -c \"{sql}\""
-    _, o, e = c.exec_command(cmd)
-    return o.read().decode('utf-8')
-
-print("=== STORES ===")
-print(query("SELECT id, trade_name, city, state, active FROM stores;"))
-
-print("=== STORE SERVICES (SERVICOS DA CASA TRI) ===")
-print(query("SELECT ss.id, ss.store_id, ms.name, ms.category, ss.active FROM store_services ss JOIN master_services ms ON ms.id = ss.master_service_id;"))
-
-print("=== PARTNERS (PARCEIROS EXCLUSIVOS / PARCERIAS) ===")
-print(query("SELECT id, name, category, active FROM partners;"))
+cmd = """cd /var/www/relm-careplus-prod/backend && node -e "
+require('dotenv').config();
+const jwt = require('jsonwebtoken');
+const secret = process.env.JWT_SECRET;
+console.log('REAL JWT SECRET EXISTS:', !!secret);
+const token = jwt.sign({ sub: '2a474db6-0f9f-4ae2-ba03-aa1af7b26910', email: 'admin@relmbikes.com.br', role: 'ADMIN_RELM' }, secret, { expiresIn: '1h' });
+const http = require('http');
+const req = http.request({ host: 'localhost', port: 3005, path: '/api/stores', headers: { Authorization: 'Bearer ' + token } }, res => {
+  let data = '';
+  res.on('data', chunk => data += chunk);
+  res.on('end', () => console.log('STATUS:', res.statusCode, 'DATA:', data));
+});
+req.end();
+"
+"""
+_, o, _ = c.exec_command(cmd)
+print("=== GET /api/stores WITH REAL SECRET ===")
+sys.stdout.buffer.write(o.read())
+print("\n")
 
 c.close()

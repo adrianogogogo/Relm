@@ -3,7 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { masterServicesAPI } from '../services/api';
 import { Card, PageHeader, Button } from '../components/ui';
 import ConvenienceDetailModal from '../components/ConvenienceDetailModal';
-import { MdAdd, MdEdit, MdDelete, MdBuild, MdAccessTime, MdCategory, MdInfoOutline } from 'react-icons/md';
+import {
+  MdAdd, MdEdit, MdDelete, MdBuild, MdAccessTime, MdCategory, MdInfoOutline,
+  MdChecklist, MdWaterDrop, MdDonutLarge, MdCompress, MdAccessibilityNew, MdElectricBike, MdShower,
+} from 'react-icons/md';
 
 const CATEGORY_OPTIONS = [
   'Revisões Periódicas',
@@ -15,6 +18,18 @@ const CATEGORY_OPTIONS = [
   'Conveniências & Hub do Ciclista',
   'Outro',
 ];
+
+// Ícone distinto por categoria (fallback MdBuild para categorias não mapeadas)
+const CATEGORY_ICONS = {
+  'Revisões Periódicas': MdChecklist,
+  'Freios & Hidráulica': MdWaterDrop,
+  'Rodas & Tubeless': MdDonutLarge,
+  'Suspensão & Amortecedores': MdCompress,
+  'Ergonomia & Biomecânica': MdAccessibilityNew,
+  'Logística & E-Bikes': MdElectricBike,
+  'Conveniências & Hub do Ciclista': MdShower,
+};
+const categoryIcon = (category) => CATEGORY_ICONS[category] || MdBuild;
 
 const EMPTY_FORM = {
   name: '',
@@ -274,7 +289,9 @@ export default function AdminMasterServicesPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredServices.map((service) => (
+          {filteredServices.map((service) => {
+            const CategoryIcon = categoryIcon(service.category);
+            return (
             <Card
               key={service.id}
               className={`relative flex flex-col justify-between transition-all ${
@@ -285,7 +302,7 @@ export default function AdminMasterServicesPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300">
-                      <MdBuild className="h-5 w-5" />
+                      <CategoryIcon className="h-5 w-5" />
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-900 dark:text-white">
@@ -350,7 +367,8 @@ export default function AdminMasterServicesPage() {
                 </div>
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
