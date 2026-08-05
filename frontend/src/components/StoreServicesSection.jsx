@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { storeServicesAPI, masterServicesAPI } from '../services/api';
 import { Card, Button } from './ui';
+import ConvenienceDetailModal from './ConvenienceDetailModal';
 import {
   MdBuild,
   MdAccessTime,
@@ -12,6 +13,7 @@ import {
   MdCalendarMonth,
   MdCheckCircle,
   MdLocalOffer,
+  MdInfoOutline,
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
 
@@ -256,6 +258,7 @@ export default function StoreServicesSection({ storeId, isAdmin = false }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('TODAS');
   const [plusRuleFilter, setPlusRuleFilter] = useState('ALL'); // 'ALL' | 'FREE' | 'DISCOUNT'
+  const [selectedConvenienceDetail, setSelectedConvenienceDetail] = useState(null);
 
   const { data: storeServices = [], isLoading } = useQuery({
     queryKey: ['store-services', storeId],
@@ -489,6 +492,13 @@ export default function StoreServicesSection({ storeId, isAdmin = false }) {
                 </div>
 
                 <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-700">
+                  <button
+                    onClick={() => setSelectedConvenienceDetail(service)}
+                    className="flex items-center gap-1 text-xs font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400"
+                  >
+                    <MdInfoOutline className="h-4 w-4" /> Detalhes & Regras
+                  </button>
+
                   {isAdmin ? (
                     <div className="flex items-center gap-2 ml-auto">
                       <button
@@ -514,13 +524,13 @@ export default function StoreServicesSection({ storeId, isAdmin = false }) {
                   ) : (
                     <button
                       onClick={() =>
-                        navigate(`/customer/workshop`, {
+                        navigate(`/cliente/oficina`, {
                           state: { storeId, storeServiceId: service.id },
                         })
                       }
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-cyan-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-cyan-700"
+                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-cyan-700"
                     >
-                      <MdCalendarMonth className="h-4 w-4" /> Agendar Este Serviço
+                      <MdCalendarMonth className="h-4 w-4" /> Agendar
                     </button>
                   )}
                 </div>
@@ -535,7 +545,19 @@ export default function StoreServicesSection({ storeId, isAdmin = false }) {
           storeId={storeId}
           storeService={selectedStoreService}
           masterServices={masterServices}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedStoreService(null);
+          }}
+        />
+      )}
+
+      {selectedConvenienceDetail && (
+        <ConvenienceDetailModal
+          service={selectedConvenienceDetail}
+          onClose={() => setSelectedConvenienceDetail(null)}
+          onAction={() => setSelectedConvenienceDetail(null)}
+          actionLabel="Entendido"
         />
       )}
     </Card>

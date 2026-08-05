@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { masterServicesAPI } from '../services/api';
 import { Card, PageHeader, Button } from '../components/ui';
-import { MdAdd, MdEdit, MdDelete, MdBuild, MdAccessTime, MdCategory } from 'react-icons/md';
+import ConvenienceDetailModal from '../components/ConvenienceDetailModal';
+import { MdAdd, MdEdit, MdDelete, MdBuild, MdAccessTime, MdCategory, MdInfoOutline } from 'react-icons/md';
 
 const CATEGORY_OPTIONS = [
   'Revisões Periódicas',
@@ -171,6 +172,7 @@ export default function AdminMasterServicesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('TODAS');
+  const [selectedConvenienceDetail, setSelectedConvenienceDetail] = useState(null);
 
   const { data: masterServices = [], isLoading } = useQuery({
     queryKey: ['admin-master-services'],
@@ -316,27 +318,36 @@ export default function AdminMasterServicesPage() {
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center justify-end gap-2 border-t border-slate-100 pt-3 dark:border-slate-700">
+              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-700">
                 <button
-                  onClick={() => {
-                    setSelectedService(service);
-                    setIsModalOpen(true);
-                  }}
-                  className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-cyan-600 hover:bg-cyan-50 dark:text-cyan-400 dark:hover:bg-slate-700"
+                  onClick={() => setSelectedConvenienceDetail(service)}
+                  className="flex items-center gap-1 text-xs font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400"
                 >
-                  <MdEdit className="h-4 w-4" /> Editar
+                  <MdInfoOutline className="h-4 w-4" /> Ficha Técnica
                 </button>
 
-                <button
-                  onClick={() => {
-                    if (confirm(`Deseja desativar o serviço "${service.name}"?`)) {
-                      deleteMutation.mutate(service.id);
-                    }
-                  }}
-                  className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-700"
-                >
-                  <MdDelete className="h-4 w-4" /> Desativar
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setSelectedService(service);
+                      setIsModalOpen(true);
+                    }}
+                    className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-cyan-600 hover:bg-cyan-50 dark:text-cyan-400 dark:hover:bg-slate-700"
+                  >
+                    <MdEdit className="h-4 w-4" /> Editar
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      if (confirm(`Deseja desativar o serviço "${service.name}"?`)) {
+                        deleteMutation.mutate(service.id);
+                      }
+                    }}
+                    className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-700"
+                  >
+                    <MdDelete className="h-4 w-4" /> Desativar
+                  </button>
+                </div>
               </div>
             </Card>
           ))}
@@ -347,6 +358,15 @@ export default function AdminMasterServicesPage() {
         <MasterServiceModal
           service={selectedService}
           onClose={() => setIsModalOpen(false)}
+        />
+      )}
+
+      {selectedConvenienceDetail && (
+        <ConvenienceDetailModal
+          service={selectedConvenienceDetail}
+          onClose={() => setSelectedConvenienceDetail(null)}
+          onAction={() => setSelectedConvenienceDetail(null)}
+          actionLabel="Fechar Ficha Técnico"
         />
       )}
     </div>

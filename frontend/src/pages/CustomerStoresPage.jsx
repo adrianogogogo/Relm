@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { storesAPI, storeServicesAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader, Button } from '../components/ui';
+import ConvenienceDetailModal from '../components/ConvenienceDetailModal';
 import {
   MdStorefront,
   MdLocationOn,
@@ -20,6 +21,7 @@ import {
   MdClose,
   MdCalendarMonth,
   MdLocalOffer,
+  MdInfoOutline,
 } from 'react-icons/md';
 
 // Haversine distance formula in KM
@@ -49,7 +51,7 @@ const CONVENIENCE_FILTER_OPTIONS = [
   { id: 'MALABIKE', label: '🧳 Mala-Bike & Racks', keyword: 'mala-bike' },
 ];
 
-function StoreModal({ store, user, onClose, onSelectStoreForBooking }) {
+function StoreModal({ store, user, onClose, onSelectStoreForBooking, onOpenConvenienceDetail }) {
   const isPlus = user?.currentTier === 'PLUS';
   const services = store?.storeServices || [];
 
@@ -121,9 +123,14 @@ function StoreModal({ store, user, onClose, onSelectStoreForBooking }) {
 
           {/* Conveniences Section */}
           <div>
-            <h4 className="mb-3 flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
-              <MdStar className="h-5 w-5 text-amber-500" />
-              Conveniências & Hub do Ciclista nesta Unidade ({conveniences.length})
+            <h4 className="mb-3 flex items-center justify-between text-base font-bold text-slate-900 dark:text-white">
+              <span className="flex items-center gap-2">
+                <MdStar className="h-5 w-5 text-amber-500" />
+                Conveniências & Hub do Ciclista ({conveniences.length})
+              </span>
+              <span className="text-xs font-normal text-amber-600 dark:text-amber-400">
+                Clique para ver os detalhes
+              </span>
             </h4>
 
             {conveniences.length === 0 ? (
@@ -140,11 +147,12 @@ function StoreModal({ store, user, onClose, onSelectStoreForBooking }) {
                   return (
                     <div
                       key={s.id}
-                      className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-3 shadow-sm dark:border-amber-900/40 dark:bg-amber-950/20"
+                      onClick={() => onOpenConvenienceDetail(s, store)}
+                      className="cursor-pointer group rounded-xl border border-amber-200/80 bg-amber-50/40 p-3 shadow-xs hover:border-amber-400 hover:bg-amber-100/50 transition-all dark:border-amber-900/40 dark:bg-amber-950/20 dark:hover:bg-amber-900/30"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <h5 className="font-bold text-sm text-slate-900 dark:text-white">
-                          {name}
+                        <h5 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-amber-700 dark:group-hover:text-amber-300 flex items-center gap-1">
+                          {name} <MdInfoOutline className="h-4 w-4 text-amber-500 opacity-80" />
                         </h5>
                         <span
                           className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
@@ -159,6 +167,9 @@ function StoreModal({ store, user, onClose, onSelectStoreForBooking }) {
                       <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
                         {desc}
                       </p>
+                      <div className="mt-2 flex items-center text-[10px] font-bold text-amber-700 dark:text-amber-400 underline">
+                        ℹ️ Ver Ficha Técnica & Insumos Inclusos
+                      </div>
                     </div>
                   );
                 })}
@@ -249,6 +260,9 @@ export default function CustomerStoresPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedConvenienceFilter, setSelectedConvenienceFilter] = useState('ALL');
   const [selectedStoreModal, setSelectedStoreModal] = useState(null);
+
+  // Convenience detail modal state
+  const [selectedConvenienceDetail, setSelectedConvenienceDetail] = useState(null); // { service, store }
 
   const { data: stores = [], isLoading } = useQuery({
     queryKey: ['public-stores-customer'],
@@ -422,9 +436,10 @@ export default function CustomerStoresPage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredStores.map((store) => {
             const services = store.storeServices || [];
-            const convenienciesCount = services.filter(
+            const conveniencies = services.filter(
               (s) => s.masterService?.category === 'Conveniências & Hub do Ciclista'
-            ).length;
+            );
+            const convenienciesCount = conveniencies.length;
 
             return (
               <Card
@@ -472,21 +487,23 @@ export default function CustomerStoresPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-1 pt-1">
-                      {services
-                        .filter((s) => s.masterService?.category === 'Conveniências & Hub do Ciclista')
-                        .slice(0, 4)
-                        .map((s) => (
-                          <span
-                            key={s.id}
-                            className="rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-900/50 dark:text-amber-300"
-                          >
-                            {s.masterService?.name?.split('(')[0] || 'Conveniência'}
-                          </span>
-                        ))}
+                      {conveniencies.slice(0, 4).map((s) => (
+                        <button
+                          key={s.id}
+                          onClick={() => setSelectedConvenienceDetail({ service: s, store })}
+                          className="rounded-md bg-amber-100 hover:bg-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 dark:hover:bg-amber-900 transition-all flex items-center gap-1"
+                        >
+                          <span>{s.masterService?.name?.split('(')[0] || 'Conveniência'}</span>
+                          <MdInfoOutline className="h-3 w-3 opacity-70" />
+                        </button>
+                      ))}
                       {convenienciesCount > 4 && (
-                        <span className="rounded-md bg-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                        <button
+                          onClick={() => setSelectedStoreModal(store)}
+                          className="rounded-md bg-slate-200 hover:bg-slate-300 px-1.5 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-slate-700 dark:text-slate-300"
+                        >
                           +{convenienciesCount - 4} mais
-                        </span>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -522,6 +539,23 @@ export default function CustomerStoresPage() {
           user={user}
           onClose={() => setSelectedStoreModal(null)}
           onSelectStoreForBooking={handleBookingRedirect}
+          onOpenConvenienceDetail={(s, st) => setSelectedConvenienceDetail({ service: s, store: st })}
+        />
+      )}
+
+      {/* Modal Detalhes da Conveniência */}
+      {selectedConvenienceDetail && (
+        <ConvenienceDetailModal
+          service={selectedConvenienceDetail.service}
+          store={selectedConvenienceDetail.store}
+          onClose={() => setSelectedConvenienceDetail(null)}
+          onAction={() => {
+            const storeId = selectedConvenienceDetail.store?.id;
+            setSelectedConvenienceDetail(null);
+            setSelectedStoreModal(null);
+            if (storeId) handleBookingRedirect(storeId);
+          }}
+          actionLabel="Agendar / Consumir nesta Loja"
         />
       )}
     </div>
