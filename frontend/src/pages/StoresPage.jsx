@@ -14,7 +14,7 @@ export default function StoresPage() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [stateFilter, setStateFilter] = useState('');
-  const [activeFilter, setActiveFilter] = useState('true');
+  const [activeFilter, setActiveFilter] = useState('');
   const [importing, setImporting] = useState(false);
   const fileRef = useRef(null);
 

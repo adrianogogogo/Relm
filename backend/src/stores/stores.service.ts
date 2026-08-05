@@ -72,11 +72,15 @@ export class StoresService {
     const where: any = {};
 
     if (filters?.search) {
+      const searchClean = filters.search.trim();
+      const cnpjDigits = searchClean.replace(/\D/g, '');
+
       where.OR = [
-        { tradeName: { contains: filters.search, mode: 'insensitive' } },
-        { legalName: { contains: filters.search, mode: 'insensitive' } },
-        { city: { contains: filters.search, mode: 'insensitive' } },
-        { aliases: { hasSome: [filters.search] } },
+        { tradeName: { contains: searchClean, mode: 'insensitive' } },
+        { legalName: { contains: searchClean, mode: 'insensitive' } },
+        { city: { contains: searchClean, mode: 'insensitive' } },
+        { state: { contains: searchClean, mode: 'insensitive' } },
+        ...(cnpjDigits ? [{ cnpj: { contains: cnpjDigits } }] : []),
       ];
     }
 
