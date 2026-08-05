@@ -233,7 +233,9 @@ export default function StoreProfilePage() {
           </AnimatedSection>
 
           {/* ── CARD DE DADOS DA LOJA ── */}
-          {store ? (
+          {/* Usa activeStore (vem do getOwnProfile) pois contas da tabela User
+              não trazem objeto `store` no login — só `storeId`. */}
+          {activeStore ? (
             <AnimatedSection delay={0.25} className="mb-8">
               <KineticCard>
                 <div className="mb-6 pb-4 border-b-2 border-kinetic-border dark:border-kinetic-border-dark flex items-center justify-between">
@@ -393,7 +395,7 @@ export default function StoreProfilePage() {
           ) : null}
 
           {/* ── CARD DE LOGOMARCA DA LOJA ── */}
-          {store && (
+          {activeStore && (
             <AnimatedSection delay={0.3} className="mb-8">
               <KineticCard>
                 <div className="mb-6 pb-4 border-b-2 border-kinetic-border dark:border-kinetic-border-dark flex items-center justify-between">
@@ -427,12 +429,12 @@ export default function StoreProfilePage() {
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center bg-cyan-100 text-cyan-700 font-extrabold text-xl rounded-xl">
-                            {store.tradeName?.charAt(0) || 'L'}
+                            {activeStore.tradeName?.charAt(0) || 'L'}
                           </div>
                         )}
                       </div>
                       <span className="text-[10px] text-slate-400 mt-2 font-semibold text-center">
-                        {formData.tradeName || store.tradeName}
+                        {formData.tradeName || activeStore.tradeName}
                       </span>
                     </div>
 
