@@ -5,7 +5,8 @@ import { useAuthStore } from '../store/authStore';
 import { workshopAPI, storesAPI, storeServicesAPI } from '../services/api';
 import { useEntitlements } from '../hooks/useEntitlements';
 import { Card, PageHeader, Button, StatusChip } from '../components/ui';
-import { MdEvent, MdBuild, MdDirectionsBike, MdLocalShipping, MdLock, MdStar, MdAccessTime } from 'react-icons/md';
+import ConvenienceDetailModal from '../components/ConvenienceDetailModal';
+import { MdEvent, MdBuild, MdDirectionsBike, MdLocalShipping, MdLock, MdStar, MdAccessTime, MdInfoOutline } from 'react-icons/md';
 
 const LOGISTICS_STEPS = [
   { key: 'COLETA_AGENDADA', label: 'Coleta agendada' },
@@ -43,6 +44,7 @@ export default function CustomerWorkshopPage() {
   const [pickupAddress, setPickupAddress] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [selectedDetailModalService, setSelectedDetailModalService] = useState(null);
 
   // Saldo anual por tipo (Wave 6) — fonte de verdade vem do backend
   const { data: allowance } = useQuery({
@@ -327,6 +329,14 @@ export default function CustomerWorkshopPage() {
                         : `R$ ${selectedStoreService.calculatedPlusPrice.toFixed(2)} para assinantes Plus`}
                     </span>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDetailModalService(selectedStoreService)}
+                    className="mt-2 flex items-center gap-1 font-bold text-cyan-700 dark:text-cyan-400 hover:underline text-xs"
+                  >
+                    <MdInfoOutline className="h-4 w-4" /> ℹ️ Ver Ficha Técnica & Etapas Executadas
+                  </button>
                 </div>
               )}
 
@@ -509,6 +519,15 @@ export default function CustomerWorkshopPage() {
           </Card>
         </div>
       </div>
+
+      {selectedDetailModalService && (
+        <ConvenienceDetailModal
+          service={selectedDetailModalService}
+          onClose={() => setSelectedDetailModalService(null)}
+          onAction={() => setSelectedDetailModalService(null)}
+          actionLabel="Entendido"
+        />
+      )}
     </div>
   );
 }

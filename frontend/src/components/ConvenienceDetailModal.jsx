@@ -1,5 +1,6 @@
 import React from 'react';
 import { getConvenienceDetailsByName } from '../data/convenienceDetails';
+import { getWorkshopServiceDetailsByName } from '../data/workshopServiceDetails';
 import { Button } from './ui';
 import {
   MdClose,
@@ -10,10 +11,12 @@ import {
   MdStorefront,
   MdCalendarMonth,
   MdVerified,
-  MdShield,
+  MdBuild,
+  MdCheck,
+  MdTipsAndUpdates,
 } from 'react-icons/md';
 
-export default function ConvenienceDetailModal({
+export default function ServiceDetailModal({
   service,
   store,
   onClose,
@@ -22,12 +25,18 @@ export default function ConvenienceDetailModal({
 }) {
   if (!service) return null;
 
-  const masterName = service.masterService?.name || service.name || 'Conveniência';
-  const masterCategory = service.masterService?.category || service.category || 'Conveniências & Hub do Ciclista';
+  const masterName = service.masterService?.name || service.name || 'Serviço';
+  const masterCategory = service.masterService?.category || service.category || 'Oficina';
   const masterDesc = service.masterService?.description || service.description || '';
 
-  const details = getConvenienceDetailsByName(masterName);
-  const icon = details?.icon || '⭐';
+  const isConvenience = masterCategory === 'Conveniências & Hub do Ciclista';
+
+  // Buscar detalhes no dicionario correspondente
+  const convenienceDetails = isConvenience ? getConvenienceDetailsByName(masterName) : null;
+  const workshopDetails = !isConvenience ? getWorkshopServiceDetailsByName(masterName) : null;
+
+  const details = convenienceDetails || workshopDetails;
+  const icon = details?.icon || (isConvenience ? '🌟' : '⚙️');
 
   const isFree = service.plusRule === 'FREE' || details?.plusBenefitText?.includes('GRATUITO');
   const priceCare = service.price !== undefined ? Number(service.price) : (service.defaultPrice || 0);
@@ -37,20 +46,32 @@ export default function ConvenienceDetailModal({
       <div className="relative flex max-h-[92vh] w-full max-w-2xl flex-col rounded-3xl bg-white shadow-2xl dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
         
         {/* Header */}
-        <div className="relative border-b border-slate-200 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-slate-50 p-6 dark:border-slate-800 dark:from-amber-500/20 dark:to-slate-800/80">
+        <div className={`relative border-b border-slate-200 p-6 dark:border-slate-800 ${
+          isConvenience
+            ? 'bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-slate-50 dark:from-amber-500/20 dark:to-slate-800/80'
+            : 'bg-gradient-to-r from-cyan-500/10 via-cyan-500/5 to-slate-50 dark:from-cyan-500/20 dark:to-slate-800/80'
+        }`}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500 text-white font-extrabold text-3xl shadow-lg shadow-amber-500/30 shrink-0">
+              <div className={`flex h-16 w-16 items-center justify-center rounded-2xl text-white font-extrabold text-3xl shadow-lg shrink-0 ${
+                isConvenience
+                  ? 'bg-amber-500 shadow-amber-500/30'
+                  : 'bg-cyan-600 shadow-cyan-600/30'
+              }`}>
                 {icon}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-extrabold text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                  <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold ${
+                    isConvenience
+                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                      : 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300'
+                  }`}>
                     {masterCategory}
                   </span>
-                  {details?.estimatedTime && (
+                  {(details?.estimatedTime || service.estimatedMinutes) && (
                     <span className="flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                      <MdAccessTime className="h-3.5 w-3.5" /> {details.estimatedTime}
+                      <MdAccessTime className="h-3.5 w-3.5" /> {details?.estimatedTime || `${service.estimatedMinutes} min`}
                     </span>
                   )}
                 </div>
@@ -73,15 +94,73 @@ export default function ConvenienceDetailModal({
         {/* Content */}
         <div className="space-y-6 overflow-y-auto p-6 text-slate-700 dark:text-slate-300 text-sm">
           
-          {/* Summary / Description */}
+          {/* Summary / Technical Description */}
           <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-            <p className="leading-relaxed text-slate-700 dark:text-slate-200">
+            <p className="leading-relaxed text-slate-700 dark:text-slate-200 font-medium">
               {details?.summary || masterDesc}
             </p>
           </div>
 
-          {/* Items & Facilities Included */}
-          {details?.itemsIncluded && (
+          {/* Section: Etapas Executadas na Oficina (para Oficina) */}
+          {workshopDetails?.steps && (
+            <div>
+              <h4 className="mb-3 flex items-center gap-2 text-base font-extrabold text-slate-900 dark:text-white">
+                <MdBuild className="h-5 w-5 text-cyan-600" />
+                Etapas & Procedimentos Executados na Oficina:
+              </h4>
+
+              <div className="grid gap-2.5 sm:grid-cols-1">
+                {workshopDetails.steps.map((step, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-xs dark:border-slate-800 dark:bg-slate-800/90 font-semibold text-xs text-slate-800 dark:text-slate-200"
+                  >
+                    <span className="text-lg leading-none shrink-0">{step.icon}</span>
+                    <span>{step.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Section: Insumos e Produtos Utilizados (para Oficina) */}
+          {workshopDetails?.productsUsed && (
+            <div className="rounded-2xl border border-cyan-200 bg-cyan-50/50 p-4 dark:border-cyan-900/40 dark:bg-cyan-950/20">
+              <h4 className="mb-2 flex items-center gap-2 text-xs font-extrabold text-cyan-900 dark:text-cyan-300 uppercase tracking-wider">
+                🧪 Insumos & Lubrificantes Profissionais Utilizados:
+              </h4>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {workshopDetails.productsUsed.map((prod, idx) => (
+                  <span
+                    key={idx}
+                    className="rounded-lg bg-cyan-100 px-2.5 py-1 text-xs font-bold text-cyan-900 dark:bg-cyan-900/60 dark:text-cyan-200"
+                  >
+                    ✓ {prod}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Section: Recomendações Técnicas (para Oficina) */}
+          {workshopDetails?.recommendations && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+              <h4 className="mb-2 flex items-center gap-2 text-xs font-extrabold text-amber-900 dark:text-amber-300 uppercase tracking-wider">
+                <MdTipsAndUpdates className="h-4 w-4 text-amber-600" /> Recomendações & Benefícios da Manutenção:
+              </h4>
+              <ul className="space-y-1 pl-2 text-xs text-amber-900 dark:text-amber-200 font-medium">
+                {workshopDetails.recommendations.map((rec, idx) => (
+                  <li key={idx} className="flex items-start gap-1.5">
+                    <span>💡</span>
+                    <span>{rec}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Section: Items & Facilities Included (para Conveniências) */}
+          {convenienceDetails?.itemsIncluded && (
             <div>
               <h4 className="mb-3 flex items-center gap-2 text-base font-extrabold text-slate-900 dark:text-white">
                 <MdVerified className="h-5 w-5 text-emerald-500" />
@@ -89,7 +168,7 @@ export default function ConvenienceDetailModal({
               </h4>
 
               <div className="grid gap-2.5 sm:grid-cols-2">
-                {details.itemsIncluded.map((item, idx) => (
+                {convenienceDetails.itemsIncluded.map((item, idx) => (
                   <div
                     key={idx}
                     className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white p-3 shadow-xs dark:border-slate-800 dark:bg-slate-800/90 font-semibold text-xs text-slate-800 dark:text-slate-200"
@@ -102,16 +181,15 @@ export default function ConvenienceDetailModal({
             </div>
           )}
 
-          {/* Usage Rules & Guidelines */}
-          {details?.rules && (
+          {/* Section: Usage Rules & Guidelines (para Conveniências) */}
+          {convenienceDetails?.rules && (
             <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900/40 dark:bg-blue-950/20">
-              <h4 className="mb-2 flex items-center gap-2 text-sm font-extrabold text-blue-900 dark:text-blue-300">
-                <MdInfoOutline className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                Orientações & Regras de Uso:
+              <h4 className="mb-2 flex items-center gap-2 text-xs font-extrabold text-blue-900 dark:text-blue-300 uppercase tracking-wider">
+                <MdInfoOutline className="h-4 w-4 text-blue-600 dark:text-blue-400" /> Orientações & Regras de Uso:
               </h4>
 
               <ul className="space-y-1.5 pl-2 text-xs text-blue-800 dark:text-blue-200">
-                {details.rules.map((rule, idx) => (
+                {convenienceDetails.rules.map((rule, idx) => (
                   <li key={idx} className="flex items-start gap-2">
                     <span className="text-blue-500 font-bold">•</span>
                     <span>{rule}</span>
@@ -130,7 +208,7 @@ export default function ConvenienceDetailModal({
                   BENEFÍCIO RELM PLUS
                 </div>
                 <h5 className="text-base font-extrabold text-amber-950 dark:text-amber-200 mt-0.5">
-                  {details?.plusBenefitText || (isFree ? 'GRATUITO NO RELM PLUS' : 'DESCONTO EXCLUSIVO NO PLUS')}
+                  {details?.plusBenefitText || (isFree ? '100% GRATUITO NO RELM PLUS' : 'DESCONTO EXCLUSIVO NO PLUS')}
                 </h5>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                   {priceCare > 0 ? `Valor padrão (Plano Care): R$ ${priceCare.toFixed(2)}` : 'Atendimento cortesia da rede Relm'}
