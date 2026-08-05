@@ -35,41 +35,47 @@ const STATES = [
  */
 export default function StoreProfilePage() {
   const { user, setUser } = useAuthStore();
-  const store = user?.store;
-  const queryClient = useQueryClient();
+  // Busca os dados completos e atualizados da própria loja via GET /api/store/profile
+  const { data: ownStore } = useQuery({
+    queryKey: ['own-store-profile'],
+    queryFn: () => storesAPI.getOwnProfile(),
+    staleTime: 0,
+  });
+
+  const activeStore = ownStore || store;
 
   // Estados dos formulários
-  const [logoUrl, setLogoUrl] = useState(store?.logoUrl || '');
+  const [logoUrl, setLogoUrl] = useState(activeStore?.logoUrl || '');
   const [logoSuccess, setLogoSuccess] = useState(false);
   const logoFileRef = useRef(null);
 
   const [formData, setFormData] = useState({
-    tradeName: store?.tradeName || '',
-    legalName: store?.legalName || '',
-    phone: store?.phone || '',
-    email: store?.email || '',
-    address: store?.address || '',
-    city: store?.city || '',
-    state: store?.state || 'SP',
-    zipCode: store?.zipCode || '',
+    tradeName: activeStore?.tradeName || '',
+    legalName: activeStore?.legalName || '',
+    phone: activeStore?.phone || '',
+    email: activeStore?.email || '',
+    address: activeStore?.address || '',
+    city: activeStore?.city || '',
+    state: activeStore?.state || 'SP',
+    zipCode: activeStore?.zipCode || '',
   });
   const [storeSuccess, setStoreSuccess] = useState(false);
 
   useEffect(() => {
-    if (store) {
-      setLogoUrl(store.logoUrl || '');
+    if (activeStore) {
+      setLogoUrl(activeStore.logoUrl || '');
       setFormData({
-        tradeName: store.tradeName || '',
-        legalName: store.legalName || '',
-        phone: store.phone || '',
-        email: store.email || '',
-        address: store.address || '',
-        city: store.city || '',
-        state: store.state || 'SP',
-        zipCode: store.zipCode || '',
+        tradeName: activeStore.tradeName || '',
+        legalName: activeStore.legalName || '',
+        phone: activeStore.phone || '',
+        email: activeStore.email || '',
+        address: activeStore.address || '',
+        city: activeStore.city || '',
+        state: activeStore.state || 'SP',
+        zipCode: activeStore.zipCode || '',
       });
     }
-  }, [store]);
+  }, [ownStore]);
 
   const handleLogoFile = async (e) => {
     const file = e.target.files?.[0];
@@ -117,6 +123,7 @@ export default function StoreProfilePage() {
   const updateStoreMutation = useMutation({
     mutationFn: (data) => storesAPI.updateOwnProfile(data),
     onSuccess: (updatedStore) => {
+      queryClient.invalidateQueries({ queryKey: ['own-store-profile'] });
       queryClient.invalidateQueries({ queryKey: ['public-stores-customer'] });
       queryClient.invalidateQueries({ queryKey: ['store', store?.id] });
       queryClient.invalidateQueries({ queryKey: ['customer-partners'] });
