@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MdVerifiedUser, MdDescription, MdEvent, MdPerson, MdLocationOn, MdCardGiftcard, MdShare, MdContentCopy, MdCheck, MdEmojiEvents } from 'react-icons/md';
+import { MdVerifiedUser, MdDescription, MdEvent, MdPerson, MdLocationOn, MdCardGiftcard, MdShare, MdContentCopy, MdCheck, MdEmojiEvents, MdStorefront } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import { customerPortalAPI, gamificationAPI } from '../services/api';
 import { useEntitlements } from '../hooks/useEntitlements';
