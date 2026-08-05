@@ -23,6 +23,9 @@ import {
   MdStorefront,
 } from 'react-icons/md';
 
+import { useQuery } from '@tanstack/react-query';
+import { storesAPI } from '../services/api';
+
 const MENU = [
   { path: '/loja/dashboard', label: 'Início', icon: MdDashboard },
   { path: '/loja/clientes', label: 'Clientes', icon: MdPeople },
@@ -43,6 +46,17 @@ export default function StoreLayout() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const { collapsed, toggle } = useSidebarStore();
+
+  // Consulta dinamica dos dados atualizados da propria loja
+  const { data: ownStore } = useQuery({
+    queryKey: ['own-store-profile'],
+    queryFn: () => storesAPI.getOwnProfile().catch(() => null),
+    staleTime: 30000,
+  });
+
+  const activeStore = ownStore || user?.store;
+  const storeLogoUrl = activeStore?.logoUrl || user?.store?.logoUrl;
+  const storeTradeName = activeStore?.tradeName || user?.store?.tradeName || user?.name || 'MINHA LOJA';
 
   const handleLogout = () => {
     logout();
@@ -93,29 +107,62 @@ export default function StoreLayout() {
           </button>
         </div>
 
-        {/* User Info Housing */}
-        {!collapsed && (
-          <div className="mx-3 my-3 p-3 rounded-xl bg-[#0A1929] shadow-[inset_3px_3px_6px_#050c14,inset_-3px_-3px_6px_#10263e] border border-white/10 font-mono">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-[#2196F3] flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden shadow-[0_0_10px_rgba(33,150,243,0.5)]">
-                {user?.store?.logoUrl ? (
+        {/* User Info Housing - Card com Logo Grande da Marca (64x64px) */}
+        {!collapsed ? (
+          <div className="mx-3 my-3 p-3.5 rounded-2xl bg-[#071320] shadow-[inset_3px_3px_6px_#03080e,inset_-3px_-3px_6px_#0e243c] border border-white/10 font-mono">
+            <div className="flex items-center gap-3.5">
+              <Link
+                to="/loja/perfil"
+                title="Editar Logo e Perfil da Loja"
+                className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center text-[#2196F3] font-black text-2xl shrink-0 overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.35),0_0_12px_rgba(33,150,243,0.3)] border-2 border-white/80 p-1 group relative transition-transform hover:scale-105"
+              >
+                {storeLogoUrl ? (
                   <img
-                    src={user.store.logoUrl}
-                    alt={user?.store?.tradeName || 'Logo'}
-                    className="w-full h-full object-contain bg-white"
+                    src={storeLogoUrl}
+                    alt={storeTradeName}
+                    className="w-full h-full object-contain"
                     onError={(e) => { e.target.style.display = 'none'; }}
                   />
                 ) : (
-                  user?.name?.charAt(0)?.toUpperCase() || 'L'
+                  <span className="font-extrabold text-2xl tracking-tighter text-[#2196F3]">
+                    {storeTradeName?.charAt(0)?.toUpperCase() || 'L'}
+                  </span>
                 )}
-              </div>
-              <div className="min-w-0">
-                <p className="font-bold text-xs text-[#f0f2f5] uppercase tracking-tight truncate">{user?.name}</p>
-                <p className="text-[10px] text-[#94a3b8] truncate font-medium">
-                  {user?.store?.tradeName || user?.email}
+              </Link>
+              <div className="min-w-0 flex-1">
+                <p className="font-extrabold text-xs text-white uppercase tracking-tight truncate leading-tight">
+                  {storeTradeName}
                 </p>
+                <p className="text-[11px] text-[#94a3b8] truncate font-medium mt-0.5">
+                  {activeStore?.email || user?.email || 'contato@loja.com'}
+                </p>
+                <Link
+                  to="/loja/perfil"
+                  className="inline-flex items-center gap-1 text-[10px] text-[#2196F3] hover:text-white font-bold tracking-wider uppercase mt-1 transition-colors"
+                >
+                  <span>EDITAR PERFIL</span>
+                </Link>
               </div>
             </div>
+          </div>
+        ) : (
+          <div className="my-3 flex justify-center">
+            <Link
+              to="/loja/perfil"
+              title={storeTradeName}
+              className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[#2196F3] font-bold text-base shrink-0 overflow-hidden shadow-[0_0_10px_rgba(33,150,243,0.4)] p-0.5 border border-white/80 transition-transform hover:scale-105"
+            >
+              {storeLogoUrl ? (
+                <img
+                  src={storeLogoUrl}
+                  alt={storeTradeName}
+                  className="w-full h-full object-contain"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              ) : (
+                storeTradeName?.charAt(0)?.toUpperCase() || 'L'
+              )}
+            </Link>
           </div>
         )}
 
