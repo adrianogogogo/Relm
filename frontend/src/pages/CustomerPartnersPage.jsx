@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { partnersAPI } from '../services/api';
 import { Card, PageHeader } from '../components/ui';
@@ -80,6 +81,13 @@ function PartnerCard({ partner }) {
           >
             <MdLock size={13} /> Seja Plus para desbloquear
           </a>
+        ) : partner.isStore ? (
+          <Link
+            to="/cliente/lojas"
+            className="text-xs text-cyan-600 dark:text-cyan-400 font-bold underline flex items-center gap-1"
+          >
+            📍 Ver Loja & Conveniências <MdOpenInNew size={13} />
+          </Link>
         ) : partner.link ? (
           <a
             href={partner.link}

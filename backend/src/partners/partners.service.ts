@@ -28,9 +28,7 @@ export class PartnersService {
     });
   }
 
-  /** Portal cliente: lista parceiros ativos. Retorna todos, mas anota cada um
-   *  com `eligible` (tier do cliente >= minTier do parceiro). Isso permite
-   *  exibir parceiros PLUS bloqueados para membros CARE como CTA de upgrade. */
+  /** Portal cliente: lista parceiros ativos (inclui parceiros diretos e lojas parceiras ativas). */
   async findForCustomer(customerId: string) {
     const customer = await this.prisma.customer.findUnique({
       where: { id: customerId },
@@ -43,10 +41,55 @@ export class PartnersService {
       orderBy: [{ category: 'asc' }, { name: 'asc' }],
     });
 
-    return partners.map((p) => ({
+    const mappedPartners = partners.map((p) => ({
       ...p,
       eligible: tierAtLeast(customerTier, p.minTier),
     }));
+
+    // Buscar lojas parceiras ativas e mapeá-las como parceiros da comunidade
+    const stores = await this.prisma.store.findMany({
+      where: { active: true },
+      include: {
+        storeServices: {
+          where: { active: true },
+          include: { masterService: true },
+        },
+      },
+    });
+
+    const storePartners = stores.map((s) => {
+      const conveniences = s.storeServices
+        .filter((ss) => ss.masterService?.category === 'Conveniências & Hub do Ciclista')
+        .map((ss) => ss.masterService?.name?.split('(')[0]?.trim());
+
+      const benefitText =
+        conveniences.length > 0
+          ? `Hub do Ciclista: ${conveniences.slice(0, 3).join(', ')}${
+              conveniences.length > 3 ? ' e mais' : ''
+            }`
+          : 'Loja Parceira & Oficina Especializada Relm Care+';
+
+      return {
+        id: `store-${s.id}`,
+        name: s.tradeName,
+        category: PartnerCategory.CAFE,
+        description: s.address
+          ? `${s.address} — ${s.city}/${s.state}`
+          : `${s.city}/${s.state}`,
+        benefit: benefitText,
+        minTier: TierLevel.CARE,
+        logoUrl: s.logoUrl,
+        link: `/cliente/lojas`,
+        city: `${s.city}/${s.state}`,
+        active: true,
+        createdAt: s.createdAt,
+        updatedAt: s.updatedAt,
+        eligible: true,
+        isStore: true,
+      };
+    });
+
+    return [...mappedPartners, ...storePartners];
   }
 
   async findOne(id: string) {
