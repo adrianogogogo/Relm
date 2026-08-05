@@ -199,6 +199,14 @@ export class StoresService {
     return this.formatStore(store);
   }
 
+  // Auto-serviço do lojista: edita apenas a própria loja (storeId vem do
+  // token, não da URL). Nunca permite alterar `active` (a loja se trancaria)
+  // nem `cnpj` (dado fiscal, só admin muda).
+  async updateOwnProfile(storeId: string, dto: UpdateStoreDto) {
+    const { active, cnpj, ...allowed } = dto as any;
+    return this.update(storeId, allowed);
+  }
+
   async remove(id: string) {
     const store = await this.prisma.store.findUnique({
       where: { id },

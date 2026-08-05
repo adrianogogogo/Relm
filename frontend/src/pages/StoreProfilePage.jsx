@@ -89,7 +89,7 @@ export default function StoreProfilePage() {
 
   // Mutation para atualizar a logomarca
   const updateLogoMutation = useMutation({
-    mutationFn: (newLogoUrl) => storesAPI.update(store.id, { logoUrl: newLogoUrl }),
+    mutationFn: (newLogoUrl) => storesAPI.updateOwnProfile({ logoUrl: newLogoUrl }),
     onSuccess: (updatedStore) => {
       queryClient.invalidateQueries({ queryKey: ['public-stores-customer'] });
       queryClient.invalidateQueries({ queryKey: ['store', store?.id] });
@@ -115,7 +115,7 @@ export default function StoreProfilePage() {
 
   // Mutation para atualizar os dados gerais da loja
   const updateStoreMutation = useMutation({
-    mutationFn: (data) => storesAPI.update(store.id, data),
+    mutationFn: (data) => storesAPI.updateOwnProfile(data),
     onSuccess: (updatedStore) => {
       queryClient.invalidateQueries({ queryKey: ['public-stores-customer'] });
       queryClient.invalidateQueries({ queryKey: ['store', store?.id] });
