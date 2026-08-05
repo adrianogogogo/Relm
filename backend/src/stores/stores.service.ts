@@ -34,6 +34,7 @@ export class StoresService {
         zipCode: createStoreDto.zipCode,
         latitude: createStoreDto.latitude,
         longitude: createStoreDto.longitude,
+        logoUrl: createStoreDto.logoUrl,
         active: createStoreDto.active ?? true,
       },
     });
@@ -269,6 +270,7 @@ export class StoresService {
         email: true,
         latitude: true,
         longitude: true,
+        logoUrl: true,
         storeServices: {
           where: { active: true },
           select: {

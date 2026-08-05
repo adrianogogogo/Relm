@@ -24,6 +24,7 @@ export default function StoreFormPage() {
     zipCode: '',
     latitude: '',
     longitude: '',
+    logoUrl: '',
     active: true,
   });
 
@@ -51,6 +52,7 @@ export default function StoreFormPage() {
         zipCode: store.zipCode || '',
         latitude: store.latitude || '',
         longitude: store.longitude || '',
+        logoUrl: store.logoUrl || '',
         active: store.active !== false,
       });
     }
@@ -281,6 +283,22 @@ export default function StoreFormPage() {
                   placeholder="Ex: Bike Shop, Loja Center (separar por vírgula)"
                 />
                 <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">Variações do nome da loja (separadas por vírgula)</p>
+              </div>
+
+              <div>
+                <label htmlFor="logoUrl" className="label">
+                  URL da Logomarca (Imagem PNG / JPG / SVG)
+                </label>
+                <input
+                  type="url"
+                  id="logoUrl"
+                  name="logoUrl"
+                  value={formData.logoUrl}
+                  onChange={handleChange}
+                  className="input"
+                  placeholder="https://sualoja.com.br/logo.png"
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">Link público da imagem do logo para exibição no portal do cliente</p>
               </div>
             </div>
           </div>

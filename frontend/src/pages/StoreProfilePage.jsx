@@ -1,4 +1,7 @@
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { storesAPI } from '../services/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   KineticCard,
   KineticPageHeader,
@@ -7,20 +10,62 @@ import {
   NoiseTexture,
   AnimatedSection,
 } from '../components/ui/kinetic';
-import { MdStorefront, MdPeople, MdLocationOn, MdInfo } from 'react-icons/md';
+import { MdStorefront, MdPeople, MdLocationOn, MdInfo, MdImage, MdSave, MdCheckCircle } from 'react-icons/md';
 
 /**
- * Perfil do lojista logado (somente leitura no v1) — inclui dados da loja
- * quando disponíveis no usuário do authStore.
- * A troca de senha fica no menu do avatar (TopBarChrome → ChangePasswordModal).
+ * Perfil do lojista logado — inclui dados da loja e gerenciador de Logomarca Oficial.
  */
 export default function StoreProfilePage() {
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const store = user?.store;
+  const queryClient = useQueryClient();
+
+  const [logoUrl, setLogoUrl] = useState(store?.logoUrl || '');
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  useEffect(() => {
+    if (store?.logoUrl) {
+      setLogoUrl(store.logoUrl);
+    }
+  }, [store]);
+
+  const updateLogoMutation = useMutation({
+    mutationFn: (newLogoUrl) => storesAPI.update(store.id, { logoUrl: newLogoUrl }),
+    onSuccess: (updatedStore) => {
+      queryClient.invalidateQueries({ queryKey: ['public-stores-customer'] });
+      queryClient.invalidateQueries({ queryKey: ['store', store?.id] });
+      
+      // Update local authStore user store object
+      if (user && store) {
+        setUser({
+          ...user,
+          store: {
+            ...store,
+            logoUrl: updatedStore.logoUrl || logoUrl,
+          },
+        });
+      }
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 4000);
+    },
+    onError: (err) => {
+      alert(`Erro ao salvar logo da loja: ${err.response?.data?.message || err.message}`);
+    },
+  });
+
+  const handleSaveLogo = (e) => {
+    e.preventDefault();
+    if (!store?.id) {
+      alert('Nenhuma loja vinculada ao seu usuário.');
+      return;
+    }
+    updateLogoMutation.mutate(logoUrl.trim());
+  };
 
   const fields = [
-    { label: 'Nome', value: user?.name },
-    { label: 'E-mail', value: user?.email },
+    { label: 'Nome do Usuário', value: user?.name },
+    { label: 'E-mail de Login', value: user?.email },
     { label: 'Cargo', value: user?.role || 'Loja' },
     { label: 'Loja', value: store?.tradeName },
     { label: 'CNPJ', value: store?.cnpj || '—' },
@@ -87,6 +132,89 @@ export default function StoreProfilePage() {
             </div>
           </AnimatedSection>
 
+          {/* ── CARD DE LOGOMARCA DA LOJA (Onda 8) ── */}
+          {store && (
+            <AnimatedSection delay={0.25} className="mb-8">
+              <KineticCard>
+                <div className="mb-6 pb-4 border-b-2 border-kinetic-border dark:border-kinetic-border-dark flex items-center justify-between">
+                  <div>
+                    <h2 className="font-kinetic text-xl md:text-2xl font-bold uppercase tracking-tighter text-kinetic-fg dark:text-kinetic-fg-dark flex items-center gap-2">
+                      <MdImage className="text-cyan-500" /> Logomarca da Loja no Portal do Cliente
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      Adicione o link da imagem da logomarca oficial da sua loja para exibição no card de busca e nos modais dos clientes.
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSaveLogo} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                    {/* Live Preview Container */}
+                    <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                        Preview no Card
+                      </p>
+                      <div className="h-16 w-16 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center p-1 overflow-hidden">
+                        {logoUrl.trim() ? (
+                          <img
+                            src={logoUrl.trim()}
+                            alt="Logo da Loja"
+                            className="h-full w-full object-contain"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = 'https://via.placeholder.com/64?text=Logo';
+                            }}
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-cyan-100 text-cyan-700 font-extrabold text-xl rounded-xl">
+                            {store.tradeName?.charAt(0) || 'L'}
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-slate-400 mt-2 font-semibold">
+                        {store.tradeName}
+                      </span>
+                    </div>
+
+                    {/* URL Input field */}
+                    <div className="md:col-span-2 space-y-3">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                        URL da Imagem do Logo (PNG, JPG ou SVG)
+                      </label>
+                      <input
+                        type="url"
+                        value={logoUrl}
+                        onChange={(e) => setLogoUrl(e.target.value)}
+                        placeholder="https://sualoja.com.br/logo.png"
+                        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm focus:border-cyan-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                      <p className="text-[11px] text-slate-500">
+                        Recomendado: Imagem quadrada (ex: 200x200px) com fundo transparente ou branco.
+                      </p>
+
+                      <div className="flex items-center gap-3 pt-2">
+                        <button
+                          type="submit"
+                          disabled={updateLogoMutation.isPending}
+                          className="flex items-center gap-2 rounded-xl bg-cyan-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-cyan-700 disabled:opacity-50 transition-all"
+                        >
+                          <MdSave className="h-4 w-4" />
+                          {updateLogoMutation.isPending ? 'Salvando...' : 'Salvar Logomarca'}
+                        </button>
+
+                        {saveSuccess && (
+                          <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 animate-fade-in">
+                            <MdCheckCircle className="h-4 w-4" /> Logomarca atualizada com sucesso!
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </KineticCard>
+            </AnimatedSection>
+          )}
+
           {/* ── CARD DE INFORMAÇÕES ── */}
           <AnimatedSection delay={0.3} className="mb-8">
             <KineticCard>
@@ -119,16 +247,18 @@ export default function StoreProfilePage() {
                   <MdInfo size={22} />
                 </div>
                 <div>
-                  <h3 className="font-kinetic text-lg font-bold uppercase tracking-tighter text-kinetic-fg dark:text-kinetic-fg-dark mb-1">
-                    Alterar Senha
+                  <h3 className="font-kinetic text-lg font-bold uppercase tracking-tight text-kinetic-fg dark:text-kinetic-fg-dark mb-1">
+                    Alteração de Senha
                   </h3>
                   <p className="font-kinetic text-sm text-kinetic-fg-muted dark:text-kinetic-fg-muted-dark">
-                    Para alterar sua senha, use o menu do avatar no topo da tela → "Alterar Senha".
+                    Para alterar sua senha de acesso, clique na sua foto ou iniciais no canto superior direito da tela e escolha a opção{' '}
+                    <strong className="text-kinetic-fg dark:text-kinetic-fg-dark font-semibold">"Alterar Senha"</strong>.
                   </p>
                 </div>
               </div>
             </KineticCard>
           </AnimatedSection>
+
         </div>
       </div>
     </div>

@@ -47,6 +47,10 @@ export class CreateStoreDto {
   longitude?: string;
 
   @IsOptional()
+  @IsString()
+  logoUrl?: string;
+
+  @IsOptional()
   @IsBoolean()
   active?: boolean;
 }

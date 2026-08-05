@@ -141,6 +141,7 @@ model Store {
   zipCode    String?  @map("zip_code")
   latitude   String?  // Coordenada geográfica
   longitude  String?  // Coordenada geográfica
+  logoUrl    String?  @map("logo_url") // URL da logomarca da loja
   active     Boolean  @default(true)
   
   // HelmDesk integration

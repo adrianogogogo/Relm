@@ -58,7 +58,7 @@ export class StoresController {
   }
 
   @Patch(':id')
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'DISTRIBUIDOR')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'DISTRIBUIDOR', 'LOJA')
   update(@Param('id') id: string, @Body() updateStoreDto: UpdateStoreDto) {
     return this.storesService.update(id, updateStoreDto);
   }

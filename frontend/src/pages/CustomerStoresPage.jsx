@@ -113,8 +113,25 @@ function StoreModal({ store, user, onClose, onSelectStoreForBooking, onOpenConve
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-800/80">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-600 text-white font-bold text-lg shadow-md">
-              <MdStorefront className="h-6 w-6" />
+            <div className="h-14 w-14 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-center p-1 overflow-hidden shrink-0 dark:border-slate-700 dark:bg-slate-800">
+              {store.logoUrl ? (
+                <img
+                  src={store.logoUrl}
+                  alt={store.tradeName}
+                  className="h-full w-full object-contain"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.style.display = 'none';
+                    if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div
+                className="flex h-full w-full items-center justify-center bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300 font-extrabold text-lg rounded-xl"
+                style={{ display: store.logoUrl ? 'none' : 'flex' }}
+              >
+                <MdStorefront className="h-7 w-7" />
+              </div>
             </div>
             <div>
               <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
@@ -511,8 +528,25 @@ export default function CustomerStoresPage() {
                   {/* Distance badge & Header */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300 font-bold shrink-0">
-                        <MdStorefront className="h-6 w-6" />
+                      <div className="h-14 w-14 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-center p-1 overflow-hidden shrink-0 dark:border-slate-700 dark:bg-slate-800">
+                        {store.logoUrl ? (
+                          <img
+                            src={store.logoUrl}
+                            alt={store.tradeName}
+                            className="h-full w-full object-contain"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.style.display = 'none';
+                              if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="flex h-full w-full items-center justify-center bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300 font-extrabold text-base rounded-xl"
+                          style={{ display: store.logoUrl ? 'none' : 'flex' }}
+                        >
+                          <MdStorefront className="h-6 w-6" />
+                        </div>
                       </div>
                       <div>
                         <h4 className="font-extrabold text-base text-slate-900 dark:text-white line-clamp-1">
