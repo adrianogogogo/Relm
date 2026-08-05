@@ -37,6 +37,7 @@ import CustomerPurchasesPage from './pages/CustomerPurchasesPage';
 import CustomerCatalogPage from './pages/CustomerCatalogPage';
 import CustomerSubscriptionPage from './pages/CustomerSubscriptionPage';
 import CustomerRankingPage from './pages/CustomerRankingPage';
+import CustomerStoresPage from './pages/CustomerStoresPage';
 
 // Store portal pages
 import StoreDashboard from './pages/StoreDashboard';
@@ -144,6 +145,7 @@ export default function App() {
           >
             <Route path="dashboard" element={<CustomerDashboard />} />
             <Route path="compras" element={<CustomerPurchasesPage />} />
+            <Route path="lojas" element={<CustomerStoresPage />} />
             <Route path="assinatura" element={<CustomerSubscriptionPage />} />
             <Route path="garantias" element={<Navigate to="/cliente/dashboard" replace />} />
             <Route path="eventos" element={<CustomerEventsPage />} />

@@ -269,6 +269,25 @@ export class StoresService {
         email: true,
         latitude: true,
         longitude: true,
+        storeServices: {
+          where: { active: true },
+          select: {
+            id: true,
+            price: true,
+            plusRule: true,
+            plusDiscountPercent: true,
+            plusPrice: true,
+            estimatedMinutes: true,
+            masterService: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                category: true,
+              },
+            },
+          },
+        },
       },
       orderBy: [
         { city: 'asc' },

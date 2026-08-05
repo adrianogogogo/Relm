@@ -26,6 +26,7 @@ import {
 const MENU = [
   { path: '/cliente/dashboard', label: 'Início', icon: MdDashboard },
   { path: '/cliente/compras', label: 'Minhas Compras', icon: MdShoppingBag },
+  { path: '/cliente/lojas', label: 'Rede de Lojas & Hubs', icon: MdStorefront },
   { path: '/cliente/assinatura', label: 'Minha Assinatura', icon: MdWorkspacePremium },
   { path: '/cliente/oficina', label: 'Oficina / Revisões', icon: MdBuild },
   { path: '/cliente/resgate', label: 'Resgatar Prêmios', icon: MdCardGiftcard },
@@ -33,7 +34,7 @@ const MENU = [
   { path: '/cliente/vantagens', label: 'Vantagens', icon: MdCardGiftcard },
   { path: '/cliente/seguros', label: 'Cotações de Seguro', icon: MdDescription },
   { path: '/cliente/ranking', label: 'Ranking', icon: MdEmojiEvents },
-  { path: '/cliente/parcerias', label: 'Parcerias', icon: MdStorefront },
+  { path: '/cliente/parcerias', label: 'Parcerias Exclusivas', icon: MdStorefront },
   { path: '/cliente/perfil', label: 'Meu Perfil', icon: MdPerson },
 ];
 

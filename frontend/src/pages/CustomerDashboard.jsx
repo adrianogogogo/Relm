@@ -265,6 +265,9 @@ export default function CustomerDashboard() {
           <Card>
             <h2 className="font-title text-lg font-bold text-gray-900 dark:text-slate-100 mb-4">Ações Rápidas</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Link to="/cliente/lojas" className="btn btn-outline justify-start border-cyan-500 text-cyan-700 dark:text-cyan-400">
+                <MdStorefront size={18} /> 📌 Lojas Próximas & Conveniências
+              </Link>
               <Link to="/seguro" className="btn btn-outline justify-start">
                 <MdDescription size={18} /> Cotação de seguro
               </Link>
