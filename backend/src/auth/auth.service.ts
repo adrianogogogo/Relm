@@ -66,7 +66,15 @@ export class AuthService {
         throw new UnauthorizedException();
       }
 
-      const newPayload = { sub: user.id, email: user.email, role: user.role };
+      // Espelha o payload do login: sem storeId/userType, tokens de loja
+      // (role LOJA) renovados perdem o vínculo e passam a levar 401.
+      const newPayload = {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        storeId: user.storeId,
+        userType: user.role,
+      };
       return {
         access_token: this.jwtService.sign(newPayload),
       };
