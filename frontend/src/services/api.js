@@ -73,6 +73,8 @@ export const authAPI = {
   // Troca de senha do usuário logado (equipe Relm / tabela User)
   changePassword: (currentPassword, newPassword) =>
     api.post('/auth/change-password', { currentPassword, newPassword }).then((res) => res.data),
+  // Auto-serviço: edita nome/e-mail do próprio usuário (equipe Relm / distribuidor)
+  updateProfile: (data) => api.patch('/auth/profile', data).then((res) => res.data),
 };
 
 export const storeAuthAPI = {

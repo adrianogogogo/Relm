@@ -1,9 +1,10 @@
-import { Controller, Post, Body, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Patch, Body, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { ChangePasswordDto } from '../common/dto/change-password.dto';
+import { UpdateOwnProfileDto } from './dto/update-own-profile.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -44,6 +45,14 @@ export class AuthController {
       dto.currentPassword,
       dto.newPassword,
     );
+  }
+
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Editar nome/e-mail do usuário logado (tabela User)' })
+  async updateProfile(@Request() req, @Body() dto: UpdateOwnProfileDto) {
+    return this.authService.updateOwnProfile(req.user.userId, dto);
   }
 
   // ── Endpoints Unificados ────────────────────────────────────────────────────

@@ -1,4 +1,5 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
+import { UpdateOwnProfileDto } from './dto/update-own-profile.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
@@ -87,6 +88,33 @@ export class AuthService {
     await this.prisma.user.update({
       where: { id: userId },
       data: { refreshToken: null },
+    });
+  }
+
+  // Auto-serviço do usuário da equipe Relm / distribuidor (tabela User):
+  // edita apenas o próprio nome/e-mail. role/storeId/active nunca mudam aqui.
+  async updateOwnProfile(userId: string, dto: UpdateOwnProfileDto) {
+    if (dto.email) {
+      const existing = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
+      if (existing && existing.id !== userId) {
+        throw new ConflictException('E-mail já está em uso');
+      }
+    }
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.email !== undefined && { email: dto.email }),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        storeId: true,
+      },
     });
   }
 
