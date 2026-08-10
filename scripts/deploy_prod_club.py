@@ -81,7 +81,7 @@ out, err = run(c,
 say('4) club_settings:\n%s%s' % (out, err[-200:]))
 
 # 5) generate + build + pm2 reload
-out, err = run(c, 'cd %s && npx prisma generate 2>&1 | tail -1 && npm run build 2>&1 | tail -3' % BE)
+out, err = run(c, 'cd %s && npm install --no-audit && npx prisma generate 2>&1 | tail -1 && npm run build 2>&1 | tail -3' % BE)
 say('5) generate+build: %s %s' % (out.strip()[-400:], err.strip()[-300:]))
 if 'error TS' in (out + err) or 'Build failed' in (out + err):
     sys.exit('ABORTADO: build falhou. dist antigo preservado em %s' % bak)
