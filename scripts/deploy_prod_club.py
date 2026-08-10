@@ -98,7 +98,7 @@ say('   base-to-care aplicado:\n%s%s' % (out, err[-200:]))
 local_dist = os.path.join(ROOT, 'frontend', 'dist')
 if not os.path.isdir(local_dist):
     sys.exit('frontend/dist nao existe — rode "npm run build" no frontend antes.')
-run(c, 'cp -a %s %s/web.bak 2>/dev/null; mkdir -p %s' % (WEB, bak, WEB))
+run(c, 'cp -a %s %s/web.bak 2>/dev/null; rm -rf %s/* && mkdir -p %s' % (WEB, bak, WEB, WEB))
 sftp2 = c.open_sftp()
 def upload_all(sftp, local, remote):
     try: sftp.stat(remote)
@@ -109,6 +109,7 @@ def upload_all(sftp, local, remote):
         else: sftp.put(lp, rp)
 upload_all(sftp2, local_dist, WEB)
 sftp2.close()
+run(c, 'systemctl reload nginx 2>&1')
 say('7) frontend dist publicado em %s (backup em %s/web.bak)' % (WEB, bak))
 
 # 8) Verificacao final

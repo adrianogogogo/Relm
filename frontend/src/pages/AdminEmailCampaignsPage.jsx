@@ -1,35 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { emailCrmAPI } from '../services/api';
-import AiMarketingModal from '../components/AiMarketingModal';
-import { MdEmail, MdSend, MdAdd, MdStars, MdCheckCircle, MdErrorOutline, MdDescription, MdPeople, MdAutorenew } from 'react-icons/md';
+import { emailCrmAPI, aiAssistantAPI } from '../services/api';
+import { MdEmail, MdSend, MdStars, MdAutorenew, MdPeople, MdCheck, MdEdit, MdContentCopy, MdArrowForward } from 'react-icons/md';
 
 export default function AdminEmailCampaignsPage() {
   const [templates, setTemplates] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Tabs: 'CAMPAIGNS' | 'TEMPLATES'
+  // Tabs: 'CAMPAIGNS' | 'MAGIC_CREATE'
   const [activeTab, setActiveTab] = useState('CAMPAIGNS');
 
-  // Modal Campaign State
-  const [showCampModal, setShowCampModal] = useState(false);
-  const [campTitle, setCampTitle] = useState('');
-  const [campTemplateId, setCampTemplateId] = useState('');
-  const [campSegment, setCampSegment] = useState('ALL_CUSTOMERS');
+  // AI Prompt & State
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [generating, setGenerating] = useState(false);
 
-  // Modal Template State
-  const [showTmplModal, setShowTmplModal] = useState(false);
-  const [tmplName, setTmplName] = useState('');
-  const [tmplSlug, setTmplSlug] = useState('');
-  const [tmplSubject, setTmplSubject] = useState('');
-  const [tmplBody, setTmplBody] = useState('');
+  // Generated Email Form & WYSIWYG Preview State
+  const [subject, setSubject] = useState('');
+  const [heading, setHeading] = useState('');
+  const [bodyMessage, setBodyMessage] = useState('');
+  const [ctaText, setCtaText] = useState('');
+  const [targetSegment, setTargetSegment] = useState('ALL_CUSTOMERS');
+  const [campaignTitle, setCampaignTitle] = useState('');
 
-  // Test Email State
+  // Test Email
   const [testEmail, setTestEmail] = useState('');
   const [sendingTest, setSendingTest] = useState(false);
-
-  // AI Modal State
-  const [showAiModal, setShowAiModal] = useState(false);
+  const [sendingCampaign, setSendingCampaign] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -44,9 +40,6 @@ export default function AdminEmailCampaignsPage() {
       ]);
       setTemplates(tmplData || []);
       setCampaigns(campData || []);
-      if (tmplData && tmplData.length > 0) {
-        setCampTemplateId(tmplData[0].id);
-      }
     } catch (err) {
       console.error('Erro ao carregar e-mail CRM:', err);
     } finally {
@@ -54,62 +47,108 @@ export default function AdminEmailCampaignsPage() {
     }
   }
 
-  async function handleCreateTemplate(e) {
-    e.preventDefault();
+  // 1-Click Magic AI Email Generation
+  async function handleMagicGenerate(e) {
+    if (e) e.preventDefault();
+    if (!aiPrompt.trim()) return;
+
     try {
-      await emailCrmAPI.createTemplate({
-        name: tmplName,
-        slug: tmplSlug.toLowerCase().replace(/\s+/g, '-'),
-        subject: tmplSubject,
-        bodyHtml: tmplBody,
+      setGenerating(true);
+      const copyRes = await aiAssistantAPI.generateCopy({
+        prompt: aiPrompt,
+        type: 'EMAIL_SUBJECT',
       });
-      setShowTmplModal(false);
-      loadData();
+
+      const genSubject = copyRes.suggestedSubject || copyRes.heading || aiPrompt;
+      const genHeading = copyRes.heading || 'Vantagem Exclusiva Relm Care+';
+      const genContent = copyRes.content || aiPrompt;
+
+      setSubject(genSubject);
+      setHeading(genHeading);
+      setBodyMessage(genContent);
+      setCtaText('Conferir Meu Benefício');
+      setCampaignTitle(`Campanha: ${genSubject.substring(0, 30)}...`);
     } catch (err) {
-      alert(err.response?.data?.message || 'Erro ao criar template.');
+      alert('Erro ao gerar e-mail com IA.');
+    } finally {
+      setGenerating(false);
     }
   }
 
-  async function handleCreateCampaign(e) {
-    e.preventDefault();
-    try {
-      await emailCrmAPI.createCampaign({
-        title: campTitle,
-        templateId: campTemplateId,
-        targetSegment: campSegment,
-      });
-      setShowCampModal(false);
-      loadData();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Erro ao criar campanha.');
-    }
-  }
-
-  async function handleTriggerCampaign(campaignId) {
-    if (!confirm('Deseja disparar esta campanha agora para o segmento selecionado?')) return;
-    try {
-      await emailCrmAPI.sendCampaign(campaignId);
-      alert('Campanha enviada com sucesso!');
-      loadData();
-    } catch (err) {
-      alert('Erro ao disparar campanha.');
-    }
-  }
-
+  // Send Test Email
   async function handleSendTest() {
     if (!testEmail.trim()) return;
     try {
       setSendingTest(true);
+      const htmlBody = `
+        <div style="font-family: Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 30px; border-radius: 16px;">
+          <h1 style="color: #10b981; font-size: 24px;">${heading || 'Relm Care+'}</h1>
+          <p style="font-size: 16px; line-height: 1.6; color: #cbd5e1;">${bodyMessage}</p>
+          <div style="margin-top: 24px;">
+            <a href="https://relmcareplus.com.br" style="background-color: #10b981; color: #020617; padding: 12px 24px; font-weight: bold; border-radius: 8px; text-decoration: none; display: inline-block;">
+              ${ctaText || 'Acessar Plataforma'}
+            </a>
+          </div>
+        </div>
+      `;
       await emailCrmAPI.sendTest({
         to: testEmail,
-        subject: tmplSubject || 'E-mail de Teste Relm Care+',
-        bodyHtml: tmplBody || '<p>Teste de envio de e-mail</p>',
+        subject: subject || 'E-mail de Teste Relm Care+',
+        bodyHtml: htmlBody,
       });
       alert(`E-mail de teste enviado para ${testEmail}!`);
     } catch (err) {
       alert('Falha ao enviar e-mail de teste.');
     } finally {
       setSendingTest(false);
+    }
+  }
+
+  // Create & Trigger Campaign 1-Click
+  async function handleCreateAndSendCampaign() {
+    if (!subject.trim() || !bodyMessage.trim()) {
+      alert('Por favor, digite ou gere um assunto e mensagem para o e-mail.');
+      return;
+    }
+    try {
+      setSendingCampaign(true);
+      const htmlBody = `
+        <div style="font-family: Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 30px; border-radius: 16px;">
+          <h1 style="color: #10b981; font-size: 24px;">${heading || 'Relm Care+'}</h1>
+          <p style="font-size: 16px; line-height: 1.6; color: #cbd5e1;">${bodyMessage}</p>
+          <div style="margin-top: 24px;">
+            <a href="https://relmcareplus.com.br" style="background-color: #10b981; color: #020617; padding: 12px 24px; font-weight: bold; border-radius: 8px; text-decoration: none; display: inline-block;">
+              ${ctaText || 'Acessar Plataforma'}
+            </a>
+          </div>
+        </div>
+      `;
+
+      // 1. Create template
+      const tmpl = await emailCrmAPI.createTemplate({
+        name: campaignTitle || subject,
+        slug: `email-${Date.now()}`,
+        subject: subject,
+        bodyHtml: htmlBody,
+      });
+
+      // 2. Create campaign
+      const camp = await emailCrmAPI.createCampaign({
+        title: campaignTitle || subject,
+        templateId: tmpl.id,
+        targetSegment: targetSegment,
+      });
+
+      // 3. Trigger campaign immediately
+      await emailCrmAPI.sendCampaign(camp.id);
+
+      alert('Campanha criada e enviada com sucesso!');
+      setActiveTab('CAMPAIGNS');
+      loadData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Erro ao disparar campanha.');
+    } finally {
+      setSendingCampaign(false);
     }
   }
 
@@ -120,51 +159,192 @@ export default function AdminEmailCampaignsPage() {
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <MdEmail className="w-6 h-6 text-emerald-400" />
-            Campanhas de E-mail & CRM
+            Campanhas de E-mail CRM por IA
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Gerencie templates e envie disparos de e-mail segmentados para clientes e lojas credenciadas.
+            Gere mensagens e assuntos com inteligência artificial e edite diretamente no preview sem precisar de código HTML.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowAiModal(true)}
-            className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold rounded-xl transition flex items-center gap-2 border border-emerald-500/20 text-sm"
+            onClick={() => setActiveTab(activeTab === 'MAGIC_CREATE' ? 'CAMPAIGNS' : 'MAGIC_CREATE')}
+            className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl transition flex items-center gap-2 text-sm shadow-xl shadow-emerald-500/20"
           >
-            <MdStars className="w-4 h-4" />
-            Assistente IA
-          </button>
-          <button
-            onClick={() => setShowCampModal(true)}
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition flex items-center gap-2 text-sm shadow-lg shadow-emerald-600/20"
-          >
-            <MdSend className="w-4 h-4" />
-            Nova Campanha
+            <MdStars className="w-5 h-5" />
+            {activeTab === 'MAGIC_CREATE' ? 'Ver Minhas Campanhas' : 'Criar E-mail com IA'}
           </button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-4 border-b border-slate-800 pb-2">
-        <button
-          onClick={() => setActiveTab('CAMPAIGNS')}
-          className={`px-4 py-2 font-bold text-sm rounded-lg transition ${
-            activeTab === 'CAMPAIGNS' ? 'bg-slate-800 text-emerald-400' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          Campanhas ({campaigns.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('TEMPLATES')}
-          className={`px-4 py-2 font-bold text-sm rounded-lg transition ${
-            activeTab === 'TEMPLATES' ? 'bg-slate-800 text-emerald-400' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          Templates ({templates.length})
-        </button>
-      </div>
+      {/* TAB: MAGIC CREATE (100% INTUITIVE EMAIL BUILDER) */}
+      {activeTab === 'MAGIC_CREATE' && (
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Left Column: AI Prompt & Campaign Controls */}
+          <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 space-y-6 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl">
+                <MdStars className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">1. Digite a Ideia do Seu E-mail</h3>
+                <p className="text-xs text-slate-400">Descreva o que deseja divulgar aos seus clientes</p>
+              </div>
+            </div>
 
-      {/* Tab: Campanhas */}
+            <form onSubmit={handleMagicGenerate} className="space-y-4">
+              <textarea
+                rows={3}
+                required
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Ex: Enviar lembrete sobre o acúmulo de pontos do mês para assinantes Plus com convite para o pedal..."
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-emerald-500"
+              />
+
+              <button
+                type="submit"
+                disabled={generating || !aiPrompt.trim()}
+                className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold rounded-xl text-sm transition flex items-center justify-center gap-2 border border-emerald-500/20 disabled:opacity-50"
+              >
+                {generating ? (
+                  <>
+                    <MdAutorenew className="w-4 h-4 animate-spin" />
+                    Gerando E-mail por IA...
+                  </>
+                ) : (
+                  <>
+                    <MdStars className="w-4 h-4" />
+                    Gerar Assunto e Mensagem com IA
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="pt-4 border-t border-slate-800 space-y-4">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <MdPeople className="w-4 h-4 text-emerald-400" />
+                2. Selecione o Público-Alvo de Envio
+              </h3>
+
+              <select
+                value={targetSegment}
+                onChange={(e) => setTargetSegment(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-emerald-500"
+              >
+                <option value="ALL_CUSTOMERS">Todos os Clientes Cadastrados</option>
+                <option value="PLUS_ONLY">Apenas Assinantes Membros Plus</option>
+                <option value="STORES_ONLY">Apenas Lojas Credenciadas</option>
+              </select>
+
+              <div className="space-y-2">
+                <label className="text-xs text-slate-400 font-semibold">Testar Envio no Seu E-mail:</label>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    placeholder="seuemail@exemplo.com"
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSendTest}
+                    disabled={sendingTest || !testEmail}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-emerald-400 rounded-xl disabled:opacity-50"
+                  >
+                    {sendingTest ? 'Enviando...' : 'Testar'}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCreateAndSendCampaign}
+                disabled={sendingCampaign || !subject}
+                className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-base transition shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {sendingCampaign ? (
+                  <>
+                    <MdAutorenew className="w-5 h-5 animate-spin" />
+                    Enviando Campanha...
+                  </>
+                ) : (
+                  <>
+                    <MdSend className="w-5 h-5" />
+                    🚀 Disparar Campanha Agora
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Right Column: Interactive WYSIWYG Email Live Preview */}
+          <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800 space-y-4 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                <MdEdit className="w-4 h-4" /> Preview do E-mail (Clique nos textos para alterar)
+              </span>
+              <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">Sem HTML</span>
+            </div>
+
+            {/* Email Subject Field */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-400 uppercase">Assunto da Mensagem:</label>
+              <input
+                type="text"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Ex: 🚨 Seus pontos do mês vencem em breve!"
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            {/* Visual Email Card Preview */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5 text-slate-100">
+              <div className="flex items-center gap-2 border-b border-slate-800 pb-4">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500 text-slate-950 font-extrabold flex items-center justify-center text-sm">
+                  R
+                </div>
+                <span className="font-bold text-white text-sm">RELM CARE+</span>
+              </div>
+
+              {/* Editable Heading */}
+              <h2
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) => setHeading(e.target.innerText)}
+                className="text-xl font-extrabold text-white outline-none hover:bg-slate-800 p-1.5 rounded transition"
+              >
+                {heading || 'Título Principal da Mensagem'}
+              </h2>
+
+              {/* Editable Body */}
+              <p
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={(e) => setBodyMessage(e.target.innerText)}
+                className="text-sm text-slate-300 leading-relaxed outline-none hover:bg-slate-800 p-1.5 rounded transition whitespace-pre-line"
+              >
+                {bodyMessage || 'Sua mensagem formatada aparecerá aqui. Clique para alterar o texto livremente.'}
+              </p>
+
+              {/* Editable Button */}
+              <div className="pt-2">
+                <button
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) => setCtaText(e.target.innerText)}
+                  className="px-6 py-3 bg-emerald-500 text-slate-950 font-bold rounded-xl text-sm outline-none hover:bg-emerald-400"
+                >
+                  {ctaText || 'Acessar Minha Conta'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: CAMPAIGNS LISTING */}
       {activeTab === 'CAMPAIGNS' && (
         <div className="space-y-4">
           {loading ? (
@@ -174,22 +354,21 @@ export default function AdminEmailCampaignsPage() {
               <MdEmail className="w-12 h-12 text-slate-600 mx-auto" />
               <p className="text-slate-400 font-medium">Nenhuma campanha enviada ainda.</p>
               <button
-                onClick={() => setShowCampModal(true)}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg"
+                onClick={() => setActiveTab('MAGIC_CREATE')}
+                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl"
               >
                 Criar Minha Primeira Campanha
               </button>
             </div>
           ) : (
-            <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+            <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
               <table className="w-full text-left text-sm text-slate-300">
                 <thead className="bg-slate-950 text-slate-400 text-xs font-semibold uppercase tracking-wider">
                   <tr>
-                    <th className="px-6 py-4">Título da Campanha</th>
+                    <th className="px-6 py-4">Título / Assunto</th>
                     <th className="px-6 py-4">Segmento Alvo</th>
                     <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4">Enviados</th>
-                    <th className="px-6 py-4 text-right">Ação</th>
+                    <th className="px-6 py-4">Resultado Envio</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
@@ -197,39 +376,23 @@ export default function AdminEmailCampaignsPage() {
                     <tr key={camp.id} className="hover:bg-slate-800/40 transition">
                       <td className="px-6 py-4 font-bold text-white">
                         {camp.title}
-                        <span className="block text-xs font-normal text-slate-400">Template: {camp.template?.name || 'Padrão'}</span>
+                        <span className="block text-xs font-normal text-slate-400">
+                          {camp.template?.subject || 'Assunto Personalizado'}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 text-xs">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 text-xs font-medium">
                           <MdPeople className="w-3.5 h-3.5 text-emerald-400" />
                           {camp.targetSegment}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span
-                          className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${
-                            camp.status === 'SENT'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                              : camp.status === 'SENDING'
-                              ? 'bg-amber-500/10 text-amber-400'
-                              : 'bg-slate-800 text-slate-400'
-                          }`}
-                        >
+                        <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                           {camp.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-slate-300 font-mono">
+                      <td className="px-6 py-4 text-slate-300 font-mono text-xs">
                         {camp.sentCount} ok / {camp.errorCount} erros
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        {camp.status === 'DRAFT' && (
-                          <button
-                            onClick={() => handleTriggerCampaign(camp.id)}
-                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition inline-flex items-center gap-1"
-                          >
-                            <MdSend className="w-3.5 h-3.5" /> Disparar Agora
-                          </button>
-                        )}
                       </td>
                     </tr>
                   ))}
@@ -239,210 +402,6 @@ export default function AdminEmailCampaignsPage() {
           )}
         </div>
       )}
-
-      {/* Tab: Templates */}
-      {activeTab === 'TEMPLATES' && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-bold text-white">Templates Cadastrados</h3>
-            <button
-              onClick={() => setShowTmplModal(true)}
-              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold rounded-lg transition text-xs flex items-center gap-1.5 border border-emerald-500/20"
-            >
-              <MdAdd className="w-4 h-4" /> Criar Template
-            </button>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {templates.map((tmpl) => (
-              <div key={tmpl.id} className="bg-slate-900 rounded-2xl border border-slate-800 p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-400 font-mono">/{tmpl.slug}</span>
-                  <MdDescription className="w-4 h-4 text-slate-500" />
-                </div>
-                <h4 className="text-base font-bold text-white">{tmpl.name}</h4>
-                <p className="text-xs text-slate-400">Assunto: {tmpl.subject}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Modal Criar Campanha */}
-      {showCampModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <form
-            onSubmit={handleCreateCampaign}
-            className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5"
-          >
-            <h2 className="text-xl font-bold text-white">Criar Nova Campanha de E-mail</h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Título Interno da Campanha</label>
-                <input
-                  type="text"
-                  required
-                  value={campTitle}
-                  onChange={(e) => setCampTitle(e.target.value)}
-                  placeholder="Ex: Disparo Lançamento Plano Plus de Agosto"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Selecione o Template de E-mail</label>
-                <select
-                  value={campTemplateId}
-                  onChange={(e) => setCampTemplateId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
-                >
-                  {templates.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} ({t.subject})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Segmento Alvo de Envio</label>
-                <select
-                  value={campSegment}
-                  onChange={(e) => setCampSegment(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
-                >
-                  <option value="ALL_CUSTOMERS">Todos os Clientes Cadastrados</option>
-                  <option value="PLUS_ONLY">Apenas Assinantes Membros Plus</option>
-                  <option value="STORES_ONLY">Apenas Lojas Parceiras Credenciadas</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-              <button
-                type="button"
-                onClick={() => setShowCampModal(false)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg"
-              >
-                Salvar Rascunho da Campanha
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Modal Criar Template */}
-      {showTmplModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <form
-            onSubmit={handleCreateTemplate}
-            className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto"
-          >
-            <h2 className="text-xl font-bold text-white">Criar Template de E-mail HTML</h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Nome do Template</label>
-                <input
-                  type="text"
-                  required
-                  value={tmplName}
-                  onChange={(e) => setTmplName(e.target.value)}
-                  placeholder="Ex: Lembrete de Pontos a Vencer"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Slug</label>
-                <input
-                  type="text"
-                  required
-                  value={tmplSlug}
-                  onChange={(e) => setTmplSlug(e.target.value)}
-                  placeholder="ex: pontos-vencendo"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Assunto do E-mail</label>
-                <input
-                  type="text"
-                  required
-                  value={tmplSubject}
-                  onChange={(e) => setTmplSubject(e.target.value)}
-                  placeholder="Ex: 🚨 Seus pontos do mês vencem em breve!"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Corpo do E-mail (HTML)</label>
-                <textarea
-                  rows={6}
-                  required
-                  value={tmplBody}
-                  onChange={(e) => setTmplBody(e.target.value)}
-                  placeholder="<h1>Olá {{customerName}}!</h1><p>Seus pontos valem desonctos em nossas lojas.</p>"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-white"
-                />
-              </div>
-
-              <div className="pt-2 border-t border-slate-800 flex items-center gap-2">
-                <input
-                  type="email"
-                  placeholder="Enviar teste para este e-mail..."
-                  value={testEmail}
-                  onChange={(e) => setTestEmail(e.target.value)}
-                  className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white"
-                />
-                <button
-                  type="button"
-                  onClick={handleSendTest}
-                  disabled={sendingTest || !testEmail}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-xs font-bold text-emerald-400 rounded-lg"
-                >
-                  {sendingTest ? 'Enviando...' : 'Testar'}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-              <button
-                type="button"
-                onClick={() => setShowTmplModal(false)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg"
-              >
-                Salvar Template
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Modal IA Assistant */}
-      <AiMarketingModal
-        isOpen={showAiModal}
-        onClose={() => setShowAiModal(false)}
-        onApplyCopy={(res) => {
-          if (res.suggestedSubject) setTmplSubject(res.suggestedSubject);
-          if (res.content) setTmplBody(`<p>${res.content}</p>`);
-        }}
-      />
     </div>
   );
 }
