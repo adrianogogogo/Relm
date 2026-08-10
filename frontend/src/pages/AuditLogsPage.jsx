@@ -56,6 +56,46 @@ function MetadataDetails({ metadata }) {
   );
 }
 
+const ACTOR_LABEL = {
+  USER: 'Equipe Relm',
+  STORE_USER: 'Loja',
+  CUSTOMER: 'Cliente',
+  ANONIMO: 'Sem autenticação',
+};
+
+// O ator só tem nome e papel quando é da equipe Relm (FK para `users`). Loja e
+// cliente vivem em outras tabelas: o que existe é actorType + actorId, e o
+// e-mail que o interceptor guardou no metadata.
+function ActorCell({ log }) {
+  if (log.user) {
+    return (
+      <>
+        <p className="font-medium text-gray-800 dark:text-slate-100">{log.user.name}</p>
+        <p className="text-xs text-gray-400 dark:text-slate-500">{log.user.role}</p>
+      </>
+    );
+  }
+
+  if (!log.actorType || log.actorType === 'ANONIMO') {
+    return (
+      <span className="text-gray-400 dark:text-slate-500">
+        {log.actorType === 'ANONIMO' ? 'Sem autenticação' : 'Sistema'}
+      </span>
+    );
+  }
+
+  return (
+    <>
+      <p className="font-medium text-gray-800 dark:text-slate-100 truncate max-w-40" title={log.actorId}>
+        {log.metadata?.actorEmail || (log.actorId ? `${log.actorId.slice(0, 8)}…` : '—')}
+      </p>
+      <p className="text-xs text-gray-400 dark:text-slate-500">
+        {ACTOR_LABEL[log.actorType] || log.actorType}
+      </p>
+    </>
+  );
+}
+
 export default function AuditLogsPage() {
   const [filters, setFilters] = useState({ action: '', entity: '', page: '1' });
 
@@ -132,14 +172,7 @@ export default function AuditLogsPage() {
                         {new Date(log.createdAt).toLocaleString('pt-BR')}
                       </td>
                       <td className="px-5 py-3">
-                        {log.user ? (
-                          <>
-                            <p className="font-medium text-gray-800 dark:text-slate-100">{log.user.name}</p>
-                            <p className="text-xs text-gray-400 dark:text-slate-500">{log.user.role}</p>
-                          </>
-                        ) : (
-                          <span className="text-gray-400 dark:text-slate-500">Sistema</span>
-                        )}
+                        <ActorCell log={log} />
                       </td>
                       <td className="px-5 py-3">
                         <span className="bg-primary/10 text-primary dark:text-primary-400 text-xs px-2 py-1 rounded font-mono">

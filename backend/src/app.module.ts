@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -36,6 +36,7 @@ import { PartnersModule } from './partners/partners.module';
 import { ClubSettingsModule } from './club-settings/club-settings.module';
 import { HealthController } from './health.controller';
 import { CommonModule } from './common/common.module';
+import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { MasterServicesModule } from './master-services/master-services.module';
 
 @Module({
@@ -96,6 +97,13 @@ import { MasterServicesModule } from './master-services/master-services.module';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    // Auditoria de toda mutação (POST/PUT/PATCH/DELETE). Global de propósito:
+    // o modelo anterior era chamada manual em 7 módulos, então todo módulo novo
+    // nascia sem auditoria. AuditLogsService.log() nunca lança.
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
     },
   ],
 })

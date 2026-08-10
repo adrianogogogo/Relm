@@ -103,7 +103,7 @@ foi alterada por conta própria.
 | 2 | `bucket` no ledger + saldo mensal derivado + `computeState` | **DONE** |
 | 3 | Venda → pontos + tabela de regra + ajuste na curadoria + tela admin | **DONE** |
 | 4 | Serviço resgatável por pontos | **DONE** |
-| 5 | Ator polimórfico + interceptor global | TODO |
+| 5 | Ator polimórfico + interceptor global | **DONE** |
 | 7 | Score por loja | TODO |
 
 ---
@@ -211,6 +211,30 @@ rota, alvo e resultado, mantendo as chamadas manuais só onde há contexto de ne
 **Arquivos:** `backend/src/common/`, `backend/src/app.module.ts`, `backend/src/audit-logs/`
 **Tags:** impl, security
 **Cuidado:** não logar corpo de requisição com senha, token ou PII bruta.
+
+### Como ficou (implementado 10/08/2026)
+
+`AuditInterceptor` registrado como `APP_INTERCEPTOR` global: toda mutação
+(POST/PUT/PATCH/DELETE) vira linha, inclusive as que falham — 401/403 são o rastro de
+quem tentou o que não podia. `action` usa o **padrão** da rota (`PATCH
+/v1/points/admin/rules/:id`), não a URL concreta: id embutido explodiria a cardinalidade
+e quebraria o filtro por texto da tela.
+
+Ator polimórfico `actorType`+`actorId` (`USER` | `STORE_USER` | `CUSTOMER` | `ANONIMO`),
+padrão do `Notification`. `userId` continua existindo como FK do subconjunto USER — é o
+que a tela usa para mostrar nome e papel; para lojista e cliente o e-mail vai no metadata,
+que é o suficiente para identificação humana sem join impossível.
+
+**O corpo não é lido em lugar nenhum** — há teste que serializa a linha e falha se a senha
+do `req.body` aparecer. Metadata guarda só `{method, route, status, actorEmail?, storeId?}`.
+
+**Duas ressalvas:**
+
+1. **Log duplicado nos 7 módulos com chamada manual.** Mantido de propósito: o automático
+   diz "quem chamou o quê", o manual diz "o que mudou" (transição de status, motivo).
+2. **`store-jwt` aceita `User` com role LOJA**, e nesse caso o `actorId` aponta para
+   `users.id` e não `store_users.id`. Distinguir exigiria mudar o payload do token; o
+   e-mail no metadata cobre a identificação.
 
 ---
 

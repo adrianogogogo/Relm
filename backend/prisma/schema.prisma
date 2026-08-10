@@ -738,22 +738,31 @@ model PrivacyConsent {
   @@map("privacy_consents")
 }
 
+// Ator polimórfico, mesmo padrão do Notification: quem age não vive numa
+// tabela só — equipe Relm em `users`, lojista em `store_users`, cliente em
+// `customers`. `userId` continua sendo a FK do subconjunto USER (é o que a tela
+// de logs usa para mostrar nome e papel); os demais atores só têm
+// actorType+actorId, com o e-mail no metadata para leitura humana.
+//   actorType: "USER" | "STORE_USER" | "CUSTOMER" | "ANONIMO"
 model AuditLog {
   id        String   @id @default(uuid())
   userId    String?  @map("user_id")
+  actorType String?  @map("actor_type")
+  actorId   String?  @map("actor_id")
   action    String   // EXPORT_DATA, VIEW_SENSITIVE, etc.
   entity    String   // customers, warranty_claims, etc.
   entityId  String?  @map("entity_id")
   metadata  Json?
   ipAddress String?  @map("ip_address")
-  
+
   createdAt DateTime @default(now()) @map("created_at")
-  
+
   // Relations
   user User? @relation(fields: [userId], references: [id])
-  
+
   @@index([userId, createdAt])
   @@index([action])
+  @@index([actorType, actorId, createdAt])
   @@map("audit_logs")
 }
 

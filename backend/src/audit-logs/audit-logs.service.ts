@@ -15,6 +15,11 @@ export class AuditLogsService {
    */
   async log(params: {
     userId?: string;
+    // Ator polimórfico. As chamadas manuais só passam `userId` (sempre equipe
+    // Relm) e caem no default USER — quem preenche os outros tipos é o
+    // AuditInterceptor, que vê lojista e cliente também.
+    actorType?: string;
+    actorId?: string;
     action: string;
     entity: string;
     entityId?: string;
@@ -25,6 +30,8 @@ export class AuditLogsService {
       await this.prisma.auditLog.create({
         data: {
           userId: params.userId,
+          actorType: params.actorType ?? (params.userId ? 'USER' : undefined),
+          actorId: params.actorId ?? params.userId,
           action: params.action,
           entity: params.entity,
           entityId: params.entityId,
@@ -56,6 +63,8 @@ export class AuditLogsService {
         skip,
         select: {
           id: true,
+          actorType: true,
+          actorId: true,
           action: true,
           entity: true,
           entityId: true,
