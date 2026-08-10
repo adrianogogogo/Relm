@@ -182,6 +182,9 @@ export default function App() {
             <Route path="beneficios" element={<StoreBenefitsPage />} />
             <Route path="perfil" element={<StoreProfilePage />} />
             <Route path="oficina" element={<StoreWorkshopPage />} />
+            {/* Mesma página do admin, montada dentro do StoreLayout para não
+                derrubar a sidebar da loja ao abrir o catálogo. */}
+            <Route path="master-services" element={<AdminMasterServicesPage />} />
           </Route>
 
           {/* ── Admin routes (AdminLayout sidebar, no Header/Footer) ──────── */}

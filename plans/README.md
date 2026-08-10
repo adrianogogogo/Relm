@@ -24,6 +24,7 @@ row when done.
 | 008  | Aba "Compras" no cliente 360° (série + status de garantia) | P2 | S | 006, 007 (soft) | DONE (mesma branch, revisado — não mergeado) |
 | 009  | Fechar `RewardsController` (9 rotas sem autenticação + IDOR) | **P0** | S | — | DONE (mergeado em `main`, `fc63420`) |
 | 010  | Escopar `GET /warranty/claims` por loja + mascarar PII | **P0** | S | — | DONE (mergeado em `main`, revisado) |
+| 011  | Reunião 07/08/2026 — ajustes para o lançamento de 18/08 (8 steps) | P1 | L | — | Step 1 DONE; steps 2–8 TODO |
 
 > **Execução 010 — 2026-07-22.** Regressão introduzida pelo commit `8e83e5e`
 > (que liberou `GET /warranty/claims` para `LOJA` para corrigir um 403 real na

@@ -33,7 +33,7 @@ const MENU = [
   { path: '/loja/vendas-lista', label: 'Minhas Vendas', icon: MdReceiptLong },
   { path: '/loja/pagamentos', label: 'Pagamentos (Anuidade)', icon: MdPayments },
   { path: '/loja/oficina', label: 'Oficina & Conveniências', icon: MdBuild },
-  { path: '/admin/master-services', label: 'Catálogo de Conveniências & Serviços', icon: MdStorefront },
+  { path: '/loja/master-services', label: 'Catálogo de Conveniências & Serviços', icon: MdStorefront },
   { path: '/loja/seguros', label: 'Cotações de Seguro', icon: MdDescription },
   { path: '/loja/produtos', label: 'Produtos', icon: MdInventory2 },
   { path: '/loja/eventos', label: 'Eventos', icon: MdEvent },
