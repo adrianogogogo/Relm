@@ -171,7 +171,13 @@ describe('Club flows (integration-style, no DB)', () => {
           {
             provide: PointsService,
             // Saldo alto para garantir que o bloqueio é pela pré-venda, não por saldo.
-            useValue: { getBalance: jest.fn().mockResolvedValue(999999) },
+            useValue: {
+              getBalance: jest.fn().mockResolvedValue(999999),
+              getBalances: jest.fn().mockResolvedValue({
+                accumulated: 999999, monthly: 0, total: 999999,
+              }),
+              redeemPoints: jest.fn().mockResolvedValue({ fromMonthly: 0, fromAccumulated: 0 }),
+            },
           },
         ],
       }).compile();

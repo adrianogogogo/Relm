@@ -58,6 +58,7 @@ Três descobertas mudaram o desenho original:
 | Fonte da verdade dos knobs | ClubSettings sobrescreve, ENTITLEMENTS vira default. Resolver único, async |
 | Crédito da venda | No registro, por valor. Curadoria credita a diferença **só para cima**, nunca estorna |
 | Granularidade da regra | Categoria (`productType`) + override por produto. Precedência: produto > categoria > multiplicador |
+| Alcance do ponto mensal | **Qualquer resgate**, não só serviço (Adriano, 10/08/2026). Todo débito passa por `redeemPoints`, que gasta o mensal antes do acumulável |
 | Resgate de serviço | Só registra (loja, serviço, pontos, R$ via `point_value_brl`). Acerto financeiro offline |
 | Ator do audit log | Polimórfico `actorType`+`actorId`, seguindo o padrão do `Notification` |
 | Corpo no audit log | **Não grava.** Só método, rota, ator, entidade, entityId, status HTTP |

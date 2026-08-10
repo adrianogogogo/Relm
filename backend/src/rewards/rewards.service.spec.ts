@@ -1,7 +1,7 @@
 /// <reference types="jest" />
 import { RewardsService } from './rewards.service';
 import { RewardsController } from './rewards.controller';
-import { TierLevel, PointTxType, VoucherStatus, Prisma } from '@prisma/client';
+import { TierLevel, VoucherStatus, Prisma } from '@prisma/client';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -26,7 +26,8 @@ function makeCatalogItem(overrides: Partial<{
 }
 
 function makeService(opts: {
-  balance?: number;
+  balance?: number; // saldo TOTAL do cliente (mensal + acumulável)
+  monthly?: number; // quanto do total vem do bucket mensal
   item?: ReturnType<typeof makeCatalogItem>;
   items?: ReturnType<typeof makeCatalogItem>[];
   subscriptionTier?: TierLevel | null; // tier vindo do banco (assinatura ACTIVE); null = sem assinatura
@@ -62,8 +63,18 @@ function makeService(opts: {
     $transaction: jest.fn().mockImplementation((fn) => fn(txMock, { isolationLevel: 'Serializable' })),
   };
 
+  // O resgate passou a consultar o saldo TOTAL e a debitar via redeemPoints
+  // (que gasta o mensal primeiro), em vez de escrever no ledger direto.
+  const total = opts.balance ?? 100;
+  const monthly = opts.monthly ?? 0;
   const pointsService: any = {
-    getBalance: jest.fn().mockResolvedValue(opts.balance ?? 100),
+    getBalance: jest.fn().mockResolvedValue(total - monthly),
+    getBalances: jest.fn().mockResolvedValue({
+      accumulated: total - monthly,
+      monthly,
+      total,
+    }),
+    redeemPoints: jest.fn().mockResolvedValue({ fromMonthly: 0, fromAccumulated: 0 }),
   };
 
   const logger: any = { log: jest.fn() };
@@ -150,6 +161,25 @@ describe('RewardsService.redeemReward — presale enforcement', () => {
     expect(result.voucherCode).toBeDefined();
   });
 
+  // Decisão do Adriano (10/08/2026): ponto mensal vale para QUALQUER resgate,
+  // não só serviço. Antes deste teste o cliente abaixo era recusado — o saldo
+  // mensal não entrava na conta e o débito ia inteiro no acumulável.
+  it('pontos mensais contam para o prêmio e são debitados antes do acumulável', async () => {
+    const item = makeCatalogItem({ pointsCost: 50 });
+    // 30 acumuláveis + 40 mensais: só passa se o mensal contar.
+    const { service, pointsService, txMock } = makeService({
+      item, balance: 70, monthly: 40, subscriptionTier: TierLevel.PLUS,
+    });
+
+    const result = await service.redeemReward({ customerId: 'c1', catalogItemId: 'item-1' });
+
+    expect(result.voucherCode).toBeDefined();
+    expect(pointsService.redeemPoints).toHaveBeenCalledWith(
+      'c1', 50, expect.stringContaining('Resgate de Recompensa'), 'item-1', txMock,
+    );
+    expect(txMock.pointsLedger.create).not.toHaveBeenCalled();
+  });
+
   it('lança BadRequestException se saldo insuficiente', async () => {
     const { service } = makeService({ balance: 10, item: makeCatalogItem({ pointsCost: 50 }), subscriptionTier: TierLevel.PLUS });
     await expect(
@@ -161,7 +191,7 @@ describe('RewardsService.redeemReward — presale enforcement', () => {
 describe('RewardsService.createVoucherManual', () => {
   it('cria voucher com sucesso debitando pontos do cliente', async () => {
     const item = makeCatalogItem({ pointsCost: 50, stock: 10 });
-    const { service, txMock } = makeService({ item, balance: 100 });
+    const { service, txMock, pointsService } = makeService({ item, balance: 100 });
     txMock.customer = {
       findUnique: jest.fn().mockResolvedValue({ id: 'c1', fullName: 'John Doe' }),
     };
@@ -179,17 +209,17 @@ describe('RewardsService.createVoucherManual', () => {
       where: { id: 'item-1' },
       data: { stock: 9 },
     }));
-    expect(txMock.pointsLedger.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({
-        amount: -50,
-        transactionType: PointTxType.REDEEM,
-      }),
-    }));
+    // Via redeemPoints, não escrita direta no ledger: é o que faz o débito
+    // sair do bucket mensal antes do acumulável.
+    expect(pointsService.redeemPoints).toHaveBeenCalledWith(
+      'c1', 50, expect.stringContaining('Resgate Manual'), 'item-1', txMock,
+    );
+    expect(txMock.pointsLedger.create).not.toHaveBeenCalled();
   });
 
   it('cria voucher com sucesso como cortesia (sem debitar pontos)', async () => {
     const item = makeCatalogItem({ pointsCost: 50, stock: 10 });
-    const { service, txMock } = makeService({ item, balance: 10 });
+    const { service, txMock, pointsService } = makeService({ item, balance: 10 });
     txMock.customer = {
       findUnique: jest.fn().mockResolvedValue({ id: 'c1', fullName: 'John Doe' }),
     };
@@ -203,7 +233,7 @@ describe('RewardsService.createVoucherManual', () => {
     });
 
     expect(result.voucherCode).toBeDefined();
-    expect(txMock.pointsLedger.create).not.toHaveBeenCalled();
+    expect(pointsService.redeemPoints).not.toHaveBeenCalled();
     expect(txMock.catalogItem.update).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: 'item-1' },
       data: { stock: 9 },

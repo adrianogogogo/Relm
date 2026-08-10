@@ -25,12 +25,12 @@ export class PointsController {
   })
   async getBalance(@Request() req: any) {
     const balances = await this.pointsService.getBalances(req.user.customerId);
-    // `balance` continua sendo o ACUMULÁVEL, não o total — de propósito. É o
-    // que o resgate de catálogo aceita (rewards.service.ts valida e debita só
-    // o acumulável), então apontá-lo para o total faria a tela oferecer um
-    // resgate que o backend recusa. Os campos novos são aditivos: nenhum
-    // consumidor existente quebra.
-    return { balance: balances.accumulated, ...balances };
+    // `balance` é o TOTAL (mensal + acumulável): o ponto mensal vale para
+    // qualquer resgate, então o total é o que o cliente de fato pode gastar e
+    // o que o rewards.service valida. Os campos discriminados existem para a
+    // tela conseguir explicar de onde vem o saldo e o que expira na virada
+    // do mês.
+    return { balance: balances.total, ...balances };
   }
 
   @Post('admin/grant')

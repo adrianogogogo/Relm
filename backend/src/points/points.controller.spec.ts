@@ -14,15 +14,15 @@ describe('PointsController.getBalance — contrato dos saldos', () => {
     expect(res).toMatchObject({ accumulated: 1200, monthly: 500, total: 1700 });
   });
 
-  // Escolha deliberada, não descuido: o resgate de catálogo valida e debita
-  // apenas o acumulável (rewards.service.ts). Apontar `balance` para o total
-  // faria a tela oferecer resgate que o backend recusa com "Insufficient
-  // Points". Se este teste falhar, o consumidor da tela precisa mudar junto.
-  it('balance é o ACUMULÁVEL, não o total — é o que o catálogo aceita gastar', async () => {
+  // `balance` é o TOTAL porque o ponto mensal vale para qualquer resgate
+  // (decisão do Adriano, 10/08/2026). Tem que casar com o que o
+  // rewards.service valida — se um mudar sem o outro, a tela oferece resgate
+  // que o backend recusa, ou esconde saldo que o cliente poderia gastar.
+  it('balance é o TOTAL — mensal + acumulável, tudo gastável em qualquer resgate', async () => {
     const ctrl = makeController({ accumulated: 1200, monthly: 500, total: 1700 });
     const res = await ctrl.getBalance({ user: { customerId: 'c1' } });
 
-    expect(res.balance).toBe(1200);
+    expect(res.balance).toBe(1700);
   });
 
   it('cliente sem saldo mensal (Care) recebe monthly zero, não ausente', async () => {

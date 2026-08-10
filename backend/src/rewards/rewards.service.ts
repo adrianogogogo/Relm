@@ -2,7 +2,7 @@ import { Injectable, BadRequestException, ForbiddenException, Logger } from '@ne
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
-import { PointTxType, VoucherStatus, TierLevel, Prisma } from '@prisma/client';
+import { VoucherStatus, TierLevel, Prisma } from '@prisma/client';
 import { tierAtLeast } from '../common/entitlements';
 
 @Injectable()
@@ -17,7 +17,9 @@ export class RewardsService {
   async redeemReward(dto: { customerId: string; catalogItemId: string }) {
     return this.prisma.$transaction(async (tx) => {
       // Saldo vivo (FIFO, já exclui pontos vencidos) na mesma transação.
-      const balance = await this.pointsService.getBalance(dto.customerId, tx);
+      // TOTAL e não só o acumulável: o ponto mensal vale para qualquer
+      // resgate, inclusive prêmio de catálogo.
+      const { total: balance } = await this.pointsService.getBalances(dto.customerId, tx);
 
       const item = await tx.catalogItem.findUnique({
         where: { id: dto.catalogItemId },
@@ -51,15 +53,17 @@ export class RewardsService {
         throw new BadRequestException('Out of Stock');
       }
 
-      await tx.pointsLedger.create({
-        data: {
-          customerId: dto.customerId,
-          transactionType: PointTxType.REDEEM,
-          amount: -item.pointsCost,
-          description: `Resgate de Recompensa: ${item.title}`,
-          referenceId: item.id,
-        },
-      });
+      // Via redeemPoints, não escrevendo no ledger direto: ele gasta o bucket
+      // MENSAL primeiro, que vence na virada do mês. A escrita direta que
+      // existia aqui caía no default ACUMULAVEL e fazia o cliente queimar o
+      // saldo histórico enquanto o mensal expirava sem uso.
+      await this.pointsService.redeemPoints(
+        dto.customerId,
+        item.pointsCost,
+        `Resgate de Recompensa: ${item.title}`,
+        item.id,
+        tx,
+      );
 
       await tx.catalogItem.update({
         where: { id: item.id },
@@ -131,20 +135,19 @@ export class RewardsService {
       }
 
       if (dto.debitPoints) {
-        const balance = await this.pointsService.getBalance(dto.customerId, tx);
-        if (balance < item.pointsCost) {
+        const { total } = await this.pointsService.getBalances(dto.customerId, tx);
+        if (total < item.pointsCost) {
           throw new BadRequestException('Insufficient Points');
         }
 
-        await tx.pointsLedger.create({
-          data: {
-            customerId: dto.customerId,
-            transactionType: PointTxType.REDEEM,
-            amount: -item.pointsCost,
-            description: `Resgate Manual (Débito) de Recompensa: ${item.title}`,
-            referenceId: item.id,
-          },
-        });
+        // Mesma razão do resgate do cliente: mensal primeiro, acumulável depois.
+        await this.pointsService.redeemPoints(
+          dto.customerId,
+          item.pointsCost,
+          `Resgate Manual (Débito) de Recompensa: ${item.title}`,
+          item.id,
+          tx,
+        );
       }
 
       await tx.catalogItem.update({

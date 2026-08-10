@@ -78,8 +78,12 @@ export class WhatsappService {
     }
 
     if (textBody === '/saldo') {
-      const balance = await this.pointsService.getBalance(customer.id);
-      const messageText = `Olá, ${customer.fullName}! Seu saldo de pontos atual no Clube de Vantagens Relm é de: ${balance} pontos.`;
+      // Total, não só o acumulável: o ponto mensal vale para qualquer resgate,
+      // então informar menos que isso induz o cliente a não resgatar.
+      const { total: balance, monthly } = await this.pointsService.getBalances(customer.id);
+      const messageText =
+        `Olá, ${customer.fullName}! Seu saldo de pontos atual no Clube de Vantagens Relm é de: ${balance} pontos.` +
+        (monthly > 0 ? ` Destes, ${monthly} são pontos mensais e expiram no fim do mês.` : '');
       await this.sendCloudMessage(senderPhone, messageText);
       return { status: 'processed_saldo', balance };
     }
