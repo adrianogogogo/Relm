@@ -15,35 +15,35 @@ export class MarketingController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @Post()
   create(@Body() createDto: CreateLandingPageDto) {
     return this.marketingService.create(createDto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @Get()
   findAll() {
     return this.marketingService.findAll();
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.marketingService.findOne(id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateDto: UpdateLandingPageDto) {
     return this.marketingService.update(id, updateDto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.marketingService.remove(id);

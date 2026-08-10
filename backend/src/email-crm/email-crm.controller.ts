@@ -7,7 +7,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 
 @Controller('email-crm')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN')
+@Roles('ADMIN_RELM', 'GERENTE_RELM')
 export class EmailCrmController {
   constructor(private readonly emailCrmService: EmailCrmService) {}
 

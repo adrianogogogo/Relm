@@ -7,7 +7,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 
 @Controller('ai-assistant')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN')
+@Roles('ADMIN_RELM', 'GERENTE_RELM')
 export class AiAssistantController {
   constructor(private readonly aiAssistantService: AiAssistantService) {}
 
