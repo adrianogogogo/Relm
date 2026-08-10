@@ -76,10 +76,23 @@ defensável pela fungibilidade, mas foi tomada com informação incompleta.
 **Risco concentrado:** `computeState` em `points.service.ts` é a fonte da verdade de todo
 saldo do clube. Testes do bucket mensal antes de tocar na função.
 
-**GATE do Step 4:** `plus_monthly_points` está em `1000` — valor ilustrativo escolhido
-pelo dev (≈R$50 a R$0,05/ponto, cobrindo ~1 lavagem/mês), **não aprovado pelo Adriano**.
-Enquanto o resgate não estiver ligado não há exposição. O Step 4 **não sobe para produção**
-sem o Adriano confirmar o valor. Em staging pode.
+**GATE do `plus_monthly_points` (revisado 10/08/2026):** o valor virou editável na tela
+`/admin/club-settings`, com o custo em R$ calculado ao lado do campo. Não depende mais de
+confirmação do Adriano — quem tiver acesso admin calibra na hora, sem deploy.
+
+Duas coisas mudaram o risco desde a formulação original do gate:
+
+1. **A exposição antecipou.** O gate era do Step 4 porque, sem resgate de serviço, o ponto
+   mensal não comprava nada. Depois da decisão de 10/08 (mensal vale para qualquer
+   resgate), ele compra prêmio de catálogo — a exposição existe já, não no Step 4.
+2. **O default continua `1000`.** `DEFAULT_SETTINGS` deriva de `ENTITLEMENTS[PLUS]`, então
+   banco sem a linha `plus_monthly_points` resolve para 1000, não 0. Deploy sem ninguém
+   abrir a tela = todo Plus com 1000 pontos/mês (≈R$50 a R$0,05/ponto) gastáveis em prêmio.
+
+**Ação no deploy:** abrir `/admin/club-settings` e fixar o valor — `0` desliga. Para que o
+recurso nasça desligado por padrão, trocar `monthlyPoints: 1000` por `0` em
+`backend/src/common/entitlements.ts:93`; a escolha do `1000` foi do usuário em 10/08 e não
+foi alterada por conta própria.
 
 ### Ordem de execução
 

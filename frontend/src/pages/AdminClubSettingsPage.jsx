@@ -10,6 +10,7 @@ export default function AdminClubSettingsPage() {
   const [form, setForm] = useState({
     plusAnnualFee: 299.00,
     plusPointsMultiplier: 2.0,
+    plusMonthlyPoints: 0,
     careQuotaAnnualRevisions: 2,
     voucherValidityDays: 60,
     pointValueBrl: 0.05,
@@ -30,6 +31,9 @@ export default function AdminClubSettingsPage() {
       setForm({
         plusAnnualFee: settings.plusAnnualFee ?? 299.00,
         plusPointsMultiplier: settings.plusPointsMultiplier ?? 2.0,
+        // ?? e não ||: zero é valor válido aqui (desliga o saldo mensal) e
+        // seria engolido por um fallback truthy.
+        plusMonthlyPoints: settings.plusMonthlyPoints ?? 0,
         careQuotaAnnualRevisions: settings.careQuotaAnnualRevisions ?? 2,
         voucherValidityDays: settings.voucherValidityDays ?? 60,
         pointValueBrl: settings.pointValueBrl ?? 0.05,
@@ -66,6 +70,7 @@ export default function AdminClubSettingsPage() {
     updateMutation.mutate({
       plusAnnualFee: Number(form.plusAnnualFee),
       plusPointsMultiplier: Number(form.plusPointsMultiplier),
+      plusMonthlyPoints: Number(form.plusMonthlyPoints),
       careQuotaAnnualRevisions: Number(form.careQuotaAnnualRevisions),
       voucherValidityDays: Number(form.voucherValidityDays),
       pointValueBrl: Number(form.pointValueBrl),
@@ -153,6 +158,32 @@ export default function AdminClubSettingsPage() {
                 />
                 <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1">
                   Fator de aceleração de acúmulo de pontos para membros Plus (ex: 2.0 = 2x pontos).
+                </p>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="label">Pontos Mensais Care Plus (uso-ou-perde)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="50"
+                  className="input font-mono font-bold text-lg text-[#0A1929] dark:text-white"
+                  value={form.plusMonthlyPoints}
+                  onChange={(e) => handleChange('plusMonthlyPoints', e.target.value)}
+                  placeholder="0"
+                />
+                <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1">
+                  Cota que renova todo mês e <strong>não acumula</strong>: o que não for usado
+                  vira pó na virada do mês. Vale para qualquer resgate (prêmio ou serviço) e é
+                  sempre gasta antes do saldo acumulado. <strong>Use 0 para desligar.</strong>
+                </p>
+                {/* O custo é o que decide esse número. Mostrar em reais evita
+                    calibrar no escuro — 1000 pontos não significa nada sozinho. */}
+                <p className="text-[11px] font-semibold text-[#2196F3] mt-1">
+                  Custo estimado: R$ {(Number(form.plusMonthlyPoints || 0) * Number(form.pointValueBrl || 0)).toFixed(2)} por
+                  membro Plus por mês
+                  {' '}({(Number(form.plusMonthlyPoints || 0) * Number(form.pointValueBrl || 0) * 12).toFixed(2)} ao ano,
+                  contra anuidade de R$ {Number(form.plusAnnualFee || 0).toFixed(2)}).
                 </p>
               </div>
             </div>
