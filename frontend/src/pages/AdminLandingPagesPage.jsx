@@ -46,6 +46,9 @@ export default function AdminLandingPagesPage() {
     }
   }
 
+  const [storylineCategory, setStorylineCategory] = useState('WORKSHOP');
+  const [dalleImageUrl, setDalleImageUrl] = useState(null);
+
   // 1-Click Magic AI Landing Page Generation
   async function handleMagicGenerate(e) {
     if (e) e.preventDefault();
@@ -61,6 +64,21 @@ export default function AdminLandingPagesPage() {
 
       const mainTitle = copyRes.hero?.title || aiPrompt;
       const mainSub = copyRes.hero?.subtitle || 'Aproveite esta vantagem exclusiva do Clube Relm Care+';
+      const category = copyRes.category || 'WORKSHOP';
+      const dalleImg = copyRes.dalleImageUrl || null;
+
+      setStorylineCategory(category);
+      setDalleImageUrl(dalleImg);
+
+      // Select default image: DALL-E 3 or matched stock photo
+      const defaultImg = dalleImg || (
+        category === 'WORKSHOP' ? 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=1200&q=80' :
+        category === 'MTB_TRAIL' ? 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=1200&q=80' :
+        category === 'ROAD' ? 'https://images.unsplash.com/photo-1517649763962-0c623266010b?auto=format&fit=crop&w=1200&q=80' :
+        category === 'URBAN' ? 'https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?auto=format&fit=crop&w=1200&q=80' :
+        category === 'EQUIPMENT' ? 'https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?auto=format&fit=crop&w=1200&q=80' :
+        'https://images.unsplash.com/photo-1571068316344-75ad7692d490?auto=format&fit=crop&w=1200&q=80'
+      );
 
       const generatedBlocks = [
         {
@@ -68,13 +86,13 @@ export default function AdminLandingPagesPage() {
           title: mainTitle,
           subtitle: mainSub,
           ctaText: 'Quero Garantir Minha Oferta',
-          imageUrl: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=1200&q=80',
+          imageUrl: defaultImg,
         },
         {
           type: 'FEATURES',
           title: 'Por Que Participar Desta Promoção',
           items: [
-            { title: 'RevisãoPreventiva Inclusa', description: 'Atendimento prioritário na oficina credenciada.' },
+            { title: 'Revisão Preventiva Inclusa', description: 'Atendimento prioritário na oficina credenciada.' },
             { title: 'Pontos em Dobro', description: 'Acumule pontos extras para resgatar prêmios e vouchers.' },
             { title: 'Garantia Digital Protegida', description: 'Registro em tempo real por número de série.' },
           ],
@@ -379,6 +397,8 @@ export default function AdminLandingPagesPage() {
             blocks={blocks}
             onUpdateBlocks={setBlocks}
             store={stores.find((s) => s.id === selectedStoreId)}
+            storylineCategory={storylineCategory}
+            dalleImageUrl={dalleImageUrl}
           />
         </div>
       )}

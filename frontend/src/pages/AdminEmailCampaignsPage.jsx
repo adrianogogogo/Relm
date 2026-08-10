@@ -14,6 +14,8 @@ export default function AdminEmailCampaignsPage() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [selectedModel, setSelectedModel] = useState('gpt-4o-mini');
   const [generating, setGenerating] = useState(false);
+  const [emailImageUrl, setEmailImageUrl] = useState('');
+  const [storylineCategory, setStorylineCategory] = useState('');
 
   // Generated Email Form & WYSIWYG Preview State
   const [subject, setSubject] = useState('');
@@ -64,7 +66,20 @@ export default function AdminEmailCampaignsPage() {
       const genSubject = copyRes.suggestedSubject || copyRes.heading || aiPrompt;
       const genHeading = copyRes.heading || 'Vantagem Exclusiva Relm Care+';
       const genContent = copyRes.content || aiPrompt;
+      const category = copyRes.category || 'WORKSHOP';
+      const dalleImg = copyRes.dalleImageUrl || null;
 
+      const defaultImg = dalleImg || (
+        category === 'WORKSHOP' ? 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=1200&q=80' :
+        category === 'MTB_TRAIL' ? 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=1200&q=80' :
+        category === 'ROAD' ? 'https://images.unsplash.com/photo-1517649763962-0c623266010b?auto=format&fit=crop&w=1200&q=80' :
+        category === 'URBAN' ? 'https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?auto=format&fit=crop&w=1200&q=80' :
+        category === 'EQUIPMENT' ? 'https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?auto=format&fit=crop&w=1200&q=80' :
+        'https://images.unsplash.com/photo-1571068316344-75ad7692d490?auto=format&fit=crop&w=1200&q=80'
+      );
+
+      setStorylineCategory(category);
+      setEmailImageUrl(defaultImg);
       setSubject(genSubject);
       setHeading(genHeading);
       setBodyMessage(genContent);
@@ -316,44 +331,55 @@ export default function AdminEmailCampaignsPage() {
             </div>
 
             {/* Visual Email Card Preview */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5 text-slate-100">
-              <div className="flex items-center gap-2 border-b border-slate-800 pb-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden space-y-5 text-slate-100 pb-6">
+              {emailImageUrl && (
+                <div className="h-44 w-full relative overflow-hidden border-b border-slate-800">
+                  <img src={emailImageUrl} alt="Capa do E-mail" className="w-full h-full object-cover" />
+                  <div className="absolute top-2 right-2 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-emerald-400 border border-emerald-500/30">
+                    Enredo: {storylineCategory || 'Geral'}
+                  </div>
+                </div>
+              )}
+
+              <div className="px-6 pt-2 flex items-center gap-2 border-b border-slate-800/50 pb-4">
                 <div className="w-8 h-8 rounded-lg bg-emerald-500 text-slate-950 font-extrabold flex items-center justify-center text-sm">
                   R
                 </div>
                 <span className="font-bold text-white text-sm">RELM CARE+</span>
               </div>
 
-              {/* Editable Heading */}
-              <h2
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => setHeading(e.target.innerText)}
-                className="text-xl font-extrabold text-white outline-none hover:bg-slate-800 p-1.5 rounded transition"
-              >
-                {heading || 'Título Principal da Mensagem'}
-              </h2>
-
-              {/* Editable Body */}
-              <p
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => setBodyMessage(e.target.innerText)}
-                className="text-sm text-slate-300 leading-relaxed outline-none hover:bg-slate-800 p-1.5 rounded transition whitespace-pre-line"
-              >
-                {bodyMessage || 'Sua mensagem formatada aparecerá aqui. Clique para alterar o texto livremente.'}
-              </p>
-
-              {/* Editable Button */}
-              <div className="pt-2">
-                <button
+              <div className="px-6 space-y-4">
+                {/* Editable Heading */}
+                <h2
                   contentEditable
                   suppressContentEditableWarning
-                  onBlur={(e) => setCtaText(e.target.innerText)}
-                  className="px-6 py-3 bg-emerald-500 text-slate-950 font-bold rounded-xl text-sm outline-none hover:bg-emerald-400"
+                  onBlur={(e) => setHeading(e.target.innerText)}
+                  className="text-xl font-extrabold text-white outline-none hover:bg-slate-800 p-1.5 rounded transition"
                 >
-                  {ctaText || 'Acessar Minha Conta'}
-                </button>
+                  {heading || 'Título Principal da Mensagem'}
+                </h2>
+
+                {/* Editable Body */}
+                <p
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={(e) => setBodyMessage(e.target.innerText)}
+                  className="text-sm text-slate-300 leading-relaxed outline-none hover:bg-slate-800 p-1.5 rounded transition whitespace-pre-line"
+                >
+                  {bodyMessage || 'Sua mensagem formatada aparecerá aqui. Clique para alterar o texto livremente.'}
+                </p>
+
+                {/* Editable Button */}
+                <div className="pt-2">
+                  <button
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => setCtaText(e.target.innerText)}
+                    className="px-6 py-3 bg-emerald-500 text-slate-950 font-bold rounded-xl text-sm outline-none hover:bg-emerald-400"
+                  >
+                    {ctaText || 'Acessar Minha Conta'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
