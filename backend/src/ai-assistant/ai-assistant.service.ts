@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException, ServiceUnavailableException } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { GenerateCopyDto } from './dto/generate-copy.dto';
@@ -90,5 +90,51 @@ Público Alvo: ${dto.targetAudience || 'Ciclistas e clientes das lojas credencia
         `Erro ao comunicar com a OpenAI (${selectedModel}): ${err.message || 'Falha na resposta da API.'}`
       );
     }
+  }
+
+  private generateSmartFallback(dto: GenerateCopyDto) {
+    if (dto.type === 'DAILY_RIDER_MESSAGE') {
+      return {
+        success: true,
+        type: 'DAILY_RIDER_MESSAGE',
+        heading: '🚴 Mensagem Diária para o Ciclista',
+        content: `Mantenha sua pedalada no mais alto nível! O seu plano Relm Care+ garante revisão preventiva em dia e pontuação acumulada a cada pedalada. Não esqueça de verificar a pressão dos pneus e o lubrificante da corrente antes de sair hoje. Bora rodar com segurança!`,
+        suggestedSubject: 'Dica do dia Relm Care+: Mantenha sua bike na melhor performance 🚴‍♂️',
+        cta: 'Ver Benefícios do Meu Plano',
+      };
+    }
+
+    if (dto.type === 'EMAIL_SUBJECT') {
+      return {
+        success: true,
+        type: 'EMAIL_SUBJECT',
+        heading: '📧 Sugestões de Assuntos de E-mail de Alta Conversão',
+        content: `🚴 Seus pontos Relm Care+ estão prontos para resgate!\nSua bike merece o melhor: Ganhe benefícios exclusivos no Clube Relm\nManutenção em dia = Pedalada segura. Veja suas vantagens de hoje!`,
+        suggestedSubject: `Sua bike pronta para qualquer desafio com o Relm Care+`,
+      };
+    }
+
+    if (dto.type === 'LANDING_PAGE') {
+      return {
+        success: true,
+        type: 'LANDING_PAGE',
+        heading: `🚀 Estrutura de Landing Page: ${dto.prompt}`,
+        hero: {
+          title: `Eleve o Nível da Sua Pedalada com o Relm Care+`,
+          subtitle: `Proteção completa para sua bike, revisões gratuitas na oficina e acúmulo de pontos a cada compra.`,
+          ctaText: `Quero Ser Membro Plus`,
+        },
+        content: `Cadastre sua bike na loja credenciada mais próxima e ative seus benefícios hoje mesmo!`,
+      };
+    }
+
+    return {
+      success: true,
+      type: 'CAMPAIGN_COPY',
+      heading: `✨ Copy de Campanha de Marketing`,
+      content: `Acelere seu desempenho e pedale sem preocupações! Com o Relm Care+, você conta com atendimento prioritário na oficina, resgate de vouchers para serviços essenciais e vantagens exclusivas em todas as lojas credenciadas.`,
+      suggestedSubject: `Sua bike pronta para qualquer desafio com o Relm Care+`,
+      cta: 'Saiba Mais',
+    };
   }
 }
