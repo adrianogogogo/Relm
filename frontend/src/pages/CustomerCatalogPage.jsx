@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 import { rewardsAPI, customerPortalAPI } from '../services/api';
 import { Card, PageHeader, Button } from '../components/ui';
-import { MdCardGiftcard, MdStars, MdCheckCircle, MdOutlineHistory, MdLock, MdTimer } from 'react-icons/md';
+import { MdCardGiftcard, MdStars, MdCheckCircle, MdOutlineHistory, MdLock, MdTimer, MdBuild } from 'react-icons/md';
 
 function presaleDaysLeft(presaleUntil) {
   if (!presaleUntil) return null;
@@ -48,9 +48,19 @@ export default function CustomerCatalogPage() {
     enabled: !!user?.id,
   });
 
-  // Redeem reward mutation
+  // Serviços de loja resgatáveis com pontos (Step 4)
+  const { data: services = [], isLoading: loadingServices } = useQuery({
+    queryKey: ['redeemable-services'],
+    queryFn: () => rewardsAPI.getRedeemableServices(),
+  });
+
+  // Uma mutation só para os dois tipos: confirmação, erro e voucher gerado
+  // são idênticos — só muda o endpoint.
   const redeemMutation = useMutation({
-    mutationFn: rewardsAPI.redeem,
+    mutationFn: (sel) =>
+      sel.kind === 'SERVICE'
+        ? rewardsAPI.redeemService(sel.id)
+        : rewardsAPI.redeem({ customerId: user.id, catalogItemId: sel.id }),
     onSuccess: (data) => {
       setGeneratedVoucher(data);
       setShowConfirm(false);
@@ -58,6 +68,7 @@ export default function CustomerCatalogPage() {
       queryClient.invalidateQueries({ queryKey: ['customer-points', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['customer-vouchers', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['rewards-catalog'] });
+      queryClient.invalidateQueries({ queryKey: ['redeemable-services'] });
     },
     onError: (err) => {
       setErrorMsg(err.response?.data?.message || 'Falha ao resgatar recompensa.');
@@ -65,22 +76,27 @@ export default function CustomerCatalogPage() {
     },
   });
 
-  const handleRedeemRequest = (item) => {
+  // Normaliza os dois formatos aqui, na borda, para o modal de confirmação
+  // não precisar saber de qual tipo veio.
+  const handleRedeemRequest = (item, kind = 'CATALOG') => {
     setErrorMsg('');
     if (balance < item.pointsCost) {
       setErrorMsg(`Saldo insuficiente. Você precisa de ${item.pointsCost} pontos, mas tem apenas ${balance}.`);
       return;
     }
-    setSelectedItem(item);
+    setSelectedItem({
+      id: item.id,
+      kind,
+      title: kind === 'SERVICE' ? item.name : item.title,
+      pointsCost: item.pointsCost,
+      storeName: kind === 'SERVICE' ? item.store?.tradeName : null,
+    });
     setShowConfirm(true);
   };
 
   const confirmRedeem = () => {
     if (!selectedItem) return;
-    redeemMutation.mutate({
-      customerId: user.id,
-      catalogItemId: selectedItem.id,
-    });
+    redeemMutation.mutate(selectedItem);
   };
 
   const formatDate = (isoString) => {
@@ -120,6 +136,51 @@ export default function CustomerCatalogPage() {
         {errorMsg && (
           <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300 px-4 py-3 rounded-lg text-sm mb-6">
             {errorMsg}
+          </div>
+        )}
+
+        {/* Serviços resgatáveis — só aparece se alguma loja publicou algum.
+            Sem serviço cadastrado com pointsCost, a seção não existe. */}
+        {!loadingServices && services.length > 0 && (
+          <div className="mb-6">
+            <h3 className="font-title font-bold text-lg text-[#0A1929] dark:text-slate-100 mb-3 flex items-center gap-2">
+              <MdBuild className="text-[#0A1929] dark:text-[#2196F3]" /> Serviços na Oficina
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {services.map((svc) => {
+                const canAfford = balance >= svc.pointsCost;
+                return (
+                  <Card key={svc.id} className="p-4 flex flex-col justify-between">
+                    <div>
+                      <h4 className="font-bold text-[#0A1929] dark:text-slate-100">{svc.name}</h4>
+                      <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+                        {svc.store?.tradeName}
+                        {svc.store?.city ? ` · ${svc.store.city}` : ''}
+                      </p>
+                      {svc.description && (
+                        <p className="text-xs text-gray-600 dark:text-slate-300 mt-2 line-clamp-2">
+                          {svc.description}
+                        </p>
+                      )}
+                    </div>
+                    <div className="mt-4 flex items-center justify-between gap-2">
+                      <span className="font-mono font-bold text-[#2196F3]">{svc.pointsCost} pts</span>
+                      <Button
+                        size="sm"
+                        variant={canAfford ? 'primary' : 'secondary'}
+                        disabled={!canAfford}
+                        onClick={() => handleRedeemRequest(svc, 'SERVICE')}
+                      >
+                        {canAfford ? 'Resgatar' : 'Saldo insuficiente'}
+                      </Button>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-2">
+              O resgate gera um código. Apresente-o na loja escolhida para fazer o serviço.
+            </p>
           </div>
         )}
 
@@ -226,7 +287,17 @@ export default function CustomerCatalogPage() {
                     >
                       <div className="flex justify-between items-start gap-1">
                         <span className="font-bold text-[#0A1929] dark:text-slate-200">
-                          {v.catalogItem?.title}
+                          {/* Voucher aponta para prêmio OU serviço — sem o
+                              fallback, o de serviço aparecia sem nome. */}
+                          {v.catalogItem?.title
+                            || v.storeService?.customName
+                            || v.storeService?.masterService?.name
+                            || 'Resgate'}
+                          {v.storeService?.store?.tradeName && (
+                            <span className="block font-normal text-[10px] text-gray-500 dark:text-slate-400">
+                              {v.storeService.store.tradeName}
+                            </span>
+                          )}
                         </span>
                         <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
                           isUsed
@@ -264,6 +335,9 @@ export default function CustomerCatalogPage() {
               <h3 className="font-title font-bold text-lg text-gray-900 dark:text-slate-100 mb-2">Confirmar Resgate</h3>
               <p className="text-sm text-gray-600 dark:text-slate-400 mb-4">
                 Você deseja confirmar o resgate de <strong>{selectedItem.title}</strong> por <strong>{selectedItem.pointsCost} pontos</strong>?
+                {selectedItem.storeName && (
+                  <> O serviço será feito na loja <strong>{selectedItem.storeName}</strong>.</>
+                )}
               </p>
               <div className="flex gap-3">
                 <Button variant="outline" className="flex-1" onClick={() => setShowConfirm(false)}>
@@ -291,8 +365,10 @@ export default function CustomerCatalogPage() {
               <div className="bg-[#0A1929]/10 dark:bg-[#2196F3]/20 border border-[#183757]/30 p-3 rounded font-mono font-black text-2xl tracking-wider text-[#0A1929] dark:text-[#2196F3] select-all">
                 {generatedVoucher.voucherCode}
               </div>
+              {/* Sem "(60 dias)": a validade vem do ClubSettings e pode ser
+                  outra — a data já diz tudo. */}
               <p className="text-[10px] text-gray-500">
-                Válido até {formatDate(generatedVoucher.expiresAt)} (60 dias)
+                Válido até {formatDate(generatedVoucher.expiresAt)}
               </p>
               <Button variant="primary" className="w-full" onClick={() => setGeneratedVoucher(null)}>
                 Fechar

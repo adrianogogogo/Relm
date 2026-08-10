@@ -44,6 +44,11 @@ function AddEditStoreServiceModal({ storeId, storeService, masterServices, onClo
   const [estimatedMinutes, setEstimatedMinutes] = useState(
     storeService?.estimatedMinutes || 60
   );
+  // Vazio = não resgatável por pontos. Guardado como string para o input
+  // conseguir ficar vazio — a conversão para null acontece no submit.
+  const [pointsCost, setPointsCost] = useState(
+    storeService?.pointsCost != null ? String(storeService.pointsCost) : ''
+  );
   const [active, setActive] = useState(storeService?.active ?? true);
   const [error, setError] = useState('');
 
@@ -76,6 +81,9 @@ function AddEditStoreServiceModal({ storeId, storeService, masterServices, onClo
       plusDiscountPercent: plusRule === 'DISCOUNT_PERCENT' ? Number(plusDiscountPercent) : null,
       plusPrice: plusRule === 'FIXED_PRICE' ? Number(plusPrice) : null,
       estimatedMinutes: Number(estimatedMinutes) || 60,
+      // null explícito e não undefined: undefined faria o backend preservar o
+      // valor antigo, e limpar o campo tem que desligar o resgate.
+      pointsCost: pointsCost.trim() === '' ? null : Number(pointsCost),
       active,
     });
   };
@@ -148,6 +156,26 @@ function AddEditStoreServiceModal({ storeId, storeService, masterServices, onClo
                 onChange={(e) => setEstimatedMinutes(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 p-2.5 text-sm focus:border-cyan-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
               />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Custo em Pontos (resgate pelo clube)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="50"
+                placeholder="Deixe vazio para não permitir resgate com pontos"
+                value={pointsCost}
+                onChange={(e) => setPointsCost(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 p-2.5 text-sm focus:border-cyan-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+              />
+              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                Com um valor aqui, o serviço aparece no portal do cliente para resgate com
+                pontos. O cliente gera um código e você dá baixa na aba Oficina. O acerto
+                financeiro é feito fora do sistema.
+              </p>
             </div>
           </div>
 

@@ -325,6 +325,11 @@ export const customerPortalAPI = {
 
 export const pointsAPI = {
   grantByAdmin: (data) => api.post('/v1/points/admin/grant', data).then((res) => res.data),
+  // Regras de pontuação por produto/categoria (Step 3).
+  listRules: () => api.get('/v1/points/admin/rules').then((res) => res.data),
+  createRule: (data) => api.post('/v1/points/admin/rules', data).then((res) => res.data),
+  updateRule: (id, data) => api.patch(`/v1/points/admin/rules/${id}`, data).then((res) => res.data),
+  deleteRule: (id) => api.delete(`/v1/points/admin/rules/${id}`).then((res) => res.data),
 };
 
 // ── Gamificação (Wave 4) ──────────────────────────────────────────────────────
@@ -356,6 +361,12 @@ export const rewardsAPI = {
   getCatalog: (tier) =>
     api.get('/v1/rewards/catalog', { params: tier ? { tier } : {} }).then((res) => res.data),
   redeem: (data) => api.post('/v1/rewards/redeem', data).then((res) => res.data),
+  // Serviços de loja resgatáveis com pontos (Step 4). storeId opcional filtra
+  // por loja — o cliente escolhe onde vai usar.
+  getRedeemableServices: (storeId) =>
+    api.get('/v1/rewards/services', { params: storeId ? { storeId } : {} }).then((res) => res.data),
+  redeemService: (storeServiceId) =>
+    api.post('/v1/rewards/redeem-service', { storeServiceId }).then((res) => res.data),
   getVouchers: (customerId) => api.get(`/v1/rewards/vouchers/${customerId}`).then((res) => res.data),
   createCatalogItem: (data) => api.post('/v1/rewards/catalog', data).then((res) => res.data),
   updateCatalogItem: (id, data) => api.patch(`/v1/rewards/catalog/${id}`, data).then((res) => res.data),

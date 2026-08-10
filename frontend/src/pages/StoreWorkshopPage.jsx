@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/authStore';
 import { workshopAPI } from '../services/api';
 import { Card, PageHeader, Button, StatusChip } from '../components/ui';
-import { MdBuild, MdDirectionsBike, MdLocalShipping, MdPriorityHigh, MdPlayArrow, MdCheck, MdClose, MdArrowForward } from 'react-icons/md';
+import { MdBuild, MdDirectionsBike, MdLocalShipping, MdPriorityHigh, MdPlayArrow, MdCheck, MdClose, MdArrowForward, MdRedeem } from 'react-icons/md';
 
 const SERVICE_LABELS = {
   REVISION_BASIC: 'Revisão Básica',
@@ -32,6 +32,63 @@ const LOGISTICS_LABELS = {
 
 import { useState } from 'react';
 import StoreServicesSection from '../components/StoreServicesSection';
+import { rewardsAPI } from '../services/api';
+
+// Baixa do voucher no balcão. O backend só deixa a loja baixar voucher de
+// serviço DELA — aqui a UI apenas repassa o erro que vier.
+function VoucherRedeemCard() {
+  const [code, setCode] = useState('');
+  const [result, setResult] = useState(null);
+
+  const useVoucherMutation = useMutation({
+    mutationFn: (c) => rewardsAPI.useVoucher(c.trim().toUpperCase()),
+    onSuccess: () => {
+      setResult({ ok: true, text: `Voucher ${code.trim().toUpperCase()} baixado com sucesso.` });
+      setCode('');
+    },
+    onError: (err) => {
+      setResult({ ok: false, text: err.response?.data?.message || 'Não foi possível baixar o voucher.' });
+    },
+  });
+
+  return (
+    <Card className="p-4 mb-6">
+      <div className="flex items-center gap-2 mb-3">
+        <MdRedeem className="text-cyan-600" size={20} />
+        <h3 className="font-title font-bold text-[#0A1929] dark:text-slate-100">
+          Baixar voucher de serviço
+        </h3>
+      </div>
+      <form
+        className="flex flex-col sm:flex-row gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setResult(null);
+          if (code.trim()) useVoucherMutation.mutate(code);
+        }}
+      >
+        <input
+          className="input font-mono uppercase tracking-wider flex-1"
+          placeholder="RLM-XXXXX"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+        />
+        <Button type="submit" variant="primary" loading={useVoucherMutation.isPending} disabled={!code.trim()}>
+          Confirmar atendimento
+        </Button>
+      </form>
+      {result && (
+        <p className={`text-xs mt-2 font-semibold ${result.ok ? 'text-emerald-600' : 'text-rose-600'}`}>
+          {result.text}
+        </p>
+      )}
+      <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-2">
+        O cliente apresenta o código gerado no resgate. A baixa é única — depois de
+        confirmada, o código não vale mais.
+      </p>
+    </Card>
+  );
+}
 
 export default function StoreWorkshopPage() {
   const user = useAuthStore((state) => state.user);
@@ -84,6 +141,8 @@ export default function StoreWorkshopPage() {
           title="Oficina / Serviços"
           subtitle="Gerencie os agendamentos, revisões e tabela de serviços e conveniências da unidade"
         />
+
+        <VoucherRedeemCard />
 
         {/* Tab Navigation */}
         <div className="mb-6 flex gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
