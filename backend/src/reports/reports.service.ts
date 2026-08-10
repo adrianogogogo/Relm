@@ -34,6 +34,24 @@ function computeActivePoints(
   return Math.max(0, earnedTotal - redeemed - desiredExpire);
 }
 
+// Pesos do score por loja. Ficam no ClubSettings para calibrar sem deploy —
+// ninguém sabe o peso certo antes de ver o ranking com dados reais.
+const SCORE_WEIGHT_KEYS = {
+  revenue: 'score_weight_revenue',
+  newCustomers: 'score_weight_customers',
+  plusConversion: 'score_weight_plus',
+  services: 'score_weight_services',
+} as const;
+
+const DEFAULT_SCORE_WEIGHTS = {
+  revenue: 40,
+  newCustomers: 20,
+  plusConversion: 25,
+  services: 15,
+};
+
+type ScoreDimension = keyof typeof DEFAULT_SCORE_WEIGHTS;
+
 /** Formata Date → 'YYYY-MM' */
 function toYearMonth(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -328,6 +346,164 @@ export class ReportsService {
       totalReferrals,
       pendingReferrals: totalReferrals - completedReferrals,
       note: 'plusViaBikePurchase é aproximação: PLUS sem indicação direta. Distinção bike/acessório não está no schema atual.',
+    };
+  }
+
+  /**
+   * Score de performance por loja sobre janela móvel (default 90 dias).
+   *
+   * Composto e **decomponível**: além do número, devolve as métricas cruas e
+   * quanto cada dimensão contribuiu — score sem a decomposição vira caixa-preta
+   * e ninguém sabe o que fazer para melhorar.
+   *
+   * O score é **relativo**, não absoluto: volume (receita, clientes novos,
+   * serviços) é normalizado pela melhor loja da janela, então 100 significa
+   * "a melhor entre as ativas", não "atingiu uma meta". Só a conversão Plus é
+   * absoluta, por já ser uma taxa. Com uma loja só, ela marca 100 nas três
+   * dimensões de volume.
+   *
+   * Sem tabela nova — é agregação sobre o que já existe.
+   */
+  async getStoreScores(days = 90) {
+    const now = new Date();
+    const since = new Date(now.getTime() - days * 86400000);
+
+    const [stores, weightRows, sales, newCustomerRows, customerRows, plusRows, serviceRows] =
+      await Promise.all([
+        this.prisma.store.findMany({
+          where: { active: true },
+          select: { id: true, tradeName: true },
+        }),
+        this.prisma.clubSettings.findMany({
+          where: { key: { in: Object.values(SCORE_WEIGHT_KEYS) } },
+        }),
+        // Sale não guarda total — o valor vive nos itens. Volume de 90 dias é
+        // pequeno o bastante para somar em memória (mesma escolha do
+        // getClubPointsLiability, que já carrega ledger inteiro).
+        this.prisma.sale.findMany({
+          where: { storeId: { not: null }, saleDate: { gte: since } },
+          select: { storeId: true, items: { select: { quantity: true, unitPrice: true } } },
+        }),
+        this.prisma.customer.groupBy({
+          by: ['storeId'],
+          where: { storeId: { not: null }, createdAt: { gte: since } },
+          _count: true,
+        }),
+        // Conversão é razão de estoque, não de fluxo: usa a base inteira da
+        // loja, não só quem entrou na janela.
+        this.prisma.customer.groupBy({
+          by: ['storeId'],
+          where: { storeId: { not: null }, active: true },
+          _count: true,
+        }),
+        this.prisma.customer.groupBy({
+          by: ['storeId'],
+          where: {
+            storeId: { not: null },
+            active: true,
+            subscription: { tier: TierLevel.PLUS },
+          },
+          _count: true,
+        }),
+        this.prisma.serviceOrder.groupBy({
+          by: ['storeId'],
+          where: { status: 'COMPLETED', createdAt: { gte: since } },
+          _count: true,
+        }),
+      ]);
+
+    const weights = { ...DEFAULT_SCORE_WEIGHTS };
+    for (const row of weightRows) {
+      const dimension = (Object.keys(SCORE_WEIGHT_KEYS) as ScoreDimension[]).find(
+        (d) => SCORE_WEIGHT_KEYS[d] === row.key,
+      );
+      const parsed = parseFloat(row.value);
+      if (dimension && Number.isFinite(parsed) && parsed >= 0) weights[dimension] = parsed;
+    }
+
+    const countBy = (rows: any[]) =>
+      new Map<string, number>(rows.map((r) => [r.storeId as string, r._count as number]));
+
+    const newCustomersByStore = countBy(newCustomerRows);
+    const customersByStore = countBy(customerRows);
+    const plusByStore = countBy(plusRows);
+    const servicesByStore = countBy(serviceRows);
+
+    const revenueByStore = new Map<string, number>();
+    const salesCountByStore = new Map<string, number>();
+    for (const sale of sales) {
+      const storeId = sale.storeId as string;
+      const total = sale.items.reduce(
+        (sum, item) => sum + Number(item.unitPrice ?? 0) * item.quantity,
+        0,
+      );
+      revenueByStore.set(storeId, (revenueByStore.get(storeId) ?? 0) + total);
+      salesCountByStore.set(storeId, (salesCountByStore.get(storeId) ?? 0) + 1);
+    }
+
+    const base = stores.map((store) => {
+      const totalCustomers = customersByStore.get(store.id) ?? 0;
+      const plusCustomers = plusByStore.get(store.id) ?? 0;
+      return {
+        storeId: store.id,
+        tradeName: store.tradeName,
+        metrics: {
+          revenueBrl: +(revenueByStore.get(store.id) ?? 0).toFixed(2),
+          salesCount: salesCountByStore.get(store.id) ?? 0,
+          newCustomers: newCustomersByStore.get(store.id) ?? 0,
+          totalCustomers,
+          plusCustomers,
+          plusConversion: totalCustomers > 0 ? plusCustomers / totalCustomers : 0,
+          servicesCompleted: servicesByStore.get(store.id) ?? 0,
+        },
+      };
+    });
+
+    // Divisor 0 vira 1: se ninguém vendeu nada, todo mundo fica com 0 naquela
+    // dimensão em vez de NaN.
+    const maxOf = (pick: (s: (typeof base)[number]) => number) =>
+      base.reduce((max, s) => Math.max(max, pick(s)), 0) || 1;
+
+    const maxRevenue = maxOf((s) => s.metrics.revenueBrl);
+    const maxNewCustomers = maxOf((s) => s.metrics.newCustomers);
+    const maxServices = maxOf((s) => s.metrics.servicesCompleted);
+    const totalWeight =
+      Object.values(weights).reduce((sum, w) => sum + w, 0) || 1;
+
+    // Escala 0–100 independente da soma dos pesos: quem calibrar 10/10/10/10
+    // não deve ver o teto do score cair para 40.
+    const contribution = (ratio: number, weight: number) =>
+      +((ratio * weight * 100) / totalWeight).toFixed(1);
+
+    const scored = base
+      .map((store) => {
+        const components = {
+          revenue: contribution(store.metrics.revenueBrl / maxRevenue, weights.revenue),
+          newCustomers: contribution(
+            store.metrics.newCustomers / maxNewCustomers,
+            weights.newCustomers,
+          ),
+          plusConversion: contribution(store.metrics.plusConversion, weights.plusConversion),
+          services: contribution(
+            store.metrics.servicesCompleted / maxServices,
+            weights.services,
+          ),
+        };
+        // Soma do que é exibido: o score nunca discorda das suas partes.
+        const score = +Object.values(components)
+          .reduce((sum, c) => sum + c, 0)
+          .toFixed(1);
+        return { ...store, components, score };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    return {
+      windowDays: days,
+      since: since.toISOString(),
+      computedAt: now.toISOString(),
+      weights,
+      stores: scored,
+      note: 'Score relativo à melhor loja da janela (exceto conversão Plus, que é taxa absoluta).',
     };
   }
 }

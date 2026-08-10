@@ -425,6 +425,9 @@ export const clubReportsAPI = {
     api.get('/reports/club/revenue', { params: { months } }).then((res) => res.data),
   getFunnel: () =>
     api.get('/reports/club/funnel').then((res) => res.data),
+  // Score por loja: janela móvel em dias (default 90 no backend).
+  getStoreScores: (days) =>
+    api.get('/reports/stores/score', { params: { days } }).then((res) => res.data),
 };
 
 export const whatsappAPI = {

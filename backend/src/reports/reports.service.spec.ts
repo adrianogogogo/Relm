@@ -60,6 +60,113 @@ function makeService(overrides: Partial<Record<string, any>> = {}) {
   return new ReportsService(prisma);
 }
 
+// ─── getStoreScores ───────────────────────────────────────────────────────────
+
+/** Prisma mockado só com o que o score consulta. */
+function makeScoreService(opts: {
+  stores?: { id: string; tradeName: string }[];
+  sales?: any[];
+  newCustomers?: any[];
+  customers?: any[];
+  plus?: any[];
+  services?: any[];
+  weights?: { key: string; value: string }[];
+}) {
+  const groupBy = jest
+    .fn()
+    .mockResolvedValueOnce(opts.newCustomers ?? [])
+    .mockResolvedValueOnce(opts.customers ?? [])
+    .mockResolvedValueOnce(opts.plus ?? []);
+
+  return makeService({
+    store: { findMany: jest.fn().mockResolvedValue(opts.stores ?? []) },
+    clubSettings: { findMany: jest.fn().mockResolvedValue(opts.weights ?? []) },
+    sale: { findMany: jest.fn().mockResolvedValue(opts.sales ?? []) },
+    customer: { groupBy },
+    serviceOrder: { groupBy: jest.fn().mockResolvedValue(opts.services ?? []) },
+  });
+}
+
+describe('ReportsService.getStoreScores', () => {
+  it('sem lojas ativas devolve lista vazia sem estourar', async () => {
+    const result = await makeScoreService({}).getStoreScores();
+    expect(result.stores).toEqual([]);
+    expect(result.weights).toEqual({
+      revenue: 40,
+      newCustomers: 20,
+      plusConversion: 25,
+      services: 15,
+    });
+  });
+
+  it('score é a soma exata dos componentes exibidos', async () => {
+    const result = await makeScoreService({
+      stores: [{ id: 'a', tradeName: 'Loja A' }],
+      sales: [{ storeId: 'a', items: [{ quantity: 2, unitPrice: 100 }] }],
+      newCustomers: [{ storeId: 'a', _count: 5 }],
+      customers: [{ storeId: 'a', _count: 10 }],
+      plus: [{ storeId: 'a', _count: 5 }],
+      services: [{ storeId: 'a', _count: 3 }],
+    }).getStoreScores();
+
+    const [loja] = result.stores;
+    expect(loja.metrics.revenueBrl).toBe(200);
+    expect(loja.metrics.plusConversion).toBe(0.5);
+    const soma = +Object.values(loja.components)
+      .reduce((s, c) => s + c, 0)
+      .toFixed(1);
+    expect(loja.score).toBe(soma);
+    // Única loja: 100% do volume, metade da conversão → 100 − 25/2 = 87,5.
+    expect(loja.score).toBe(87.5);
+  });
+
+  it('ordena por score e normaliza volume pela melhor loja', async () => {
+    const result = await makeScoreService({
+      stores: [
+        { id: 'a', tradeName: 'Fraca' },
+        { id: 'b', tradeName: 'Forte' },
+      ],
+      sales: [
+        { storeId: 'a', items: [{ quantity: 1, unitPrice: 100 }] },
+        { storeId: 'b', items: [{ quantity: 1, unitPrice: 400 }] },
+      ],
+      customers: [
+        { storeId: 'a', _count: 4 },
+        { storeId: 'b', _count: 4 },
+      ],
+    }).getStoreScores();
+
+    expect(result.stores.map((s) => s.tradeName)).toEqual(['Forte', 'Fraca']);
+    // Melhor receita = 100% do peso de receita; a outra fica em 1/4 disso.
+    expect(result.stores[0].components.revenue).toBe(40);
+    expect(result.stores[1].components.revenue).toBe(10);
+  });
+
+  it('peso do ClubSettings sobrescreve o default e o teto segue 100', async () => {
+    const result = await makeScoreService({
+      stores: [{ id: 'a', tradeName: 'Loja A' }],
+      sales: [{ storeId: 'a', items: [{ quantity: 1, unitPrice: 50 }] }],
+      newCustomers: [{ storeId: 'a', _count: 1 }],
+      customers: [{ storeId: 'a', _count: 2 }],
+      plus: [{ storeId: 'a', _count: 2 }],
+      services: [{ storeId: 'a', _count: 1 }],
+      weights: [{ key: 'score_weight_revenue', value: '10' }],
+    }).getStoreScores();
+
+    expect(result.weights.revenue).toBe(10);
+    // Tudo no máximo (conversão 100%) → 100, independente da soma dos pesos.
+    expect(result.stores[0].score).toBe(100);
+  });
+
+  it('divisão por zero não vira NaN quando ninguém vendeu', async () => {
+    const result = await makeScoreService({
+      stores: [{ id: 'a', tradeName: 'Loja A' }],
+    }).getStoreScores();
+    expect(result.stores[0].score).toBe(0);
+    expect(Number.isNaN(result.stores[0].components.revenue)).toBe(false);
+  });
+});
+
 // ─── getClubPointsLiability ───────────────────────────────────────────────────
 
 describe('ReportsService.getClubPointsLiability', () => {

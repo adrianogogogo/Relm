@@ -43,6 +43,15 @@ export class ReportsController {
     return this.reportsService.getClubRevenue(monthsNum);
   }
 
+  /** Score de performance por loja (janela móvel, default 90 dias). */
+  @Get('stores/score')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  getStoreScores(@Query('days') days?: string) {
+    const parsed = days ? parseInt(days, 10) : 90;
+    // Janela fora de 1..365 não é filtro, é engano — clampa em vez de aceitar.
+    return this.reportsService.getStoreScores(Math.min(365, Math.max(1, parsed || 90)));
+  }
+
   /** Funil de origens dos membros, upgrades e indicações. */
   @Get('club/funnel')
   @Roles('ADMIN_RELM', 'GERENTE_RELM')

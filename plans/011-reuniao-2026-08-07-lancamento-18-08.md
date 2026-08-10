@@ -104,7 +104,7 @@ foi alterada por conta própria.
 | 3 | Venda → pontos + tabela de regra + ajuste na curadoria + tela admin | **DONE** |
 | 4 | Serviço resgatável por pontos | **DONE** |
 | 5 | Ator polimórfico + interceptor global | **DONE** |
-| 7 | Score por loja | TODO |
+| 7 | Score por loja | **DONE** |
 
 ---
 
@@ -262,6 +262,27 @@ dashboard admin. Sem tabela nova — é agregação sobre dados existentes.
 
 **Arquivos:** `backend/src/reports/reports.service.ts`, `frontend/src/pages/AdminDashboard.jsx`
 **Tags:** impl
+
+### Como ficou (implementado 10/08/2026)
+
+`GET /reports/stores/score?days=90` devolve o ranking com **score, componentes e métricas
+cruas**. Quatro dimensões: receita da janela (soma de `SaleItem.unitPrice × quantity`,
+porque `Sale` não guarda total), clientes novos na janela, conversão Plus da base da loja
+e serviços concluídos. Pesos default 40/20/25/15, sobrescritos por
+`score_weight_revenue|customers|plus|services` no ClubSettings.
+
+Duas propriedades que valem saber:
+
+1. **O score é relativo, não uma meta.** Volume é normalizado pela melhor loja da janela —
+   100 quer dizer "a melhor entre as ativas", não "bateu o alvo". Só a conversão Plus é
+   absoluta, por já ser taxa. Com uma loja só, ela marca 100 nas três de volume.
+2. **A escala é 0–100 independente da soma dos pesos**, e o score é a soma exata dos
+   componentes exibidos — quem calibrar 10/10/10/10 não vê o teto cair para 40, e o número
+   nunca discorda da barra empilhada do dashboard.
+
+**Sem tela para os pesos:** eles moram no ClubSettings e hoje só mudam por SQL. A tela
+`/admin/club-settings` não foi tocada — a calibragem só faz sentido depois de ver o
+ranking com dados reais, e o Step 7 não a listava. Sobe junto se o ranking pedir ajuste.
 
 ---
 
