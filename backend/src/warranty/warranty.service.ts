@@ -312,14 +312,18 @@ export class WarrantyService {
         throw new BadRequestException('Usuário de loja sem loja vinculada.');
       }
       
-      // A loja vê garantias associadas diretamente a ela OU de seus clientes vinculados
+      // A loja vê as garantias dela e as ÓRFÃS (storeId nulo) de clientes seus.
+      // O braço do cliente é condicionado a storeId nulo de propósito: sem essa
+      // condição, uma garantia registrada NA loja-B cujo cliente pertence à
+      // loja-A aparecia para a loja-A — vazamento entre lojas que o plano 010
+      // tratou como P0. Coberto por teste em warranty.service.spec.ts.
       where.AND = [
         {
           OR: [
             { storeId: storeId },
-            { customer: { storeId: storeId } }
-          ]
-        }
+            { AND: [{ storeId: null }, { customer: { storeId: storeId } }] },
+          ],
+        },
       ];
     } else if (filters.storeId) {
       where.storeId = filters.storeId;

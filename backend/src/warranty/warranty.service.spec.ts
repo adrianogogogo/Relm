@@ -11,6 +11,7 @@ describe('WarrantyService', () => {
     function buildService(prismaOverrides: any) {
       const prisma = {
         user: { findUnique: jest.fn() },
+        storeUser: { findUnique: jest.fn().mockResolvedValue(null) },
         warrantyClaim: { findMany: jest.fn().mockResolvedValue([]) },
         ...prismaOverrides,
       };
@@ -25,7 +26,7 @@ describe('WarrantyService', () => {
       return { service, prisma };
     }
 
-    it('escopa por loja: papel LOJA usa o storeId do usuário no where', async () => {
+    it('escopa por loja: papel LOJA vê garantias da própria loja OU órfãs de cliente seu', async () => {
       const { service, prisma } = buildService({});
       prisma.user.findUnique.mockResolvedValue({ storeId: 'loja-A' });
 
@@ -33,9 +34,34 @@ describe('WarrantyService', () => {
 
       expect(prisma.warrantyClaim.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ storeId: 'loja-A' }),
+          where: expect.objectContaining({
+            AND: [
+              {
+                OR: [
+                  { storeId: 'loja-A' },
+                  { AND: [{ storeId: null }, { customer: { storeId: 'loja-A' } }] },
+                ],
+              },
+            ],
+          }),
         }),
       );
+    });
+
+    // Regressão do P0 do plano 010. O OR que cobria garantia órfã era
+    // incondicional, então uma garantia DA loja-B cujo cliente é da loja-A
+    // vazava para a loja-A. O braço do cliente só vale quando storeId é nulo.
+    it('não vaza entre lojas: garantia com storeId de outra loja fica fora, mesmo se o cliente é meu', async () => {
+      const { service, prisma } = buildService({});
+      prisma.user.findUnique.mockResolvedValue({ storeId: 'loja-A' });
+
+      await service.findAll({}, { requesterUserId: 'user-1', requesterRole: 'LOJA' });
+
+      const { where } = prisma.warrantyClaim.findMany.mock.calls[0][0];
+      const customerArm = where.AND[0].OR.find((c: any) => !('storeId' in c));
+      // O braço do cliente precisa exigir storeId nulo — sem isso, claim de
+      // outra loja com cliente meu entraria no resultado.
+      expect(customerArm.AND).toContainEqual({ storeId: null });
     });
 
     it('não confia no query param: filters.storeId de outra loja é ignorado para papel LOJA', async () => {
@@ -47,11 +73,9 @@ describe('WarrantyService', () => {
         { requesterUserId: 'user-1', requesterRole: 'LOJA' },
       );
 
-      expect(prisma.warrantyClaim.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ storeId: 'loja-A' }),
-        }),
-      );
+      const { where } = prisma.warrantyClaim.findMany.mock.calls[0][0];
+      expect(JSON.stringify(where)).toContain('loja-A');
+      expect(JSON.stringify(where)).not.toContain('loja-B');
     });
 
     it('loja sem vínculo: rejeita com BadRequestException', async () => {

@@ -75,6 +75,11 @@ defensável pela fungibilidade, mas foi tomada com informação incompleta.
 **Risco concentrado:** `computeState` em `points.service.ts` é a fonte da verdade de todo
 saldo do clube. Testes do bucket mensal antes de tocar na função.
 
+**GATE do Step 4:** `plus_monthly_points` está em `1000` — valor ilustrativo escolhido
+pelo dev (≈R$50 a R$0,05/ponto, cobrindo ~1 lavagem/mês), **não aprovado pelo Adriano**.
+Enquanto o resgate não estiver ligado não há exposição. O Step 4 **não sobe para produção**
+sem o Adriano confirmar o valor. Em staging pode.
+
 ### Ordem de execução
 
 | | Step | Estado |

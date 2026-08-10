@@ -240,3 +240,59 @@ Os demais são dados operacionais necessários para prestar o serviço solicitad
 `referrals` (grafo), `customer_achievements`, `payments`, `insurance_policies` e
 `vouchers` associados. `leaderboard_opt_in`/`nickname` podem ser revertidos a
 qualquer momento pelo próprio cliente (opt-out) sem apagar a conta.
+
+---
+
+## Criando uma migration nova — `migrate dev` NÃO funciona
+
+**Sintoma:** `npx prisma migrate dev` falha com `P3006`, tipicamente apontando
+`20260708000000_add_payments_club_settings` e `The underlying table for model
+subscriptions does not exist`.
+
+**Causa:** o `migrate dev` valida o histórico replicando **todas** as migrations
+num shadow database vazio. Como o schema base nasceu de `db push` (ver seção 2),
+o histórico não contém o `CREATE TABLE` das tabelas base — ele pressupõe um banco
+que já existia. O replay do zero sempre quebra.
+
+**Isto não afeta o deploy.** `migrate deploy` não usa shadow database: aplica o
+SQL pendente direto. Prod e staging seguem normais, desde que baselinados
+(seção 2 — o `scripts/deploy_staging_club.py` já automatiza).
+
+### Procedimento para adicionar uma migration
+
+```bash
+cd backend
+# 1) Edite prisma/schema.prisma normalmente.
+
+# 2) Gere o SQL pelo diff entre o banco vivo e o schema editado.
+M="prisma/migrations/$(date +%Y%m%d%H%M%S)_descricao_curta"
+mkdir -p "$M"
+npx prisma migrate diff \
+  --from-schema-datasource prisma/schema.prisma \
+  --to-schema-datamodel  prisma/schema.prisma \
+  --script > "$M/migration.sql"
+
+# 3) CONFIRA o SQL antes de aplicar. Diff não sabe distinguir rename de
+#    drop+create: uma coluna renomeada vira DROP + ADD e perde os dados.
+cat "$M/migration.sql"
+
+# 4) Aplique e registre no histórico.
+npx prisma db execute --file "$M/migration.sql" --schema prisma/schema.prisma
+npx prisma migrate resolve --applied "$(basename "$M")"
+npx prisma generate
+npx prisma migrate status   # deve dizer "Database schema is up to date!"
+```
+
+Nos ambientes remotos a migration segue pelo fluxo normal de `migrate deploy` —
+o contorno acima é só para **autoria local**.
+
+### Bootstrap de ambiente novo
+
+Um banco vazio **não** sobe só com `migrate deploy`, pelo mesmo motivo. Use
+`scripts/db_push_and_seed_prod.py` (`db push` + seed) e depois baseline o
+histórico conforme a seção 2.
+
+> Para eliminar de vez este contorno seria preciso uma migration inicial
+> consolidada com o schema completo, marcada como aplicada nos ambientes que já
+> existem. Avaliado em 10/08/2026 e adiado: não bloqueia nada e o custo cai bem
+> mais depois do lançamento de 18/08.

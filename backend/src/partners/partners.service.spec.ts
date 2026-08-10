@@ -35,6 +35,9 @@ function makeService(opts: {
     customer: {
       findUnique: jest.fn().mockResolvedValue({ currentTier: opts.customerTier ?? TierLevel.CARE }),
     },
+    // O service passou a listar lojas parceiras junto dos parceiros da
+    // comunidade; sem este mock o findMany estoura antes de chegar na asserção.
+    store: { findMany: jest.fn().mockResolvedValue([]) },
     partner: {
       findMany: jest.fn().mockResolvedValue(partners),
       findUnique: jest.fn().mockImplementation(({ where }) =>
