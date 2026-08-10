@@ -121,6 +121,7 @@ model Product {
   insuranceQuotes InsuranceQuote[]
   insurancePolicies InsurancePolicy[]
   saleItems       SaleItem[]
+  pointsRule      PointsRule?
 
   @@index([serialNumber])
   @@index([storeId])
@@ -841,6 +842,14 @@ enum PointsBucket {
   MENSAL
 }
 
+// Como a regra converte um item vendido em pontos.
+//   FIXO     — `value` pontos por unidade, independente do preço.
+//   POR_REAL — `value` pontos por real do subtotal do item.
+enum PointsRuleMode {
+  FIXO
+  POR_REAL
+}
+
 enum PlusCoverageRule {
   FREE
   DISCOUNT_PERCENT
@@ -968,6 +977,27 @@ model PointsLedger {
 
   @@index([customerId])
   @@map("points_ledger")
+}
+
+// "comprou uma roda a gente já sabe quantos pontos a gente vai dar" [reunião 07/08].
+// Exatamente UM dos alvos é preenchido: productId (override de um produto
+// específico) ou productType (a categoria inteira). Resolução em
+// points.service.ts, com precedência produto > categoria > multiplicador do
+// tier — item sem regra continua pontuando como sempre pontuou.
+model PointsRule {
+  id          String         @id @default(uuid())
+  productId   String?        @unique @map("product_id")
+  productType String?        @unique @map("product_type")
+  mode        PointsRuleMode
+  value       Decimal        @db.Decimal(10, 2)
+  active      Boolean        @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@map("points_rules")
 }
 
 model ServiceOrder {

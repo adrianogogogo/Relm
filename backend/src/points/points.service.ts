@@ -1,7 +1,13 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
-import { PointTxType, TierLevel, PointsLedger, PointsBucket } from '@prisma/client';
+import {
+  PointTxType,
+  TierLevel,
+  PointsLedger,
+  PointsBucket,
+  PointsRuleMode,
+} from '@prisma/client';
 import { CronHealthService } from '../common/cron-health.service';
 import { ClubSettingsService } from '../club-settings/club-settings.service';
 
@@ -10,6 +16,17 @@ const EARN_EXPIRY_DAYS = 365;
 // Bônus fixo creditado ao concluir uma revisão na oficina. Valor de negócio —
 // ajuste livre. ponytail: constante fixa; mover para config se variar por tier.
 const WORKSHOP_COMPLETION_POINTS = 50;
+
+/**
+ * O mínimo que o cálculo de pontos precisa de um item de venda. Estrutural de
+ * propósito: aceita tanto o SaleItem do Prisma (unitPrice é Decimal) quanto um
+ * literal de teste, sem acoplar o PointsService ao módulo de vendas.
+ */
+export type SaleItemForPoints = {
+  productId?: string | null;
+  unitPrice?: unknown;
+  quantity?: number | null;
+};
 
 @Injectable()
 export class PointsService {
@@ -229,6 +246,133 @@ export class PointsService {
     const { pointsMultiplier } = await this.clubSettings.resolveEntitlements(tier);
     const amount = Math.floor(Math.floor(purchaseValue) * pointsMultiplier);
     return this.earnPoints(customerId, amount, description, referenceId, tx);
+  }
+
+  /**
+   * Regra aplicável a um produto: o override do próprio produto primeiro,
+   * senão a regra da categoria (`productType`). Null = sem regra.
+   * ponytail: duas queries por item; item de venda tem teto de 50, se virar
+   * gargalo carregue as regras ativas uma vez por venda.
+   */
+  private async findPointsRule(productId: string, client: any) {
+    const own = await client.pointsRule.findFirst({ where: { productId, active: true } });
+    if (own) return own;
+
+    const product = await client.product.findUnique({
+      where: { id: productId },
+      select: { productType: true },
+    });
+    if (!product?.productType) return null;
+
+    return client.pointsRule.findFirst({
+      where: { productType: product.productType, active: true },
+    });
+  }
+
+  /**
+   * Pontos devidos por um item de venda. Precedência: regra do produto >
+   * regra da categoria > multiplicador do tier. O fallback é exatamente a
+   * conta que `addPurchasePoints` já fazia, então item sem regra — inclusive
+   * item ainda não curado, que nem tem productId — pontua como sempre pontuou.
+   */
+  async pointsForSaleItem(
+    item: SaleItemForPoints,
+    tier: TierLevel,
+    tx?: any,
+  ): Promise<number> {
+    const client = tx || this.prisma;
+    const quantity = item.quantity ?? 1;
+    const subtotal = Number(item.unitPrice ?? 0) * quantity;
+
+    const rule = item.productId ? await this.findPointsRule(item.productId, client) : null;
+    if (rule) {
+      const value = Number(rule.value);
+      return rule.mode === PointsRuleMode.FIXO
+        ? Math.floor(value * quantity)
+        : Math.floor(subtotal * value);
+    }
+
+    const { pointsMultiplier } = await this.clubSettings.resolveEntitlements(tier);
+    return Math.floor(Math.floor(subtotal) * pointsMultiplier);
+  }
+
+  /**
+   * Credita — ou completa — os pontos de um item de venda. Soma o que o item
+   * já gerou (ancorado no `referenceId`) e credita só a diferença.
+   *
+   * Só para cima: quando a curadoria vincula o produto e a regra rende mais, o
+   * cliente ganha o complemento; se rendesse menos, nada acontece. Ponto que já
+   * apareceu no extrato do cliente não se estorna por reclassificação nossa.
+   */
+  async syncSaleItemPoints(
+    customerId: string,
+    saleItemId: string,
+    item: SaleItemForPoints,
+    description: string,
+    tx?: any,
+  ) {
+    const client = tx || this.prisma;
+    const subscription = await client.subscription.findUnique({ where: { customerId } });
+    const tier = subscription ? subscription.tier : TierLevel.CARE;
+
+    const due = await this.pointsForSaleItem(item, tier, client);
+    const credited = await client.pointsLedger.aggregate({
+      _sum: { amount: true },
+      where: {
+        customerId,
+        referenceId: saleItemId,
+        transactionType: PointTxType.EARN,
+      },
+    });
+
+    const delta = due - (credited._sum.amount ?? 0);
+    if (delta <= 0) return null;
+    return this.earnPoints(customerId, delta, description, saleItemId, tx);
+  }
+
+  // ── Regras de pontuação (CRUD admin) ──────────────────────────────────────
+
+  listPointsRules() {
+    return this.prisma.pointsRule.findMany({
+      include: { product: { select: { id: true, name: true, productType: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async createPointsRule(data: {
+    productId?: string;
+    productType?: string;
+    mode: PointsRuleMode;
+    value: number;
+  }) {
+    // XOR: a regra é de UM produto ou de UMA categoria. Com os dois, a
+    // precedência do resolver ficaria ambígua; com nenhum, a regra é inerte.
+    if (!!data.productId === !!data.productType) {
+      throw new BadRequestException('Informe productId OU productType — exatamente um.');
+    }
+    if (data.productId) {
+      const product = await this.prisma.product.findUnique({ where: { id: data.productId } });
+      if (!product) throw new NotFoundException('Produto não encontrado');
+    }
+    return this.prisma.pointsRule.create({ data });
+  }
+
+  async updatePointsRule(
+    id: string,
+    data: { mode?: PointsRuleMode; value?: number; active?: boolean },
+  ) {
+    const rule = await this.prisma.pointsRule.findUnique({ where: { id } });
+    if (!rule) throw new NotFoundException('Regra de pontuação não encontrada');
+    return this.prisma.pointsRule.update({ where: { id }, data });
+  }
+
+  async removePointsRule(id: string) {
+    // Apaga de verdade, não desativa: productId/productType são UNIQUE, então
+    // uma regra inativa seguiria ocupando a chave e bloquearia a criação da
+    // substituta. Para pausar sem perder, use `active: false` no update.
+    const rule = await this.prisma.pointsRule.findUnique({ where: { id } });
+    if (!rule) throw new NotFoundException('Regra de pontuação não encontrada');
+    return this.prisma.pointsRule.delete({ where: { id } });
   }
 
   /** Bônus por revisão concluída na oficina. */

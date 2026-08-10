@@ -86,8 +86,8 @@ sem o Adriano confirmar o valor. Em staging pode.
 |---|---|---|
 | 0 | Baseline das 22 migrations (`migrate resolve --applied`) | **DONE** |
 | 2a | Resolver de settings (ClubSettings > ENTITLEMENTS); 9 call sites viram `await` | TODO |
-| 2 | `bucket` no ledger + saldo mensal derivado + `computeState` | TODO → **parada de validação** |
-| 3 | Venda → pontos + tabela de regra + ajuste na curadoria | TODO |
+| 2 | `bucket` no ledger + saldo mensal derivado + `computeState` | **DONE** |
+| 3 | Venda → pontos + tabela de regra + ajuste na curadoria | **DONE** |
 | 4 | Serviço resgatável por pontos | TODO |
 | 5 | Ator polimórfico + interceptor global | TODO |
 | 7 | Score por loja | TODO |
@@ -135,6 +135,34 @@ Criar tabela de regra de pontuação (pontos fixos ou por real, por produto e po
 **Arquivos:** `backend/prisma/schema.prisma`, `backend/src/points/`, `backend/src/sales/`
 **Tags:** impl, db
 **Depende de:** Step 2 (o bucket precisa existir antes de decidir em qual creditar).
+
+### Como ficou (implementado 10/08/2026)
+
+Model `PointsRule` com alvo exclusivo — `productId` **ou** `productType`, ambos UNIQUE —
+e modos `FIXO` (pontos por unidade) / `POR_REAL` (pontos por real do subtotal).
+`pointsForSaleItem` resolve na ordem **produto > categoria > multiplicador do tier**; o
+fallback é a conta que `addPurchasePoints` já fazia, então item sem regra não mudou de
+comportamento. CRUD admin em `/v1/points/admin/rules`.
+
+O crédito é ancorado no `referenceId` do ledger (= id do `SaleItem`), sem coluna nova.
+`syncSaleItemPoints` recalcula o devido, soma o já creditado e lança **só a diferença
+positiva** — é o que torna a curadoria um complemento e não um segundo crédito, e o que
+faz reexecução ser no-op.
+
+**Duas escolhas que precisam de ciente:**
+
+1. **O crédito na venda é fora da transação e o erro é logado, não propagado.** Registrar
+   a venda é o caminho crítico do balcão; falhar por causa do ledger seria pior. O preço:
+   se o crédito falhar e o item nunca for curado, os pontos daquele item se perdem em
+   silêncio (fica no log, com id da venda e do item). Se isso aparecer na prática, o
+   conserto é uma fila, não uma transação.
+2. **`removePointsRule` apaga de verdade.** Desativar mantinha a chave UNIQUE ocupada e
+   bloqueava a criação da regra substituta. Para pausar sem perder, use `active: false`
+   pelo PATCH.
+
+**Sem tela ainda:** a regra só é gerenciável por API. A tela admin não estava no escopo
+declarado do step e não é pré-requisito do dia 18 — o Adriano consegue operar via API ou
+a gente sobe a tela no Step 7, que já mexe no admin.
 
 ---
 

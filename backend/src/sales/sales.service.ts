@@ -1,9 +1,11 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PointsService } from '../points/points.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { QuerySalesDto } from './dto/query-sales.dto';
 
@@ -15,7 +17,12 @@ export function computeWarrantyEnd(saleDate: Date, warrantyDays?: number | null)
 
 @Injectable()
 export class SalesService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(SalesService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private points: PointsService,
+  ) {}
 
   async create(dto: CreateSaleDto, userId?: string) {
     const user = userId ? await this.prisma.user.findUnique({ where: { id: userId } }) : null;
@@ -39,7 +46,7 @@ export class SalesService {
 
     const saleDate = new Date(dto.saleDate);
 
-    return this.prisma.sale.create({
+    const sale = await this.prisma.sale.create({
       data: {
         customerId: dto.customerId,
         ...(storeId && { storeId }),
@@ -64,6 +71,31 @@ export class SalesService {
       },
       include: { items: true },
     });
+
+    // Crédito de pontos no registro da venda. Item ainda não curado (sem
+    // productId) pontua pelo multiplicador do tier; quando a curadoria vincular
+    // o produto, linkItemToProduct completa a diferença.
+    //
+    // Fora da transação e com o erro engolido de propósito: registrar a venda é
+    // o caminho crítico do balcão e não pode falhar por causa de pontos. O
+    // crédito é recuperável — syncSaleItemPoints só credita a diferença, então
+    // re-executar corrige. ponytail: se o log virar ruído, vire fila.
+    for (const item of sale.items) {
+      try {
+        await this.points.syncSaleItemPoints(
+          sale.customerId,
+          item.id,
+          item,
+          `Compra: ${item.commercialName}`,
+        );
+      } catch (err: any) {
+        this.logger.error(
+          `Falha ao creditar pontos do item ${item.id} (venda ${sale.id}): ${err.message}`,
+        );
+      }
+    }
+
+    return sale;
   }
 
   async findAll(query: QuerySalesDto, userId?: string) {
@@ -191,7 +223,10 @@ export class SalesService {
   // Vincula a descrição livre (commercialName) de um item de venda a um
   // produto do catálogo — é a curadoria feita pela equipe Relm.
   async linkItemToProduct(itemId: string, productId: string) {
-    const item = await this.prisma.saleItem.findUnique({ where: { id: itemId } });
+    const item = await this.prisma.saleItem.findUnique({
+      where: { id: itemId },
+      include: { sale: { select: { customerId: true } } },
+    });
     if (!item) {
       throw new NotFoundException('Item de venda não encontrado');
     }
@@ -201,6 +236,21 @@ export class SalesService {
       throw new NotFoundException('Produto não encontrado');
     }
 
-    return this.prisma.saleItem.update({ where: { id: itemId }, data: { productId } });
+    const updated = await this.prisma.saleItem.update({
+      where: { id: itemId },
+      data: { productId },
+    });
+
+    // Agora que o produto é conhecido, a regra dele (ou a da categoria) pode
+    // render mais que o multiplicador aplicado no registro da venda.
+    // syncSaleItemPoints credita só a diferença e nunca estorna.
+    await this.points.syncSaleItemPoints(
+      item.sale.customerId,
+      itemId,
+      updated,
+      `Curadoria de compra: ${item.commercialName}`,
+    );
+
+    return updated;
   }
 }
