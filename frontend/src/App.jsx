@@ -82,6 +82,7 @@ import AdminWhatsAppPage from './pages/AdminWhatsAppPage';
 import AdminPartnersPage from './pages/AdminPartnersPage';
 import AdminClubReportsPage from './pages/AdminClubReportsPage';
 import CustomerPartnersPage from './pages/CustomerPartnersPage';
+import AdminClubSettingsPage from './pages/AdminClubSettingsPage';
 import AdminPointsRulesPage from './pages/AdminPointsRulesPage';
 import AdminMasterServicesPage from './pages/AdminMasterServicesPage';
 import PublicLandingPage from './pages/PublicLandingPage';
