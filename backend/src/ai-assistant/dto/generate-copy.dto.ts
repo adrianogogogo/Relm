@@ -16,4 +16,8 @@ export class GenerateCopyDto {
   @IsString()
   @IsOptional()
   tone?: string;
+
+  @IsString()
+  @IsOptional()
+  model?: string;
 }

@@ -11,8 +11,9 @@ export default function AdminLandingPagesPage() {
   // Mode: 'LIST' | 'CREATE_MAGIC' | 'EDIT_WYSIWYG'
   const [mode, setMode] = useState('LIST');
 
-  // AI Prompt State
+  // AI Prompt & Model State
   const [aiPrompt, setAiPrompt] = useState('');
+  const [selectedModel, setSelectedModel] = useState('gpt-4o-mini');
   const [generating, setGenerating] = useState(false);
 
   // Active Editing Page State
@@ -55,6 +56,7 @@ export default function AdminLandingPagesPage() {
       const copyRes = await aiAssistantAPI.generateCopy({
         prompt: aiPrompt,
         type: 'LANDING_PAGE',
+        model: selectedModel,
       });
 
       const mainTitle = copyRes.hero?.title || aiPrompt;
@@ -95,7 +97,8 @@ export default function AdminLandingPagesPage() {
       setBlocks(generatedBlocks);
       setMode('EDIT_WYSIWYG');
     } catch (err) {
-      alert('Erro ao gerar página com IA.');
+      console.error('Erro na OpenAI:', err);
+      alert(err.response?.data?.message || err.message || 'Erro ao comunicar com a API da OpenAI. Tente novamente.');
     } finally {
       setGenerating(false);
     }
@@ -281,6 +284,19 @@ export default function AdminLandingPagesPage() {
           </div>
 
           <form onSubmit={handleMagicGenerate} className="space-y-4">
+            <div className="text-left space-y-1">
+              <label className="text-xs font-bold text-slate-300">Modelo OpenAI:</label>
+              <select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+              >
+                <option value="gpt-4o-mini">🤖 OpenAI gpt-4o-mini (Recomendado — Rápido & Inteligente)</option>
+                <option value="gpt-4o">🚀 OpenAI gpt-4o (Criatividade Avançada & Raciocínio Persuasivo)</option>
+                <option value="gpt-3.5-turbo">⚡ OpenAI gpt-3.5-turbo (Padrão)</option>
+              </select>
+            </div>
+
             <textarea
               rows={4}
               required

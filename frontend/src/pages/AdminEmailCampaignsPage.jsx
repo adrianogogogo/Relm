@@ -10,8 +10,9 @@ export default function AdminEmailCampaignsPage() {
   // Tabs: 'CAMPAIGNS' | 'MAGIC_CREATE'
   const [activeTab, setActiveTab] = useState('CAMPAIGNS');
 
-  // AI Prompt & State
+  // AI Prompt & Model State
   const [aiPrompt, setAiPrompt] = useState('');
+  const [selectedModel, setSelectedModel] = useState('gpt-4o-mini');
   const [generating, setGenerating] = useState(false);
 
   // Generated Email Form & WYSIWYG Preview State
@@ -57,6 +58,7 @@ export default function AdminEmailCampaignsPage() {
       const copyRes = await aiAssistantAPI.generateCopy({
         prompt: aiPrompt,
         type: 'EMAIL_SUBJECT',
+        model: selectedModel,
       });
 
       const genSubject = copyRes.suggestedSubject || copyRes.heading || aiPrompt;
@@ -69,7 +71,8 @@ export default function AdminEmailCampaignsPage() {
       setCtaText('Conferir Meu Benefício');
       setCampaignTitle(`Campanha: ${genSubject.substring(0, 30)}...`);
     } catch (err) {
-      alert('Erro ao gerar e-mail com IA.');
+      console.error('Erro na OpenAI:', err);
+      alert(err.response?.data?.message || err.message || 'Erro ao comunicar com a API da OpenAI. Tente novamente.');
     } finally {
       setGenerating(false);
     }
@@ -192,6 +195,19 @@ export default function AdminEmailCampaignsPage() {
             </div>
 
             <form onSubmit={handleMagicGenerate} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-300">Modelo OpenAI:</label>
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                >
+                  <option value="gpt-4o-mini">🤖 OpenAI gpt-4o-mini (Recomendado — Rápido & Inteligente)</option>
+                  <option value="gpt-4o">🚀 OpenAI gpt-4o (Criatividade Avançada & Raciocínio Persuasivo)</option>
+                  <option value="gpt-3.5-turbo">⚡ OpenAI gpt-3.5-turbo (Padrão)</option>
+                </select>
+              </div>
+
               <textarea
                 rows={3}
                 required
