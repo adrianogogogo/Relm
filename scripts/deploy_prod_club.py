@@ -9,8 +9,6 @@ ROOT = r'c:\Users\BOSS\Desktop\Relm\Relm-Care'
 BE = '/var/www/relm-careplus-prod/backend'
 WEB = '/var/www/relm-careplus-prod-web'
 PM2_APP = 'relm-careplus-prod-backend'
-# psql/pg_dump rejeitam o parametro ?schema= do Prisma — removemos o sufixo.
-DBURL = 'DB_URL=$(grep DATABASE_URL .env | cut -d= -f2- | tr -d \'"\' | sed \'s/?schema=.*//\')'
 
 def run(c, cmd, t=900):
     _, o, e = c.exec_command(cmd, timeout=t)
@@ -31,18 +29,31 @@ def upload_dir(sftp, local, remote):
 c = paramiko.SSHClient(); c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 c.connect(HOST, port=PORT, username=USER, password=PASS)
 
+# Extract DATABASE_URL from .env and parse connection parameters
+out_env, _ = run(c, 'grep DATABASE_URL %s/.env' % BE)
+db_line = out_env.strip().split('=', 1)[1].strip('"\'')
+scheme_and_rest = db_line.split('://', 1)[1]
+auth_part, host_db_part = scheme_and_rest.rsplit('@', 1)
+db_user, db_pass = auth_part.split(':', 1)
+host_port, db_and_query = host_db_part.split('/', 1)
+db_name = db_and_query.split('?', 1)[0]
+db_host = host_port.split(':', 1)[0] if ':' in host_port else host_port
+db_port = host_port.split(':', 1)[1] if ':' in host_port else '5432'
+
+pg_env = "PGPASSWORD='%s' PGHOST='%s' PGPORT='%s' PGUSER='%s' PGDATABASE='%s'" % (db_pass, db_host, db_port, db_user, db_name)
+
 ts = time.strftime('%Y%m%d-%H%M%S')
 bak = '/root/relm-backups/prod-club-%s' % ts
 run(c, 'mkdir -p %s' % bak)
 
 # 1) BACKUP (obrigatorio): banco + dist + .env
 out, err = run(c,
-    'cd %s && %s && pg_dump "$DB_URL" -Fc -f %s/prod-db.dump && '
+    'cd %s && %s pg_dump -Fc -f %s/prod-db.dump && '
     'cp -a dist %s/backend-dist.bak 2>/dev/null; cp -a .env %s/env.bak && '
-    'ls -la %s/prod-db.dump && echo BACKUP_OK' % (BE, DBURL, bak, bak, bak, bak))
+    'ls -la %s/prod-db.dump && echo BACKUP_OK' % (BE, pg_env, bak, bak, bak, bak))
 say('1) backup -> %s\n%s %s' % (bak, out.strip(), err.strip()[-300:]))
-if 'BACKUP_OK' not in out:
-    sys.exit('ABORTADO: backup falhou — nada foi alterado.')
+if 'BACKUP_OK' not in out or ' 0 Aug ' in out:
+    sys.exit('ABORTADO: backup falhou ou ficou vazio — nada foi alterado.')
 
 # 2) Upload backend (src, prisma, scripts, test, package.json)
 sftp = c.open_sftp()
@@ -59,14 +70,14 @@ say('3) migrate status (antes):\n%s%s' % (out, err[-200:]))
 out, err = run(c, 'cd %s && npx prisma migrate deploy 2>&1 | tail -8' % BE)
 say('   migrate deploy:\n%s%s' % (out, err[-300:]))
 if 'Error' in out or 'Error' in err:
-    sys.exit('ABORTADO: migrate deploy falhou. Rollback: pg_restore --clean --if-exists --no-owner -d "$DB_URL" %s/prod-db.dump' % bak)
+    sys.exit('ABORTADO: migrate deploy falhou. Rollback: %s pg_restore --clean --if-exists --no-owner %s/prod-db.dump' % (pg_env, bak))
 
 # 4) Seeds de producao (SQL idempotente — NUNCA prisma db seed em prod)
 out, err = run(c,
-    'cd %s && %s && psql "$DB_URL" -c "INSERT INTO club_settings (id, key, value, updated_at) VALUES '
+    '%s psql -c "INSERT INTO club_settings (id, key, value, updated_at) VALUES '
     '(gen_random_uuid(), \'plus_annual_fee\', \'299.00\', NOW()), '
     '(gen_random_uuid(), \'point_value_brl\', \'0.05\', NOW()) '
-    'ON CONFLICT (key) DO NOTHING" && psql "$DB_URL" -tAc "SELECT key||\'=\'||value FROM club_settings ORDER BY key"' % (BE, DBURL))
+    'ON CONFLICT (key) DO NOTHING" && %s psql -tAc "SELECT key||\'=\'||value FROM club_settings ORDER BY key"' % (pg_env, pg_env))
 say('4) club_settings:\n%s%s' % (out, err[-200:]))
 
 # 5) generate + build + pm2 reload
@@ -105,11 +116,11 @@ time.sleep(5)
 out, _ = run(c, 'curl -s http://localhost:3001/health | head -c 200; echo; curl -s http://localhost:3001/health/crons | head -c 500')
 say('8) health:\n%s' % out)
 out, _ = run(c,
-    'cd %s && %s && for t in payments club_settings insurance_policies referrals achievements customer_achievements partners; do '
-    'psql "$DB_URL" -tAc "SELECT \'$t: \'||COUNT(*) FROM $t"; done && '
-    'psql "$DB_URL" -tAc "SELECT \'sem_assinatura: \'||COUNT(*) FROM customers c LEFT JOIN subscriptions s ON s.customer_id=c.id WHERE s.id IS NULL"' % (BE, DBURL))
+    'for t in payments club_settings insurance_policies referrals achievements customer_achievements partners; do '
+    '  %s psql -tAc "SELECT \'$t: \'||COUNT(*) FROM $t"; done && '
+    '%s psql -tAc "SELECT \'sem_assinatura: \'||COUNT(*) FROM customers c LEFT JOIN subscriptions s ON s.customer_id=c.id WHERE s.id IS NULL"' % (pg_env, pg_env))
 say('   verificacao DB:\n%s' % out)
 
 c.close()
 say('=== DEPLOY PRODUCAO CONCLUIDO ===')
-say('Rollback DB: pg_restore --clean --if-exists --no-owner -d "$DB_URL" %s/prod-db.dump' % bak)
+say('Rollback DB: %s pg_restore --clean --if-exists --no-owner %s/prod-db.dump' % (pg_env, bak))
