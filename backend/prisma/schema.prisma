@@ -830,6 +830,17 @@ enum PointTxType {
   EXPIRE
 }
 
+// De qual saldo a linha fala.
+//   ACUMULAVEL — o saldo histórico: acumula, expira 12 meses após o EARN.
+//   MENSAL     — saldo do Plus que renova todo mês e não acumula (uso-ou-perde).
+// O bucket MENSAL não tem linha de EARN: a cota vem do ENTITLEMENTS/ClubSettings
+// e o saldo é DERIVADO (cota menos o consumido no mês corrente), igual ao
+// serviceAllowancePerYear. Só os REDEEM mensais viram linha.
+enum PointsBucket {
+  ACUMULAVEL
+  MENSAL
+}
+
 enum PlusCoverageRule {
   FREE
   DISCOUNT_PERCENT
@@ -946,6 +957,8 @@ model PointsLedger {
   customerId      String      @map("customer_id")
   customer        Customer    @relation(fields: [customerId], references: [id])
   transactionType PointTxType @map("transaction_type")
+  // Linhas antigas são todas do saldo histórico — daí o default.
+  bucket          PointsBucket @default(ACUMULAVEL)
   amount          Int
   description     String
   referenceId     String?     @map("reference_id")

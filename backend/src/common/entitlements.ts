@@ -48,6 +48,10 @@ export interface TierEntitlements {
   freeBasicRevisionsPerYear: number | null; // derivado da cota abaixo (compat frontend); null = ilimitado
   serviceAllowancePerYear: ServiceAllowance; // Wave 6 — cota anual por tipo
   renewalBonusPoints: number; // knob de negócio — calibrar
+  // Pontos que renovam todo mês e NÃO acumulam (uso-ou-perde). Não há linha de
+  // concessão no ledger: o saldo é DERIVADO (esta cota menos o consumido no mês
+  // corrente), mesmo padrão do serviceAllowancePerYear acima.
+  monthlyPoints: number;
 }
 
 export const ENTITLEMENTS: Record<TierLevel, TierEntitlements> = {
@@ -66,6 +70,7 @@ export const ENTITLEMENTS: Record<TierLevel, TierEntitlements> = {
       BIKE_FITTING: 0,
     },
     renewalBonusPoints: 0,
+    monthlyPoints: 0, // saldo mensal é benefício exclusivo do Plus
   },
   PLUS: {
     pointsMultiplier: 2,
@@ -82,6 +87,10 @@ export const ENTITLEMENTS: Record<TierLevel, TierEntitlements> = {
       BIKE_FITTING: 1,
     },
     renewalBonusPoints: 500, // ponytail: valor ilustrativo, calibrar na estruturação
+    // ponytail: 1000 pts ≈ R$50 a point_value_brl=0,05 — cobre ~1 lavagem/mês,
+    // que foi o exemplo da reunião. Valor ilustrativo: o Adriano calibra pela
+    // tela de configurações do clube (plus_monthly_points), sem deploy.
+    monthlyPoints: 1000,
   },
 };
 

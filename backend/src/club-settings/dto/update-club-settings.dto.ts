@@ -36,6 +36,12 @@ export class UpdateClubSettingsDto {
   @Min(1)
   plusPointsMultiplier?: number;
 
+  // Min(0) e não Min(1): zerar desliga o saldo mensal do Plus.
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  plusMonthlyPoints?: number;
+
   @IsOptional()
   @IsNumber()
   @Min(1)

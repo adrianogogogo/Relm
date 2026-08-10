@@ -1,9 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
-import { PointTxType, TierLevel, PointsLedger } from '@prisma/client';
-import { ENTITLEMENTS } from '../common/entitlements';
+import { PointTxType, TierLevel, PointsLedger, PointsBucket } from '@prisma/client';
 import { CronHealthService } from '../common/cron-health.service';
+import { ClubSettingsService } from '../club-settings/club-settings.service';
 
 // Validade dos pontos: 12 meses a partir do EARN (PRD 9.2.1).
 const EARN_EXPIRY_DAYS = 365;
@@ -18,7 +18,13 @@ export class PointsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cronHealth: CronHealthService,
+    private readonly clubSettings: ClubSettingsService,
   ) {}
+
+  /** Primeiro instante do mês de `now`, em horário local do servidor. */
+  private startOfMonth(now: Date): Date {
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  }
 
   /**
    * Estado do ledger via FIFO: resgates consomem os EARN mais antigos primeiro,
@@ -55,11 +61,99 @@ export class PointsService {
     return { balance, desiredExpire, existingExpire, expiredLotIds };
   }
 
-  /** Saldo resgatável — já exclui lotes vencidos mesmo antes do cron rodar. */
+  /**
+   * Saldo ACUMULÁVEL — já exclui lotes vencidos mesmo antes do cron rodar.
+   * Filtra por bucket: um resgate feito com pontos mensais não pode abater o
+   * saldo histórico, senão o cliente pagaria duas vezes pelo mesmo consumo.
+   */
   async getBalance(customerId: string, tx?: any): Promise<number> {
     const client = tx || this.prisma;
-    const rows = await client.pointsLedger.findMany({ where: { customerId } });
+    const rows = await client.pointsLedger.findMany({
+      where: { customerId, bucket: PointsBucket.ACUMULAVEL },
+    });
     return this.computeState(rows, new Date()).balance;
+  }
+
+  /**
+   * Saldo MENSAL — derivado, não materializado: cota do tier menos o consumido
+   * no mês corrente. Não há linha de concessão nem cron de reset; virar o mês
+   * já zera o consumo porque a janela de contagem anda junto.
+   */
+  async getMonthlyBalance(customerId: string, tx?: any): Promise<number> {
+    const client = tx || this.prisma;
+    const subscription = await client.subscription.findUnique({ where: { customerId } });
+    const tier = subscription ? subscription.tier : TierLevel.CARE;
+    const { monthlyPoints } = await this.clubSettings.resolveEntitlements(tier);
+    if (monthlyPoints <= 0) return 0;
+
+    const spent = await client.pointsLedger.aggregate({
+      _sum: { amount: true },
+      where: {
+        customerId,
+        bucket: PointsBucket.MENSAL,
+        transactionType: PointTxType.REDEEM,
+        createdAt: { gte: this.startOfMonth(new Date()) },
+      },
+    });
+    const consumed = Math.abs(spent._sum.amount ?? 0);
+    return Math.max(0, monthlyPoints - consumed);
+  }
+
+  /** Os dois saldos de uma vez — o que a tela do cliente precisa mostrar. */
+  async getBalances(customerId: string, tx?: any) {
+    const [accumulated, monthly] = await Promise.all([
+      this.getBalance(customerId, tx),
+      this.getMonthlyBalance(customerId, tx),
+    ]);
+    return { accumulated, monthly, total: accumulated + monthly };
+  }
+
+  /**
+   * Débito de pontos. Gasta o saldo MENSAL primeiro — ele vence na virada do
+   * mês, então queimar o acumulável antes faria o cliente perder o mensal sem
+   * usar. Devolve quanto saiu de cada bucket.
+   */
+  async redeemPoints(
+    customerId: string,
+    amount: number,
+    description: string,
+    referenceId?: string,
+    tx?: any,
+  ) {
+    const points = Math.floor(amount);
+    if (points <= 0) throw new Error('Valor de resgate deve ser positivo');
+    const client = tx || this.prisma;
+
+    const monthly = await this.getMonthlyBalance(customerId, client);
+    const accumulated = await this.getBalance(customerId, client);
+    if (monthly + accumulated < points) {
+      throw new BadRequestException('Saldo de pontos insuficiente');
+    }
+
+    const fromMonthly = Math.min(monthly, points);
+    const fromAccumulated = points - fromMonthly;
+
+    for (const [bucket, value] of [
+      [PointsBucket.MENSAL, fromMonthly],
+      [PointsBucket.ACUMULAVEL, fromAccumulated],
+    ] as const) {
+      if (value <= 0) continue;
+      await client.pointsLedger.create({
+        data: {
+          customerId,
+          transactionType: PointTxType.REDEEM,
+          bucket,
+          amount: -value,
+          description,
+          referenceId,
+        },
+      });
+    }
+
+    this.logger.log(
+      `Redeemed ${points} points from ${customerId} (mensal=${fromMonthly}, acumulavel=${fromAccumulated})`,
+    );
+    return { fromMonthly, fromAccumulated };
   }
 
   /** Primitivo genérico de crédito. Use para qualquer regra de acúmulo. */
@@ -77,6 +171,9 @@ export class PointsService {
       data: {
         customerId,
         transactionType: PointTxType.EARN,
+        // Crédito é sempre acumulável: o saldo mensal é cota derivada, não se
+        // concede por linha.
+        bucket: PointsBucket.ACUMULAVEL,
         amount: points,
         description,
         referenceId,
@@ -127,8 +224,10 @@ export class PointsService {
     const client = tx || this.prisma;
     const subscription = await client.subscription.findUnique({ where: { customerId } });
     const tier = subscription ? subscription.tier : TierLevel.CARE;
-    const multiplier = ENTITLEMENTS[tier].pointsMultiplier;
-    const amount = Math.floor(Math.floor(purchaseValue) * multiplier);
+    // Resolver e não ENTITLEMENTS direto: o multiplicador é calibrável pela
+    // tela de configurações do clube.
+    const { pointsMultiplier } = await this.clubSettings.resolveEntitlements(tier);
+    const amount = Math.floor(Math.floor(purchaseValue) * pointsMultiplier);
     return this.earnPoints(customerId, amount, description, referenceId, tx);
   }
 
@@ -153,7 +252,12 @@ export class PointsService {
     this.logger.log('Running daily points expiration cron job...');
     const now = new Date();
     const lots = await this.prisma.pointsLedger.findMany({
-      where: { transactionType: PointTxType.EARN, isExpired: false, expiresAt: { lt: now } },
+      where: {
+        transactionType: PointTxType.EARN,
+        bucket: PointsBucket.ACUMULAVEL,
+        isExpired: false,
+        expiresAt: { lt: now },
+      },
       select: { customerId: true },
       distinct: ['customerId'],
     });
@@ -169,7 +273,9 @@ export class PointsService {
 
   private async expireCustomerPoints(customerId: string, now: Date) {
     await this.prisma.$transaction(async (tx) => {
-      const rows = await tx.pointsLedger.findMany({ where: { customerId } });
+      const rows = await tx.pointsLedger.findMany({
+        where: { customerId, bucket: PointsBucket.ACUMULAVEL },
+      });
       const { desiredExpire, existingExpire, expiredLotIds } = this.computeState(rows, now);
       const delta = desiredExpire - existingExpire;
       if (delta > 0) {
@@ -177,6 +283,7 @@ export class PointsService {
           data: {
             customerId,
             transactionType: PointTxType.EXPIRE,
+            bucket: PointsBucket.ACUMULAVEL,
             amount: -delta,
             description: 'Expiração automática de pontos (12 meses)',
           },
