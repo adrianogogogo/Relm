@@ -82,9 +82,11 @@ import AdminWhatsAppPage from './pages/AdminWhatsAppPage';
 import AdminPartnersPage from './pages/AdminPartnersPage';
 import AdminClubReportsPage from './pages/AdminClubReportsPage';
 import CustomerPartnersPage from './pages/CustomerPartnersPage';
-import AdminClubSettingsPage from './pages/AdminClubSettingsPage';
 import AdminPointsRulesPage from './pages/AdminPointsRulesPage';
 import AdminMasterServicesPage from './pages/AdminMasterServicesPage';
+import PublicLandingPage from './pages/PublicLandingPage';
+import AdminLandingPagesPage from './pages/AdminLandingPagesPage';
+import AdminEmailCampaignsPage from './pages/AdminEmailCampaignsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -133,6 +135,9 @@ export default function App() {
             <Route path="/newsletter" element={<NewsletterPage />} />
             <Route path="/validar-garantia/:token" element={<Navigate to="/" replace />} />
           </Route>
+
+          {/* Standalone Public Landing Page (No Header/Footer wrapper) */}
+          <Route path="/lp/:slug" element={<PublicLandingPage />} />
 
           {/* ── Customer portal ──────────────────────────────────────────── */}
           <Route path="/cliente/cadastro" element={<CustomerRegisterPage />} />
@@ -334,6 +339,16 @@ export default function App() {
             <Route path="master-services" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR']}>
                 <AdminMasterServicesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="landing-pages" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                <AdminLandingPagesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="email-campaigns" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                <AdminEmailCampaignsPage />
               </ProtectedRoute>
             } />
             {/* Feed view-only do Distribuidor (não acessa a gestão de eventos/benefícios) */}

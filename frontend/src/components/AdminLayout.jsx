@@ -137,6 +137,18 @@ const MENU_SECTIONS = [
         icon: MdCardGiftcard,
         roles: ['DISTRIBUIDOR'],
       },
+      {
+        path: '/admin/landing-pages',
+        label: 'Landing Pages',
+        icon: MdImage,
+        roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+      },
+      {
+        path: '/admin/email-campaigns',
+        label: 'Campanhas de E-mail (CRM)',
+        icon: MdDescription,
+        roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+      },
     ],
   },
 ];

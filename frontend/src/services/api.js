@@ -461,3 +461,27 @@ export const storeServicesAPI = {
   delete: (id) => api.delete(`/stores/services/${id}`).then((res) => res.data),
 };
 
+export const marketingAPI = {
+  getPublicBySlug: (slug) => api.get(`/marketing/landing-pages/public/${slug}`).then((res) => res.data),
+  getAll: () => api.get('/marketing/landing-pages').then((res) => res.data),
+  getById: (id) => api.get(`/marketing/landing-pages/${id}`).then((res) => res.data),
+  create: (data) => api.post('/marketing/landing-pages', data).then((res) => res.data),
+  update: (id, data) => api.patch(`/marketing/landing-pages/${id}`, data).then((res) => res.data),
+  delete: (id) => api.delete(`/marketing/landing-pages/${id}`).then((res) => res.data),
+};
+
+export const emailCrmAPI = {
+  getTemplates: () => api.get('/email-crm/templates').then((res) => res.data),
+  createTemplate: (data) => api.post('/email-crm/templates', data).then((res) => res.data),
+  getCampaigns: () => api.get('/email-crm/campaigns').then((res) => res.data),
+  createCampaign: (data) => api.post('/email-crm/campaigns', data).then((res) => res.data),
+  sendCampaign: (id) => api.post(`/email-crm/campaigns/${id}/send`).then((res) => res.data),
+  sendTest: (data) => api.post('/email-crm/send-test', data).then((res) => res.data),
+};
+
+export const aiAssistantAPI = {
+  generateCopy: (data) => api.post('/ai-assistant/generate-copy', data).then((res) => res.data),
+  getDailyRiderMessage: (data) => api.post('/ai-assistant/daily-rider-message', data).then((res) => res.data),
+};
+
+

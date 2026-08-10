@@ -160,6 +160,7 @@ model Store {
   serviceOrders   ServiceOrder[]
   sales           Sale[]
   storeServices   StoreService[]
+  landingPages    LandingPage[]
 
   @@index([city, state])
   @@map("stores")
@@ -687,6 +688,33 @@ model ContentItem {
   @@index([active, publishedAt])
   @@index([targetRole])
   @@map("content_items")
+}
+
+// Landing page de campanha (Step 6). `conteudo` guarda o PaginaGerada inteiro
+// — blocos + paleta — porque a forma vem do schema de blocos, não do banco:
+// normalizar bloco em tabela obrigaria migration a cada tipo novo.
+//
+// `storeId` é coluna solta, sem FK: a página é da campanha, não da loja, e a
+// loja só entra no rodapé. Apagar uma loja não pode derrubar a campanha.
+model LandingPage {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  title       String   @default("")
+  description String?  @db.Text
+  blocksJson  Json     @map("blocks_json")
+  active      Boolean  @default(true)
+  viewCount   Int      @default(0) @map("view_count")
+  storeId     String?  @map("store_id")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  store       Store?   @relation(fields: [storeId], references: [id])
+
+  @@index([active])
+  @@index([slug])
+  @@index([storeId])
+  @@map("landing_pages")
 }
 
 model Announcement {
@@ -1276,3 +1304,56 @@ model SaleItem {
   @@index([warrantyEndsAt])
   @@map("sale_items")
 }
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  FAILED
+}
+
+enum CampaignSegment {
+  ALL_CUSTOMERS
+  PLUS_ONLY
+  EXPIRED_POINTS
+  STORES_ONLY
+}
+
+model EmailTemplate {
+  id            String   @id @default(uuid())
+  name          String
+  slug          String   @unique
+  subject       String
+  bodyHtml      String   @db.Text @map("body_html")
+  variablesJson Json?    @map("variables_json")
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  campaigns     EmailCampaign[]
+
+  @@map("email_templates")
+}
+
+model EmailCampaign {
+  id            String          @id @default(uuid())
+  title         String
+  templateId    String          @map("template_id")
+  targetSegment CampaignSegment @default(ALL_CUSTOMERS) @map("target_segment")
+  status        CampaignStatus  @default(DRAFT)
+  sentCount     Int             @default(0) @map("sent_count")
+  errorCount    Int             @default(0) @map("error_count")
+  scheduledAt   DateTime?       @map("scheduled_at")
+  sentAt        DateTime?       @map("sent_at")
+
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  template      EmailTemplate   @relation(fields: [templateId], references: [id])
+
+  @@index([templateId])
+  @@index([status])
+  @@map("email_campaigns")
+}
+

@@ -38,6 +38,9 @@ import { HealthController } from './health.controller';
 import { CommonModule } from './common/common.module';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { MasterServicesModule } from './master-services/master-services.module';
+import { MarketingModule } from './marketing/marketing.module';
+import { EmailCrmModule } from './email-crm/email-crm.module';
+import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
 
 @Module({
   imports: [
@@ -88,6 +91,9 @@ import { MasterServicesModule } from './master-services/master-services.module';
     GamificationModule,
     PartnersModule,
     ClubSettingsModule,
+    MarketingModule,
+    EmailCrmModule,
+    AiAssistantModule,
   ],
   controllers: [HealthController],
   providers: [
