@@ -77,10 +77,19 @@ function makeService(opts: {
     redeemPoints: jest.fn().mockResolvedValue({ fromMonthly: 0, fromAccumulated: 0 }),
   };
 
+  // O service passou a ler point_value_brl (equivalente em R$ do resgate de
+  // serviço) e voucher_validity_days, que antes vivia hardcoded em 60.
+  const clubSettings: any = {
+    getSettings: jest.fn().mockResolvedValue({
+      pointValueBrl: 0.05,
+      voucherValidityDays: 60,
+    }),
+  };
+
   const logger: any = { log: jest.fn() };
-  const service = new RewardsService(prisma, pointsService);
+  const service = new RewardsService(prisma, pointsService, clubSettings);
   (service as any).logger = logger;
-  return { service, prisma, txMock, pointsService };
+  return { service, prisma, txMock, pointsService, clubSettings };
 }
 
 // ── Presale visibility (getCatalog) ────────────────────────────────────────
@@ -274,6 +283,184 @@ describe('RewardsService.createVoucherManual', () => {
         requesterUserId: 'admin-1',
       })
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+});
+
+// ── Step 4: resgate de serviço com pontos ─────────────────────────────────
+
+function makeServiceRedeemer(opts: {
+  storeService?: any;
+  balance?: number;
+} = {}) {
+  const storeService = opts.storeService === undefined
+    ? {
+        id: 'ss-1', storeId: 'loja-A', active: true, pointsCost: 800,
+        customName: null, masterService: { name: 'Lavagem Completa' },
+      }
+    : opts.storeService;
+
+  const txMock: any = {
+    storeService: { findUnique: jest.fn().mockResolvedValue(storeService) },
+    voucher: {
+      create: jest.fn().mockImplementation(({ data }: any) =>
+        Promise.resolve({ id: 'v1', ...data })),
+    },
+    auditLog: { create: jest.fn().mockResolvedValue({}) },
+  };
+  const prisma: any = {
+    $transaction: jest.fn().mockImplementation((fn) => fn(txMock, {})),
+  };
+  const total = opts.balance ?? 1000;
+  const pointsService: any = {
+    getBalances: jest.fn().mockResolvedValue({ accumulated: total, monthly: 0, total }),
+    redeemPoints: jest.fn().mockResolvedValue({ fromMonthly: 0, fromAccumulated: 0 }),
+  };
+  const clubSettings: any = {
+    getSettings: jest.fn().mockResolvedValue({ pointValueBrl: 0.05, voucherValidityDays: 30 }),
+  };
+  const service = new RewardsService(prisma, pointsService, clubSettings);
+  (service as any).logger = { log: jest.fn() };
+  return { service, txMock, pointsService };
+}
+
+describe('RewardsService.redeemService', () => {
+  it('debita pontos e emite voucher amarrado ao serviço da loja', async () => {
+    const { service, txMock, pointsService } = makeServiceRedeemer();
+
+    const result = await service.redeemService({ customerId: 'c1', storeServiceId: 'ss-1' });
+
+    expect(result.voucherCode).toMatch(/^RLM-/);
+    expect(pointsService.redeemPoints).toHaveBeenCalledWith(
+      'c1', 800, expect.stringContaining('Lavagem Completa'), 'ss-1', txMock,
+    );
+    const { data } = txMock.voucher.create.mock.calls[0][0];
+    expect(data.storeServiceId).toBe('ss-1');
+    expect(data.catalogItemId).toBeUndefined();
+  });
+
+  // O acerto com a loja é offline e posterior: se o R$ fosse recalculado na
+  // hora do repasse, uma mudança de point_value_brl reescreveria o passado.
+  it('congela pontos e equivalente em R$ no voucher', async () => {
+    const { service, txMock } = makeServiceRedeemer();
+
+    await service.redeemService({ customerId: 'c1', storeServiceId: 'ss-1' });
+
+    const { data } = txMock.voucher.create.mock.calls[0][0];
+    expect(data.pointsSpent).toBe(800);
+    expect(Number(data.brlValue)).toBeCloseTo(40); // 800 × 0,05
+  });
+
+  it('usa voucher_validity_days do ClubSettings, não os 60 dias hardcoded', async () => {
+    const { service, txMock } = makeServiceRedeemer();
+
+    await service.redeemService({ customerId: 'c1', storeServiceId: 'ss-1' });
+
+    const { data } = txMock.voucher.create.mock.calls[0][0];
+    const dias = Math.round((data.expiresAt.getTime() - Date.now()) / 86400000);
+    expect(dias).toBe(30);
+  });
+
+  it('recusa serviço sem pointsCost — ausência do custo é o opt-out', async () => {
+    const { service } = makeServiceRedeemer({
+      storeService: { id: 'ss-1', storeId: 'loja-A', active: true, pointsCost: null, masterService: { name: 'X' } },
+    });
+    await expect(
+      service.redeemService({ customerId: 'c1', storeServiceId: 'ss-1' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('recusa serviço inativo', async () => {
+    const { service } = makeServiceRedeemer({
+      storeService: { id: 'ss-1', storeId: 'loja-A', active: false, pointsCost: 100, masterService: { name: 'X' } },
+    });
+    await expect(
+      service.redeemService({ customerId: 'c1', storeServiceId: 'ss-1' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('recusa quando o saldo total não cobre', async () => {
+    const { service, pointsService } = makeServiceRedeemer({ balance: 100 });
+    await expect(
+      service.redeemService({ customerId: 'c1', storeServiceId: 'ss-1' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(pointsService.redeemPoints).not.toHaveBeenCalled();
+  });
+});
+
+describe('RewardsService.useVoucher — escopo da loja', () => {
+  function makeUser(voucher: any, user: any = { storeId: 'loja-A' }) {
+    const prisma: any = {
+      voucher: {
+        findUnique: jest.fn().mockResolvedValue(voucher),
+        update: jest.fn().mockImplementation(({ data }: any) => Promise.resolve({ ...voucher, ...data })),
+      },
+      user: { findUnique: jest.fn().mockResolvedValue(user) },
+      auditLog: { create: jest.fn().mockResolvedValue({}) },
+    };
+    const service = new RewardsService(prisma, {} as any, {} as any);
+    (service as any).logger = { log: jest.fn() };
+    return { service, prisma };
+  }
+
+  const futuro = new Date(Date.now() + 86400000);
+
+  it('loja baixa voucher de serviço da própria loja', async () => {
+    const { service, prisma } = makeUser({
+      id: 'v1', code: 'RLM-AAAAA', status: 'UNUSED', expiresAt: futuro,
+      storeService: { storeId: 'loja-A' },
+    });
+
+    await service.useVoucher('RLM-AAAAA', { userId: 'u1', role: 'LOJA' });
+
+    expect(prisma.voucher.update).toHaveBeenCalled();
+  });
+
+  // Sem isso, qualquer loja daria baixa em voucher de qualquer outra —
+  // e o acerto financeiro sairia para a loja errada.
+  it('loja NÃO baixa voucher de serviço de outra loja', async () => {
+    const { service } = makeUser({
+      id: 'v1', code: 'RLM-AAAAA', status: 'UNUSED', expiresAt: futuro,
+      storeService: { storeId: 'loja-B' },
+    });
+
+    await expect(
+      service.useVoucher('RLM-AAAAA', { userId: 'u1', role: 'LOJA' }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  // Prêmio físico não passa pela loja: não tem storeService, logo não tem dono.
+  it('loja NÃO baixa voucher de catálogo', async () => {
+    const { service } = makeUser({
+      id: 'v1', code: 'RLM-AAAAA', status: 'UNUSED', expiresAt: futuro,
+      storeService: null, catalogItemId: 'item-1',
+    });
+
+    await expect(
+      service.useVoucher('RLM-AAAAA', { userId: 'u1', role: 'LOJA' }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('admin baixa qualquer voucher, inclusive de catálogo', async () => {
+    const { service, prisma } = makeUser({
+      id: 'v1', code: 'RLM-AAAAA', status: 'UNUSED', expiresAt: futuro,
+      storeService: null, catalogItemId: 'item-1',
+    });
+
+    await service.useVoucher('RLM-AAAAA', { userId: 'u1', role: 'ADMIN_RELM' });
+
+    expect(prisma.voucher.update).toHaveBeenCalled();
+  });
+
+  it('grava usedAt na baixa — sem ele não há como fechar o acerto por período', async () => {
+    const { service, prisma } = makeUser({
+      id: 'v1', code: 'RLM-AAAAA', status: 'UNUSED', expiresAt: futuro,
+      storeService: { storeId: 'loja-A' },
+    });
+
+    await service.useVoucher('RLM-AAAAA', { userId: 'u1', role: 'LOJA' });
+
+    const { data } = prisma.voucher.update.mock.calls[0][0];
+    expect(data.usedAt).toBeInstanceOf(Date);
   });
 });
 

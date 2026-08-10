@@ -25,6 +25,24 @@ export class RewardsController {
     });
   }
 
+  @Post('redeem-service')
+  @UseGuards(CustomerJwtGuard)
+  @ApiOperation({ summary: 'Resgatar um serviço de loja com pontos' })
+  async redeemService(@Request() req: any, @Body() dto: { storeServiceId: string }) {
+    // Mesmo cuidado do resgate de prêmio: o cliente vem do token, nunca do body.
+    return this.rewardsService.redeemService({
+      customerId: req.user.customerId,
+      storeServiceId: dto.storeServiceId,
+    });
+  }
+
+  @Get('services')
+  @UseGuards(CustomerJwtGuard)
+  @ApiOperation({ summary: 'Serviços resgatáveis com pontos (?storeId filtra por loja)' })
+  async getRedeemableServices(@Query('storeId') storeId?: string) {
+    return this.rewardsService.getRedeemableServices(storeId);
+  }
+
   // ponytail: catálogo permanece público — é lido pelo portal do cliente e pelo
   // admin, que usam tokens de tipos diferentes. Sem PII e somente leitura.
   // Se um dia precisar fechar, exigirá um guard que aceite ambos os tipos.
@@ -115,10 +133,15 @@ export class RewardsController {
 
   @Patch('vouchers/:code/use')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  // LOJA entra para poder baixar o voucher no atendimento. O escopo é feito no
+  // service: a loja só dá baixa em voucher de serviço DELA.
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA')
   @ApiOperation({ summary: 'Mark a voucher as used' })
-  async useVoucher(@Param('code') code: string) {
-    return this.rewardsService.useVoucher(code);
+  async useVoucher(@Param('code') code: string, @Request() req: any) {
+    return this.rewardsService.useVoucher(code, {
+      userId: req.user?.userId,
+      role: req.user?.role,
+    });
   }
 
   @Get('vouchers/:customerId')

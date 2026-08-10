@@ -1055,11 +1055,15 @@ model StoreService {
   plusDiscountPercent Int?             @map("plus_discount_percent")
   plusPrice           Decimal?         @map("plus_price") @db.Decimal(10, 2)
   estimatedMinutes    Int              @default(60) @map("estimated_minutes")
+  // Custo em pontos para resgatar este serviço. Null = não resgatável por
+  // pontos — a própria ausência é o opt-out, sem flag separada.
+  pointsCost          Int?             @map("points_cost")
   active              Boolean          @default(true)
   createdAt           DateTime         @default(now()) @map("created_at")
   updatedAt           DateTime         @updatedAt @map("updated_at")
 
   serviceOrders ServiceOrder[]
+  vouchers      Voucher[]
 
   @@unique([storeId, masterServiceId])
   @@index([storeId, active])
@@ -1138,19 +1142,31 @@ model Partner {
   @@map("partners")
 }
 
+// Um voucher aponta para UM alvo: item do catálogo (prêmio físico) ou serviço
+// de uma loja. O ciclo — código, expiração, baixa no atendimento — é o mesmo,
+// por isso o serviço reaproveita este model em vez de ter o seu próprio.
 model Voucher {
-  id            String        @id @default(uuid())
-  code          String        @unique
-  status        VoucherStatus @default(UNUSED)
-  customerId    String        @map("customer_id")
-  catalogItemId String        @map("catalog_item_id")
-  expiresAt     DateTime      @map("expires_at")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  usedAt        DateTime?     @map("used_at")
+  id             String        @id @default(uuid())
+  code           String        @unique
+  status         VoucherStatus @default(UNUSED)
+  customerId     String        @map("customer_id")
+  catalogItemId  String?       @map("catalog_item_id")
+  storeServiceId String?       @map("store_service_id")
 
-  customer    Customer    @relation(fields: [customerId], references: [id])
-  catalogItem CatalogItem @relation(fields: [catalogItemId], references: [id])
+  // Congelados no momento do resgate: `point_value_brl` muda com o tempo e o
+  // acerto financeiro com a loja é offline — precisa do valor da época.
+  pointsSpent Int?     @map("points_spent")
+  brlValue    Decimal? @map("brl_value") @db.Decimal(10, 2)
 
+  expiresAt DateTime  @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  usedAt    DateTime? @map("used_at")
+
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  catalogItem  CatalogItem?  @relation(fields: [catalogItemId], references: [id])
+  storeService StoreService? @relation(fields: [storeServiceId], references: [id])
+
+  @@index([storeServiceId])
   @@map("vouchers")
 }
 

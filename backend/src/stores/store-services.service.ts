@@ -11,6 +11,8 @@ export interface UpsertStoreServiceDto {
   plusDiscountPercent?: number;
   plusPrice?: number;
   estimatedMinutes?: number;
+  // Null/ausente = serviço não resgatável por pontos.
+  pointsCost?: number | null;
   active?: boolean;
 }
 
@@ -22,6 +24,7 @@ export interface UpdateStoreServiceDto {
   plusDiscountPercent?: number;
   plusPrice?: number;
   estimatedMinutes?: number;
+  pointsCost?: number | null;
   active?: boolean;
 }
 
@@ -109,6 +112,10 @@ export class StoreServicesService {
           plusDiscountPercent: dto.plusDiscountPercent,
           plusPrice: dto.plusPrice,
           estimatedMinutes,
+          // Sem `?? null`: undefined faz o Prisma pular o campo, então omitir
+          // no payload preserva o custo em pontos em vez de apagá-lo. Mandar
+          // null explicitamente é o que desliga o resgate.
+          pointsCost: dto.pointsCost,
           active: dto.active ?? true,
         },
         include: { masterService: true },
@@ -128,6 +135,7 @@ export class StoreServicesService {
         plusDiscountPercent: dto.plusDiscountPercent,
         plusPrice: dto.plusPrice,
         estimatedMinutes,
+        pointsCost: dto.pointsCost,
         active: dto.active ?? true,
       },
       include: { masterService: true },

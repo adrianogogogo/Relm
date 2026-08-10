@@ -27,6 +27,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PointsService } from '../src/points/points.service';
 import { EngagementService } from '../src/engagement/engagement.service';
 import { RewardsService } from '../src/rewards/rewards.service';
+import { ClubSettingsService } from '../src/club-settings/club-settings.service';
 import { CronHealthService } from '../src/common/cron-health.service';
 import { PAYMENT_GATEWAY } from '../src/payments/gateway/payment-gateway.interface';
 
@@ -177,6 +178,14 @@ describe('Club flows (integration-style, no DB)', () => {
                 accumulated: 999999, monthly: 0, total: 999999,
               }),
               redeemPoints: jest.fn().mockResolvedValue({ fromMonthly: 0, fromAccumulated: 0 }),
+            },
+          },
+          {
+            provide: ClubSettingsService,
+            useValue: {
+              getSettings: jest.fn().mockResolvedValue({
+                pointValueBrl: 0.05, voucherValidityDays: 60,
+              }),
             },
           },
         ],

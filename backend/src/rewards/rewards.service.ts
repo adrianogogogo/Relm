@@ -1,9 +1,16 @@
-import { Injectable, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
+import {
+  Injectable, BadRequestException, ForbiddenException, Logger,
+} from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
+import { ClubSettingsService } from '../club-settings/club-settings.service';
 import { VoucherStatus, TierLevel, Prisma } from '@prisma/client';
 import { tierAtLeast } from '../common/entitlements';
+
+// Alfabeto sem O/0/I/1 — o código é ditado por telefone e lido do celular no
+// balcão. ponytail: 32^5 ≈ 33M; a unicidade quem garante é o índice do banco.
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 @Injectable()
 export class RewardsService {
@@ -12,7 +19,12 @@ export class RewardsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pointsService: PointsService,
+    private readonly clubSettings: ClubSettingsService,
   ) {}
+
+  private generateVoucherCode() {
+    return 'RLM-' + Array.from(randomBytes(5), (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join('');
+  }
 
   async redeemReward(dto: { customerId: string; catalogItemId: string }) {
     return this.prisma.$transaction(async (tx) => {
@@ -72,11 +84,11 @@ export class RewardsService {
         },
       });
 
-      // Hash único de 5 chars alfanuméricos maiúsculos, criptograficamente aleatório.
-      const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      const code =
-        'RLM-' +
-        Array.from(randomBytes(5), (b) => alphabet[b % alphabet.length]).join('');
+      const code = this.generateVoucherCode();
+
+      // Validade vinha hardcoded em 60 dias enquanto `voucher_validity_days`
+      // existia na tela admin e não era lido — mesmo defeito dos outros knobs.
+      const { voucherValidityDays } = await this.clubSettings.getSettings();
 
       const voucher = await tx.voucher.create({
         data: {
@@ -84,7 +96,7 @@ export class RewardsService {
           status: VoucherStatus.UNUSED,
           customerId: dto.customerId,
           catalogItemId: item.id,
-          expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+          expiresAt: new Date(Date.now() + voucherValidityDays * 24 * 60 * 60 * 1000),
         },
       });
 
@@ -157,10 +169,7 @@ export class RewardsService {
         },
       });
 
-      const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      const code =
-        'RLM-' +
-        Array.from(randomBytes(5), (b) => alphabet[b % alphabet.length]).join('');
+      const code = this.generateVoucherCode();
 
       const expiresAt = new Date(Date.now() + dto.expirationDays * 24 * 60 * 60 * 1000);
       const voucher = await tx.voucher.create({
@@ -187,6 +196,116 @@ export class RewardsService {
         success: true,
         voucherCode: code,
         expiresAt: voucher.expiresAt,
+      };
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    });
+  }
+
+  // ── Resgate de serviço com pontos (Step 4) ────────────────────────────────
+
+  /**
+   * Serviços resgatáveis por pontos. `pointsCost` nulo é o opt-out — não há
+   * flag separada, então listar aqui já é a definição de "resgatável".
+   */
+  async getRedeemableServices(storeId?: string) {
+    const services = await this.prisma.storeService.findMany({
+      where: {
+        active: true,
+        pointsCost: { not: null },
+        ...(storeId && { storeId }),
+      },
+      include: {
+        masterService: { select: { name: true, description: true, category: true } },
+        store: { select: { id: true, tradeName: true, city: true } },
+      },
+      orderBy: { pointsCost: 'asc' },
+    });
+
+    return services.map((s) => ({
+      id: s.id,
+      storeId: s.storeId,
+      store: s.store,
+      name: s.customName || s.masterService?.name || 'Serviço',
+      description: s.customDescription || s.masterService?.description || '',
+      category: s.masterService?.category ?? null,
+      pointsCost: s.pointsCost,
+      estimatedMinutes: s.estimatedMinutes,
+    }));
+  }
+
+  /**
+   * Resgata um serviço de loja com pontos e emite o voucher que o cliente
+   * apresenta no atendimento.
+   *
+   * Só REGISTRA o consumo: grava loja, serviço, pontos gastos e o equivalente
+   * em R$ na cotação do momento. O acerto financeiro com a loja é offline —
+   * não há repasse automático aqui.
+   */
+  async redeemService(dto: { customerId: string; storeServiceId: string }) {
+    return this.prisma.$transaction(async (tx) => {
+      const service = await tx.storeService.findUnique({
+        where: { id: dto.storeServiceId },
+        include: { masterService: { select: { name: true } } },
+      });
+
+      if (!service || !service.active || service.pointsCost == null) {
+        throw new BadRequestException('Serviço não disponível para resgate com pontos');
+      }
+
+      const { total } = await this.pointsService.getBalances(dto.customerId, tx);
+      if (total < service.pointsCost) {
+        throw new BadRequestException('Insufficient Points');
+      }
+
+      const name = service.customName || service.masterService?.name || 'Serviço';
+
+      await this.pointsService.redeemPoints(
+        dto.customerId,
+        service.pointsCost,
+        `Resgate de Serviço: ${name}`,
+        service.id,
+        tx,
+      );
+
+      const { pointValueBrl, voucherValidityDays } = await this.clubSettings.getSettings();
+      const code = this.generateVoucherCode();
+
+      const voucher = await tx.voucher.create({
+        data: {
+          code,
+          status: VoucherStatus.UNUSED,
+          customerId: dto.customerId,
+          storeServiceId: service.id,
+          // Congelados: point_value_brl muda e o acerto com a loja é posterior.
+          pointsSpent: service.pointsCost,
+          brlValue: new Prisma.Decimal(service.pointsCost * pointValueBrl),
+          expiresAt: new Date(Date.now() + voucherValidityDays * 24 * 60 * 60 * 1000),
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: null,
+          action: 'UPDATE_SENSITIVE',
+          entity: 'vouchers',
+          entityId: voucher.id,
+          metadata: {
+            code,
+            kind: 'SERVICE',
+            storeId: service.storeId,
+            storeServiceId: service.id,
+            pointsCost: service.pointsCost,
+          },
+        },
+      });
+
+      return {
+        success: true,
+        voucherCode: code,
+        expiresAt: voucher.expiresAt,
+        serviceName: name,
+        storeId: service.storeId,
       };
     }, {
       isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
@@ -226,6 +345,14 @@ export class RewardsService {
       where: { customerId },
       include: {
         catalogItem: true,
+        // Sem isto, voucher de serviço aparecia na lista do cliente sem nome
+        // nenhum — os dois alvos precisam vir juntos.
+        storeService: {
+          include: {
+            masterService: { select: { name: true } },
+            store: { select: { id: true, tradeName: true } },
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -276,6 +403,12 @@ export class RewardsService {
       include: {
         customer: true,
         catalogItem: true,
+        storeService: {
+          include: {
+            masterService: { select: { name: true } },
+            store: { select: { id: true, tradeName: true } },
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -283,13 +416,27 @@ export class RewardsService {
     });
   }
 
-  async useVoucher(code: string) {
+  async useVoucher(code: string, requester?: { userId?: string; role?: string }) {
     const voucher = await this.prisma.voucher.findUnique({
       where: { code },
+      include: { storeService: { select: { storeId: true } } },
     });
 
     if (!voucher) {
       throw new BadRequestException('Voucher not found');
+    }
+
+    // Escopo da loja: ela baixa voucher de serviço DELA. Voucher de catálogo
+    // não tem loja associada, então continua restrito ao time Relm — sem isso
+    // uma loja daria baixa em prêmio físico que nunca passou por ela.
+    if (requester?.role === 'LOJA') {
+      const user = await this.prisma.user.findUnique({ where: { id: requester.userId } });
+      if (!user?.storeId) {
+        throw new BadRequestException('Usuário de loja sem loja vinculada.');
+      }
+      if (!voucher.storeService || voucher.storeService.storeId !== user.storeId) {
+        throw new ForbiddenException('Este voucher não pertence a um serviço da sua loja.');
+      }
     }
 
     if (voucher.status === VoucherStatus.USED) {
@@ -302,7 +449,9 @@ export class RewardsService {
 
     const updated = await this.prisma.voucher.update({
       where: { code },
-      data: { status: VoucherStatus.USED },
+      // usedAt existia e nunca era preenchido — sem ele não dá para fechar o
+      // acerto com a loja por período.
+      data: { status: VoucherStatus.USED, usedAt: new Date() },
     });
 
     await this.prisma.auditLog.create({
