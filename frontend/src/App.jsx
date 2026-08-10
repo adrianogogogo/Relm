@@ -83,6 +83,7 @@ import AdminPartnersPage from './pages/AdminPartnersPage';
 import AdminClubReportsPage from './pages/AdminClubReportsPage';
 import CustomerPartnersPage from './pages/CustomerPartnersPage';
 import AdminClubSettingsPage from './pages/AdminClubSettingsPage';
+import AdminPointsRulesPage from './pages/AdminPointsRulesPage';
 import AdminMasterServicesPage from './pages/AdminMasterServicesPage';
 
 const queryClient = new QueryClient({
@@ -323,6 +324,11 @@ export default function App() {
             <Route path="club-settings" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
                 <AdminClubSettingsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="points-rules" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                <AdminPointsRulesPage />
               </ProtectedRoute>
             } />
             <Route path="master-services" element={

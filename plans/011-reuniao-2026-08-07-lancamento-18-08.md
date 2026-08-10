@@ -99,10 +99,10 @@ foi alterada por conta própria.
 | | Step | Estado |
 |---|---|---|
 | 0 | Baseline das 22 migrations (`migrate resolve --applied`) | **DONE** |
-| 2a | Resolver de settings (ClubSettings > ENTITLEMENTS); 9 call sites viram `await` | TODO |
+| 2a | Resolver de settings (ClubSettings > ENTITLEMENTS); 9 call sites viram `await` | **DONE** |
 | 2 | `bucket` no ledger + saldo mensal derivado + `computeState` | **DONE** |
-| 3 | Venda → pontos + tabela de regra + ajuste na curadoria | **DONE** |
-| 4 | Serviço resgatável por pontos | TODO |
+| 3 | Venda → pontos + tabela de regra + ajuste na curadoria + tela admin | **DONE** |
+| 4 | Serviço resgatável por pontos | **DONE** |
 | 5 | Ator polimórfico + interceptor global | TODO |
 | 7 | Score por loja | TODO |
 
@@ -174,9 +174,16 @@ faz reexecução ser no-op.
    bloqueava a criação da regra substituta. Para pausar sem perder, use `active: false`
    pelo PATCH.
 
-**Sem tela ainda:** a regra só é gerenciável por API. A tela admin não estava no escopo
-declarado do step e não é pré-requisito do dia 18 — o Adriano consegue operar via API ou
-a gente sobe a tela no Step 7, que já mexe no admin.
+**Tela admin (10/08/2026):** `/admin/points-rules` fecha a pendência — CRUD sobre
+`/v1/points/admin/rules`, com o alvo escolhido por dropdown (produto do cadastro ou
+categoria já existente em algum produto, nunca texto livre, senão a regra nasce com uma
+categoria que nunca casa). O custo em R$ de cada regra aparece ao lado, usando o
+`point_value_brl` do ClubSettings.
+
+Duas escolhas da tela: o valor salva no `onBlur` (não a cada tecla), e o botão
+**Ativa/Pausada** é o caminho recomendado — a lixeira apaga de verdade, porque
+`productId`/`productType` são UNIQUE e uma regra só desativada seguiria bloqueando a
+substituta.
 
 ---
 

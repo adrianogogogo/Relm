@@ -167,6 +167,12 @@ const CONFIG_ITEMS = [
     roles: ['ADMIN_RELM', 'GERENTE_RELM'],
   },
   {
+    path: '/admin/points-rules',
+    label: 'Regras de Pontuação',
+    icon: MdRule,
+    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+  },
+  {
     path: '/admin/users',
     label: 'Usuários do Sistema',
     icon: MdManageAccounts,
