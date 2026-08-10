@@ -18,11 +18,19 @@ export class PointsController {
 
   @Get('balance')
   @UseGuards(CustomerJwtGuard)
-  @ApiOperation({ summary: 'Get points balance for the authenticated customer' })
-  @ApiResponse({ status: 200, description: 'Return points balance' })
+  @ApiOperation({ summary: 'Saldos de pontos do cliente autenticado' })
+  @ApiResponse({
+    status: 200,
+    description: 'accumulated (histórico), monthly (uso-ou-perde do Plus) e total',
+  })
   async getBalance(@Request() req: any) {
-    const balance = await this.pointsService.getBalance(req.user.customerId);
-    return { balance };
+    const balances = await this.pointsService.getBalances(req.user.customerId);
+    // `balance` continua sendo o ACUMULÁVEL, não o total — de propósito. É o
+    // que o resgate de catálogo aceita (rewards.service.ts valida e debita só
+    // o acumulável), então apontá-lo para o total faria a tela oferecer um
+    // resgate que o backend recusa. Os campos novos são aditivos: nenhum
+    // consumidor existente quebra.
+    return { balance: balances.accumulated, ...balances };
   }
 
   @Post('admin/grant')

@@ -28,7 +28,11 @@ export default function CustomerCatalogPage() {
     queryFn: () => customerPortalAPI.getPointsBalance(),
     enabled: !!user?.id,
   });
+  // balance = saldo ACUMULÁVEL. É o único que o resgate de catálogo aceita
+  // gastar, então é ele que valida os botões aqui. O mensal aparece só como
+  // informação — vale para serviço na loja, não para prêmio.
   const balance = pointsData?.balance || 0;
+  const monthlyBalance = pointsData?.monthly || 0;
 
   // Fetch rewards catalog — passa tier para filtrar pré-vendas server-side
   const { data: catalog = [], isLoading: loadingCatalog } = useQuery({
@@ -99,6 +103,11 @@ export default function CustomerCatalogPage() {
             <div>
               <p className="text-xs uppercase tracking-wider text-slate-300 font-semibold">Meu Saldo Atual</p>
               <h2 className="text-3xl font-black font-title text-white">{balance} <span className="text-lg font-normal text-slate-300">pontos</span></h2>
+              {monthlyBalance > 0 && (
+                <p className="text-[11px] text-[#D4AF37] mt-1">
+                  + {monthlyBalance} pontos mensais — use em serviços na loja até o fim do mês
+                </p>
+              )}
             </div>
           </div>
           <div className="text-right text-xs opacity-90">
