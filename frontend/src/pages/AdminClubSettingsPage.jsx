@@ -118,15 +118,15 @@ export default function AdminClubSettingsPage() {
           <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
             {/* Bloco 1: Pontos de Compras nas Lojas */}
             <Card>
-              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100 dark:border-slate-800">
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                   <MdStars size={24} />
                 </div>
                 <div>
-                  <h2 className="font-bold text-lg text-slate-100">
+                  <h2 className="font-extrabold text-lg text-[#0A1929] dark:text-white">
                     1. Pontos em Compras nas Lojas Credenciadas
                   </h2>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
                     Define quanto o cliente pontua ao comprar produtos nas lojas parceiras.
                   </p>
                 </div>
@@ -134,7 +134,7 @@ export default function AdminClubSettingsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1">
                     Multiplicador de Pontos por Compra (Plus) *
                   </label>
                   <input
@@ -142,17 +142,17 @@ export default function AdminClubSettingsPage() {
                     step="0.1"
                     min="1"
                     required
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm font-extrabold text-slate-900 focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-cyan-400 shadow-xs transition-all"
                     value={form.plusPointsMultiplier}
                     onChange={(e) => handleChange('plusPointsMultiplier', e.target.value)}
                   />
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
                     Ex: 2.0 significa que o membro Plus ganha 2x pontos em compras de produtos.
                   </p>
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1">
                     Valor Monetário de 1 Ponto (R$) *
                   </label>
                   <input
@@ -160,11 +160,11 @@ export default function AdminClubSettingsPage() {
                     step="0.01"
                     min="0.01"
                     required
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm font-extrabold text-slate-900 focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-cyan-400 shadow-xs transition-all"
                     value={form.pointValueBrl}
                     onChange={(e) => handleChange('pointValueBrl', e.target.value)}
                   />
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
                     Ex: R$ 0,05 significa que 1.000 pontos equivalem a R$ 50,00 em prêmios/vouchers.
                   </p>
                 </div>
@@ -173,15 +173,15 @@ export default function AdminClubSettingsPage() {
 
             {/* Bloco 2: Pontos Mensais da Assinatura */}
             <Card>
-              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100 dark:border-slate-800">
-                <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400">
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
                   <MdPayments size={24} />
                 </div>
                 <div>
-                  <h2 className="font-bold text-lg text-slate-100">
+                  <h2 className="font-extrabold text-lg text-[#0A1929] dark:text-white">
                     2. Pontos Mensais da Assinatura Plus
                   </h2>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
                     Cota de pontos concedidos todo mês que expiram no fim do mês se não forem usados.
                   </p>
                 </div>
@@ -189,7 +189,7 @@ export default function AdminClubSettingsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1">
                     Valor da Anuidade Care Plus (R$) *
                   </label>
                   <input
@@ -197,14 +197,14 @@ export default function AdminClubSettingsPage() {
                     step="0.01"
                     min="0"
                     required
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm font-extrabold text-slate-900 focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-cyan-400 shadow-xs transition-all"
                     value={form.plusAnnualFee}
                     onChange={(e) => handleChange('plusAnnualFee', e.target.value)}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1">
                     Pontos Mensais Renováveis (Membro Plus) *
                   </label>
                   <input
@@ -212,11 +212,11 @@ export default function AdminClubSettingsPage() {
                     min="0"
                     step="50"
                     required
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm font-extrabold text-slate-900 focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-cyan-400 shadow-xs transition-all"
                     value={form.plusMonthlyPoints}
                     onChange={(e) => handleChange('plusMonthlyPoints', e.target.value)}
                   />
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-medium">
                     Cota mensal que vence na virada do mês.
                   </p>
                 </div>
@@ -225,15 +225,15 @@ export default function AdminClubSettingsPage() {
 
             {/* Bloco 3: Gamificação & Validades */}
             <Card>
-              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100 dark:border-slate-800">
-                <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400">
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
                   <MdTimer size={24} />
                 </div>
                 <div>
-                  <h2 className="font-bold text-lg text-slate-100">
+                  <h2 className="font-extrabold text-lg text-[#0A1929] dark:text-white">
                     3. Gamificação & Validade dos Vouchers
                   </h2>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
                     Bônus por indicação/aniversário e prazo dos cupons resgatados.
                   </p>
                 </div>
@@ -241,40 +241,40 @@ export default function AdminClubSettingsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1">
                     Validade dos Vouchers (Dias) *
                   </label>
                   <input
                     type="number"
                     min="1"
                     required
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm font-extrabold text-slate-900 focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-cyan-400 shadow-xs transition-all"
                     value={form.voucherValidityDays}
                     onChange={(e) => handleChange('voucherValidityDays', e.target.value)}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1">
                     Bônus por Indicação (Pts)
                   </label>
                   <input
                     type="number"
                     min="0"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm font-extrabold text-slate-900 focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-cyan-400 shadow-xs transition-all"
                     value={form.referralBonusPoints}
                     onChange={(e) => handleChange('referralBonusPoints', e.target.value)}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1">
                     Bônus de Aniversário (Pts)
                   </label>
                   <input
                     type="number"
                     min="0"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm font-extrabold text-slate-900 focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white dark:focus:border-cyan-400 shadow-xs transition-all"
                     value={form.birthdayBonusPoints}
                     onChange={(e) => handleChange('birthdayBonusPoints', e.target.value)}
                   />
