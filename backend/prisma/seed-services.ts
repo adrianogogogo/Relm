@@ -212,6 +212,7 @@ async function main() {
 
   const createdMasters: any[] = [];
   for (const ms of masterServicesData) {
+    const pointsCost = Math.floor((ms.defaultPrice || 50) / 0.05);
     let existing = await prisma.masterService.findFirst({ where: { name: ms.name } });
     if (existing) {
       existing = await prisma.masterService.update({
@@ -220,6 +221,10 @@ async function main() {
           description: ms.description,
           category: ms.category,
           defaultEstimatedMinutes: ms.defaultEstimatedMinutes,
+          defaultPrice: ms.defaultPrice,
+          defaultPointsCost: pointsCost,
+          defaultPlusRule: ms.plusRule,
+          defaultPlusDiscountPercent: ms.plusDiscountPercent,
           active: true,
         },
       });
@@ -230,6 +235,10 @@ async function main() {
           description: ms.description,
           category: ms.category,
           defaultEstimatedMinutes: ms.defaultEstimatedMinutes,
+          defaultPrice: ms.defaultPrice,
+          defaultPointsCost: pointsCost,
+          defaultPlusRule: ms.plusRule,
+          defaultPlusDiscountPercent: ms.plusDiscountPercent,
           active: true,
         },
       });

@@ -80,9 +80,9 @@ out, err = run(c,
     'ON CONFLICT (key) DO NOTHING" && %s psql -tAc "SELECT key||\'=\'||value FROM club_settings ORDER BY key"' % (pg_env, pg_env))
 say('4) club_settings:\n%s%s' % (out, err[-200:]))
 
-# 5) generate + build + pm2 reload
-out, err = run(c, 'cd %s && npm install --no-audit && npx prisma generate 2>&1 | tail -1 && npm run build 2>&1 | tail -3' % BE)
-say('5) generate+build: %s %s' % (out.strip()[-400:], err.strip()[-300:]))
+# 5) generate + seed-services + build + pm2 reload
+out, err = run(c, 'cd %s && npm install --no-audit && npx prisma generate 2>&1 | tail -1 && npx ts-node prisma/seed-services.ts 2>&1 | tail -3 && npm run build 2>&1 | tail -3' % BE)
+say('5) generate+seed+build: %s %s' % (out.strip()[-400:], err.strip()[-300:]))
 if 'error TS' in (out + err) or 'Build failed' in (out + err):
     sys.exit('ABORTADO: build falhou. dist antigo preservado em %s' % bak)
 out, err = run(c, 'pm2 reload %s --update-env && pm2 save 2>&1 | tail -1' % PM2_APP)
