@@ -39,7 +39,9 @@ export default function ServiceDetailModal({
   const icon = details?.icon || (isConvenience ? '🌟' : '⚙️');
 
   const isFree = service.plusRule === 'FREE' || details?.plusBenefitText?.includes('GRATUITO');
-  const priceCare = service.price !== undefined ? Number(service.price) : (service.defaultPrice || 0);
+  const priceCare = (service.price !== undefined && service.price !== null) 
+    ? Number(service.price) 
+    : Number(service.defaultPrice || 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md animate-fadeIn">

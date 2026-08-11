@@ -446,15 +446,15 @@ export default function AdminMasterServicesPage() {
                 <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 text-xs space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-slate-500 dark:text-slate-400 font-medium">💰 Valor Tabela:</span>
-                    <strong className="text-slate-900 dark:text-white">R$ {(service.defaultPrice || 50).toFixed(2)}</strong>
+                    <strong className="text-slate-900 dark:text-white">R$ {Number(service.defaultPrice || 50).toFixed(2)}</strong>
                   </div>
                   <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-bold">
                     <span>🎯 Resgate:</span>
-                    <span>{service.defaultPointsCost || Math.floor((service.defaultPrice || 50) / 0.05)} pts</span>
+                    <span>{service.defaultPointsCost || Math.floor(Number(service.defaultPrice || 50) / 0.05)} pts</span>
                   </div>
                   <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 font-bold">
                     <span>🛍️ Pontos Compra:</span>
-                    <span>+{Math.floor(service.defaultPrice || 50)} pts</span>
+                    <span>+{Math.floor(Number(service.defaultPrice || 50))} pts</span>
                   </div>
                 </div>
               </div>
