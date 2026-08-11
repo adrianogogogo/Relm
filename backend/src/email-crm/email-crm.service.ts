@@ -43,6 +43,9 @@ export class EmailCrmService {
         name: dto.name,
         slug: dto.slug,
         subject: dto.subject,
+        // O que veio digitado na tela vence: o operador pode ter trocado o
+        // preheader depois de gerar.
+        preheader: dto.preheader || blocos?.email?.preheader || null,
         bodyHtml: blocos ? renderEmail(blocos, baseUrl) : dto.bodyHtml || '',
         blocksJson: (dto.blocksJson as any) || undefined,
       },

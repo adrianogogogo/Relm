@@ -16,6 +16,11 @@ export class CreateEmailTemplateDto {
   @IsNotEmpty()
   subject: string;
 
+  /** Segundo texto na caixa de entrada. Vem da geração ou do campo na tela. */
+  @IsString()
+  @IsOptional()
+  preheader?: string;
+
   /** Derivado de blocksJson pelo service. Só é usado se não houver blocos. */
   @IsString()
   @IsOptional()

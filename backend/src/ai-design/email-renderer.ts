@@ -109,6 +109,11 @@ export function renderEmail(entrada: PaginaGerada, baseUrl = ''): string {
   <title>${esc(pagina.titulo)}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f4f4f4;">
+  ${
+    pagina.email?.preheader
+      ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#f4f4f4;">${esc(pagina.email.preheader)}</div>`
+      : ''
+  }
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f4f4f4;">
     <tr><td align="center" style="padding:24px 12px;">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;max-width:100%;background-color:${corFundo};border-radius:12px;overflow:hidden;color:${corTexto};">

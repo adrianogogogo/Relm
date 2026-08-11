@@ -1315,6 +1315,9 @@ model EmailTemplate {
   name          String
   slug          String   @unique
   subject       String
+  /// Segundo texto que aparece na caixa de entrada, ao lado do assunto. Nasce
+  /// da geração por IA; nullable porque template antigo não tem.
+  preheader     String?
   bodyHtml      String   @db.Text @map("body_html")
   /// PaginaGerada — fonte de verdade do conteúdo. bodyHtml é o render guardado.
   blocksJson    Json?    @map("blocks_json")
