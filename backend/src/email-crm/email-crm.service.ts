@@ -31,12 +31,19 @@ export class EmailCrmService {
       throw new ConflictException(`Template com slug '${dto.slug}' já existe.`);
     }
 
+    // bodyHtml é derivado, não digitado: quem manda é blocksJson. A tela não
+    // monta HTML de e-mail — as regras (tabela, CSS inline, 600px) moram no
+    // renderizador, e um segundo lugar montando isso divergiria na primeira
+    // mudança.
+    const blocos = dto.blocksJson as unknown as PaginaGerada | undefined;
+    const baseUrl = this.config.get<string>('PUBLIC_BASE_URL') || '';
+
     return this.prisma.emailTemplate.create({
       data: {
         name: dto.name,
         slug: dto.slug,
         subject: dto.subject,
-        bodyHtml: dto.bodyHtml,
+        bodyHtml: blocos ? renderEmail(blocos, baseUrl) : dto.bodyHtml || '',
         blocksJson: (dto.blocksJson as any) || undefined,
       },
     });

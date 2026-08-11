@@ -16,9 +16,10 @@ export class CreateEmailTemplateDto {
   @IsNotEmpty()
   subject: string;
 
+  /** Derivado de blocksJson pelo service. Só é usado se não houver blocos. */
   @IsString()
-  @IsNotEmpty()
-  bodyHtml: string;
+  @IsOptional()
+  bodyHtml?: string;
 
   /** PaginaGerada. É daqui que o export de HTML renderiza. */
   @IsObject()

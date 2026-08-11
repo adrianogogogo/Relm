@@ -1,449 +1,242 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { MdMail, MdAutoAwesome, MdDownload, MdSave } from 'react-icons/md';
 import { emailCrmAPI, aiAssistantAPI } from '../services/api';
-import { MdEmail, MdSend, MdStars, MdAutorenew, MdPeople, MdCheck, MdEdit, MdContentCopy, MdArrowForward } from 'react-icons/md';
+import { Card, PageHeader, Button } from '../components/ui';
+
+/**
+ * Esta tela NÃO envia e-mail. Ela gera o conteúdo e entrega o HTML pronto; o
+ * disparo acontece na ferramenta de e-mail marketing, que é quem tem lista,
+ * consentimento, descadastro e tratamento de bounce.
+ */
+function slugify(texto) {
+  return String(texto)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 60);
+}
+
+function baixar(filename, html) {
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function Preview({ pagina }) {
+  const { paleta } = pagina;
+  return (
+    <div
+      className="rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700 mx-auto"
+      style={{ background: paleta.corFundo, color: paleta.corTexto, maxWidth: 600 }}
+    >
+      {pagina.imagemUrl && (
+        <img src={pagina.imagemUrl} alt="" className="w-full h-44 object-cover" />
+      )}
+      <div className="p-6 space-y-4">
+        {pagina.blocos.map((bloco, i) => (
+          <div key={i}>
+            {bloco.tipo === 'hero' && (
+              <>
+                <h2 className="text-xl font-bold">{bloco.titulo}</h2>
+                <p className="opacity-80 text-sm">{bloco.subtitulo}</p>
+              </>
+            )}
+            {bloco.tipo === 'texto' && (
+              <>
+                <h3 className="font-semibold">{bloco.titulo}</h3>
+                <p className="opacity-80 text-sm">{bloco.corpo}</p>
+              </>
+            )}
+            {bloco.tipo === 'lista' && (
+              <>
+                <h3 className="font-semibold">{bloco.titulo}</h3>
+                <ul className="text-sm space-y-1 mt-1">
+                  {bloco.itens.map((item, j) => (
+                    <li
+                      key={j}
+                      style={{ borderLeft: `3px solid ${paleta.corPrimaria}` }}
+                      className="pl-2"
+                    >
+                      <strong>{item.titulo}</strong>{' '}
+                      <span className="opacity-75">{item.descricao}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {bloco.tipo === 'cta' && (
+              <div className="text-center pt-2">
+                <p className="mb-2 text-sm">{bloco.texto}</p>
+                <span
+                  className="inline-block px-5 py-2 rounded-lg font-semibold text-sm"
+                  style={{ background: paleta.corPrimaria, color: paleta.corFundo }}
+                >
+                  {bloco.ctaTexto}
+                </span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function AdminEmailCampaignsPage() {
-  const [templates, setTemplates] = useState([]);
-  const [campaigns, setCampaigns] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const [tema, setTema] = useState('');
+  const [pagina, setPagina] = useState(null);
+  const [assunto, setAssunto] = useState('');
+  const [erro, setErro] = useState(null);
 
-  // Tabs: 'CAMPAIGNS' | 'MAGIC_CREATE'
-  const [activeTab, setActiveTab] = useState('CAMPAIGNS');
+  const { data: campaigns = [], isLoading } = useQuery({
+    queryKey: ['email-campaigns'],
+    queryFn: emailCrmAPI.getCampaigns,
+  });
 
-  // AI Prompt & Model State
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [selectedModel, setSelectedModel] = useState('gpt-4o-mini');
-  const [generating, setGenerating] = useState(false);
-  const [emailImageUrl, setEmailImageUrl] = useState('');
-  const [storylineCategory, setStorylineCategory] = useState('');
+  const gerar = useMutation({
+    mutationFn: () => aiAssistantAPI.gerarPagina({ tema, destino: 'EMAIL' }),
+    onSuccess: (res) => {
+      setPagina(res);
+      setAssunto(res.titulo || tema);
+      setErro(null);
+    },
+    onError: (err) => setErro(err?.response?.data?.message || 'Falha ao gerar.'),
+  });
 
-  // Generated Email Form & WYSIWYG Preview State
-  const [subject, setSubject] = useState('');
-  const [heading, setHeading] = useState('');
-  const [bodyMessage, setBodyMessage] = useState('');
-  const [ctaText, setCtaText] = useState('');
-  const [targetSegment, setTargetSegment] = useState('ALL_CUSTOMERS');
-  const [campaignTitle, setCampaignTitle] = useState('');
-
-  // Test Email
-  const [testEmail, setTestEmail] = useState('');
-  const [sendingTest, setSendingTest] = useState(false);
-  const [sendingCampaign, setSendingCampaign] = useState(false);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  async function loadData() {
-    try {
-      setLoading(true);
-      const [tmplData, campData] = await Promise.all([
-        emailCrmAPI.getTemplates(),
-        emailCrmAPI.getCampaigns(),
-      ]);
-      setTemplates(tmplData || []);
-      setCampaigns(campData || []);
-    } catch (err) {
-      console.error('Erro ao carregar e-mail CRM:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // 1-Click Magic AI Email Generation
-  async function handleMagicGenerate(e) {
-    if (e) e.preventDefault();
-    if (!aiPrompt.trim()) return;
-
-    try {
-      setGenerating(true);
-      const copyRes = await aiAssistantAPI.generateCopy({
-        prompt: aiPrompt,
-        type: 'EMAIL_SUBJECT',
-        model: selectedModel,
+  const salvar = useMutation({
+    mutationFn: async () => {
+      // bodyHtml não vai daqui: o backend renderiza a partir dos blocos.
+      const template = await emailCrmAPI.createTemplate({
+        name: pagina.titulo,
+        slug: `${slugify(pagina.titulo || tema)}-${Date.now().toString(36)}`,
+        subject: assunto,
+        blocksJson: pagina,
       });
-
-      const genSubject = copyRes.suggestedSubject || copyRes.heading || aiPrompt;
-      const genHeading = copyRes.heading || 'Vantagem Exclusiva Relm Care+';
-      const genContent = copyRes.content || aiPrompt;
-      const category = copyRes.category || 'WORKSHOP';
-      const dalleImg = copyRes.dalleImageUrl || null;
-
-      const defaultImg = dalleImg || (
-        category === 'WORKSHOP' ? 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=1200&q=80' :
-        category === 'MTB_TRAIL' ? 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=1200&q=80' :
-        category === 'ROAD' ? 'https://images.unsplash.com/photo-1517649763962-0c623266010b?auto=format&fit=crop&w=1200&q=80' :
-        category === 'URBAN' ? 'https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?auto=format&fit=crop&w=1200&q=80' :
-        category === 'EQUIPMENT' ? 'https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?auto=format&fit=crop&w=1200&q=80' :
-        'https://images.unsplash.com/photo-1571068316344-75ad7692d490?auto=format&fit=crop&w=1200&q=80'
-      );
-
-      setStorylineCategory(category);
-      setEmailImageUrl(defaultImg);
-      setSubject(genSubject);
-      setHeading(genHeading);
-      setBodyMessage(genContent);
-      setCtaText('Conferir Meu Benefício');
-      setCampaignTitle(`Campanha: ${genSubject.substring(0, 30)}...`);
-    } catch (err) {
-      console.error('Erro na OpenAI:', err);
-      alert(err.response?.data?.message || err.message || 'Erro ao comunicar com a API da OpenAI. Tente novamente.');
-    } finally {
-      setGenerating(false);
-    }
-  }
-
-  // Send Test Email
-  async function handleSendTest() {
-    if (!testEmail.trim()) return;
-    try {
-      setSendingTest(true);
-      const htmlBody = `
-        <div style="font-family: Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 30px; border-radius: 16px;">
-          <h1 style="color: #10b981; font-size: 24px;">${heading || 'Relm Care+'}</h1>
-          <p style="font-size: 16px; line-height: 1.6; color: #cbd5e1;">${bodyMessage}</p>
-          <div style="margin-top: 24px;">
-            <a href="https://relmcareplus.com.br" style="background-color: #10b981; color: #020617; padding: 12px 24px; font-weight: bold; border-radius: 8px; text-decoration: none; display: inline-block;">
-              ${ctaText || 'Acessar Plataforma'}
-            </a>
-          </div>
-        </div>
-      `;
-      await emailCrmAPI.sendTest({
-        to: testEmail,
-        subject: subject || 'E-mail de Teste Relm Care+',
-        bodyHtml: htmlBody,
+      return emailCrmAPI.createCampaign({
+        title: pagina.titulo,
+        templateId: template.id,
       });
-      alert(`E-mail de teste enviado para ${testEmail}!`);
-    } catch (err) {
-      alert('Falha ao enviar e-mail de teste.');
-    } finally {
-      setSendingTest(false);
-    }
-  }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-campaigns'] });
+      setPagina(null);
+      setTema('');
+    },
+    onError: (err) => setErro(err?.response?.data?.message || 'Falha ao salvar.'),
+  });
 
-  // Create & Trigger Campaign 1-Click
-  async function handleCreateAndSendCampaign() {
-    if (!subject.trim() || !bodyMessage.trim()) {
-      alert('Por favor, digite ou gere um assunto e mensagem para o e-mail.');
-      return;
-    }
-    try {
-      setSendingCampaign(true);
-      const htmlBody = `
-        <div style="font-family: Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 30px; border-radius: 16px;">
-          <h1 style="color: #10b981; font-size: 24px;">${heading || 'Relm Care+'}</h1>
-          <p style="font-size: 16px; line-height: 1.6; color: #cbd5e1;">${bodyMessage}</p>
-          <div style="margin-top: 24px;">
-            <a href="https://relmcareplus.com.br" style="background-color: #10b981; color: #020617; padding: 12px 24px; font-weight: bold; border-radius: 8px; text-decoration: none; display: inline-block;">
-              ${ctaText || 'Acessar Plataforma'}
-            </a>
-          </div>
-        </div>
-      `;
-
-      // 1. Create template
-      const tmpl = await emailCrmAPI.createTemplate({
-        name: campaignTitle || subject,
-        slug: `email-${Date.now()}`,
-        subject: subject,
-        bodyHtml: htmlBody,
-      });
-
-      // 2. Create campaign
-      const camp = await emailCrmAPI.createCampaign({
-        title: campaignTitle || subject,
-        templateId: tmpl.id,
-        targetSegment: targetSegment,
-      });
-
-      // 3. Trigger campaign immediately
-      await emailCrmAPI.sendCampaign(camp.id);
-
-      alert('Campanha criada e enviada com sucesso!');
-      setActiveTab('CAMPAIGNS');
-      loadData();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Erro ao disparar campanha.');
-    } finally {
-      setSendingCampaign(false);
-    }
-  }
+  const exportar = useMutation({
+    mutationFn: emailCrmAPI.exportHtml,
+    onSuccess: (res) => baixar(res.filename, res.html),
+    onError: (err) => setErro(err?.response?.data?.message || 'Falha ao exportar.'),
+  });
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto text-slate-100">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/60 p-6 rounded-2xl border border-slate-800 backdrop-blur">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <MdEmail className="w-6 h-6 text-emerald-400" />
-            Campanhas de E-mail CRM por IA
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Gere mensagens e assuntos com inteligência artificial e edite diretamente no preview sem precisar de código HTML.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setActiveTab(activeTab === 'MAGIC_CREATE' ? 'CAMPAIGNS' : 'MAGIC_CREATE')}
-            className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl transition flex items-center gap-2 text-sm shadow-xl shadow-emerald-500/20"
-          >
-            <MdStars className="w-5 h-5" />
-            {activeTab === 'MAGIC_CREATE' ? 'Ver Minhas Campanhas' : 'Criar E-mail com IA'}
-          </button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Campanhas de E-mail"
+        subtitle="Gere o conteúdo aqui e dispare na sua ferramenta de e-mail marketing"
+        icon={MdMail}
+      />
 
-      {/* TAB: MAGIC CREATE (100% INTUITIVE EMAIL BUILDER) */}
-      {activeTab === 'MAGIC_CREATE' && (
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Left Column: AI Prompt & Campaign Controls */}
-          <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 space-y-6 shadow-2xl">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl">
-                <MdStars className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white">1. Digite a Ideia do Seu E-mail</h3>
-                <p className="text-xs text-slate-400">Descreva o que deseja divulgar aos seus clientes</p>
-              </div>
-            </div>
+      <Card className="p-6 space-y-4">
+        <textarea
+          value={tema}
+          onChange={(e) => setTema(e.target.value)}
+          rows={3}
+          placeholder="Ex.: lembrete de revisão para quem não passa na oficina há 6 meses"
+          className="w-full rounded-xl bg-slate-50 border border-slate-300 p-3 text-sm text-slate-900 font-semibold focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+        />
+        <Button
+          onClick={() => gerar.mutate()}
+          disabled={!tema.trim() || gerar.isPending}
+          className="flex items-center gap-2"
+        >
+          <MdAutoAwesome className="w-5 h-5" />
+          {gerar.isPending ? 'Gerando…' : 'Gerar e-mail'}
+        </Button>
+        {erro && <p className="text-sm font-bold text-rose-600 dark:text-rose-400">{erro}</p>}
+      </Card>
 
-            <form onSubmit={handleMagicGenerate} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-800 dark:text-slate-200">Modelo OpenAI:</label>
-                <select
-                  value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 font-bold focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
-                >
-                  <option value="gpt-4o-mini">🤖 OpenAI gpt-4o-mini (Recomendado — Rápido & Inteligente)</option>
-                  <option value="gpt-4o">🚀 OpenAI gpt-4o (Criatividade Avançada & Raciocínio Persuasivo)</option>
-                  <option value="gpt-3.5-turbo">⚡ OpenAI gpt-3.5-turbo (Padrão)</option>
-                </select>
-              </div>
-
-              <textarea
-                rows={3}
-                required
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder="Ex: Enviar lembrete sobre o acúmulo de pontos do mês para assinantes Plus com convite para o pedal..."
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm text-slate-900 font-semibold focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
-              />
-
-              <button
-                type="submit"
-                disabled={generating || !aiPrompt.trim()}
-                className="w-full py-3 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-emerald-400 font-bold rounded-xl text-sm transition flex items-center justify-center gap-2 border border-emerald-500/30 disabled:opacity-50"
-              >
-                {generating ? (
-                  <>
-                    <MdAutorenew className="w-4 h-4 animate-spin" />
-                    Gerando E-mail por IA...
-                  </>
-                ) : (
-                  <>
-                    <MdStars className="w-4 h-4" />
-                    Gerar Assunto e Mensagem com IA
-                  </>
-                )}
-              </button>
-            </form>
-
-            <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
-              <h3 className="text-sm font-extrabold text-[#0A1929] dark:text-white flex items-center gap-2">
-                <MdPeople className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                2. Selecione o Público-Alvo de Envio
-              </h3>
-
-              <select
-                value={targetSegment}
-                onChange={(e) => setTargetSegment(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm text-slate-900 font-bold focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
-              >
-                <option value="ALL_CUSTOMERS">Todos os Clientes Cadastrados</option>
-                <option value="PLUS_ONLY">Apenas Assinantes Membros Plus</option>
-                <option value="STORES_ONLY">Apenas Lojas Credenciadas</option>
-              </select>
-
-              <div className="space-y-2">
-                <label className="text-xs text-slate-700 dark:text-slate-300 font-bold">Testar Envio no Seu E-mail:</label>
-                <div className="flex gap-2">
-                  <input
-                    type="email"
-                    placeholder="seuemail@exemplo.com"
-                    value={testEmail}
-                    onChange={(e) => setTestEmail(e.target.value)}
-                    className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold dark:bg-slate-900 dark:border-slate-700 dark:text-white"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSendTest}
-                    disabled={sendingTest || !testEmail}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-emerald-400 rounded-xl disabled:opacity-50"
-                  >
-                    {sendingTest ? 'Enviando...' : 'Testar'}
-                  </button>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleCreateAndSendCampaign}
-                disabled={sendingCampaign || !subject}
-                className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-base transition shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {sendingCampaign ? (
-                  <>
-                    <MdAutorenew className="w-5 h-5 animate-spin" />
-                    Enviando Campanha...
-                  </>
-                ) : (
-                  <>
-                    <MdSend className="w-5 h-5" />
-                    🚀 Disparar Campanha Agora
-                  </>
-                )}
-              </button>
-            </div>
+      {pagina && (
+        <Card className="p-6 space-y-4">
+          <h3 className="font-extrabold text-[#0A1929] dark:text-white text-lg">
+            Pré-visualização
+          </h3>
+          <Preview pagina={pagina} />
+          <div>
+            <label className="block text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">
+              Assunto
+            </label>
+            <input
+              value={assunto}
+              onChange={(e) => setAssunto(e.target.value)}
+              className="w-full rounded-xl bg-slate-50 border border-slate-300 px-3 py-2 text-sm text-slate-900 font-bold dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+            />
           </div>
-
-          {/* Right Column: Interactive WYSIWYG Email Live Preview */}
-          <div className="bg-slate-950 p-6 rounded-3xl border border-slate-800 space-y-4 shadow-2xl relative">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
-                <MdEdit className="w-4 h-4" /> Preview do E-mail (Clique nos textos para alterar)
-              </span>
-              <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">Sem HTML</span>
-            </div>
-
-            {/* Email Subject Field */}
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-400 uppercase">Assunto da Mensagem:</label>
-              <input
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="Ex: 🚨 Seus pontos do mês vencem em breve!"
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-
-            {/* Visual Email Card Preview */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden space-y-5 text-slate-100 pb-6">
-              {emailImageUrl && (
-                <div className="h-44 w-full relative overflow-hidden border-b border-slate-800">
-                  <img src={emailImageUrl} alt="Capa do E-mail" className="w-full h-full object-cover" />
-                  <div className="absolute top-2 right-2 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold text-emerald-400 border border-emerald-500/30">
-                    Enredo: {storylineCategory || 'Geral'}
-                  </div>
-                </div>
-              )}
-
-              <div className="px-6 pt-2 flex items-center gap-2 border-b border-slate-800/50 pb-4">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500 text-slate-950 font-extrabold flex items-center justify-center text-sm">
-                  R
-                </div>
-                <span className="font-bold text-white text-sm">RELM CARE+</span>
-              </div>
-
-              <div className="px-6 space-y-4">
-                {/* Editable Heading */}
-                <h2
-                  contentEditable
-                  suppressContentEditableWarning
-                  onBlur={(e) => setHeading(e.target.innerText)}
-                  className="text-xl font-extrabold text-white outline-none hover:bg-slate-800 p-1.5 rounded transition"
-                >
-                  {heading || 'Título Principal da Mensagem'}
-                </h2>
-
-                {/* Editable Body */}
-                <p
-                  contentEditable
-                  suppressContentEditableWarning
-                  onBlur={(e) => setBodyMessage(e.target.innerText)}
-                  className="text-sm text-slate-300 leading-relaxed outline-none hover:bg-slate-800 p-1.5 rounded transition whitespace-pre-line"
-                >
-                  {bodyMessage || 'Sua mensagem formatada aparecerá aqui. Clique para alterar o texto livremente.'}
-                </p>
-
-                {/* Editable Button */}
-                <div className="pt-2">
-                  <button
-                    contentEditable
-                    suppressContentEditableWarning
-                    onBlur={(e) => setCtaText(e.target.innerText)}
-                    className="px-6 py-3 bg-emerald-500 text-slate-950 font-bold rounded-xl text-sm outline-none hover:bg-emerald-400"
-                  >
-                    {ctaText || 'Acessar Minha Conta'}
-                  </button>
-                </div>
-              </div>
-            </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => salvar.mutate()}
+              disabled={!assunto.trim() || salvar.isPending}
+              className="flex items-center gap-2"
+            >
+              <MdSave className="w-5 h-5" />
+              {salvar.isPending ? 'Salvando…' : 'Salvar campanha'}
+            </Button>
+            <Button variant="secondary" onClick={() => setPagina(null)}>
+              Descartar
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
 
-      {/* TAB: CAMPAIGNS LISTING */}
-      {activeTab === 'CAMPAIGNS' && (
-        <div className="space-y-4">
-          {loading ? (
-            <div className="py-12 text-center text-slate-400">Carregando campanhas...</div>
-          ) : campaigns.length === 0 ? (
-            <div className="py-16 text-center bg-slate-900/30 rounded-2xl border border-slate-800 space-y-3">
-              <MdEmail className="w-12 h-12 text-slate-600 mx-auto" />
-              <p className="text-slate-400 font-medium">Nenhuma campanha enviada ainda.</p>
-              <button
-                onClick={() => setActiveTab('MAGIC_CREATE')}
-                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl"
-              >
-                Criar Minha Primeira Campanha
-              </button>
-            </div>
-          ) : (
-            <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-              <table className="w-full text-left text-sm text-slate-300">
-                <thead className="bg-slate-950 text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                  <tr>
-                    <th className="px-6 py-4">Título / Assunto</th>
-                    <th className="px-6 py-4">Segmento Alvo</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4">Resultado Envio</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {campaigns.map((camp) => (
-                    <tr key={camp.id} className="hover:bg-slate-800/40 transition">
-                      <td className="px-6 py-4 font-bold text-white">
-                        {camp.title}
-                        <span className="block text-xs font-normal text-slate-400">
-                          {camp.template?.subject || 'Assunto Personalizado'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 text-xs font-medium">
-                          <MdPeople className="w-3.5 h-3.5 text-emerald-400" />
-                          {camp.targetSegment}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                          {camp.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-slate-300 font-mono text-xs">
-                        {camp.sentCount} ok / {camp.errorCount} erros
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+      <Card className="p-6">
+        <h3 className="font-extrabold text-[#0A1929] dark:text-white text-lg mb-4">
+          Campanhas salvas
+        </h3>
+        {isLoading ? (
+          <p className="text-slate-500 font-medium">Carregando…</p>
+        ) : campaigns.length === 0 ? (
+          <p className="text-slate-500 font-medium text-sm">Nenhuma campanha ainda.</p>
+        ) : (
+          <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+            {campaigns.map((c) => (
+              <li key={c.id} className="flex items-center justify-between py-3 gap-4">
+                <div className="min-w-0">
+                  <p className="text-slate-900 dark:text-slate-100 font-bold text-base truncate">
+                    {c.title}
+                  </p>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">
+                    {c.template?.subject}
+                  </p>
+                </div>
+                <Button
+                  variant="secondary"
+                  onClick={() => exportar.mutate(c.id)}
+                  disabled={exportar.isPending}
+                  className="flex items-center gap-2 shrink-0"
+                >
+                  <MdDownload className="w-5 h-5" />
+                  Baixar HTML
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card className="p-4 text-xs text-slate-600 dark:text-slate-400 font-medium">
+        A plataforma não dispara e-mail em massa. O transporte configurado é o
+        SMTP usado pelos e-mails transacionais (redefinição de senha, aprovação de
+        loja) — disparar marketing por ele derrubaria os dois.
+      </Card>
     </div>
   );
 }

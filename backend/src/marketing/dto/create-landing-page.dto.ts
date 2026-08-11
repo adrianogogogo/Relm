@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsObject } from 'class-validator';
 
 export class CreateLandingPageDto {
   @IsString()
@@ -13,9 +13,11 @@ export class CreateLandingPageDto {
   @IsOptional()
   description?: string;
 
-  @IsArray()
+  /** PaginaGerada inteira (título, subtítulo, paleta e blocos), não só o array
+   *  de blocos: a paleta vem do mesmo objeto e os dois renderizadores a leem. */
+  @IsObject()
   @IsNotEmpty()
-  blocksJson: any[];
+  blocksJson: Record<string, any>;
 
   @IsString()
   @IsOptional()
@@ -39,9 +41,9 @@ export class UpdateLandingPageDto {
   @IsOptional()
   description?: string;
 
-  @IsArray()
+  @IsObject()
   @IsOptional()
-  blocksJson?: any[];
+  blocksJson?: Record<string, any>;
 
   @IsString()
   @IsOptional()
