@@ -24,21 +24,21 @@ type ImageModel = {
   quality: { padrao: string; alta: string } | null;
 };
 
+// Sem dall-e: a API não serve mais nenhum `dall-e-*` — pedir devolve
+// 400 "model does not exist", e como falha de imagem é não-fatal, a página saía
+// sem imagem em silêncio. Catálogo errado aqui é invisível em produção; só
+// entra modelo confirmado em `models.list()`.
 export const IMAGE_MODELS: Record<string, ImageModel> = {
-  'dall-e-3': {
-    tamanho: { LANDING: '1792x1024', EMAIL: '1024x1024' },
-    quality: { padrao: 'standard', alta: 'hd' },
-  },
   'gpt-image-1': {
     tamanho: { LANDING: '1536x1024', EMAIL: '1024x1024' },
     quality: { padrao: 'medium', alta: 'high' },
   },
-  // Só tem quadrado e não aceita quality. Fica como opção barata de rascunho.
-  'dall-e-2': {
-    tamanho: { LANDING: '1024x1024', EMAIL: '1024x1024' },
-    quality: null,
+  // Mesmos parâmetros do irmão maior, mais barato. Opção de rascunho.
+  'gpt-image-1-mini': {
+    tamanho: { LANDING: '1536x1024', EMAIL: '1024x1024' },
+    quality: { padrao: 'medium', alta: 'high' },
   },
 };
 
-export const DEFAULT_IMAGE_MODEL = 'dall-e-3';
+export const DEFAULT_IMAGE_MODEL = 'gpt-image-1';
 export const DEFAULT_IMAGE_QUALITY = 'padrao';

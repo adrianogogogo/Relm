@@ -5,7 +5,13 @@ import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 import OpenAI from 'openai';
 import { PrismaService } from '../prisma/prisma.service';
-import { PAGINA_SCHEMA, PaginaGerada, sanitizePagina } from '../ai-design/blocks.schema';
+import {
+  PAGINA_SCHEMA,
+  PaginaGerada,
+  RespostaModelo,
+  paginaDeResposta,
+  sanitizePagina,
+} from '../ai-design/blocks.schema';
 import {
   DEFAULT_IMAGE_MODEL,
   DEFAULT_IMAGE_QUALITY,
@@ -35,8 +41,8 @@ A paleta deve nascer do tema, não de um padrão fixo: uma campanha de inverno n
 tem a mesma cor de um lançamento de bike infantil. Garanta contraste legível
 entre corTexto e corFundo.
 
-Estrutura: comece por um hero, feche por um cta, e entre eles use de dois a
-quatro blocos. Não repita a mesma ideia em blocos diferentes.
+Em "meio" use de dois a quatro blocos. Não repita em "meio" a ideia que já está
+no hero ou no cta.
 
 Sem URL inventada: quando não souber para onde o botão aponta, use "/clube".`;
 
@@ -143,7 +149,7 @@ export class AiAssistantService {
       throw new ServiceUnavailableException('Resposta do modelo veio sem conteúdo.');
     }
 
-    const pagina = sanitizePagina(JSON.parse(texto) as PaginaGerada);
+    const pagina = sanitizePagina(paginaDeResposta(JSON.parse(texto) as RespostaModelo));
     pagina.imagemUrl = await this.gerarImagem(tema, pagina, destino, cfg);
     return pagina;
   }

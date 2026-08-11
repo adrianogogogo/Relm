@@ -92,7 +92,15 @@ const BLOCO_CTA = {
   additionalProperties: false,
 };
 
-/** JSON Schema do structured output — o modelo não consegue devolver outra forma. */
+/**
+ * JSON Schema do structured output — o modelo não consegue devolver outra forma.
+ *
+ * `hero` e `cta` são campos próprios, não itens de um array de blocos: com array
+ * livre o modelo devolvia página terminando em `lista`, ou seja, landing sem
+ * botão de conversão. Pedir "feche por um cta" no prompt é sugestão; campo
+ * obrigatório em `required` é garantia. `meio` só aceita os blocos que podem
+ * mesmo repetir.
+ */
 export const PAGINA_SCHEMA = {
   type: 'object',
   properties: {
@@ -108,14 +116,33 @@ export const PAGINA_SCHEMA = {
       required: ['corPrimaria', 'corFundo', 'corTexto'],
       additionalProperties: false,
     },
-    blocos: {
+    hero: BLOCO_HERO,
+    meio: {
       type: 'array',
-      items: { anyOf: [BLOCO_HERO, BLOCO_TEXTO, BLOCO_LISTA, BLOCO_CTA] },
+      items: { anyOf: [BLOCO_TEXTO, BLOCO_LISTA] },
     },
+    cta: BLOCO_CTA,
   },
-  required: ['titulo', 'subtitulo', 'paleta', 'blocos'],
+  required: ['titulo', 'subtitulo', 'paleta', 'hero', 'meio', 'cta'],
   additionalProperties: false,
 };
+
+/** Resposta crua do modelo (a forma de PAGINA_SCHEMA), antes de virar blocos. */
+export type RespostaModelo = Omit<PaginaGerada, 'blocos' | 'imagemUrl'> & {
+  hero: Extract<Bloco, { tipo: 'hero' }>;
+  meio: Bloco[];
+  cta: Extract<Bloco, { tipo: 'cta' }>;
+};
+
+/**
+ * Achata a resposta no `blocos` que os dois renderizadores já consomem. Mora
+ * aqui, colado ao schema, porque é a outra metade dele: quem mudar um tem o
+ * outro à vista.
+ */
+export function paginaDeResposta(bruta: RespostaModelo): PaginaGerada {
+  const { hero, meio, cta, ...resto } = bruta;
+  return { ...resto, blocos: [hero, ...(meio || []), cta] };
+}
 
 /**
  * Conteúdo gerado por modelo vai para dentro de HTML — escapar não é opcional.
