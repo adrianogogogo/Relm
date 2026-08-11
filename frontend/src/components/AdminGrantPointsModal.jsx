@@ -38,15 +38,15 @@ export default function AdminGrantPointsModal({ customerId, customerName, onClos
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-      <div className="bg-white dark:bg-[#183757] border border-gray-200 dark:border-[#2196F3]/30 rounded-2xl p-6 max-w-md w-full shadow-[8px_8px_20px_rgba(10,25,41,0.5)]">
-        <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-slate-800">
-          <div className="flex items-center gap-2 text-[#0A1929] dark:text-[#2196F3]">
-            <MdCardGiftcard size={24} className="text-[#2196F3]" />
-            <h3 className="font-bold text-lg text-gray-900 dark:text-white">Atribuir Pontos Bônus</h3>
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2 text-cyan-600 dark:text-cyan-400">
+            <MdCardGiftcard size={24} className="text-cyan-600 dark:text-cyan-400" />
+            <h3 className="font-extrabold text-lg text-[#0A1929] dark:text-white">Atribuir Pontos Bônus</h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
           >
             <MdClose size={20} />
           </button>
@@ -54,25 +54,25 @@ export default function AdminGrantPointsModal({ customerId, customerName, onClos
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <p className="text-sm text-gray-500 dark:text-slate-300">
-              Cliente: <strong className="text-gray-900 dark:text-white">{customerName || 'Cliente'}</strong>
+            <p className="text-sm text-slate-600 dark:text-slate-300 font-medium">
+              Cliente: <strong className="text-[#0A1929] dark:text-white font-extrabold">{customerName || 'Cliente'}</strong>
             </p>
           </div>
 
           {error && (
-            <div className="p-3 text-xs rounded-xl bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 border border-red-200 dark:border-red-800">
+            <div className="p-3 text-xs font-bold rounded-xl bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">
               {error}
             </div>
           )}
 
           {successMsg && (
-            <div className="p-3 text-xs rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+            <div className="p-3 text-xs font-bold rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
               {successMsg}
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
               Quantidade de Pontos *
             </label>
             <input
@@ -82,12 +82,12 @@ export default function AdminGrantPointsModal({ customerId, customerName, onClos
               value={points}
               onChange={(e) => setPoints(e.target.value)}
               placeholder="Ex: 500"
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/60 text-gray-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-[#2196F3] outline-hidden"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white font-mono font-extrabold focus:outline-none focus:border-cyan-600"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
               Motivo / Descrição
             </label>
             <input
@@ -95,7 +95,7 @@ export default function AdminGrantPointsModal({ customerId, customerName, onClos
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Ex: Bônus por participação em evento VIP"
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/60 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-[#2196F3] outline-hidden"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-semibold focus:outline-none focus:border-cyan-600"
             />
           </div>
 
