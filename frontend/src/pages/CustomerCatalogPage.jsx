@@ -139,32 +139,60 @@ export default function CustomerCatalogPage() {
           </div>
         )}
 
-        {/* Serviços resgatáveis — só aparece se alguma loja publicou algum.
-            Sem serviço cadastrado com pointsCost, a seção não existe. */}
+        {/* Serviços resgatáveis — só aparece se alguma loja publicou algum. */}
         {!loadingServices && services.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-8">
             <h3 className="font-title font-bold text-lg text-[#0A1929] dark:text-slate-100 mb-3 flex items-center gap-2">
               <MdBuild className="text-[#0A1929] dark:text-[#2196F3]" /> Serviços na Oficina
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {services.map((svc) => {
                 const canAfford = balance >= svc.pointsCost;
+                const estimatedPrice = svc.price || Number((svc.pointsCost * 0.05).toFixed(2));
+                const pointsEarnedOnBuy = Math.floor(estimatedPrice * (isPlus ? 2 : 1));
+
                 return (
-                  <Card key={svc.id} className="p-4 flex flex-col justify-between">
-                    <div>
-                      <h4 className="font-bold text-[#0A1929] dark:text-slate-100">{svc.name}</h4>
-                      <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                        {svc.store?.tradeName}
-                        {svc.store?.city ? ` · ${svc.store.city}` : ''}
-                      </p>
-                      {svc.description && (
-                        <p className="text-xs text-gray-600 dark:text-slate-300 mt-2 line-clamp-2">
-                          {svc.description}
+                  <Card key={svc.id} className="p-5 flex flex-col justify-between hover:border-emerald-500/50 transition">
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="font-bold text-[#0A1929] dark:text-slate-100 text-base">{svc.name}</h4>
+                        <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+                          {svc.store?.tradeName}
+                          {svc.store?.city ? ` · ${svc.store.city}` : ''}
                         </p>
-                      )}
+                        {svc.description && (
+                          <p className="text-xs text-gray-600 dark:text-slate-300 mt-2 line-clamp-2">
+                            {svc.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Dual Indicator Section */}
+                      <div className="p-3 bg-slate-100 dark:bg-slate-900/80 rounded-xl space-y-2 border border-slate-200 dark:border-slate-800 text-xs">
+                        {/* Option A: Redeem with Points */}
+                        <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-semibold">
+                          <span className="flex items-center gap-1">
+                            🎯 Resgatar sem pagar:
+                          </span>
+                          <span className="font-bold">{svc.pointsCost} pts</span>
+                        </div>
+
+                        {/* Option B: Pay in Cash & Earn Points */}
+                        <div className="flex items-center justify-between text-slate-700 dark:text-slate-300 border-t border-slate-200 dark:border-slate-800/80 pt-1.5">
+                          <span className="flex items-center gap-1">
+                            🛍️ Comprar por R$ {estimatedPrice.toFixed(2)}:
+                          </span>
+                          <span className="font-bold text-blue-600 dark:text-blue-400">
+                            +{pointsEarnedOnBuy} pts {isPlus && '⚡'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="mt-4 flex items-center justify-between gap-2">
-                      <span className="font-mono font-bold text-[#2196F3]">{svc.pointsCost} pts</span>
+
+                    <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-gray-500 dark:text-slate-400">
+                        {isPlus ? '⚡ Bônus 2x Plus Ativo' : 'Ganhe 2x sendo Plus'}
+                      </span>
                       <Button
                         size="sm"
                         variant={canAfford ? 'primary' : 'secondary'}
@@ -179,7 +207,7 @@ export default function CustomerCatalogPage() {
               })}
             </div>
             <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-2">
-              O resgate gera um código. Apresente-o na loja escolhida para fazer o serviço.
+              O resgate gera um código de voucher. Apresente-o na oficina credenciada para realizar o serviço sem custo.
             </p>
           </div>
         )}
@@ -207,6 +235,9 @@ export default function CustomerCatalogPage() {
                   const daysLeft = presaleDaysLeft(item.presaleUntil);
                   const inPresale = daysLeft !== null && item.presaleTier;
                   const isPresalePlus = inPresale && item.presaleTier === 'PLUS' && !isPlus;
+                  const estimatedValue = Number((item.pointsCost * 0.05).toFixed(2));
+                  const pointsEarnedOnBuy = Math.floor(estimatedValue * (isPlus ? 2 : 1));
+
                   return (
                     <Card key={item.id} className={`flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden ${isPresalePlus ? 'ring-1 ring-amber-400/60' : ''}`}>
                       {inPresale && (
@@ -217,7 +248,7 @@ export default function CustomerCatalogPage() {
                         </div>
                       )}
 
-                      <div className="space-y-2">
+                      <div className="space-y-3 p-1">
                         <div className="flex justify-between items-start">
                           <h4 className="font-title font-bold text-[#0A1929] dark:text-slate-100 text-base">{item.title}</h4>
                           <span className="px-2.5 py-1 bg-[#0A1929]/10 dark:bg-[#2196F3]/20 text-[#0A1929] dark:text-[#2196F3] rounded-full font-bold text-xs shrink-0 flex items-center gap-1">
@@ -225,6 +256,14 @@ export default function CustomerCatalogPage() {
                           </span>
                         </div>
                         <p className="text-xs text-gray-600 dark:text-slate-400 line-clamp-2">{item.description}</p>
+
+                        {/* Dual Indicator Section */}
+                        <div className="p-2.5 bg-slate-100 dark:bg-slate-900/80 rounded-xl space-y-1 border border-slate-200 dark:border-slate-800 text-[11px]">
+                          <div className="flex justify-between text-slate-700 dark:text-slate-300">
+                            <span>🛍️ Se comprar na loja (R$ {estimatedValue.toFixed(2)}):</span>
+                            <span className="font-bold text-blue-600 dark:text-blue-400">+{pointsEarnedOnBuy} pts {isPlus && '⚡'}</span>
+                          </div>
+                        </div>
                       </div>
 
                       {/* CTA upgrade para CARE tentando resgatar pré-venda PLUS */}
