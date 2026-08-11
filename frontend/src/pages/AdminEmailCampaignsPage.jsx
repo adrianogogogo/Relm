@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MdMail, MdAutoAwesome, MdDownload, MdSave } from 'react-icons/md';
 import { emailCrmAPI, aiAssistantAPI } from '../services/api';
 import { Card, PageHeader, Button } from '../components/ui';
+import DepoimentosPendentes from '../components/DepoimentosPendentes';
 
 /**
  * Esta tela NÃO envia e-mail. Ela gera o conteúdo e entrega o HTML pronto; o
@@ -70,6 +71,17 @@ function Preview({ pagina }) {
                 </ul>
               </>
             )}
+            {bloco.tipo === 'prova' && (
+              <figure
+                className="text-sm"
+                style={{ borderLeft: `3px solid ${paleta.corPrimaria}`, paddingLeft: 12 }}
+              >
+                <blockquote className="italic">“{bloco.citacao}”</blockquote>
+                <figcaption className="opacity-75 mt-1">
+                  {bloco.autor} — {bloco.papel}
+                </figcaption>
+              </figure>
+            )}
             {bloco.tipo === 'cta' && (
               <div className="text-center pt-2">
                 <p className="mb-2 text-sm">{bloco.texto}</p>
@@ -93,6 +105,7 @@ export default function AdminEmailCampaignsPage() {
   const [tema, setTema] = useState('');
   const [pagina, setPagina] = useState(null);
   const [assunto, setAssunto] = useState('');
+  const [preheader, setPreheader] = useState('');
   const [erro, setErro] = useState(null);
 
   const { data: campaigns = [], isLoading } = useQuery({
@@ -104,7 +117,9 @@ export default function AdminEmailCampaignsPage() {
     mutationFn: () => aiAssistantAPI.gerarPagina({ tema, destino: 'EMAIL' }),
     onSuccess: (res) => {
       setPagina(res);
-      setAssunto(res.titulo || tema);
+      // O primeiro assunto vem pré-escolhido; os outros três ficam à mão.
+      setAssunto(res.email?.assuntos?.[0] || res.titulo || tema);
+      setPreheader(res.email?.preheader || '');
       setErro(null);
     },
     onError: (err) => setErro(err?.response?.data?.message || 'Falha ao gerar.'),
@@ -117,6 +132,7 @@ export default function AdminEmailCampaignsPage() {
         name: pagina.titulo,
         slug: `${slugify(pagina.titulo || tema)}-${Date.now().toString(36)}`,
         subject: assunto,
+        preheader,
         blocksJson: pagina,
       });
       return emailCrmAPI.createCampaign({
@@ -170,15 +186,68 @@ export default function AdminEmailCampaignsPage() {
           <h3 className="font-extrabold text-[#0A1929] dark:text-white text-lg">
             Pré-visualização
           </h3>
+          {pagina.notas?.length > 0 && (
+            <div className="rounded-xl border border-sky-300 bg-sky-50 p-4 dark:border-sky-800 dark:bg-sky-950/40">
+              <p className="text-sm font-bold text-sky-900 dark:text-sky-200">
+                A revisão ajustou {pagina.notas.length}{' '}
+                {pagina.notas.length === 1 ? 'ponto' : 'pontos'}
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-sky-900/85 dark:text-sky-200/85 list-disc pl-5">
+                {pagina.notas.map((nota, i) => (
+                  <li key={i}>{nota}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <DepoimentosPendentes pagina={pagina} onChange={setPagina} />
+
           <Preview pagina={pagina} />
+
           <div>
             <label className="block text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">
               Assunto
             </label>
+            {/* Quatro ângulos gerados; escolher entre alternativas é onde o
+                operador agrega, escrever do zero não. O campo segue editável. */}
+            {pagina.email?.assuntos?.length > 0 && (
+              <div className="mb-2 space-y-1">
+                {pagina.email.assuntos.map((op, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setAssunto(op)}
+                    className={`w-full text-left rounded-lg border px-3 py-2 text-sm transition ${
+                      assunto === op
+                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-800 font-bold dark:text-emerald-300'
+                        : 'border-slate-300 bg-slate-50 text-slate-700 font-medium hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                    }`}
+                  >
+                    {op}
+                    <span
+                      className={`ml-2 text-xs ${op.length > 45 ? 'text-rose-600 font-bold' : 'opacity-60'}`}
+                    >
+                      {op.length} car.
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
             <input
               value={assunto}
               onChange={(e) => setAssunto(e.target.value)}
               className="w-full rounded-xl bg-slate-50 border border-slate-300 px-3 py-2 text-sm text-slate-900 font-bold dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">
+              Preheader
+            </label>
+            <input
+              value={preheader}
+              onChange={(e) => setPreheader(e.target.value)}
+              placeholder="Continua o assunto na caixa de entrada, sem repeti-lo"
+              className="w-full rounded-xl bg-slate-50 border border-slate-300 px-3 py-2 text-sm text-slate-900 font-medium dark:bg-slate-900 dark:border-slate-700 dark:text-white"
             />
           </div>
           <div className="flex gap-2">

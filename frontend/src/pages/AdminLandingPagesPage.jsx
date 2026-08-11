@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MdCampaign, MdAutoAwesome, MdOpenInNew, MdDelete, MdSave } from 'react-icons/md';
 import { marketingAPI, aiAssistantAPI } from '../services/api';
 import { Card, PageHeader, Button } from '../components/ui';
+import DepoimentosPendentes from '../components/DepoimentosPendentes';
 
 /**
  * Sem seletor de modelo: ele vive em Configurações > IA. Aqui só se descreve a
@@ -59,6 +60,30 @@ function Preview({ pagina }) {
                   ))}
                 </ul>
               </>
+            )}
+            {bloco.tipo === 'faq' && (
+              <>
+                <h3 className="font-semibold">{bloco.titulo}</h3>
+                <dl className="text-sm space-y-2 mt-1">
+                  {bloco.itens.map((item, j) => (
+                    <div key={j}>
+                      <dt className="font-semibold">{item.pergunta}</dt>
+                      <dd className="opacity-75">{item.resposta}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </>
+            )}
+            {bloco.tipo === 'prova' && (
+              <figure
+                className="text-sm"
+                style={{ borderLeft: `3px solid ${paleta.corPrimaria}`, paddingLeft: 12 }}
+              >
+                <blockquote className="italic">“{bloco.citacao}”</blockquote>
+                <figcaption className="opacity-75 mt-1">
+                  {bloco.autor} — {bloco.papel}
+                </figcaption>
+              </figure>
             )}
             {bloco.tipo === 'cta' && (
               <div className="text-center pt-2">
@@ -147,6 +172,23 @@ export default function AdminLandingPagesPage() {
       {pagina && (
         <Card className="p-6 space-y-4">
           <h3 className="font-extrabold text-[#0A1929] dark:text-white text-lg">Pré-visualização</h3>
+
+          {pagina.notas?.length > 0 && (
+            <div className="rounded-xl border border-sky-300 bg-sky-50 p-4 dark:border-sky-800 dark:bg-sky-950/40">
+              <p className="text-sm font-bold text-sky-900 dark:text-sky-200">
+                A revisão ajustou {pagina.notas.length}{' '}
+                {pagina.notas.length === 1 ? 'ponto' : 'pontos'}
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-sky-900/85 dark:text-sky-200/85 list-disc pl-5">
+                {pagina.notas.map((nota, i) => (
+                  <li key={i}>{nota}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <DepoimentosPendentes pagina={pagina} onChange={setPagina} />
+
           <Preview pagina={pagina} />
           <div>
             <label className="block text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">Endereço da página</label>

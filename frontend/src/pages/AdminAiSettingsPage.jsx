@@ -13,7 +13,13 @@ import { Card, PageHeader, Button } from '../components/ui';
  */
 export default function AdminAiSettingsPage() {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({ textModel: '', imageModel: '', imageQuality: 'padrao' });
+  const [form, setForm] = useState({
+    textModel: '',
+    imageModel: '',
+    imageQuality: 'padrao',
+    tomLanding: '',
+    tomEmail: '',
+  });
   const [feedback, setFeedback] = useState(null);
 
   const { data: config, isLoading } = useQuery({
@@ -27,6 +33,8 @@ export default function AdminAiSettingsPage() {
         textModel: config.textModel,
         imageModel: config.imageModel,
         imageQuality: config.imageQuality,
+        tomLanding: config.tomLanding || '',
+        tomEmail: config.tomEmail || '',
       });
     }
   }, [config]);
@@ -123,6 +131,48 @@ export default function AdminAiSettingsPage() {
             O tamanho não é configurável: vem do destino — landing page usa
             imagem horizontal, e-mail usa uma que cabe em 600px.
           </p>
+        </div>
+
+        <div className="border-t border-slate-200 pt-6 dark:border-slate-800">
+          <h3 className="font-extrabold text-[#0A1929] dark:text-white text-lg">
+            Tom dos especialistas
+          </h3>
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 font-medium">
+            O que você escrever aqui é <strong>somado</strong> às regras fixas, nunca as
+            substitui. Idioma, contrato dos blocos, proibição de URL inventada e a
+            diferença entre Care, Care Plus e Care+ ficam no código — não dá para
+            desligá-las por esta tela. Só ADMIN_RELM salva estes dois campos.
+          </p>
+
+          {[
+            {
+              campo: 'tomLanding',
+              label: 'Landing pages',
+              dica: 'Ex.: fale como mecânico de bike, não como agência. Evite superlativo.',
+            },
+            {
+              campo: 'tomEmail',
+              label: 'E-mails',
+              dica: 'Ex.: assunto sempre no benefício direto, nunca em pergunta retórica.',
+            },
+          ].map(({ campo, label, dica }) => (
+            <div key={campo} className="mt-4">
+              <label className="block text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">
+                {label}
+              </label>
+              <textarea
+                value={form[campo]}
+                onChange={(e) => setForm({ ...form, [campo]: e.target.value })}
+                rows={4}
+                maxLength={2000}
+                placeholder={dica}
+                className="w-full rounded-xl bg-slate-50 border border-slate-300 p-3 text-sm text-slate-900 font-medium focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
+              />
+              <p className="mt-1 text-xs text-slate-500 font-medium">
+                {form[campo].length}/2000
+              </p>
+            </div>
+          ))}
         </div>
 
         {feedback && (
