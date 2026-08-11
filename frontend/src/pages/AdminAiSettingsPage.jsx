@@ -58,45 +58,45 @@ export default function AdminAiSettingsPage() {
 
       <Card className="p-6 space-y-6">
         <div>
-          <label className="block text-sm font-semibold text-slate-200 mb-2">
+          <label className="block text-sm font-bold text-slate-800 dark:text-slate-200 mb-2">
             Modelo de texto
           </label>
           <select
             value={form.textModel}
             onChange={(e) => setForm({ ...form, textModel: e.target.value })}
-            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-100"
+            className="w-full rounded-xl bg-slate-50 border border-slate-300 px-3.5 py-2.5 text-slate-900 font-extrabold focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
           >
             {(config?.textModels || []).map((m) => (
               <option key={m} value={m}>{m}</option>
             ))}
           </select>
-          <p className="mt-2 text-xs text-slate-400">
+          <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 font-medium">
             Escreve o texto e escolhe a paleta da campanha.
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-slate-200 mb-2">
-            <MdImage className="inline mb-0.5 mr-1" />
+          <label className="block text-sm font-bold text-slate-800 dark:text-slate-200 mb-2">
+            <MdImage className="inline mb-0.5 mr-1 text-cyan-600 dark:text-cyan-400" />
             Modelo de imagem
           </label>
           <select
             value={form.imageModel}
             onChange={(e) => setForm({ ...form, imageModel: e.target.value })}
-            className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-100"
+            className="w-full rounded-xl bg-slate-50 border border-slate-300 px-3.5 py-2.5 text-slate-900 font-extrabold focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
           >
             {(config?.imageModels || []).map((m) => (
               <option key={m} value={m}>{m}</option>
             ))}
           </select>
-          <p className="mt-2 text-xs text-slate-400">
+          <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 font-medium">
             A conta da OpenAI precisa ter acesso ao modelo escolhido. Se a imagem
             falhar, a página é gerada mesmo assim e você pode subir uma foto.
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-slate-200 mb-2">
+          <label className="block text-sm font-bold text-slate-800 dark:text-slate-200 mb-2">
             Qualidade da imagem
           </label>
           <div className="flex gap-3">
@@ -108,18 +108,18 @@ export default function AdminAiSettingsPage() {
                 key={op.v}
                 type="button"
                 onClick={() => setForm({ ...form, imageQuality: op.v })}
-                className={`flex-1 rounded-lg border px-4 py-3 text-left transition ${
+                className={`flex-1 rounded-xl border px-4 py-3 text-left transition font-bold ${
                   form.imageQuality === op.v
-                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
-                    : 'border-slate-700 bg-slate-800 text-slate-300'
+                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-500/30'
+                    : 'border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
                 }`}
               >
-                <span className="block font-semibold">{op.label}</span>
-                <span className="block text-xs opacity-70">{op.hint}</span>
+                <span className="block font-bold">{op.label}</span>
+                <span className="block text-xs font-medium opacity-80">{op.hint}</span>
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-slate-400">
+          <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 font-medium">
             O tamanho não é configurável: vem do destino — landing page usa
             imagem horizontal, e-mail usa uma que cabe em 600px.
           </p>
@@ -127,10 +127,10 @@ export default function AdminAiSettingsPage() {
 
         {feedback && (
           <div
-            className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm ${
+            className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-bold ${
               feedback.ok
-                ? 'bg-emerald-500/10 text-emerald-300'
-                : 'bg-red-500/10 text-red-300'
+                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
+                : 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
             }`}
           >
             {feedback.ok ? <MdCheckCircle /> : <MdWarning />}
@@ -138,14 +138,14 @@ export default function AdminAiSettingsPage() {
           </div>
         )}
 
-        <Button onClick={() => mutation.mutate(form)} disabled={mutation.isPending}>
-          <MdSave className="mr-2" />
+        <Button onClick={() => mutation.mutate(form)} disabled={mutation.isPending} className="flex items-center gap-2">
+          <MdSave className="w-5 h-5" />
           {mutation.isPending ? 'Salvando…' : 'Salvar'}
         </Button>
       </Card>
 
-      <Card className="p-4 text-xs text-slate-400">
-        A chave da API fica no <code className="text-slate-300">.env</code> do
+      <Card className="p-4 text-xs text-slate-600 dark:text-slate-400 font-medium">
+        A chave da API fica no <code className="text-slate-900 dark:text-slate-200 font-bold">.env</code> do
         servidor, não aqui — ela tem cobrança atrelada e backup de banco não é
         lugar para isso.
       </Card>

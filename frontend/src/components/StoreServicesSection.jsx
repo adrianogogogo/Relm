@@ -202,7 +202,7 @@ function AddEditStoreServiceModal({ storeId, storeService, masterServices, onClo
                     </button>
                   </div>
                   <div>
-                    <label className="block text-xs text-slate-300 mb-1">
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
                       🎯 Pontos para trocar de graça (Resgate pelo cliente)
                     </label>
                     <input
@@ -212,7 +212,7 @@ function AddEditStoreServiceModal({ storeId, storeService, masterServices, onClo
                       placeholder="Ex: 1000"
                       value={pointsCost}
                       onChange={(e) => setPointsCost(e.target.value)}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 p-2.5 text-xs text-slate-900 font-extrabold focus:outline-none focus:border-cyan-600 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                     />
                   </div>
                 </div>

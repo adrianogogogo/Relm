@@ -135,33 +135,33 @@ export default function AdminLandingPagesPage() {
           onChange={(e) => setTema(e.target.value)}
           rows={3}
           placeholder="Ex.: campanha de revisão de inverno com 20% de desconto para membros Plus"
-          className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-100"
+          className="w-full rounded-xl bg-slate-50 border border-slate-300 p-3 text-sm text-slate-900 font-semibold focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
         />
-        <Button onClick={() => gerar.mutate()} disabled={!tema.trim() || gerar.isPending}>
-          <MdAutoAwesome className="mr-2" />
+        <Button onClick={() => gerar.mutate()} disabled={!tema.trim() || gerar.isPending} className="flex items-center gap-2">
+          <MdAutoAwesome className="w-5 h-5" />
           {gerar.isPending ? 'Gerando…' : 'Gerar página'}
         </Button>
-        {erro && <p className="text-sm text-red-300">{erro}</p>}
+        {erro && <p className="text-sm font-bold text-rose-600 dark:text-rose-400">{erro}</p>}
       </Card>
 
       {pagina && (
         <Card className="p-6 space-y-4">
-          <h3 className="font-semibold text-slate-100">Pré-visualização</h3>
+          <h3 className="font-extrabold text-[#0A1929] dark:text-white text-lg">Pré-visualização</h3>
           <Preview pagina={pagina} />
           <div>
-            <label className="block text-sm text-slate-300 mb-1">Endereço da página</label>
+            <label className="block text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">Endereço da página</label>
             <div className="flex items-center gap-2">
-              <span className="text-slate-500 text-sm">/lp/</span>
+              <span className="text-slate-500 font-bold text-sm">/lp/</span>
               <input
                 value={slug}
                 onChange={(e) => setSlug(slugify(e.target.value))}
-                className="flex-1 rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-100"
+                className="flex-1 rounded-xl bg-slate-50 border border-slate-300 px-3 py-2 text-sm text-slate-900 font-bold dark:bg-slate-900 dark:border-slate-700 dark:text-white"
               />
             </div>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => salvar.mutate()} disabled={!slug || salvar.isPending}>
-              <MdSave className="mr-2" />
+            <Button onClick={() => salvar.mutate()} disabled={!slug || salvar.isPending} className="flex items-center gap-2">
+              <MdSave className="w-5 h-5" />
               {salvar.isPending ? 'Publicando…' : 'Publicar'}
             </Button>
             <Button variant="secondary" onClick={() => setPagina(null)}>
@@ -172,18 +172,18 @@ export default function AdminLandingPagesPage() {
       )}
 
       <Card className="p-6">
-        <h3 className="font-semibold text-slate-100 mb-4">Páginas publicadas</h3>
+        <h3 className="font-extrabold text-[#0A1929] dark:text-white text-lg mb-4">Páginas publicadas</h3>
         {isLoading ? (
-          <p className="text-slate-400">Carregando…</p>
+          <p className="text-slate-500 font-medium">Carregando…</p>
         ) : pages.length === 0 ? (
-          <p className="text-slate-400 text-sm">Nenhuma página ainda.</p>
+          <p className="text-slate-500 font-medium text-sm">Nenhuma página ainda.</p>
         ) : (
-          <ul className="divide-y divide-slate-800">
+          <ul className="divide-y divide-slate-200 dark:divide-slate-800">
             {pages.map((p) => (
               <li key={p.id} className="flex items-center justify-between py-3">
                 <div>
-                  <p className="text-slate-100 font-medium">{p.title}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-slate-900 dark:text-slate-100 font-bold text-base">{p.title}</p>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
                     /lp/{p.slug} · {p.viewCount} visualizações
                   </p>
                 </div>
@@ -192,17 +192,17 @@ export default function AdminLandingPagesPage() {
                     href={`/lp/${p.slug}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="p-2 text-slate-400 hover:text-emerald-400"
+                    className="p-2 text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 transition"
                     title="Abrir"
                   >
-                    <MdOpenInNew />
+                    <MdOpenInNew className="w-5 h-5" />
                   </a>
                   <button
                     onClick={() => remover.mutate(p.id)}
-                    className="p-2 text-slate-400 hover:text-red-400"
+                    className="p-2 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 transition"
                     title="Excluir"
                   >
-                    <MdDelete />
+                    <MdDelete className="w-5 h-5" />
                   </button>
                 </div>
               </li>

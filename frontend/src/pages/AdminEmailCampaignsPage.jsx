@@ -211,11 +211,11 @@ export default function AdminEmailCampaignsPage() {
 
             <form onSubmit={handleMagicGenerate} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-300">Modelo OpenAI:</label>
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200">Modelo OpenAI:</label>
                 <select
                   value={selectedModel}
                   onChange={(e) => setSelectedModel(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm text-slate-900 font-bold focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                 >
                   <option value="gpt-4o-mini">🤖 OpenAI gpt-4o-mini (Recomendado — Rápido & Inteligente)</option>
                   <option value="gpt-4o">🚀 OpenAI gpt-4o (Criatividade Avançada & Raciocínio Persuasivo)</option>
@@ -229,13 +229,13 @@ export default function AdminEmailCampaignsPage() {
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="Ex: Enviar lembrete sobre o acúmulo de pontos do mês para assinantes Plus com convite para o pedal..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm text-slate-900 font-semibold focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
               />
 
               <button
                 type="submit"
                 disabled={generating || !aiPrompt.trim()}
-                className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold rounded-xl text-sm transition flex items-center justify-center gap-2 border border-emerald-500/20 disabled:opacity-50"
+                className="w-full py-3 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-emerald-400 font-bold rounded-xl text-sm transition flex items-center justify-center gap-2 border border-emerald-500/30 disabled:opacity-50"
               >
                 {generating ? (
                   <>
@@ -251,16 +251,16 @@ export default function AdminEmailCampaignsPage() {
               </button>
             </form>
 
-            <div className="pt-4 border-t border-slate-800 space-y-4">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <MdPeople className="w-4 h-4 text-emerald-400" />
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
+              <h3 className="text-sm font-extrabold text-[#0A1929] dark:text-white flex items-center gap-2">
+                <MdPeople className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 2. Selecione o Público-Alvo de Envio
               </h3>
 
               <select
                 value={targetSegment}
                 onChange={(e) => setTargetSegment(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-sm text-slate-900 font-bold focus:outline-none focus:border-cyan-600 dark:bg-slate-900 dark:border-slate-700 dark:text-white"
               >
                 <option value="ALL_CUSTOMERS">Todos os Clientes Cadastrados</option>
                 <option value="PLUS_ONLY">Apenas Assinantes Membros Plus</option>
@@ -268,14 +268,14 @@ export default function AdminEmailCampaignsPage() {
               </select>
 
               <div className="space-y-2">
-                <label className="text-xs text-slate-400 font-semibold">Testar Envio no Seu E-mail:</label>
+                <label className="text-xs text-slate-700 dark:text-slate-300 font-bold">Testar Envio no Seu E-mail:</label>
                 <div className="flex gap-2">
                   <input
                     type="email"
                     placeholder="seuemail@exemplo.com"
                     value={testEmail}
                     onChange={(e) => setTestEmail(e.target.value)}
-                    className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                    className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold dark:bg-slate-900 dark:border-slate-700 dark:text-white"
                   />
                   <button
                     type="button"
