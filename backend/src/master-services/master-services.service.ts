@@ -6,6 +6,11 @@ export interface CreateMasterServiceDto {
   description?: string;
   category?: string;
   defaultEstimatedMinutes?: number;
+  defaultPrice?: number;
+  defaultPointsCost?: number;
+  defaultPlusRule?: any;
+  defaultPlusPrice?: number;
+  defaultPlusDiscountPercent?: number;
   active?: boolean;
 }
 
@@ -14,6 +19,11 @@ export interface UpdateMasterServiceDto {
   description?: string;
   category?: string;
   defaultEstimatedMinutes?: number;
+  defaultPrice?: number;
+  defaultPointsCost?: number;
+  defaultPlusRule?: any;
+  defaultPlusPrice?: number;
+  defaultPlusDiscountPercent?: number;
   active?: boolean;
 }
 
@@ -28,6 +38,11 @@ export class MasterServicesService {
         description: dto.description,
         category: dto.category,
         defaultEstimatedMinutes: dto.defaultEstimatedMinutes ?? 60,
+        defaultPrice: dto.defaultPrice != null ? dto.defaultPrice : null,
+        defaultPointsCost: dto.defaultPointsCost != null ? dto.defaultPointsCost : null,
+        defaultPlusRule: dto.defaultPlusRule || 'FREE',
+        defaultPlusPrice: dto.defaultPlusPrice != null ? dto.defaultPlusPrice : null,
+        defaultPlusDiscountPercent: dto.defaultPlusDiscountPercent != null ? dto.defaultPlusDiscountPercent : null,
         active: dto.active ?? true,
       },
     });

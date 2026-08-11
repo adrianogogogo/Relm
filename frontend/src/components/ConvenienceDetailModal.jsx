@@ -199,6 +199,34 @@ export default function ServiceDetailModal({
             </div>
           )}
 
+          {/* Section: Points & Price Breakdown Card */}
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 space-y-3 dark:bg-emerald-950/20">
+            <h4 className="flex items-center gap-2 text-xs font-extrabold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
+              📊 Dados de Pontuação & Valor Atual Estabelecido:
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="bg-white/80 dark:bg-slate-900/80 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-bold">💰 Valor Atual Estabelecido:</span>
+                <strong className="text-slate-900 dark:text-white text-base">R$ {priceCare.toFixed(2)}</strong>
+              </div>
+
+              <div className="bg-white/80 dark:bg-slate-900/80 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-bold">🎯 Custo para Trocar de Graça:</span>
+                <strong className="text-emerald-600 dark:text-emerald-400 text-base">
+                  {service.pointsCost || service.defaultPointsCost || Math.floor(priceCare / 0.05)} Pts
+                </strong>
+              </div>
+
+              <div className="bg-white/80 dark:bg-slate-900/80 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-bold">🛍️ Pontos Ganhos ao Pagar:</span>
+                <strong className="text-blue-600 dark:text-blue-400 text-base">
+                  +{Math.floor(priceCare)} Pts
+                </strong>
+                <span className="text-[10px] text-amber-500 block font-bold">({Math.floor(priceCare * 2)} Pts no Plus ⚡)</span>
+              </div>
+            </div>
+          </div>
+
           {/* Relm Plus vs Care Price Comparison Card */}
           <div className="rounded-2xl border border-amber-300/80 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent p-5 dark:border-amber-700/60 dark:from-amber-950/40">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">

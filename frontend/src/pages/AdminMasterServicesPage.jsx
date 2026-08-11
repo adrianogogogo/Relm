@@ -36,6 +36,9 @@ const EMPTY_FORM = {
   description: '',
   category: 'Revisões Periódicas',
   defaultEstimatedMinutes: 60,
+  defaultPrice: 50,
+  defaultPointsCost: '',
+  defaultPlusRule: 'FREE',
   active: true,
 };
 
@@ -49,10 +52,14 @@ function MasterServiceModal({ service, onClose }) {
           description: service.description || '',
           category: service.category || 'Revisões Periódicas',
           defaultEstimatedMinutes: service.defaultEstimatedMinutes || 60,
+          defaultPrice: service.defaultPrice != null ? service.defaultPrice : 50,
+          defaultPointsCost: service.defaultPointsCost != null ? String(service.defaultPointsCost) : '',
+          defaultPlusRule: service.defaultPlusRule || 'FREE',
           active: service.active,
         }
       : { ...EMPTY_FORM }
   );
+  const [isCustomPoints, setIsCustomPoints] = useState(false);
   const [error, setError] = useState('');
 
   const mutation = useMutation({
@@ -72,15 +79,25 @@ function MasterServiceModal({ service, onClose }) {
       setError('O nome do serviço é obrigatório.');
       return;
     }
+
+    const calculatedPointsCost = !isCustomPoints
+      ? Math.floor((Number(form.defaultPrice) || 0) / 0.05)
+      : form.defaultPointsCost.trim() === '' ? null : Number(form.defaultPointsCost);
+
     mutation.mutate({
       ...form,
       defaultEstimatedMinutes: Number(form.defaultEstimatedMinutes) || 60,
+      defaultPrice: Number(form.defaultPrice) || 0,
+      defaultPointsCost: calculatedPointsCost,
     });
   };
 
+  const currentPrice = Number(form.defaultPrice) || 0;
+  const autoPointsCost = Math.floor(currentPrice / 0.05);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-800">
+      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-800 max-h-[90vh] overflow-y-auto">
         <h3 className="mb-4 text-xl font-bold text-slate-800 dark:text-white">
           {isEdit ? 'Editar Serviço Mestre' : 'Novo Serviço no Catálogo'}
         </h3>
@@ -139,6 +156,97 @@ function MasterServiceModal({ service, onClose }) {
                 className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 p-2.5 text-sm focus:border-cyan-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
               />
             </div>
+          </div>
+
+          {/* Preço Padrão e Pontuação em Tempo Real */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Preço Sugerido (R$) *
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                value={form.defaultPrice}
+                onChange={(e) => setForm({ ...form, defaultPrice: e.target.value })}
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 p-2.5 text-sm font-bold focus:border-cyan-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Regra Benefício Relm Plus
+              </label>
+              <select
+                value={form.defaultPlusRule}
+                onChange={(e) => setForm({ ...form, defaultPlusRule: e.target.value })}
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 p-2.5 text-sm focus:border-cyan-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+              >
+                <option value="FREE">Gratuito (100% Coberto pelo Plus)</option>
+                <option value="DISCOUNT_PERCENT">Desconto % no Plus</option>
+                <option value="FIXED_PRICE">Preço Especial no Plus</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Card Atribuição de Pontos em Tempo Real */}
+          <div className="space-y-2">
+            {!isCustomPoints ? (
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-emerald-400 flex items-center gap-1.5">
+                    💡 Atribuição Automática de Pontos Relm Care+
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomPoints(true)}
+                    className="text-[11px] font-bold text-slate-300 underline hover:text-white"
+                  >
+                    ✏️ Personalizar Pontos
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-slate-300 pt-1">
+                  <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                    <span className="text-[10px] text-slate-400 block">🎯 Pontos para trocar de graça:</span>
+                    <strong className="text-emerald-400 text-sm">{autoPointsCost} Pts</strong>
+                  </div>
+                  <div className="bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+                    <span className="text-[10px] text-slate-400 block">🛍️ Pontos de presente na compra:</span>
+                    <strong className="text-blue-400 text-sm">+{Math.floor(currentPrice)} Pts</strong>
+                    <span className="text-[9px] text-slate-400 block">({Math.floor(currentPrice * 2)} Pts no Plus ⚡)</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-slate-900/80 border border-slate-800 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-white">Personalização Manual de Pontos:</label>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomPoints(false)}
+                    className="text-[11px] text-emerald-400 font-bold underline"
+                  >
+                    ⚡ Voltar ao Automático
+                  </button>
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-300 mb-1">
+                    🎯 Pontos para trocar de graça (Resgate pelo cliente)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="50"
+                    placeholder="Ex: 1000"
+                    value={form.defaultPointsCost}
+                    onChange={(e) => setForm({ ...form, defaultPointsCost: e.target.value })}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 p-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
@@ -332,6 +440,22 @@ export default function AdminMasterServicesPage() {
                 <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
                   <MdAccessTime className="h-4 w-4" />
                   <span>Duração padrão: {service.defaultEstimatedMinutes} minutos</span>
+                </div>
+
+                {/* Points & Price Summary Badge */}
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 text-xs space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">💰 Valor Tabela:</span>
+                    <strong className="text-slate-900 dark:text-white">R$ {(service.defaultPrice || 50).toFixed(2)}</strong>
+                  </div>
+                  <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-bold">
+                    <span>🎯 Resgate:</span>
+                    <span>{service.defaultPointsCost || Math.floor((service.defaultPrice || 50) / 0.05)} pts</span>
+                  </div>
+                  <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 font-bold">
+                    <span>🛍️ Pontos Compra:</span>
+                    <span>+{Math.floor(service.defaultPrice || 50)} pts</span>
+                  </div>
                 </div>
               </div>
 

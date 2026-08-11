@@ -1070,6 +1070,11 @@ model MasterService {
   description             String?  @db.Text
   category                String?
   defaultEstimatedMinutes Int      @default(60) @map("default_estimated_minutes")
+  defaultPrice            Decimal? @map("default_price") @db.Decimal(10, 2)
+  defaultPointsCost       Int?     @map("default_points_cost")
+  defaultPlusRule         PlusCoverageRule @default(FREE) @map("default_plus_rule")
+  defaultPlusPrice        Decimal? @map("default_plus_price") @db.Decimal(10, 2)
+  defaultPlusDiscountPercent Int?  @map("default_plus_discount_percent")
   active                  Boolean  @default(true)
   createdAt               DateTime @default(now()) @map("created_at")
   updatedAt               DateTime @updatedAt @map("updated_at")
