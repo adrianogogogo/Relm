@@ -8,11 +8,24 @@ export class AiAssistantService {
   private readonly logger = new Logger(AiAssistantService.name);
   private openai: OpenAI | null = null;
 
+  // Troca de provedor sem código novo: praticamente todo provedor sério fala o
+  // dialeto da API da OpenAI, então apontar `baseURL` para outro host já muda a
+  // LLM. OpenRouter (que dá acesso a Claude, Gemini e Llama por baixo), Groq,
+  // DeepSeek e Ollama local entram só por variável de ambiente.
+  //
+  // Não há camada de abstração de provedor aqui de propósito: seria uma
+  // interface com uma implementação só, e o SDK da OpenAI já é essa interface.
+  private baseURL(): string | undefined {
+    return this.configService.get<string>('OPENAI_BASE_URL') || undefined;
+  }
+
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
     if (apiKey) {
-      this.openai = new OpenAI({ apiKey });
-      this.logger.log('Cliente OpenAI inicializado com sucesso.');
+      this.openai = new OpenAI({ apiKey, baseURL: this.baseURL() });
+      this.logger.log(
+        `Cliente LLM inicializado (${this.baseURL() || 'api.openai.com'}).`,
+      );
     } else {
       this.logger.warn('OPENAI_API_KEY não configurada no .env.');
     }
@@ -21,7 +34,7 @@ export class AiAssistantService {
   async generateCopy(dto: GenerateCopyDto) {
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
     if (!this.openai && apiKey) {
-      this.openai = new OpenAI({ apiKey });
+      this.openai = new OpenAI({ apiKey, baseURL: this.baseURL() });
     }
 
     if (!this.openai) {
@@ -29,7 +42,13 @@ export class AiAssistantService {
       return this.generateSmartFallback(dto);
     }
 
-    const selectedModel = dto.model || 'gpt-4o-mini';
+    // O seletor da tela continua mandando o modelo; LLM_DEFAULT_MODEL só decide
+    // o que usar quando a tela não escolhe — trocar de provedor sem trocar o
+    // default deixaria um id de modelo que o novo host não conhece.
+    const selectedModel =
+      dto.model ||
+      this.configService.get<string>('LLM_DEFAULT_MODEL') ||
+      'gpt-4o-mini';
     const type = dto.type || 'LANDING_PAGE';
 
     const systemPrompt = `Você é o especialista de Marketing da Relm Bikes / Relm Care+, um clube de assinaturas e garantias de bicicletas para ciclistas no Brasil.
@@ -84,8 +103,10 @@ Público Alvo: ${dto.targetAudience || 'Ciclistas e clientes das lojas credencia
       const parsedJson = JSON.parse(responseText);
 
       // Attempt DALL-E image generation matching the storyline prompt
+      // `images.generate` é rota exclusiva da OpenAI: com baseURL de outro
+      // provedor ela dá 404 a cada geração, então nem tenta.
       let dalleImageUrl = null;
-      if (parsedJson.dalleImagePrompt) {
+      if (parsedJson.dalleImagePrompt && !this.baseURL()) {
         try {
           this.logger.log(`Solicitando imagem temática via OpenAI DALL-E...`);
           const imageRes = await this.openai.images.generate({

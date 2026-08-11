@@ -85,7 +85,21 @@ describe('EmailCrmService', () => {
     ).rejects.toThrow(ConflictException);
   });
 
-  it('deve criar e disparar uma campanha para ALL_CUSTOMERS', async () => {
+  // O disparo em massa está desligado até existir template de campanha de
+  // verdade, filtro de marketingConsent e descadastro. Enquanto isso, o teste
+  // que importa é o que garante que NADA sai — sem ele, religar por acidente
+  // manda um e-mail com cara de reset de senha para a base inteira.
+  it('recusa o disparo em massa enquanto EMAIL_CAMPAIGN_SEND_ENABLED não for true', async () => {
+    delete process.env.EMAIL_CAMPAIGN_SEND_ENABLED;
+
+    await expect(service.triggerCampaign('camp-1')).rejects.toThrow(/desligado/i);
+    expect(mockEmailService.sendPasswordResetEmail).not.toHaveBeenCalled();
+    // Nem chega a ler a campanha: a guarda é a primeira coisa do método.
+    expect(prisma.emailCampaign.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('dispara para ALL_CUSTOMERS quando o envio é habilitado explicitamente', async () => {
+    process.env.EMAIL_CAMPAIGN_SEND_ENABLED = 'true';
     prisma.emailCampaign.findUnique.mockResolvedValue({
       id: 'camp-1',
       title: 'Promoção de Verão',
@@ -102,5 +116,6 @@ describe('EmailCrmService', () => {
     await service.triggerCampaign('camp-1');
 
     expect(mockEmailService.sendPasswordResetEmail).toHaveBeenCalled();
+    delete process.env.EMAIL_CAMPAIGN_SEND_ENABLED;
   });
 });

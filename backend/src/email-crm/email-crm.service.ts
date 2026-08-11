@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { CreateEmailTemplateDto, CreateEmailCampaignDto, SendTestEmailDto, CampaignSegmentEnum } from './dto/create-email-crm.dto';
@@ -92,6 +92,28 @@ export class EmailCrmService {
   }
 
   async triggerCampaign(campaignId: string) {
+    // DESLIGADO DE PROPÓSITO. Três defeitos, em ordem de gravidade:
+    //
+    // 1. O laço abaixo dispara `sendPasswordResetEmail` com `resetUrl: '#'` —
+    //    a base inteira receberia um e-mail com cara de redefinição de senha
+    //    que ninguém pediu, com link morto. É o formato de um phishing saindo
+    //    do próprio domínio, e queima a reputação usada pelos transacionais.
+    // 2. Não filtra `Customer.marketingConsent` — envia para quem nunca disse
+    //    sim. O campo existe, é coletado no cadastro e nasce `false`.
+    // 3. Não há link de descadastro, obrigatório em envio de marketing.
+    //
+    // Gerar, pré-visualizar e salvar campanha seguem funcionando — é o escopo
+    // que o plano 011 previa para esta rodada. Para religar: template de
+    // campanha de verdade + filtro de consentimento + descadastro, e só então
+    // remover esta guarda.
+    // process.env e não ConfigService: injetar um terceiro parâmetro mudaria a
+    // assinatura do construtor e quebraria o spec que já existe.
+    if (process.env.EMAIL_CAMPAIGN_SEND_ENABLED !== 'true') {
+      throw new ServiceUnavailableException(
+        'Disparo em massa desligado: falta template de campanha, filtro de consentimento e descadastro. A campanha continua salva.',
+      );
+    }
+
     const campaign = await this.prisma.emailCampaign.findUnique({
       where: { id: campaignId },
       include: { template: true },
