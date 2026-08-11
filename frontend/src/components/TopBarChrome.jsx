@@ -6,6 +6,7 @@ import { ptBR } from 'date-fns/locale';
 import { useThemeStore } from '../store/themeStore';
 import { notificationsAPI } from '../services/api';
 import ChangePasswordModal from './ChangePasswordModal';
+import PointsBalanceWidget from './PointsBalanceWidget';
 import {
   MdLightMode,
   MdDarkMode,
@@ -124,7 +125,10 @@ export default function TopBarChrome({
   const hasUnread = enableNotifications && unreadCount > 0;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3">
+      {/* Widget de Pontos do Cliente */}
+      <PointsBalanceWidget />
+
       {/* Toggle de tema 3D Neumórfico */}
       <button
         onClick={toggleTheme}

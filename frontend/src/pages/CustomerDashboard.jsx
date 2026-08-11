@@ -155,15 +155,15 @@ export default function CustomerDashboard() {
   const { data: pointsData } = useQuery({
     queryKey: ['customer-points', user?.id],
     queryFn: () => customerPortalAPI.getPointsBalance(),
-    enabled: !!user?.id && isPlus,
+    enabled: !!user?.id,
   });
 
-  const points = pointsData?.balance || 0;
+  const points = pointsData?.balance ?? pointsData?.total ?? 0;
 
   const metrics = [
     { label: 'Eventos', value: events.length, icon: MdEvent, color: isPlus ? '#D4AF37' : '#0A1929', link: '/cliente/eventos' },
     { label: 'Vantagens', value: benefits.length, icon: MdCardGiftcard, color: isPlus ? '#D4AF37' : '#183757', link: '/cliente/vantagens' },
-    { label: isPlus ? 'Meus Pontos' : 'Cotações', value: isPlus ? points : quotes.length, icon: isPlus ? MdCardGiftcard : MdDescription, color: isPlus ? '#D4AF37' : '#2196F3', link: isPlus ? '/cliente/vantagens' : '/cliente/seguros' },
+    { label: 'Meus Pontos', value: `${points} pts`, icon: MdCardGiftcard, color: isPlus ? '#D4AF37' : '#2196F3', link: '/cliente/catalogo' },
   ];
 
   return (
