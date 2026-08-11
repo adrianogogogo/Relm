@@ -1,11 +1,7 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsObject } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsObject } from 'class-validator';
 
-export enum CampaignSegmentEnum {
-  ALL_CUSTOMERS = 'ALL_CUSTOMERS',
-  PLUS_ONLY = 'PLUS_ONLY',
-  EXPIRED_POINTS = 'EXPIRED_POINTS',
-  STORES_ONLY = 'STORES_ONLY',
-}
+// Sem CampaignSegmentEnum: segmentação é decidida na ferramenta de disparo, que
+// é quem tem a lista. Guardar um segmento aqui seria um campo que ninguém lê.
 
 export class CreateEmailTemplateDto {
   @IsString()
@@ -24,9 +20,10 @@ export class CreateEmailTemplateDto {
   @IsNotEmpty()
   bodyHtml: string;
 
+  /** PaginaGerada. É daqui que o export de HTML renderiza. */
   @IsObject()
   @IsOptional()
-  variablesJson?: Record<string, any>;
+  blocksJson?: Record<string, any>;
 }
 
 export class CreateEmailCampaignDto {
@@ -37,22 +34,4 @@ export class CreateEmailCampaignDto {
   @IsString()
   @IsNotEmpty()
   templateId: string;
-
-  @IsEnum(CampaignSegmentEnum)
-  @IsOptional()
-  targetSegment?: CampaignSegmentEnum;
-}
-
-export class SendTestEmailDto {
-  @IsString()
-  @IsNotEmpty()
-  to: string;
-
-  @IsString()
-  @IsNotEmpty()
-  subject: string;
-
-  @IsString()
-  @IsNotEmpty()
-  bodyHtml: string;
 }

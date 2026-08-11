@@ -25,10 +25,15 @@ export type PaginaGerada = {
   subtitulo: string;
   paleta: Paleta;
   blocos: Bloco[];
+  /**
+   * Preenchido pelo código depois da geração, NUNCA pelo modelo — por isso não
+   * aparece em PAGINA_SCHEMA. Pedir URL de imagem a um modelo de texto só
+   * produz link inventado. Vem da geração de imagem ou de upload pela tela.
+   */
+  imagemUrl?: string;
 };
 
-// Sem bloco de imagem: o modelo não tem imagem para indicar e inventaria URL
-// quebrada. Imagem entra depois, pela tela, quando a loja subir o arquivo.
+// Sem bloco de imagem: a imagem é uma só, do topo, e vive em `imagemUrl`.
 const BLOCO_HERO = {
   type: 'object',
   properties: {
@@ -111,6 +116,19 @@ export const PAGINA_SCHEMA = {
   required: ['titulo', 'subtitulo', 'paleta', 'blocos'],
   additionalProperties: false,
 };
+
+/**
+ * Conteúdo gerado por modelo vai para dentro de HTML — escapar não é opcional.
+ * Mora aqui, e não em cada renderizador, porque duas cópias de uma função de
+ * escape são duas chances de uma delas ficar para trás.
+ */
+export function esc(texto: string): string {
+  return String(texto ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 

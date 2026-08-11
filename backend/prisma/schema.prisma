@@ -1305,28 +1305,14 @@ model SaleItem {
   @@map("sale_items")
 }
 
-enum CampaignStatus {
-  DRAFT
-  SCHEDULED
-  SENDING
-  SENT
-  FAILED
-}
-
-enum CampaignSegment {
-  ALL_CUSTOMERS
-  PLUS_ONLY
-  EXPIRED_POINTS
-  STORES_ONLY
-}
-
 model EmailTemplate {
   id            String   @id @default(uuid())
   name          String
   slug          String   @unique
   subject       String
   bodyHtml      String   @db.Text @map("body_html")
-  variablesJson Json?    @map("variables_json")
+  /// PaginaGerada — fonte de verdade do conteúdo. bodyHtml é o render guardado.
+  blocksJson    Json?    @map("blocks_json")
 
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
@@ -1338,14 +1324,11 @@ model EmailTemplate {
 
 model EmailCampaign {
   id            String          @id @default(uuid())
+  // Sem campos de envio: este módulo gera e exporta HTML, o disparo acontece na
+  // ferramenta de e-mail marketing. Segmento, status e contadores eram colunas
+  // que nunca seriam preenchidas.
   title         String
   templateId    String          @map("template_id")
-  targetSegment CampaignSegment @default(ALL_CUSTOMERS) @map("target_segment")
-  status        CampaignStatus  @default(DRAFT)
-  sentCount     Int             @default(0) @map("sent_count")
-  errorCount    Int             @default(0) @map("error_count")
-  scheduledAt   DateTime?       @map("scheduled_at")
-  sentAt        DateTime?       @map("sent_at")
 
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
@@ -1353,7 +1336,6 @@ model EmailCampaign {
   template      EmailTemplate   @relation(fields: [templateId], references: [id])
 
   @@index([templateId])
-  @@index([status])
   @@map("email_campaigns")
 }
 

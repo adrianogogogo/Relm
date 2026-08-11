@@ -1,6 +1,6 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, UseGuards } from '@nestjs/common';
 import { AiAssistantService } from './ai-assistant.service';
-import { GenerateCopyDto } from './dto/generate-copy.dto';
+import { AiConfigDto, GerarPaginaDto } from './dto/ai.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -11,16 +11,19 @@ import { Roles } from '../common/decorators/roles.decorator';
 export class AiAssistantController {
   constructor(private readonly aiAssistantService: AiAssistantService) {}
 
-  @Post('generate-copy')
-  generateCopy(@Body() dto: GenerateCopyDto) {
-    return this.aiAssistantService.generateCopy(dto);
+  @Post('gerar-pagina')
+  gerarPagina(@Body() dto: GerarPaginaDto) {
+    return this.aiAssistantService.gerarPagina(dto.tema, dto.destino, dto.contexto);
   }
 
-  @Post('daily-rider-message')
-  dailyRiderMessage(@Body() dto: GenerateCopyDto) {
-    return this.aiAssistantService.generateCopy({
-      ...dto,
-      type: 'DAILY_RIDER_MESSAGE',
-    });
+  /** Devolve o configurado E as opções válidas — a tela não tem lista própria. */
+  @Get('config')
+  getConfig() {
+    return this.aiAssistantService.getConfig();
+  }
+
+  @Put('config')
+  setConfig(@Body() dto: AiConfigDto) {
+    return this.aiAssistantService.setConfig(dto);
   }
 }

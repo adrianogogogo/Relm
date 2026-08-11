@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { EmailCrmService } from './email-crm.service';
-import { CreateEmailTemplateDto, CreateEmailCampaignDto, SendTestEmailDto } from './dto/create-email-crm.dto';
+import { CreateEmailTemplateDto, CreateEmailCampaignDto } from './dto/create-email-crm.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -31,13 +31,9 @@ export class EmailCrmController {
     return this.emailCrmService.createCampaign(dto);
   }
 
-  @Post('campaigns/:id/send')
-  triggerCampaign(@Param('id') id: string) {
-    return this.emailCrmService.triggerCampaign(id);
-  }
-
-  @Post('send-test')
-  sendTestEmail(@Body() dto: SendTestEmailDto) {
-    return this.emailCrmService.sendTestEmail(dto);
+  /** HTML pronto para colar na ferramenta de disparo. Este módulo não envia. */
+  @Get('campaigns/:id/export')
+  exportHtml(@Param('id') id: string) {
+    return this.emailCrmService.exportHtml(id);
   }
 }

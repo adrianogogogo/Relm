@@ -1,189 +1,193 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'crypto';
+import { mkdir, writeFile } from 'fs/promises';
+import { join } from 'path';
 import OpenAI from 'openai';
-import { GenerateCopyDto } from './dto/generate-copy.dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { PAGINA_SCHEMA, PaginaGerada, sanitizePagina } from '../ai-design/blocks.schema';
+import {
+  DEFAULT_IMAGE_MODEL,
+  DEFAULT_IMAGE_QUALITY,
+  DEFAULT_TEXT_MODEL,
+  Destino,
+  IMAGE_MODELS,
+  TEXT_MODELS,
+} from './models';
+
+const KEY_TEXT = 'ai_text_model';
+const KEY_IMAGE = 'ai_image_model';
+const KEY_QUALITY = 'ai_image_quality';
+
+/** Onde a imagem gerada é gravada. Servido estaticamente em /uploads/marketing. */
+const IMAGE_DIR = join(process.cwd(), 'uploads', 'marketing');
+
+const SISTEMA = `Você monta páginas de campanha para a Relm Bikes, uma marca de
+bicicletas com clube de assinatura (Care gratuito e Care Plus pago) vendido por
+lojas parceiras no Brasil.
+
+Escreva em português do Brasil, no tom de quem conhece ciclismo e fala com
+ciclista — direto, específico, sem jargão de marketing. Prefira o benefício
+concreto ("revisão inclusa a cada 6 meses") ao adjetivo ("experiência
+incrível").
+
+A paleta deve nascer do tema, não de um padrão fixo: uma campanha de inverno não
+tem a mesma cor de um lançamento de bike infantil. Garanta contraste legível
+entre corTexto e corFundo.
+
+Estrutura: comece por um hero, feche por um cta, e entre eles use de dois a
+quatro blocos. Não repita a mesma ideia em blocos diferentes.
+
+Sem URL inventada: quando não souber para onde o botão aponta, use "/clube".`;
 
 @Injectable()
 export class AiAssistantService {
   private readonly logger = new Logger(AiAssistantService.name);
   private openai: OpenAI | null = null;
 
-  // Troca de provedor sem código novo: praticamente todo provedor sério fala o
-  // dialeto da API da OpenAI, então apontar `baseURL` para outro host já muda a
-  // LLM. OpenRouter (que dá acesso a Claude, Gemini e Llama por baixo), Groq,
-  // DeepSeek e Ollama local entram só por variável de ambiente.
-  //
-  // Não há camada de abstração de provedor aqui de propósito: seria uma
-  // interface com uma implementação só, e o SDK da OpenAI já é essa interface.
-  private baseURL(): string | undefined {
-    return this.configService.get<string>('OPENAI_BASE_URL') || undefined;
-  }
-
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {
+    // A chave fica no .env de propósito: ela tem cobrança atrelada, e backup de
+    // banco não é lugar para isso. Só os modelos vão para a tela.
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
     if (apiKey) {
-      this.openai = new OpenAI({ apiKey, baseURL: this.baseURL() });
-      this.logger.log(
-        `Cliente LLM inicializado (${this.baseURL() || 'api.openai.com'}).`,
-      );
+      const baseURL = this.configService.get<string>('OPENAI_BASE_URL') || undefined;
+      this.openai = new OpenAI({ apiKey, baseURL });
     } else {
-      this.logger.warn('OPENAI_API_KEY não configurada no .env.');
+      this.logger.warn('OPENAI_API_KEY ausente — geração por IA desligada.');
     }
   }
 
-  async generateCopy(dto: GenerateCopyDto) {
-    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
-    if (!this.openai && apiKey) {
-      this.openai = new OpenAI({ apiKey, baseURL: this.baseURL() });
-    }
-
-    if (!this.openai) {
-      this.logger.warn('OPENAI_API_KEY ausente. Utilizando motor de fallback.');
-      return this.generateSmartFallback(dto);
-    }
-
-    // O seletor da tela continua mandando o modelo; LLM_DEFAULT_MODEL só decide
-    // o que usar quando a tela não escolhe — trocar de provedor sem trocar o
-    // default deixaria um id de modelo que o novo host não conhece.
-    const selectedModel =
-      dto.model ||
-      this.configService.get<string>('LLM_DEFAULT_MODEL') ||
-      'gpt-4o-mini';
-    const type = dto.type || 'LANDING_PAGE';
-
-    const systemPrompt = `Você é o especialista de Marketing da Relm Bikes / Relm Care+, um clube de assinaturas e garantias de bicicletas para ciclistas no Brasil.
-Sua missão é escrever copys de alta conversão em português do Brasil com tom entusiasta, direto e focado no benefício para o ciclista.
-Também deve classificar o tema do enredo em uma das seguintes categorias: 'WORKSHOP', 'MTB_TRAIL', 'ROAD', 'URBAN', 'EQUIPMENT', 'EVENT'.
-
-Responda EXCLUSIVAMENTE em formato JSON válido contendo a seguinte estrutura dependendo do tipo:
-
-Para LANDING_PAGE:
-{
-  "heading": "Título principal curto da oferta",
-  "category": "WORKSHOP | MTB_TRAIL | ROAD | URBAN | EQUIPMENT | EVENT",
-  "dalleImagePrompt": "Detailed English prompt for high-resolution photorealistic cycling image matching this storyline",
-  "hero": {
-    "title": "Título impactante para o topo da página",
-    "subtitle": "Subtítulo explicativo com oferta e benefícios",
-    "ctaText": "Texto do botão de ação"
-  },
-  "content": "Descrição persuasiva detalhada da campanha",
-  "suggestedSubject": "Assunto recomendado para e-mail"
-}
-
-Para EMAIL_SUBJECT ou CAMPAIGN_COPY ou DAILY_RIDER_MESSAGE:
-{
-  "heading": "Título principal da mensagem",
-  "category": "WORKSHOP | MTB_TRAIL | ROAD | URBAN | EQUIPMENT | EVENT",
-  "dalleImagePrompt": "Detailed English prompt for high-resolution photorealistic cycling image matching this storyline",
-  "content": "Texto do e-mail ou mensagem em parágrafos claros",
-  "suggestedSubject": "Assunto de alta taxa de abertura para e-mail",
-  "cta": "Texto do botão"
-}`;
-
-    const userPrompt = `Tipo de Conteúdo: ${type}
-Modelo Solicitado: ${selectedModel}
-Ideia/Objetivo da Campanha: ${dto.prompt}
-Público Alvo: ${dto.targetAudience || 'Ciclistas e clientes das lojas credenciadas Relm'}`;
-
-    try {
-      this.logger.log(`Solicitando geração à OpenAI [Modelo: ${selectedModel}, Tipo: ${type}]...`);
-
-      const completion = await this.openai.chat.completions.create({
-        model: selectedModel,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.7,
-      });
-
-      const responseText = completion.choices[0]?.message?.content || '{}';
-      const parsedJson = JSON.parse(responseText);
-
-      // Attempt DALL-E image generation matching the storyline prompt
-      // `images.generate` é rota exclusiva da OpenAI: com baseURL de outro
-      // provedor ela dá 404 a cada geração, então nem tenta.
-      let dalleImageUrl = null;
-      if (parsedJson.dalleImagePrompt && !this.baseURL()) {
-        try {
-          this.logger.log(`Solicitando imagem temática via OpenAI DALL-E...`);
-          const imageRes = await this.openai.images.generate({
-            model: 'dall-e-2', // or dall-e-3 based on account tier
-            prompt: `High quality realistic photograph: ${parsedJson.dalleImagePrompt}, cycling theme, bright lighting, professional product photo style`,
-            n: 1,
-            size: '512x512',
-          });
-          dalleImageUrl = imageRes.data[0]?.url || null;
-        } catch (imgErr: any) {
-          this.logger.warn(`DALL-E imagem não gerada (usando foto de tema): ${imgErr.message}`);
-        }
-      }
-
-      return {
-        success: true,
-        modelUsed: selectedModel,
-        type: type,
-        category: parsedJson.category || 'WORKSHOP',
-        dalleImageUrl: dalleImageUrl,
-        ...parsedJson,
-      };
-    } catch (err: any) {
-      this.logger.error(`Falha na API da OpenAI: ${err.message}`, err.stack);
-      throw new ServiceUnavailableException(
-        `Erro ao comunicar com a OpenAI (${selectedModel}): ${err.message || 'Falha na resposta da API.'}`
-      );
-    }
-  }
-
-  private generateSmartFallback(dto: GenerateCopyDto) {
-    if (dto.type === 'DAILY_RIDER_MESSAGE') {
-      return {
-        success: true,
-        type: 'DAILY_RIDER_MESSAGE',
-        category: 'ROAD',
-        heading: '🚴 Mensagem Diária para o Ciclista',
-        content: `Mantenha sua pedalada no mais alto nível! O seu plano Relm Care+ garante revisão preventiva em dia e pontuação acumulada a cada pedalada. Não esqueça de verificar a pressão dos pneus e o lubrificante da corrente antes de sair hoje. Bora rodar com segurança!`,
-        suggestedSubject: 'Dica do dia Relm Care+: Mantenha sua bike na melhor performance 🚴‍♂️',
-        cta: 'Ver Benefícios do Meu Plano',
-      };
-    }
-
-    if (dto.type === 'EMAIL_SUBJECT') {
-      return {
-        success: true,
-        type: 'EMAIL_SUBJECT',
-        category: 'WORKSHOP',
-        heading: '📧 Sugestões de Assuntos de E-mail de Alta Conversão',
-        content: `🚴 Seus pontos Relm Care+ estão prontos para resgate!\nSua bike merece o melhor: Ganhe benefícios exclusivos no Clube Relm\nManutenção em dia = Pedalada segura. Veja suas vantagens de hoje!`,
-        suggestedSubject: `Sua bike pronta para qualquer desafio com o Relm Care+`,
-      };
-    }
-
-    if (dto.type === 'LANDING_PAGE') {
-      return {
-        success: true,
-        type: 'LANDING_PAGE',
-        category: 'WORKSHOP',
-        heading: `🚀 Estrutura de Landing Page: ${dto.prompt}`,
-        hero: {
-          title: `Eleve o Nível da Sua Pedalada com o Relm Care+`,
-          subtitle: `Proteção completa para sua bike, revisões gratuitas na oficina e acúmulo de pontos a cada compra.`,
-          ctaText: `Quero Ser Membro Plus`,
-        },
-        content: `Cadastre sua bike na loja credenciada mais próxima e ative seus benefícios hoje mesmo!`,
-      };
-    }
+  /**
+   * Valida na LEITURA, não só na escrita: um modelo pode sair do catálogo num
+   * commit futuro e a linha antiga continuaria no banco, quebrando toda geração
+   * com 400 até alguém abrir a tela.
+   */
+  async getConfig() {
+    const rows = await this.prisma.clubSettings.findMany({
+      where: { key: { in: [KEY_TEXT, KEY_IMAGE, KEY_QUALITY] } },
+    });
+    const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
 
     return {
-      success: true,
-      type: 'CAMPAIGN_COPY',
-      category: 'ROAD',
-      heading: `✨ Copy de Campanha de Marketing`,
-      content: `Acelere seu desempenho e pedale sem preocupações! Com o Relm Care+, você conta com atendimento prioritário na oficina, resgate de vouchers para serviços essenciais e vantagens exclusivas em todas as lojas credenciadas.`,
-      suggestedSubject: `Sua bike pronta para qualquer desafio com o Relm Care+`,
-      cta: 'Saiba Mais',
+      textModel: TEXT_MODELS.includes(map[KEY_TEXT]) ? map[KEY_TEXT] : DEFAULT_TEXT_MODEL,
+      imageModel: IMAGE_MODELS[map[KEY_IMAGE]] ? map[KEY_IMAGE] : DEFAULT_IMAGE_MODEL,
+      imageQuality: map[KEY_QUALITY] === 'alta' ? 'alta' : DEFAULT_IMAGE_QUALITY,
+      textModels: TEXT_MODELS,
+      imageModels: Object.keys(IMAGE_MODELS),
     };
+  }
+
+  async setConfig(dto: { textModel?: string; imageModel?: string; imageQuality?: string }) {
+    const pares: [string, string][] = [];
+    if (dto.textModel && TEXT_MODELS.includes(dto.textModel)) {
+      pares.push([KEY_TEXT, dto.textModel]);
+    }
+    if (dto.imageModel && IMAGE_MODELS[dto.imageModel]) {
+      pares.push([KEY_IMAGE, dto.imageModel]);
+    }
+    if (dto.imageQuality === 'alta' || dto.imageQuality === 'padrao') {
+      pares.push([KEY_QUALITY, dto.imageQuality]);
+    }
+
+    for (const [key, value] of pares) {
+      await this.prisma.clubSettings.upsert({
+        where: { key },
+        update: { value },
+        create: { key, value },
+      });
+    }
+
+    return this.getConfig();
+  }
+
+  /**
+   * Tema livre digitado pela equipe → página em blocos, pronta para os dois
+   * renderizadores.
+   *
+   * O structured output prende a resposta ao schema, então não há parser
+   * defensivo aqui. O que o schema NÃO garante é o conteúdo — cor e URL passam
+   * por sanitizePagina antes de virar `style` e `href`.
+   */
+  async gerarPagina(tema: string, destino: Destino, contexto?: string): Promise<PaginaGerada> {
+    if (!this.openai) {
+      throw new ServiceUnavailableException(
+        'Geração por IA indisponível: OPENAI_API_KEY não configurada.',
+      );
+    }
+
+    const cfg = await this.getConfig();
+    this.logger.log(`Gerando página [${cfg.textModel}, destino ${destino}]: ${tema}`);
+
+    const completion = await this.openai.chat.completions.create({
+      model: cfg.textModel,
+      messages: [
+        { role: 'system', content: SISTEMA },
+        {
+          role: 'user',
+          content: contexto
+            ? `Tema da campanha: ${tema}\n\nContexto adicional: ${contexto}`
+            : `Tema da campanha: ${tema}`,
+        },
+      ],
+      response_format: {
+        type: 'json_schema',
+        json_schema: { name: 'pagina', strict: true, schema: PAGINA_SCHEMA },
+      },
+    } as any);
+
+    const texto = completion.choices[0]?.message?.content;
+    if (!texto) {
+      throw new ServiceUnavailableException('Resposta do modelo veio sem conteúdo.');
+    }
+
+    const pagina = sanitizePagina(JSON.parse(texto) as PaginaGerada);
+    pagina.imagemUrl = await this.gerarImagem(tema, pagina, destino, cfg);
+    return pagina;
+  }
+
+  /**
+   * A imagem é sempre baixada e gravada em disco. Os modelos que devolvem URL
+   * dão uma URL que expira em ~1h — um e-mail exportado hoje e disparado amanhã
+   * sairia com a imagem quebrada, e ninguém ligaria uma coisa na outra.
+   *
+   * Falha aqui não derruba a geração: página sem imagem é utilizável, e a tela
+   * permite subir uma no lugar.
+   */
+  private async gerarImagem(
+    tema: string,
+    pagina: PaginaGerada,
+    destino: Destino,
+    cfg: { imageModel: string; imageQuality: string },
+  ): Promise<string | undefined> {
+    const modelo = IMAGE_MODELS[cfg.imageModel];
+
+    try {
+      const resposta = await this.openai!.images.generate({
+        model: cfg.imageModel,
+        prompt: `Fotografia realista de alta qualidade sobre ciclismo para a campanha "${tema}". ${pagina.subtitulo}. Luz natural, sem texto na imagem, sem logotipo.`,
+        n: 1,
+        size: modelo.tamanho[destino],
+        ...(modelo.quality ? { quality: modelo.quality[cfg.imageQuality] } : {}),
+      } as any);
+
+      const item = resposta.data?.[0];
+      if (!item) return undefined;
+
+      // Uns modelos devolvem base64, outros URL. Os dois acabam no mesmo lugar.
+      const bytes = item.b64_json
+        ? Buffer.from(item.b64_json, 'base64')
+        : Buffer.from(await (await fetch(item.url!)).arrayBuffer());
+
+      const nome = `${randomUUID()}.png`;
+      await mkdir(IMAGE_DIR, { recursive: true });
+      await writeFile(join(IMAGE_DIR, nome), bytes);
+      return `/uploads/marketing/${nome}`;
+    } catch (err: any) {
+      this.logger.warn(`Imagem não gerada (a página segue sem ela): ${err.message}`);
+      return undefined;
+    }
   }
 }

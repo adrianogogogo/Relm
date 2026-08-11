@@ -1,39 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { EmailCrmService } from './email-crm.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { EmailService } from '../email/email.service';
 import { ConflictException, NotFoundException } from '@nestjs/common';
+
+const PAGINA = {
+  titulo: 'Revisão de inverno',
+  subtitulo: 'Sua bike pronta para a chuva',
+  paleta: { corPrimaria: '#2196F3', corFundo: '#FFFFFF', corTexto: '#111111' },
+  blocos: [
+    {
+      tipo: 'hero',
+      titulo: 'Revisão de inverno',
+      subtitulo: 'Agende na loja parceira',
+      ctaTexto: 'Agendar',
+      ctaUrl: '/clube',
+    },
+  ],
+  imagemUrl: '/uploads/marketing/abc.png',
+};
 
 describe('EmailCrmService', () => {
   let service: EmailCrmService;
   let prisma: any;
-  let emailService: any;
 
   const mockPrisma = {
-    emailTemplate: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-    },
-    emailCampaign: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    },
-    customer: {
-      findMany: jest.fn(),
-    },
-    subscription: {
-      findMany: jest.fn(),
-    },
-    store: {
-      findMany: jest.fn(),
-    },
-  };
-
-  const mockEmailService = {
-    sendPasswordResetEmail: jest.fn(),
+    emailTemplate: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn() },
+    emailCampaign: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn() },
   };
 
   beforeEach(async () => {
@@ -43,36 +36,15 @@ describe('EmailCrmService', () => {
       providers: [
         EmailCrmService,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: EmailService, useValue: mockEmailService },
+        { provide: ConfigService, useValue: { get: () => 'https://relm.example' } },
       ],
     }).compile();
 
     service = module.get<EmailCrmService>(EmailCrmService);
     prisma = module.get<PrismaService>(PrismaService);
-    emailService = module.get<EmailService>(EmailService);
   });
 
-  it('deve criar um template de e-mail com sucesso', async () => {
-    prisma.emailTemplate.findUnique.mockResolvedValue(null);
-    prisma.emailTemplate.create.mockResolvedValue({
-      id: 'tmpl-1',
-      name: 'Boas vindas',
-      slug: 'boas-vindas',
-      subject: 'Bem-vindo ao Relm Care+',
-      bodyHtml: '<p>Olá</p>',
-    });
-
-    const result = await service.createTemplate({
-      name: 'Boas vindas',
-      slug: 'boas-vindas',
-      subject: 'Bem-vindo ao Relm Care+',
-      bodyHtml: '<p>Olá</p>',
-    });
-
-    expect(result.id).toBe('tmpl-1');
-  });
-
-  it('deve lançar ConflictException se o slug do template já existir', async () => {
+  it('lança ConflictException se o slug do template já existir', async () => {
     prisma.emailTemplate.findUnique.mockResolvedValue({ id: 'existing' });
 
     await expect(
@@ -85,37 +57,29 @@ describe('EmailCrmService', () => {
     ).rejects.toThrow(ConflictException);
   });
 
-  // O disparo em massa está desligado até existir template de campanha de
-  // verdade, filtro de marketingConsent e descadastro. Enquanto isso, o teste
-  // que importa é o que garante que NADA sai — sem ele, religar por acidente
-  // manda um e-mail com cara de reset de senha para a base inteira.
-  it('recusa o disparo em massa enquanto EMAIL_CAMPAIGN_SEND_ENABLED não for true', async () => {
-    delete process.env.EMAIL_CAMPAIGN_SEND_ENABLED;
-
-    await expect(service.triggerCampaign('camp-1')).rejects.toThrow(/desligado/i);
-    expect(mockEmailService.sendPasswordResetEmail).not.toHaveBeenCalled();
-    // Nem chega a ler a campanha: a guarda é a primeira coisa do método.
-    expect(prisma.emailCampaign.findUnique).not.toHaveBeenCalled();
-  });
-
-  it('dispara para ALL_CUSTOMERS quando o envio é habilitado explicitamente', async () => {
-    process.env.EMAIL_CAMPAIGN_SEND_ENABLED = 'true';
+  it('exporta HTML de e-mail a partir dos blocos', async () => {
     prisma.emailCampaign.findUnique.mockResolvedValue({
       id: 'camp-1',
-      title: 'Promoção de Verão',
-      templateId: 'tmpl-1',
-      targetSegment: 'ALL_CUSTOMERS',
-      template: { subject: 'Promo', bodyHtml: '<p>Verão</p>' },
+      template: { subject: 'Promo', slug: 'promo', blocksJson: PAGINA },
     });
-    prisma.customer.findMany.mockResolvedValue([
-      { email: 'c1@test.com', fullName: 'Cliente 1' },
-    ]);
-    prisma.emailCampaign.update.mockImplementation((args) => args.data);
-    mockEmailService.sendPasswordResetEmail.mockResolvedValue({ success: true });
 
-    await service.triggerCampaign('camp-1');
+    const res = await service.exportHtml('camp-1');
 
-    expect(mockEmailService.sendPasswordResetEmail).toHaveBeenCalled();
-    delete process.env.EMAIL_CAMPAIGN_SEND_ENABLED;
+    expect(res.subject).toBe('Promo');
+    expect(res.filename).toBe('promo.html');
+    // Tabela e CSS inline: é o que cliente de e-mail entende.
+    expect(res.html).toContain('<table');
+    expect(res.html).toContain('Revisão de inverno');
+    // Imagem absoluta: relativa não carrega em cliente de e-mail.
+    expect(res.html).toContain('https://relm.example/uploads/marketing/abc.png');
+  });
+
+  it('recusa exportar campanha sem blocos em vez de gerar HTML vazio', async () => {
+    prisma.emailCampaign.findUnique.mockResolvedValue({
+      id: 'camp-2',
+      template: { subject: 'X', slug: 'x', blocksJson: null },
+    });
+
+    await expect(service.exportHtml('camp-2')).rejects.toThrow(NotFoundException);
   });
 });

@@ -1,44 +1,71 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AiAssistantService } from './ai-assistant.service';
 import { ConfigService } from '@nestjs/config';
+import { AiAssistantService } from './ai-assistant.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { DEFAULT_IMAGE_MODEL, DEFAULT_TEXT_MODEL } from './models';
 
 describe('AiAssistantService', () => {
   let service: AiAssistantService;
+  let prisma: any;
 
-  const mockConfigService = {
-    get: jest.fn().mockReturnValue(null),
+  const mockPrisma = {
+    clubSettings: { findMany: jest.fn(), upsert: jest.fn() },
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AiAssistantService,
-        { provide: ConfigService, useValue: mockConfigService },
+        // Sem OPENAI_API_KEY: o módulo tem que subir mesmo assim, senão a API
+        // inteira cai porque a campanha não foi configurada.
+        { provide: ConfigService, useValue: { get: () => null } },
+        { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile();
 
     service = module.get<AiAssistantService>(AiAssistantService);
+    prisma = module.get<PrismaService>(PrismaService);
   });
 
-  it('deve gerar copy usando o engine inteligente de fallback', async () => {
-    const result = await service.generateCopy({
-      prompt: 'Promoção de revisão de bicicleta',
-      type: 'CAMPAIGN_COPY',
-    });
+  it('usa os defaults quando não há nada configurado', async () => {
+    prisma.clubSettings.findMany.mockResolvedValue([]);
 
-    expect(result.success).toBe(true);
-    expect(result.type).toBe('CAMPAIGN_COPY');
-    expect(result.content).toBeDefined();
+    const cfg = await service.getConfig();
+
+    expect(cfg.textModel).toBe(DEFAULT_TEXT_MODEL);
+    expect(cfg.imageModel).toBe(DEFAULT_IMAGE_MODEL);
+    expect(cfg.imageQuality).toBe('padrao');
   });
 
-  it('deve gerar mensagem diária para ciclistas', async () => {
-    const result = await service.generateCopy({
-      prompt: 'Dica diária',
-      type: 'DAILY_RIDER_MESSAGE',
-    });
+  it('ignora modelo salvo que saiu do catálogo em vez de gerar 400 a cada uso', async () => {
+    prisma.clubSettings.findMany.mockResolvedValue([
+      { key: 'ai_text_model', value: 'modelo-aposentado' },
+      { key: 'ai_image_model', value: 'modelo-aposentado' },
+      { key: 'ai_image_quality', value: 'alta' },
+    ]);
 
-    expect(result.success).toBe(true);
-    expect(result.type).toBe('DAILY_RIDER_MESSAGE');
-    expect(result.heading).toContain('Ciclista');
+    const cfg = await service.getConfig();
+
+    expect(cfg.textModel).toBe(DEFAULT_TEXT_MODEL);
+    expect(cfg.imageModel).toBe(DEFAULT_IMAGE_MODEL);
+    // A qualidade era válida e sobrevive.
+    expect(cfg.imageQuality).toBe('alta');
+  });
+
+  it('não grava valor fora do catálogo', async () => {
+    prisma.clubSettings.findMany.mockResolvedValue([]);
+
+    await service.setConfig({ textModel: 'inventado', imageQuality: 'alta' });
+
+    const chaves = prisma.clubSettings.upsert.mock.calls.map((c) => c[0].where.key);
+    expect(chaves).toEqual(['ai_image_quality']);
+  });
+
+  it('recusa gerar sem OPENAI_API_KEY em vez de falhar em silêncio', async () => {
+    await expect(service.gerarPagina('Revisão de inverno', 'LANDING')).rejects.toThrow(
+      /OPENAI_API_KEY/,
+    );
   });
 });

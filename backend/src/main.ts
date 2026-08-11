@@ -1,12 +1,22 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, RequestMethod } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { json, urlencoded } from 'express';
+import { join } from 'path';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // SÓ uploads/marketing é público. uploads/warranty e uploads/sales guardam
+  // documento de cliente — servir `uploads/` inteiro vazaria os dois. Imagem de
+  // campanha precisa ser buscável anonimamente: quem a busca é o cliente de
+  // e-mail do destinatário, sem sessão nenhuma.
+  app.useStaticAssets(join(process.cwd(), 'uploads', 'marketing'), {
+    prefix: '/uploads/marketing',
+  });
 
   // Logos enviados pelo usuário chegam como data URI base64 no campo logoUrl.
   // O default do body-parser (~100kb) estoura, então elevamos para 5mb.
@@ -26,8 +36,11 @@ async function bootstrap() {
   // o Express usar o IP real do cliente vindo do X-Forwarded-For.
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
 
-  // Global prefix
-  app.setGlobalPrefix('api');
+  // Global prefix. /lp/:slug fica de fora: é URL de marketing, colada no
+  // WhatsApp e em bio de rede social — /api/lp/promo-inverno não serve.
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: 'lp/:slug', method: RequestMethod.GET }],
+  });
 
   // CORS (C-01) — sem fallback inseguro para '*'.
   // CORS_ORIGIN pode ser uma lista separada por vírgula. Se não estiver

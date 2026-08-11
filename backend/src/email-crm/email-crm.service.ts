@@ -1,15 +1,24 @@
-import { Injectable, NotFoundException, ConflictException, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import { EmailService } from '../email/email.service';
-import { CreateEmailTemplateDto, CreateEmailCampaignDto, SendTestEmailDto, CampaignSegmentEnum } from './dto/create-email-crm.dto';
+import { CreateEmailTemplateDto, CreateEmailCampaignDto } from './dto/create-email-crm.dto';
+import { PaginaGerada } from '../ai-design/blocks.schema';
+import { renderEmail } from '../ai-design/email-renderer';
 
+/**
+ * Este módulo NÃO envia e-mail, por decisão de projeto. Ele gera, guarda e
+ * exporta HTML; o disparo é feito na ferramenta de e-mail marketing que a equipe
+ * já usa, que traz consentimento, descadastro, bounce e supressão prontos.
+ *
+ * O transporte daqui é nodemailer sobre SMTP do Gmail — teto de ~500/dia, e a
+ * mesma conta manda redefinição de senha. Disparo em massa por ali suspende a
+ * conta e derruba o transacional junto.
+ */
 @Injectable()
 export class EmailCrmService {
-  private readonly logger = new Logger(EmailCrmService.name);
-
   constructor(
     private readonly prisma: PrismaService,
-    private readonly emailService: EmailService,
+    private readonly config: ConfigService,
   ) {}
 
   // ---------------- TEMPLATES ----------------
@@ -28,28 +37,24 @@ export class EmailCrmService {
         slug: dto.slug,
         subject: dto.subject,
         bodyHtml: dto.bodyHtml,
-        variablesJson: dto.variablesJson || null,
+        blocksJson: (dto.blocksJson as any) || undefined,
       },
     });
   }
 
   async findAllTemplates() {
-    return this.prisma.emailTemplate.findMany({
-      orderBy: { name: 'asc' },
-    });
+    return this.prisma.emailTemplate.findMany({ orderBy: { name: 'asc' } });
   }
 
   async findTemplateBySlug(slug: string) {
-    const template = await this.prisma.emailTemplate.findUnique({
-      where: { slug },
-    });
+    const template = await this.prisma.emailTemplate.findUnique({ where: { slug } });
     if (!template) {
       throw new NotFoundException(`Template '${slug}' não encontrado.`);
     }
     return template;
   }
 
-  // ---------------- CAMPAIGNS ----------------
+  // ---------------- CAMPANHAS ----------------
 
   async createCampaign(dto: CreateEmailCampaignDto) {
     const template = await this.prisma.emailTemplate.findUnique({
@@ -60,12 +65,7 @@ export class EmailCrmService {
     }
 
     return this.prisma.emailCampaign.create({
-      data: {
-        title: dto.title,
-        templateId: dto.templateId,
-        targetSegment: dto.targetSegment || CampaignSegmentEnum.ALL_CUSTOMERS,
-        status: 'DRAFT',
-      },
+      data: { title: dto.title, templateId: dto.templateId },
       include: { template: true },
     });
   }
@@ -77,110 +77,36 @@ export class EmailCrmService {
     });
   }
 
-  async sendTestEmail(dto: SendTestEmailDto) {
-    try {
-      return await this.emailService.sendPasswordResetEmail({
-        to: dto.to,
-        name: 'Usuário de Teste',
-        resetUrl: '#',
-        portalName: 'Cliente',
-      });
-    } catch (err) {
-      this.logger.error(`Falha no envio de e-mail de teste: ${err.message}`);
-      return { success: false, error: err.message };
-    }
-  }
-
-  async triggerCampaign(campaignId: string) {
-    // DESLIGADO DE PROPÓSITO. Três defeitos, em ordem de gravidade:
-    //
-    // 1. O laço abaixo dispara `sendPasswordResetEmail` com `resetUrl: '#'` —
-    //    a base inteira receberia um e-mail com cara de redefinição de senha
-    //    que ninguém pediu, com link morto. É o formato de um phishing saindo
-    //    do próprio domínio, e queima a reputação usada pelos transacionais.
-    // 2. Não filtra `Customer.marketingConsent` — envia para quem nunca disse
-    //    sim. O campo existe, é coletado no cadastro e nasce `false`.
-    // 3. Não há link de descadastro, obrigatório em envio de marketing.
-    //
-    // Gerar, pré-visualizar e salvar campanha seguem funcionando — é o escopo
-    // que o plano 011 previa para esta rodada. Para religar: template de
-    // campanha de verdade + filtro de consentimento + descadastro, e só então
-    // remover esta guarda.
-    // process.env e não ConfigService: injetar um terceiro parâmetro mudaria a
-    // assinatura do construtor e quebraria o spec que já existe.
-    if (process.env.EMAIL_CAMPAIGN_SEND_ENABLED !== 'true') {
-      throw new ServiceUnavailableException(
-        'Disparo em massa desligado: falta template de campanha, filtro de consentimento e descadastro. A campanha continua salva.',
-      );
-    }
-
+  /**
+   * HTML pronto para colar na ferramenta de disparo.
+   *
+   * Renderiza a partir dos blocos, não do bodyHtml guardado: se alguém trocar a
+   * paleta ou o texto, o export sai atualizado sem depender de alguém lembrar
+   * de regravar o HTML.
+   */
+  async exportHtml(campaignId: string) {
     const campaign = await this.prisma.emailCampaign.findUnique({
       where: { id: campaignId },
       include: { template: true },
     });
-
     if (!campaign) {
       throw new NotFoundException(`Campanha ID '${campaignId}' não encontrada.`);
     }
 
-    // Update status to SENDING
-    await this.prisma.emailCampaign.update({
-      where: { id: campaignId },
-      data: { status: 'SENDING' },
-    });
-
-    let recipients: { email: string; name: string }[] = [];
-
-    if (campaign.targetSegment === 'ALL_CUSTOMERS') {
-      const customers = await this.prisma.customer.findMany({
-        where: { active: true },
-        select: { email: true, fullName: true },
-      });
-      recipients = customers.map((c) => ({ email: c.email, name: c.fullName }));
-    } else if (campaign.targetSegment === 'PLUS_ONLY') {
-      const subscriptions = await this.prisma.subscription.findMany({
-        where: { tier: 'PLUS', status: 'ACTIVE' },
-        include: { customer: true },
-      });
-      recipients = subscriptions
-        .filter((s) => s.customer && s.customer.active)
-        .map((s) => ({ email: s.customer.email, name: s.customer.fullName }));
-    } else if (campaign.targetSegment === 'STORES_ONLY') {
-      const stores = await this.prisma.store.findMany({
-        where: { active: true },
-        select: { email: true, tradeName: true },
-      });
-      recipients = stores
-        .filter((s) => s.email)
-        .map((s) => ({ email: s.email, name: s.tradeName }));
+    const blocos = campaign.template.blocksJson as unknown as PaginaGerada | null;
+    if (!blocos) {
+      throw new NotFoundException(
+        'Esta campanha não tem conteúdo em blocos para exportar.',
+      );
     }
 
-    let sentCount = 0;
-    let errorCount = 0;
+    // Absoluto: cliente de e-mail não resolve caminho relativo, a imagem some.
+    const baseUrl = this.config.get<string>('PUBLIC_BASE_URL') || '';
 
-    for (const recipient of recipients) {
-      try {
-        await this.emailService.sendPasswordResetEmail({
-          to: recipient.email,
-          name: recipient.name,
-          resetUrl: '#',
-          portalName: 'Cliente',
-        });
-        sentCount++;
-      } catch (err) {
-        errorCount++;
-      }
-    }
-
-    return this.prisma.emailCampaign.update({
-      where: { id: campaignId },
-      data: {
-        status: errorCount > 0 && sentCount === 0 ? 'FAILED' : 'SENT',
-        sentCount,
-        errorCount,
-        sentAt: new Date(),
-      },
-      include: { template: true },
-    });
+    return {
+      subject: campaign.template.subject,
+      filename: `${campaign.template.slug}.html`,
+      html: renderEmail(blocos, baseUrl),
+    };
   }
 }

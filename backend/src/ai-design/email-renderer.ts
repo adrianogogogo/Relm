@@ -1,4 +1,4 @@
-import { Bloco, PaginaGerada } from './blocks.schema';
+import { Bloco, PaginaGerada, esc } from './blocks.schema';
 
 /**
  * Segundo renderizador do mesmo contrato de blocos: tabela + CSS inline, que é
@@ -7,15 +7,6 @@ import { Bloco, PaginaGerada } from './blocks.schema';
  *
  * Largura fixa em 600px porque é o teto seguro no painel de leitura do Outlook.
  */
-
-/** Conteúdo gerado por modelo vai para dentro de HTML — escapar não é opcional. */
-function esc(texto: string): string {
-  return String(texto ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 function botao(texto: string, url: string, cor: string): string {
   // Botão como tabela, não <a> com padding: Outlook não respeita padding em
@@ -34,6 +25,7 @@ function renderBloco(bloco: Bloco, p: PaginaGerada): string {
   switch (bloco.tipo) {
     case 'hero':
       return `<tr><td style="padding:40px 32px 8px 32px;text-align:center;">
+  ${p.imagemUrl ? `<img src="${esc(p.imagemUrl)}" width="536" style="display:block;width:100%;max-width:536px;height:auto;border-radius:8px;margin:0 auto 20px auto;" alt="" />` : ''}
   <h1 style="${base}font-size:30px;line-height:1.25;margin:0 0 12px 0;">${esc(bloco.titulo)}</h1>
   <p style="${base}font-size:17px;line-height:1.5;margin:0;opacity:0.85;">${esc(bloco.subtitulo)}</p>
   ${botao(bloco.ctaTexto, bloco.ctaUrl, corPrimaria)}
@@ -68,7 +60,18 @@ function renderBloco(bloco: Bloco, p: PaginaGerada): string {
   }
 }
 
-export function renderEmail(pagina: PaginaGerada): string {
+/**
+ * `baseUrl` não é opcional na prática: cliente de e-mail não resolve caminho
+ * relativo, então uma imagem em "/uploads/..." simplesmente não aparece. Fica
+ * com default vazio só para o caso sem imagem.
+ */
+export function renderEmail(entrada: PaginaGerada, baseUrl = ''): string {
+  const pagina: PaginaGerada = {
+    ...entrada,
+    imagemUrl: entrada.imagemUrl?.startsWith('/')
+      ? `${baseUrl}${entrada.imagemUrl}`
+      : entrada.imagemUrl,
+  };
   const { corFundo, corTexto } = pagina.paleta;
 
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
