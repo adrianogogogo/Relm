@@ -475,13 +475,16 @@ export const emailCrmAPI = {
   createTemplate: (data) => api.post('/email-crm/templates', data).then((res) => res.data),
   getCampaigns: () => api.get('/email-crm/campaigns').then((res) => res.data),
   createCampaign: (data) => api.post('/email-crm/campaigns', data).then((res) => res.data),
-  sendCampaign: (id) => api.post(`/email-crm/campaigns/${id}/send`).then((res) => res.data),
-  sendTest: (data) => api.post('/email-crm/send-test', data).then((res) => res.data),
+  // Sem envio: a plataforma gera o HTML, o disparo acontece na ferramenta de
+  // e-mail marketing, que tem lista, consentimento e descadastro.
+  exportHtml: (id) => api.get(`/email-crm/campaigns/${id}/export`).then((res) => res.data),
 };
 
 export const aiAssistantAPI = {
-  generateCopy: (data) => api.post('/ai-assistant/generate-copy', data).then((res) => res.data),
-  getDailyRiderMessage: (data) => api.post('/ai-assistant/daily-rider-message', data).then((res) => res.data),
+  gerarPagina: (data) => api.post('/ai-assistant/gerar-pagina', data).then((res) => res.data),
+  // O modelo vem de Configurações > IA; as telas de criação não escolhem.
+  getConfig: () => api.get('/ai-assistant/config').then((res) => res.data),
+  setConfig: (data) => api.put('/ai-assistant/config', data).then((res) => res.data),
 };
 
 

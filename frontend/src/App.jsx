@@ -85,7 +85,7 @@ import CustomerPartnersPage from './pages/CustomerPartnersPage';
 import AdminClubSettingsPage from './pages/AdminClubSettingsPage';
 import AdminPointsRulesPage from './pages/AdminPointsRulesPage';
 import AdminMasterServicesPage from './pages/AdminMasterServicesPage';
-import PublicLandingPage from './pages/PublicLandingPage';
+import AdminAiSettingsPage from './pages/AdminAiSettingsPage';
 import AdminLandingPagesPage from './pages/AdminLandingPagesPage';
 import AdminEmailCampaignsPage from './pages/AdminEmailCampaignsPage';
 
@@ -137,8 +137,9 @@ export default function App() {
             <Route path="/validar-garantia/:token" element={<Navigate to="/" replace />} />
           </Route>
 
-          {/* Standalone Public Landing Page (No Header/Footer wrapper) */}
-          <Route path="/lp/:slug" element={<PublicLandingPage />} />
+          {/* /lp/:slug NÃO é rota do React: é HTML servido pelo backend, com as
+              meta tags OG. Robô de WhatsApp não executa JavaScript, então uma
+              rota de SPA aqui devolvia sempre o mesmo card genérico. */}
 
           {/* ── Customer portal ──────────────────────────────────────────── */}
           <Route path="/cliente/cadastro" element={<CustomerRegisterPage />} />
@@ -335,6 +336,11 @@ export default function App() {
             <Route path="points-rules" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
                 <AdminPointsRulesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="ai-settings" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
+                <AdminAiSettingsPage />
               </ProtectedRoute>
             } />
             <Route path="master-services" element={

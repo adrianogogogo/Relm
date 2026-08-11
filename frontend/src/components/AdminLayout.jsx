@@ -25,6 +25,7 @@ import {
   MdStorefront,
   MdAnalytics,
   MdRule,
+  MdAutoAwesome,
   MdSettings,
   MdExpandMore,
   MdExpandLess,
@@ -154,6 +155,12 @@ const MENU_SECTIONS = [
 ];
 
 const CONFIG_ITEMS = [
+  {
+    path: '/admin/ai-settings',
+    label: 'Inteligência Artificial',
+    icon: MdAutoAwesome,
+    roles: ['ADMIN_RELM', 'GERENTE_RELM'],
+  },
   {
     path: '/admin/whatsapp',
     label: 'WhatsApp',

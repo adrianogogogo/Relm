@@ -1,407 +1,215 @@
-import React, { useState, useEffect } from 'react';
-import { marketingAPI, storesAPI, aiAssistantAPI } from '../services/api';
-import WysiwygPreview from '../components/WysiwygPreview';
-import { MdStars, MdAdd, MdImage, MdShare, MdCheck, MdLaunch, MdDelete, MdEdit, MdCheckCircle, MdAutorenew, MdArrowForward } from 'react-icons/md';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { MdCampaign, MdAutoAwesome, MdOpenInNew, MdDelete, MdSave } from 'react-icons/md';
+import { marketingAPI, aiAssistantAPI } from '../services/api';
+import { Card, PageHeader, Button } from '../components/ui';
+
+/**
+ * Sem seletor de modelo: ele vive em Configurações > IA. Aqui só se descreve a
+ * campanha e se clica em Gerar.
+ */
+function slugify(texto) {
+  return String(texto)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 60);
+}
+
+function Preview({ pagina }) {
+  const { paleta } = pagina;
+  return (
+    <div
+      className="rounded-xl overflow-hidden border border-slate-700"
+      style={{ background: paleta.corFundo, color: paleta.corTexto }}
+    >
+      {pagina.imagemUrl && (
+        <img src={pagina.imagemUrl} alt="" className="w-full h-48 object-cover" />
+      )}
+      <div className="p-6 space-y-4">
+        {pagina.blocos.map((bloco, i) => (
+          <div key={i}>
+            {bloco.tipo === 'hero' && (
+              <>
+                <h2 className="text-2xl font-bold">{bloco.titulo}</h2>
+                <p className="opacity-80">{bloco.subtitulo}</p>
+              </>
+            )}
+            {bloco.tipo === 'texto' && (
+              <>
+                <h3 className="font-semibold">{bloco.titulo}</h3>
+                <p className="opacity-80 text-sm">{bloco.corpo}</p>
+              </>
+            )}
+            {bloco.tipo === 'lista' && (
+              <>
+                <h3 className="font-semibold">{bloco.titulo}</h3>
+                <ul className="text-sm space-y-1 mt-1">
+                  {bloco.itens.map((item, j) => (
+                    <li
+                      key={j}
+                      style={{ borderLeft: `3px solid ${paleta.corPrimaria}` }}
+                      className="pl-2"
+                    >
+                      <strong>{item.titulo}</strong>{' '}
+                      <span className="opacity-75">{item.descricao}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {bloco.tipo === 'cta' && (
+              <div className="text-center pt-2">
+                <p className="mb-2">{bloco.texto}</p>
+                <span
+                  className="inline-block px-5 py-2 rounded-lg font-semibold"
+                  style={{ background: paleta.corPrimaria, color: paleta.corFundo }}
+                >
+                  {bloco.ctaTexto}
+                </span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function AdminLandingPagesPage() {
-  const [pages, setPages] = useState([]);
-  const [stores, setStores] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  // Mode: 'LIST' | 'CREATE_MAGIC' | 'EDIT_WYSIWYG'
-  const [mode, setMode] = useState('LIST');
-
-  // AI Prompt & Model State
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [selectedModel, setSelectedModel] = useState('gpt-4o-mini');
-  const [generating, setGenerating] = useState(false);
-
-  // Active Editing Page State
-  const [editingId, setEditingId] = useState(null);
-  const [title, setTitle] = useState('');
+  const queryClient = useQueryClient();
+  const [tema, setTema] = useState('');
+  const [pagina, setPagina] = useState(null);
   const [slug, setSlug] = useState('');
-  const [description, setDescription] = useState('');
-  const [selectedStoreId, setSelectedStoreId] = useState('');
-  const [blocks, setBlocks] = useState([]);
-  const [copiedSlug, setCopiedSlug] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [erro, setErro] = useState(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const { data: pages = [], isLoading } = useQuery({
+    queryKey: ['landing-pages'],
+    queryFn: marketingAPI.getAll,
+  });
 
-  async function loadData() {
-    try {
-      setLoading(true);
-      const [pagesData, storesData] = await Promise.all([
-        marketingAPI.getAll(),
-        storesAPI.getAll(),
-      ]);
-      setPages(pagesData || []);
-      setStores(storesData || []);
-    } catch (err) {
-      console.error('Erro ao carregar dados:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const gerar = useMutation({
+    mutationFn: () => aiAssistantAPI.gerarPagina({ tema, destino: 'LANDING' }),
+    onSuccess: (res) => {
+      setPagina(res);
+      setSlug(slugify(res.titulo || tema));
+      setErro(null);
+    },
+    onError: (err) => setErro(err?.response?.data?.message || 'Falha ao gerar.'),
+  });
 
-  const [storylineCategory, setStorylineCategory] = useState('WORKSHOP');
-  const [dalleImageUrl, setDalleImageUrl] = useState(null);
+  const salvar = useMutation({
+    mutationFn: () =>
+      marketingAPI.create({
+        title: pagina.titulo,
+        slug,
+        description: pagina.subtitulo,
+        blocksJson: pagina,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['landing-pages'] });
+      setPagina(null);
+      setTema('');
+    },
+    onError: (err) => setErro(err?.response?.data?.message || 'Falha ao salvar.'),
+  });
 
-  // 1-Click Magic AI Landing Page Generation
-  async function handleMagicGenerate(e) {
-    if (e) e.preventDefault();
-    if (!aiPrompt.trim()) return;
-
-    try {
-      setGenerating(true);
-      const copyRes = await aiAssistantAPI.generateCopy({
-        prompt: aiPrompt,
-        type: 'LANDING_PAGE',
-        model: selectedModel,
-      });
-
-      const mainTitle = copyRes.hero?.title || aiPrompt;
-      const mainSub = copyRes.hero?.subtitle || 'Aproveite esta vantagem exclusiva do Clube Relm Care+';
-      const category = copyRes.category || 'WORKSHOP';
-      const dalleImg = copyRes.dalleImageUrl || null;
-
-      setStorylineCategory(category);
-      setDalleImageUrl(dalleImg);
-
-      // Select default image: DALL-E 3 or matched stock photo
-      const defaultImg = dalleImg || (
-        category === 'WORKSHOP' ? 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=1200&q=80' :
-        category === 'MTB_TRAIL' ? 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=1200&q=80' :
-        category === 'ROAD' ? 'https://images.unsplash.com/photo-1517649763962-0c623266010b?auto=format&fit=crop&w=1200&q=80' :
-        category === 'URBAN' ? 'https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?auto=format&fit=crop&w=1200&q=80' :
-        category === 'EQUIPMENT' ? 'https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?auto=format&fit=crop&w=1200&q=80' :
-        'https://images.unsplash.com/photo-1571068316344-75ad7692d490?auto=format&fit=crop&w=1200&q=80'
-      );
-
-      const generatedBlocks = [
-        {
-          type: 'HERO',
-          title: mainTitle,
-          subtitle: mainSub,
-          ctaText: 'Quero Garantir Minha Oferta',
-          imageUrl: defaultImg,
-        },
-        {
-          type: 'FEATURES',
-          title: 'Por Que Participar Desta Promoção',
-          items: [
-            { title: 'Revisão Preventiva Inclusa', description: 'Atendimento prioritário na oficina credenciada.' },
-            { title: 'Pontos em Dobro', description: 'Acumule pontos extras para resgatar prêmios e vouchers.' },
-            { title: 'Garantia Digital Protegida', description: 'Registro em tempo real por número de série.' },
-          ],
-        },
-        {
-          type: 'PRICING',
-          title: 'Escolha Seu Plano',
-        },
-        {
-          type: 'CTA_BANNER',
-          title: 'Garanta Suas Vantagens Hoje!',
-          subtitle: 'Fale com a loja parceira mais próxima no WhatsApp.',
-        },
-      ];
-
-      setEditingId(null);
-      setTitle(mainTitle);
-      setSlug(mainTitle.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-'));
-      setDescription(mainSub);
-      setBlocks(generatedBlocks);
-      setMode('EDIT_WYSIWYG');
-    } catch (err) {
-      console.error('Erro na OpenAI:', err);
-      alert(err.response?.data?.message || err.message || 'Erro ao comunicar com a API da OpenAI. Tente novamente.');
-    } finally {
-      setGenerating(false);
-    }
-  }
-
-  // Open Edit Existing Page in WYSIWYG
-  function handleOpenEdit(page) {
-    setEditingId(page.id);
-    setTitle(page.title);
-    setSlug(page.slug);
-    setDescription(page.description || '');
-    setSelectedStoreId(page.storeId || '');
-    setBlocks(Array.isArray(page.blocksJson) ? page.blocksJson : []);
-    setMode('EDIT_WYSIWYG');
-  }
-
-  // Save Page
-  async function handleSavePage() {
-    try {
-      setSaving(true);
-      const payload = {
-        title,
-        slug: slug.toLowerCase().replace(/\s+/g, '-'),
-        description,
-        blocksJson: blocks,
-        active: true,
-        storeId: selectedStoreId || null,
-      };
-
-      if (editingId) {
-        await marketingAPI.update(editingId, payload);
-      } else {
-        await marketingAPI.create(payload);
-      }
-
-      setMode('LIST');
-      loadData();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Erro ao salvar Landing Page.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  // Delete Page
-  async function handleDelete(id) {
-    if (!confirm('Deseja excluir esta Landing Page?')) return;
-    try {
-      await marketingAPI.delete(id);
-      loadData();
-    } catch (err) {
-      alert('Erro ao excluir.');
-    }
-  }
-
-  function handleCopyShareLink(pageSlug, storeIdParam) {
-    const origin = window.location.origin;
-    let url = `${origin}/lp/${pageSlug}`;
-    if (storeIdParam) url += `?storeId=${storeIdParam}`;
-    navigator.clipboard.writeText(url);
-    setCopiedSlug(pageSlug);
-    setTimeout(() => setCopiedSlug(''), 2000);
-  }
+  const remover = useMutation({
+    mutationFn: marketingAPI.delete,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['landing-pages'] }),
+  });
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto text-slate-100">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/60 p-6 rounded-2xl border border-slate-800 backdrop-blur">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <MdImage className="w-6 h-6 text-emerald-400" />
-            Criador Mágico de Landing Pages
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Gere páginas promocionais instantâneas com IA e edite tudo clicando diretamente sobre o preview.
-          </p>
-        </div>
-        {mode === 'LIST' && (
-          <button
-            onClick={() => setMode('CREATE_MAGIC')}
-            className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl transition flex items-center gap-2 text-sm shadow-xl shadow-emerald-500/20"
-          >
-            <MdStars className="w-5 h-5" />
-            Criar Nova Página com IA
-          </button>
-        )}
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Landing Pages"
+        subtitle="Descreva a campanha; a IA monta a página e a paleta"
+        icon={MdCampaign}
+      />
 
-      {/* MODE 1: LISTING LANDING PAGES */}
-      {mode === 'LIST' && (
-        <div className="space-y-6">
-          {loading ? (
-            <div className="py-12 text-center text-slate-400">Carregando landing pages...</div>
-          ) : pages.length === 0 ? (
-            <div className="py-16 text-center bg-slate-900/30 rounded-2xl border border-slate-800 space-y-4">
-              <MdStars className="w-14 h-14 text-emerald-400 mx-auto animate-bounce" />
-              <div className="max-w-md mx-auto space-y-1">
-                <h3 className="text-lg font-bold text-white">Nenhuma Landing Page Criada</h3>
-                <p className="text-sm text-slate-400">Digite uma frase sobre sua promoção e deixe a IA criar a página completa em segundos.</p>
-              </div>
-              <button
-                onClick={() => setMode('CREATE_MAGIC')}
-                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl transition"
-              >
-                Criar Minha Primeira Página Agora
-              </button>
+      <Card className="p-6 space-y-4">
+        <textarea
+          value={tema}
+          onChange={(e) => setTema(e.target.value)}
+          rows={3}
+          placeholder="Ex.: campanha de revisão de inverno com 20% de desconto para membros Plus"
+          className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-100"
+        />
+        <Button onClick={() => gerar.mutate()} disabled={!tema.trim() || gerar.isPending}>
+          <MdAutoAwesome className="mr-2" />
+          {gerar.isPending ? 'Gerando…' : 'Gerar página'}
+        </Button>
+        {erro && <p className="text-sm text-red-300">{erro}</p>}
+      </Card>
+
+      {pagina && (
+        <Card className="p-6 space-y-4">
+          <h3 className="font-semibold text-slate-100">Pré-visualização</h3>
+          <Preview pagina={pagina} />
+          <div>
+            <label className="block text-sm text-slate-300 mb-1">Endereço da página</label>
+            <div className="flex items-center gap-2">
+              <span className="text-slate-500 text-sm">/lp/</span>
+              <input
+                value={slug}
+                onChange={(e) => setSlug(slugify(e.target.value))}
+                className="flex-1 rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-slate-100"
+              />
             </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {pages.map((page) => (
-                <div
-                  key={page.id}
-                  className="bg-slate-900 rounded-2xl border border-slate-800 p-5 space-y-4 hover:border-slate-700 transition flex flex-col justify-between"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        Ativa
-                      </span>
-                      <span className="text-xs text-slate-400">{page.viewCount} acessos</span>
-                    </div>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={() => salvar.mutate()} disabled={!slug || salvar.isPending}>
+              <MdSave className="mr-2" />
+              {salvar.isPending ? 'Publicando…' : 'Publicar'}
+            </Button>
+            <Button variant="secondary" onClick={() => setPagina(null)}>
+              Descartar
+            </Button>
+          </div>
+        </Card>
+      )}
 
-                    <h3 className="text-lg font-bold text-white line-clamp-1">{page.title}</h3>
-                    <p className="text-xs text-slate-400 line-clamp-2">{page.description || 'Sem descrição.'}</p>
-                    <div className="text-xs font-mono text-emerald-400 bg-slate-950 px-2 py-1 rounded inline-block">
-                      /lp/{page.slug}
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-slate-800 flex items-center justify-between gap-2">
-                    <a
-                      href={`/lp/${page.slug}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-slate-300 hover:text-white flex items-center gap-1 font-semibold"
-                    >
-                      <MdLaunch className="w-3.5 h-3.5" /> Ver Pública
-                    </a>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleCopyShareLink(page.slug, page.storeId)}
-                        className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition"
-                        title="Copiar Link"
-                      >
-                        {copiedSlug === page.slug ? <MdCheck className="w-4 h-4 text-emerald-400" /> : <MdShare className="w-4 h-4" />}
-                      </button>
-                      <button
-                        onClick={() => handleOpenEdit(page)}
-                        className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition"
-                        title="Editar no Preview"
-                      >
-                        <MdEdit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(page.id)}
-                        className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition"
-                        title="Excluir"
-                      >
-                        <MdDelete className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+      <Card className="p-6">
+        <h3 className="font-semibold text-slate-100 mb-4">Páginas publicadas</h3>
+        {isLoading ? (
+          <p className="text-slate-400">Carregando…</p>
+        ) : pages.length === 0 ? (
+          <p className="text-slate-400 text-sm">Nenhuma página ainda.</p>
+        ) : (
+          <ul className="divide-y divide-slate-800">
+            {pages.map((p) => (
+              <li key={p.id} className="flex items-center justify-between py-3">
+                <div>
+                  <p className="text-slate-100 font-medium">{p.title}</p>
+                  <p className="text-xs text-slate-500">
+                    /lp/{p.slug} · {p.viewCount} visualizações
+                  </p>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* MODE 2: MAGIC AI PROMPT BOX */}
-      {mode === 'CREATE_MAGIC' && (
-        <div className="max-w-2xl mx-auto bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl space-y-6 text-center">
-          <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/20">
-            <MdStars className="w-8 h-8" />
-          </div>
-
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-white">O que você deseja divulgar hoje?</h2>
-            <p className="text-sm text-slate-400">
-              Descreva em linguagem simples sua promoção ou evento. A IA cuidará do layout, títulos e fotos automaticamente.
-            </p>
-          </div>
-
-          <form onSubmit={handleMagicGenerate} className="space-y-4">
-            <div className="text-left space-y-1">
-              <label className="text-xs font-bold text-slate-300">Modelo OpenAI:</label>
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
-              >
-                <option value="gpt-4o-mini">🤖 OpenAI gpt-4o-mini (Recomendado — Rápido & Inteligente)</option>
-                <option value="gpt-4o">🚀 OpenAI gpt-4o (Criatividade Avançada & Raciocínio Persuasivo)</option>
-                <option value="gpt-3.5-turbo">⚡ OpenAI gpt-3.5-turbo (Padrão)</option>
-              </select>
-            </div>
-
-            <textarea
-              rows={4}
-              required
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              placeholder="Ex: Promoção de revisão preventiva com desconto de 20% e acúmulo de pontos em dobro para o mês do ciclista..."
-              className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 shadow-inner"
-            />
-
-            <div className="flex items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => setMode('LIST')}
-                className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-sm transition"
-              >
-                Voltar
-              </button>
-              <button
-                type="submit"
-                disabled={generating || !aiPrompt.trim()}
-                className="px-8 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-sm transition flex items-center gap-2 shadow-xl shadow-emerald-500/20 disabled:opacity-50"
-              >
-                {generating ? (
-                  <>
-                    <MdAutorenew className="w-5 h-5 animate-spin" />
-                    Gerando Página Completa...
-                  </>
-                ) : (
-                  <>
-                    <MdStars className="w-5 h-5" />
-                    Gerar Landing Page com IA
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* MODE 3: WYSIWYG EDITING PREVIEW MODE */}
-      {mode === 'EDIT_WYSIWYG' && (
-        <div className="space-y-6">
-          {/* Action Bar */}
-          <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <button
-                onClick={() => setMode('LIST')}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg transition"
-              >
-                ← Voltar sem salvar
-              </button>
-              <div>
-                <span className="text-xs text-slate-400 block">Vincular a uma Loja Parceira (Opcional):</span>
-                <select
-                  value={selectedStoreId}
-                  onChange={(e) => setSelectedStoreId(e.target.value)}
-                  className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-white"
-                >
-                  <option value="">Nenhuma (Link Genérico Relm)</option>
-                  {stores.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.tradeName} ({s.city})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <button
-              onClick={handleSavePage}
-              disabled={saving}
-              className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm rounded-xl transition flex items-center gap-2 shadow-xl shadow-emerald-500/20 disabled:opacity-50"
-            >
-              {saving ? 'Publicando...' : '🚀 Publicar Página Agora'}
-            </button>
-          </div>
-
-          {/* Interactive WYSIWYG Live Preview */}
-          <WysiwygPreview
-            blocks={blocks}
-            onUpdateBlocks={setBlocks}
-            store={stores.find((s) => s.id === selectedStoreId)}
-            storylineCategory={storylineCategory}
-            dalleImageUrl={dalleImageUrl}
-          />
-        </div>
-      )}
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`/lp/${p.slug}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-2 text-slate-400 hover:text-emerald-400"
+                    title="Abrir"
+                  >
+                    <MdOpenInNew />
+                  </a>
+                  <button
+                    onClick={() => remover.mutate(p.id)}
+                    className="p-2 text-slate-400 hover:text-red-400"
+                    title="Excluir"
+                  >
+                    <MdDelete />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
     </div>
   );
 }

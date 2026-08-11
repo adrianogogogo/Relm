@@ -382,6 +382,32 @@ export default function AdminClubReportsPage() {
             )}
           </div>
         </Section>
+
+        {/* ── Auditoria e Controle de Resgates de Pontos ── */}
+        <Section
+          title="Auditoria e Controle de Resgates de Pontos"
+          intro="Registro transparente dos resgates efetuados pelos clientes com o detalhamento exato dos pontos consumidos (Pontos Mensais vs. Pontos Acumulados de Compras)."
+        >
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 shadow-sm space-y-4">
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div className="p-4 bg-[var(--color-bg)] rounded-xl border border-[var(--color-border)]">
+                <span className="text-xs text-[var(--color-text-secondary)] font-medium block">Dedução Preferencial</span>
+                <span className="text-sm font-bold text-amber-500 block mt-1">🟡 1º Pontos Mensais</span>
+                <span className="text-[10px] text-[var(--color-text-secondary)] block mt-0.5">Expiram no fim do mês corrente</span>
+              </div>
+              <div className="p-4 bg-[var(--color-bg)] rounded-xl border border-[var(--color-border)]">
+                <span className="text-xs text-[var(--color-text-secondary)] font-medium block">Dedução Secundária</span>
+                <span className="text-sm font-bold text-emerald-500 block mt-1">🟢 2º Pontos de Compras</span>
+                <span className="text-[10px] text-[var(--color-text-secondary)] block mt-0.5">Validade de 12 meses (365 dias)</span>
+              </div>
+              <div className="p-4 bg-[var(--color-bg)] rounded-xl border border-[var(--color-border)]">
+                <span className="text-xs text-[var(--color-text-secondary)] font-medium block">Serviços Gratuítos do Plano</span>
+                <span className="text-sm font-bold text-blue-500 block mt-1">🛠️ Cota Mensal (Sem Pts)</span>
+                <span className="text-[10px] text-[var(--color-text-secondary)] block mt-0.5">Uso de serviço grátis não gera/gasta pontos</span>
+              </div>
+            </div>
+          </div>
+        </Section>
       </div>
     </div>
   );

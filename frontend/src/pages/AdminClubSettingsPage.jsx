@@ -10,7 +10,7 @@ export default function AdminClubSettingsPage() {
   const [form, setForm] = useState({
     plusAnnualFee: 299.00,
     plusPointsMultiplier: 2.0,
-    plusMonthlyPoints: 0,
+    plusMonthlyPoints: 200,
     careQuotaAnnualRevisions: 2,
     voucherValidityDays: 60,
     pointValueBrl: 0.05,
@@ -31,9 +31,7 @@ export default function AdminClubSettingsPage() {
       setForm({
         plusAnnualFee: settings.plusAnnualFee ?? 299.00,
         plusPointsMultiplier: settings.plusPointsMultiplier ?? 2.0,
-        // ?? e não ||: zero é valor válido aqui (desliga o saldo mensal) e
-        // seria engolido por um fallback truthy.
-        plusMonthlyPoints: settings.plusMonthlyPoints ?? 0,
+        plusMonthlyPoints: settings.plusMonthlyPoints ?? 200,
         careQuotaAnnualRevisions: settings.careQuotaAnnualRevisions ?? 2,
         voucherValidityDays: settings.voucherValidityDays ?? 60,
         pointValueBrl: settings.pointValueBrl ?? 0.05,
@@ -88,17 +86,23 @@ export default function AdminClubSettingsPage() {
     );
   }
 
+  const pointValue = Number(form.pointValueBrl) || 0.05;
+  const voucherCostFor50 = Math.floor(50 / pointValue);
+  const monthlyPts = Number(form.plusMonthlyPoints) || 0;
+  const fromMonthlySim = Math.min(monthlyPts, voucherCostFor50);
+  const fromAccumulatedSim = Math.max(0, voucherCostFor50 - fromMonthlySim);
+
   return (
     <div className="py-8 px-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto space-y-6">
         <PageHeader
-          title="Regras do Clube & Anuidade"
-          subtitle="Configure o valor oficial da anuidade Care Plus, multiplicadores e parâmetros de gamificação."
+          title="Regras do Clube & Pontuação"
+          subtitle="Painel intuitivo de configuração de pontos, benefícios e anuidade com simulador ao vivo."
         />
 
         {feedback && (
           <div
-            className={`mb-6 rounded-xl p-4 text-sm font-semibold flex items-center gap-2 ${
+            className={`rounded-xl p-4 text-sm font-semibold flex items-center gap-2 ${
               feedback.type === 'success'
                 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
                 : 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
@@ -109,200 +113,228 @@ export default function AdminClubSettingsPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Seção 1: Anuidade & Assinatura */}
-          <Card>
-            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100 dark:border-slate-800">
-              <div className="p-2.5 rounded-xl bg-[#0A1929] text-[#2196F3] shadow-[2px_2px_4px_#050c14]">
-                <MdPayments size={22} />
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Main Form (2 Columns) */}
+          <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
+            {/* Bloco 1: Pontos de Compras nas Lojas */}
+            <Card>
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100 dark:border-slate-800">
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
+                  <MdStars size={24} />
+                </div>
+                <div>
+                  <h2 className="font-bold text-lg text-slate-100">
+                    1. Pontos em Compras nas Lojas Credenciadas
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Define quanto o cliente pontua ao comprar produtos nas lojas parceiras.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="font-title font-bold text-lg text-[#0A1929] dark:text-slate-100">
-                  Anuidade & Assinatura Care Plus
-                </h2>
-                <p className="text-xs text-gray-500 dark:text-slate-400">
-                  Valor monetário padrão pré-preenchido nos registros de pagamento das lojas.
-                </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                    Multiplicador de Pontos por Compra (Plus) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="1"
+                    required
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+                    value={form.plusPointsMultiplier}
+                    onChange={(e) => handleChange('plusPointsMultiplier', e.target.value)}
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Ex: 2.0 significa que o membro Plus ganha 2x pontos em compras de produtos.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                    Valor Monetário de 1 Ponto (R$) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+                    value={form.pointValueBrl}
+                    onChange={(e) => handleChange('pointValueBrl', e.target.value)}
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Ex: R$ 0,05 significa que 1.000 pontos equivalem a R$ 50,00 em prêmios/vouchers.
+                  </p>
+                </div>
+              </div>
+            </Card>
+
+            {/* Bloco 2: Pontos Mensais da Assinatura */}
+            <Card>
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100 dark:border-slate-800">
+                <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400">
+                  <MdPayments size={24} />
+                </div>
+                <div>
+                  <h2 className="font-bold text-lg text-slate-100">
+                    2. Pontos Mensais da Assinatura Plus
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Cota de pontos concedidos todo mês que expiram no fim do mês se não forem usados.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                    Valor da Anuidade Care Plus (R$) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    required
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+                    value={form.plusAnnualFee}
+                    onChange={(e) => handleChange('plusAnnualFee', e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                    Pontos Mensais Renováveis (Membro Plus) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="50"
+                    required
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+                    value={form.plusMonthlyPoints}
+                    onChange={(e) => handleChange('plusMonthlyPoints', e.target.value)}
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Cota mensal que vence na virada do mês.
+                  </p>
+                </div>
+              </div>
+            </Card>
+
+            {/* Bloco 3: Gamificação & Validades */}
+            <Card>
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100 dark:border-slate-800">
+                <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400">
+                  <MdTimer size={24} />
+                </div>
+                <div>
+                  <h2 className="font-bold text-lg text-slate-100">
+                    3. Gamificação & Validade dos Vouchers
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    Bônus por indicação/aniversário e prazo dos cupons resgatados.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                    Validade dos Vouchers (Dias) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+                    value={form.voucherValidityDays}
+                    onChange={(e) => handleChange('voucherValidityDays', e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                    Bônus por Indicação (Pts)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+                    value={form.referralBonusPoints}
+                    onChange={(e) => handleChange('referralBonusPoints', e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                    Bônus de Aniversário (Pts)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+                    value={form.birthdayBonusPoints}
+                    onChange={(e) => handleChange('birthdayBonusPoints', e.target.value)}
+                  />
+                </div>
+              </div>
+            </Card>
+
+            <div className="pt-2">
+              <Button type="submit" variant="primary" isLoading={updateMutation.isPending} className="w-full sm:w-auto py-3.5 px-8">
+                <MdSave className="w-5 h-5 mr-2" />
+                Salvar Regras de Pontuação
+              </Button>
+            </div>
+          </form>
+
+          {/* Live Simulator Widget (Right Column) */}
+          <div className="space-y-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5 shadow-2xl sticky top-6">
+              <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm border-b border-slate-800 pb-3">
+                <MdStars className="w-5 h-5" />
+                <span>⚡ Simulador em Tempo Real</span>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Veja instantaneamente como suas configurações vão funcionar na prática para os clientes e lojistas:
+              </p>
+
+              <div className="space-y-4 text-xs">
+                <div className="p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-1.5">
+                  <span className="font-bold text-white block flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span> 🛒 Compra de Produto (R$ 100,00)
+                  </span>
+                  <p className="text-slate-300 leading-normal">
+                    O cliente recebe <strong className="text-emerald-400 font-bold">{(100 * Number(form.plusPointsMultiplier || 1)).toFixed(0)} Pontos Acumulados</strong>.
+                  </p>
+                  <span className="text-[10px] text-slate-500 block">📅 Validade: 365 dias (12 meses a partir da compra).</span>
+                </div>
+
+                <div className="p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-1.5">
+                  <span className="font-bold text-white block flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-400"></span> 📅 Início do Mês (Plano Plus)
+                  </span>
+                  <p className="text-slate-300 leading-normal">
+                    O cliente recebe <strong className="text-amber-400 font-bold">{monthlyPts} Pontos Mensais</strong>.
+                  </p>
+                  <span className="text-[10px] text-slate-500 block">⏳ Validade: Expiram no último dia do mês corrente.</span>
+                </div>
+
+                <div className="p-3.5 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-1.5">
+                  <span className="font-bold text-white block flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-400"></span> 🎁 Resgate de Voucher de R$ 50,00
+                  </span>
+                  <p className="text-slate-300 leading-normal">
+                    Custa <strong className="text-white font-bold">{voucherCostFor50} pontos</strong>.
+                    O sistema abate primeiro <strong className="text-amber-400 font-bold">{fromMonthlySim} pts Mensais</strong> e a diferença (<strong className="text-emerald-400 font-bold">{fromAccumulatedSim} pts</strong>) dos Pontos Acumulados.
+                  </p>
+                </div>
               </div>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div>
-                <label className="label">Valor da Anuidade Care Plus (R$) *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  required
-                  className="input font-mono font-bold text-lg text-[#0A1929] dark:text-white"
-                  value={form.plusAnnualFee}
-                  onChange={(e) => handleChange('plusAnnualFee', e.target.value)}
-                  placeholder="299.00"
-                />
-                <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1">
-                  Este valor será aplicado automaticamente em todas as cobranças de renovação anual.
-                </p>
-              </div>
-
-              <div>
-                <label className="label">Multiplicador de Pontos Care Plus *</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="1"
-                  required
-                  className="input font-mono font-bold text-lg text-[#0A1929] dark:text-white"
-                  value={form.plusPointsMultiplier}
-                  onChange={(e) => handleChange('plusPointsMultiplier', e.target.value)}
-                  placeholder="2.0"
-                />
-                <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1">
-                  Fator de aceleração de acúmulo de pontos para membros Plus (ex: 2.0 = 2x pontos).
-                </p>
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="label">Pontos Mensais Care Plus (uso-ou-perde)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="50"
-                  className="input font-mono font-bold text-lg text-[#0A1929] dark:text-white"
-                  value={form.plusMonthlyPoints}
-                  onChange={(e) => handleChange('plusMonthlyPoints', e.target.value)}
-                  placeholder="0"
-                />
-                <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1">
-                  Cota que renova todo mês e <strong>não acumula</strong>: o que não for usado
-                  vira pó na virada do mês. Vale para qualquer resgate (prêmio ou serviço) e é
-                  sempre gasta antes do saldo acumulado. <strong>Use 0 para desligar.</strong>
-                </p>
-                {/* O custo é o que decide esse número. Mostrar em reais evita
-                    calibrar no escuro — 1000 pontos não significa nada sozinho. */}
-                <p className="text-[11px] font-semibold text-[#2196F3] mt-1">
-                  Custo estimado: R$ {(Number(form.plusMonthlyPoints || 0) * Number(form.pointValueBrl || 0)).toFixed(2)} por
-                  membro Plus por mês
-                  {' '}({(Number(form.plusMonthlyPoints || 0) * Number(form.pointValueBrl || 0) * 12).toFixed(2)} ao ano,
-                  contra anuidade de R$ {Number(form.plusAnnualFee || 0).toFixed(2)}).
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          {/* Seção 2: Benefícios da Oficina & Vouchers */}
-          <Card>
-            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100 dark:border-slate-800">
-              <div className="p-2.5 rounded-xl bg-[#0A1929] text-[#2196F3] shadow-[2px_2px_4px_#050c14]">
-                <MdBuild size={22} />
-              </div>
-              <div>
-                <h2 className="font-title font-bold text-lg text-[#0A1929] dark:text-slate-100">
-                  Oficina & Resgate de Prêmios
-                </h2>
-                <p className="text-xs text-gray-500 dark:text-slate-400">
-                  Limites de serviços de manutenção e validade dos cupons resgatados.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div>
-                <label className="label">Cota Anual de Revisões Básicas (Care Gratuito) *</label>
-                <input
-                  type="number"
-                  min="1"
-                  required
-                  className="input font-mono font-bold text-[#0A1929] dark:text-white"
-                  value={form.careQuotaAnnualRevisions}
-                  onChange={(e) => handleChange('careQuotaAnnualRevisions', e.target.value)}
-                />
-                <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1">
-                  Quantidade de revisões gratuitas liberadas por ano civil para o plano básico.
-                </p>
-              </div>
-
-              <div>
-                <label className="label">Validade dos Vouchers Resgatados (Dias) *</label>
-                <input
-                  type="number"
-                  min="1"
-                  required
-                  className="input font-mono font-bold text-[#0A1929] dark:text-white"
-                  value={form.voucherValidityDays}
-                  onChange={(e) => handleChange('voucherValidityDays', e.target.value)}
-                />
-                <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1">
-                  Prazo máximo para o cliente apresentar o código do voucher na loja física.
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          {/* Seção 3: Pontuação & Bônus de Gamificação */}
-          <Card>
-            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100 dark:border-slate-800">
-              <div className="p-2.5 rounded-xl bg-[#0A1929] text-[#2196F3] shadow-[2px_2px_4px_#050c14]">
-                <MdStars size={22} />
-              </div>
-              <div>
-                <h2 className="font-title font-bold text-lg text-[#0A1929] dark:text-slate-100">
-                  Gamificação & Bônus de Engajamento
-                </h2>
-                <p className="text-xs text-gray-500 dark:text-slate-400">
-                  Pontos bonificados por indicações, aniversário e participação em eventos.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="label">Bônus por Indicação (Pts)</label>
-                <input
-                  type="number"
-                  min="0"
-                  className="input font-mono text-[#0A1929] dark:text-white"
-                  value={form.referralBonusPoints}
-                  onChange={(e) => handleChange('referralBonusPoints', e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="label">Bônus de Aniversário (Pts)</label>
-                <input
-                  type="number"
-                  min="0"
-                  className="input font-mono text-[#0A1929] dark:text-white"
-                  value={form.birthdayBonusPoints}
-                  onChange={(e) => handleChange('birthdayBonusPoints', e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="label">Presença em Eventos (Pts)</label>
-                <input
-                  type="number"
-                  min="0"
-                  className="input font-mono text-[#0A1929] dark:text-white"
-                  value={form.eventParticipationPoints}
-                  onChange={(e) => handleChange('eventParticipationPoints', e.target.value)}
-                />
-              </div>
-            </div>
-          </Card>
-
-          {/* Botão de Salvar */}
-          <div className="flex justify-end pt-2">
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              loading={updateMutation.isPending}
-              className="flex items-center gap-2 px-8 bg-[#2196F3] hover:bg-[#1e88e5] text-white font-bold"
-            >
-              <MdSave size={20} /> Salvar Regras do Clube
-            </Button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
