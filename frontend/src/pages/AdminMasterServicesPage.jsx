@@ -194,45 +194,45 @@ function MasterServiceModal({ service, onClose }) {
           {/* Card Atribuição de Pontos em Tempo Real */}
           <div className="space-y-2">
             {!isCustomPoints ? (
-              <div className="p-4 bg-emerald-50/70 border border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800/60 rounded-2xl space-y-2.5 text-xs">
+              <div className="p-4 bg-emerald-50 border-2 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800 rounded-2xl space-y-3 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-extrabold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5 text-xs">
+                  <span className="font-black text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5 text-xs">
                     💡 Atribuição Automática de Pontos Relm Care+
                   </span>
                   <button
                     type="button"
                     onClick={() => setIsCustomPoints(true)}
-                    className="text-[11px] font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white underline transition"
+                    className="text-[11px] font-extrabold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white underline transition"
                   >
                     ✏️ Personalizar Pontos
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-3 pt-1">
-                  <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-emerald-200/80 dark:border-slate-800 shadow-xs">
-                    <span className="text-[11px] text-slate-700 dark:text-slate-300 font-bold block mb-0.5">🎯 Pontos para trocar de graça:</span>
-                    <strong className="text-emerald-700 dark:text-emerald-400 font-black text-sm">{autoPointsCost} Pts</strong>
+                  <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-emerald-300 dark:border-slate-700 shadow-xs">
+                    <span className="text-[11px] text-slate-900 dark:text-slate-100 font-extrabold block mb-1">🎯 Pontos para trocar de graça:</span>
+                    <strong className="text-emerald-700 dark:text-emerald-400 font-black text-base">{autoPointsCost} Pts</strong>
                   </div>
-                  <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-cyan-200/80 dark:border-slate-800 shadow-xs">
-                    <span className="text-[11px] text-slate-700 dark:text-slate-300 font-bold block mb-0.5">🛍️ Pontos de presente na compra:</span>
-                    <strong className="text-cyan-700 dark:text-cyan-400 font-black text-sm">+{Math.floor(currentPrice)} Pts</strong>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold block mt-0.5">({Math.floor(currentPrice * 2)} Pts no Plus ⚡)</span>
+                  <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-cyan-300 dark:border-slate-700 shadow-xs">
+                    <span className="text-[11px] text-slate-900 dark:text-slate-100 font-extrabold block mb-1">🛍️ Pontos de presente na compra:</span>
+                    <strong className="text-cyan-700 dark:text-cyan-400 font-black text-base">+{Math.floor(currentPrice)} Pts</strong>
+                    <span className="text-[10px] text-slate-700 dark:text-slate-300 font-bold block mt-0.5">({Math.floor(currentPrice * 2)} Pts no Plus ⚡)</span>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="p-4 bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
+              <div className="p-4 bg-slate-100 dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 rounded-2xl space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-extrabold text-[#0A1929] dark:text-white">Personalização Manual de Pontos:</label>
+                  <label className="text-xs font-black text-[#0A1929] dark:text-white">Personalização Manual de Pontos:</label>
                   <button
                     type="button"
                     onClick={() => setIsCustomPoints(false)}
-                    className="text-[11px] text-emerald-700 dark:text-emerald-400 font-bold underline hover:opacity-80 transition"
+                    className="text-[11px] text-emerald-800 dark:text-emerald-400 font-extrabold underline hover:opacity-80 transition"
                   >
                     ⚡ Voltar ao Automático
                   </button>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">
+                  <label className="block text-xs font-extrabold text-slate-900 dark:text-slate-100 mb-1.5">
                     🎯 Pontos para trocar de graça (Resgate pelo cliente)
                   </label>
                   <input
@@ -242,7 +242,7 @@ function MasterServiceModal({ service, onClose }) {
                     placeholder="Ex: 1000"
                     value={form.defaultPointsCost}
                     onChange={(e) => setForm({ ...form, defaultPointsCost: e.target.value })}
-                    className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs text-slate-900 font-black focus:outline-none focus:border-cyan-600 dark:border-slate-700 dark:bg-slate-950 dark:text-white shadow-xs transition"
+                    className="w-full rounded-xl border-2 border-slate-300 bg-white p-3 text-xs text-slate-900 font-black focus:outline-none focus:border-cyan-600 dark:border-slate-700 dark:bg-slate-950 dark:text-white shadow-xs transition"
                   />
                 </div>
               </div>
