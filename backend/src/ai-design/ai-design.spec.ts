@@ -1,4 +1,5 @@
-import { PaginaGerada, sanitizePagina } from './blocks.schema';
+import { PaginaGerada, paginaDeResposta, sanitizePagina, schemaDe } from './blocks.schema';
+import { montarSistema, textoDosFatos } from '../ai-assistant/campanha-prompts';
 import { renderEmail } from './email-renderer';
 
 function pagina(overrides: Partial<PaginaGerada> = {}): PaginaGerada {
@@ -109,5 +110,79 @@ describe('renderEmail', () => {
   it('aplica a paleta gerada, não uma cor fixa', () => {
     const html = renderEmail(pagina());
     expect(html).toContain('#1B4965');
+  });
+});
+
+describe('especialista de campanhas', () => {
+  const bruta = {
+    titulo: 'T',
+    subtitulo: 'S',
+    paleta: { corPrimaria: '#1B4965', corFundo: '#FFFFFF', corTexto: '#0A1929' },
+    hero: { tipo: 'hero' as const, titulo: 'H', subtitulo: 'h', ctaTexto: 'Ir', ctaUrl: '/clube' },
+    meio: [],
+    cta: { tipo: 'cta' as const, texto: 'C', ctaTexto: 'Ir', ctaUrl: '/clube' },
+  };
+
+  const fatos = {
+    plusAnnualFee: 299,
+    pointValueBrl: 0.05,
+    referralBonusPoints: 500,
+    birthdayBonusPoints: 200,
+    eventParticipationPoints: 100,
+    careQuotaAnnualRevisions: 1,
+    plusPointsMultiplier: 2,
+    plusMonthlyPoints: 1000,
+  };
+
+  it('marca todo depoimento vindo do modelo como inventado', () => {
+    const prova = { tipo: 'prova' as const, citacao: 'c', autor: 'a', papel: 'p' };
+    const pagina = paginaDeResposta({ ...bruta, meio: [prova] });
+
+    const gerado = pagina.blocos.find((b) => b.tipo === 'prova') as any;
+    expect(gerado.inventado).toBe(true);
+  });
+
+  it('não deixa o hero nem o cta faltarem — são campos, não itens de array', () => {
+    for (const email of [false, true]) {
+      const schema = schemaDe(email, false) as any;
+      expect(schema.required).toContain('hero');
+      expect(schema.required).toContain('cta');
+    }
+  });
+
+  it('só o schema de e-mail pede assunto e preheader', () => {
+    expect((schemaDe(true, false) as any).required).toContain('email');
+    expect((schemaDe(false, false) as any).required).not.toContain('email');
+  });
+
+  it('só a revisão pede notas', () => {
+    expect((schemaDe(false, true) as any).required).toContain('notas');
+    expect((schemaDe(false, false) as any).required).not.toContain('notas');
+  });
+
+  it('injeta os números do banco em vez de literal no prompt', () => {
+    const texto = textoDosFatos({ ...fatos, plusMonthlyPoints: 777 });
+    expect(texto).toContain('777 pontos por mês');
+    expect(texto).toContain('R$ 299,00');
+  });
+
+  // O tom é editável em produção: se ele pudesse sobrepor o núcleo, uma edição
+  // sem review apagaria a regra que separa Care de Care Plus.
+  it('concatena o tom depois do núcleo, sem substituí-lo', () => {
+    const sistema = montarSistema('LANDING', fatos, 'Use gírias de ciclista.');
+
+    expect(sistema).toContain('Use gírias de ciclista.');
+    expect(sistema).toContain('"Care Plus" é o plano pago');
+    expect(sistema.indexOf('"Care Plus" é o plano pago')).toBeLessThan(
+      sistema.indexOf('Use gírias de ciclista.'),
+    );
+  });
+
+  it('dá instruções diferentes para landing e para e-mail', () => {
+    const landing = montarSistema('LANDING', fatos);
+    const email = montarSistema('EMAIL', fatos);
+
+    expect(email).toContain('quatro alternativas');
+    expect(landing).not.toContain('quatro alternativas');
   });
 });

@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Post,
+  Put,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { AiAssistantService } from './ai-assistant.service';
 import { AiConfigDto, GerarPaginaDto } from './dto/ai.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -22,8 +31,18 @@ export class AiAssistantController {
     return this.aiAssistantService.getConfig();
   }
 
+  /**
+   * A tela inteira é ADMIN_RELM + GERENTE_RELM, mas os campos de tom entram no
+   * prompt de sistema — são a única config daqui que muda o texto que chega ao
+   * cliente. Essa parte fica só com ADMIN_RELM; escolher modelo continua com os
+   * dois.
+   */
   @Put('config')
-  setConfig(@Body() dto: AiConfigDto) {
-    return this.aiAssistantService.setConfig(dto);
+  setConfig(@Body() dto: AiConfigDto, @Request() req: any) {
+    const mexeNoPrompt = dto.tomLanding !== undefined || dto.tomEmail !== undefined;
+    if (mexeNoPrompt && req.user?.role !== 'ADMIN_RELM') {
+      throw new ForbiddenException('Apenas ADMIN_RELM pode alterar o tom dos especialistas.');
+    }
+    return this.aiAssistantService.setConfig(dto, req.user?.userId);
   }
 }

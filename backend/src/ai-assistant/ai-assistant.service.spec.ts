@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { AiAssistantService } from './ai-assistant.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { DEFAULT_IMAGE_MODEL, DEFAULT_TEXT_MODEL } from './models';
+import { ClubSettingsService } from '../club-settings/club-settings.service';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
 describe('AiAssistantService', () => {
   let service: AiAssistantService;
@@ -11,6 +13,7 @@ describe('AiAssistantService', () => {
   const mockPrisma = {
     clubSettings: { findMany: jest.fn(), upsert: jest.fn() },
   };
+  const mockAudit = { log: jest.fn() };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -22,6 +25,8 @@ describe('AiAssistantService', () => {
         // inteira cai porque a campanha não foi configurada.
         { provide: ConfigService, useValue: { get: () => null } },
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: ClubSettingsService, useValue: { getSettings: jest.fn() } },
+        { provide: AuditLogsService, useValue: mockAudit },
       ],
     }).compile();
 

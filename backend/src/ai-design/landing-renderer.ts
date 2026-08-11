@@ -140,6 +140,35 @@ function renderBloco(bloco: Bloco, indice: number, primeiroTexto: boolean): stri
     </div>
   </section>`;
 
+    // <details> nativo: acordeão sem uma linha de JS, acessível por teclado e
+    // aberto pelo Ctrl+F do navegador.
+    case 'faq':
+      return `<section class="faixa"${atraso}>
+    <div class="miolo estreito">
+      <h2 class="titulo-secao centro">${esc(bloco.titulo)}</h2>
+      <div class="duvidas">
+        ${bloco.itens
+          .map(
+            (item) => `<details>
+          <summary>${esc(item.pergunta)}</summary>
+          <p>${esc(item.resposta)}</p>
+        </details>`,
+          )
+          .join('\n        ')}
+      </div>
+    </div>
+  </section>`;
+
+    // `inventado` não é lido: a marcação de depoimento gerado vive no Preview
+    // do admin, não na página pública.
+    case 'prova':
+      return `<section class="faixa alt"${atraso}>
+    <figure class="depoimento miolo estreito">
+      <blockquote>${esc(bloco.citacao)}</blockquote>
+      <figcaption><strong>${esc(bloco.autor)}</strong><span>${esc(bloco.papel)}</span></figcaption>
+    </figure>
+  </section>`;
+
     case 'cta':
       return `<section class="fechamento"${atraso}>
     <div class="miolo centro">
@@ -356,6 +385,44 @@ body::after{
   font-size:1.18rem;line-height:1.25;letter-spacing:-.01em;margin-bottom:9px;
 }
 .cartoes p{font-size:1rem;line-height:1.6;color:var(--suave)}
+
+/* ---------- dúvidas ---------- */
+.estreito{max-width:820px}
+.duvidas{border-top:1px solid var(--linha)}
+.duvidas details{border-bottom:1px solid var(--linha)}
+.duvidas summary{
+  list-style:none;cursor:pointer;display:flex;align-items:center;gap:18px;
+  padding:24px 0;font-family:var(--display);font-weight:700;font-stretch:104%;
+  font-size:clamp(1.02rem,2vw,1.2rem);line-height:1.35;transition:color .2s;
+}
+.duvidas summary::-webkit-details-marker{display:none}
+.duvidas summary::after{
+  content:'+';margin-left:auto;flex:none;
+  font-family:var(--display);font-weight:400;font-size:1.7rem;line-height:1;
+  color:var(--acento);transition:transform .28s cubic-bezier(.2,.8,.2,1);
+}
+.duvidas details[open] summary::after{transform:rotate(45deg)}
+.duvidas summary:hover{color:var(--acento)}
+.duvidas summary:focus-visible{outline:2px solid var(--acento);outline-offset:3px}
+.duvidas details p{padding:0 46px 26px 0;color:var(--suave);font-size:1.05rem;line-height:1.7}
+
+/* ---------- depoimento ---------- */
+.depoimento{position:relative;text-align:center;padding-top:26px}
+.depoimento::before{
+  content:'\\201C';position:absolute;top:-26px;left:50%;transform:translateX(-50%);
+  font-family:var(--display);font-weight:900;font-size:8rem;line-height:1;
+  color:var(--acento);opacity:.2;
+}
+.depoimento blockquote{
+  font-size:clamp(1.3rem,3.2vw,2rem);line-height:1.45;font-style:italic;
+  text-wrap:balance;max-width:24ch;margin:0 auto;
+}
+.depoimento figcaption{margin-top:26px}
+.depoimento figcaption strong{
+  display:block;font-family:var(--display);font-weight:800;font-size:14px;
+  letter-spacing:.12em;text-transform:uppercase;
+}
+.depoimento figcaption span{display:block;margin-top:4px;font-size:14px;color:var(--suave)}
 
 /* ---------- fechamento ---------- */
 .fechamento{

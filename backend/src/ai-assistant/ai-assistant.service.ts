@@ -6,12 +6,15 @@ import { join } from 'path';
 import OpenAI from 'openai';
 import { PrismaService } from '../prisma/prisma.service';
 import {
-  PAGINA_SCHEMA,
   PaginaGerada,
   RespostaModelo,
   paginaDeResposta,
   sanitizePagina,
+  schemaDe,
 } from '../ai-design/blocks.schema';
+import { ClubSettingsService } from '../club-settings/club-settings.service';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { CHECKLIST, montarSistema } from './campanha-prompts';
 import {
   DEFAULT_IMAGE_MODEL,
   DEFAULT_IMAGE_QUALITY,
@@ -24,27 +27,14 @@ import {
 const KEY_TEXT = 'ai_text_model';
 const KEY_IMAGE = 'ai_image_model';
 const KEY_QUALITY = 'ai_image_quality';
+/** Camada editável do prompt, uma por destino. O núcleo fica no código. */
+const KEY_TOM_LANDING = 'ai_tom_landing';
+const KEY_TOM_EMAIL = 'ai_tom_email';
+/** Teto do campo de tom: prompt de sistema não é lugar para um documento. */
+const TOM_MAX = 2000;
 
 /** Onde a imagem gerada é gravada. Servido estaticamente em /uploads/marketing. */
 const IMAGE_DIR = join(process.cwd(), 'uploads', 'marketing');
-
-const SISTEMA = `Você monta páginas de campanha para a Relm Bikes, uma marca de
-bicicletas com clube de assinatura (Care gratuito e Care Plus pago) vendido por
-lojas parceiras no Brasil.
-
-Escreva em português do Brasil, no tom de quem conhece ciclismo e fala com
-ciclista — direto, específico, sem jargão de marketing. Prefira o benefício
-concreto ("revisão inclusa a cada 6 meses") ao adjetivo ("experiência
-incrível").
-
-A paleta deve nascer do tema, não de um padrão fixo: uma campanha de inverno não
-tem a mesma cor de um lançamento de bike infantil. Garanta contraste legível
-entre corTexto e corFundo.
-
-Em "meio" use de dois a quatro blocos. Não repita em "meio" a ideia que já está
-no hero ou no cta.
-
-Sem URL inventada: quando não souber para onde o botão aponta, use "/clube".`;
 
 @Injectable()
 export class AiAssistantService {
@@ -54,6 +44,8 @@ export class AiAssistantService {
   constructor(
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly clubSettings: ClubSettingsService,
+    private readonly auditLogs: AuditLogsService,
   ) {
     // A chave fica no .env de propósito: ela tem cobrança atrelada, e backup de
     // banco não é lugar para isso. Só os modelos vão para a tela.
@@ -73,7 +65,7 @@ export class AiAssistantService {
    */
   async getConfig() {
     const rows = await this.prisma.clubSettings.findMany({
-      where: { key: { in: [KEY_TEXT, KEY_IMAGE, KEY_QUALITY] } },
+      where: { key: { in: [KEY_TEXT, KEY_IMAGE, KEY_QUALITY, KEY_TOM_LANDING, KEY_TOM_EMAIL] } },
     });
     const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
 
@@ -81,12 +73,28 @@ export class AiAssistantService {
       textModel: TEXT_MODELS.includes(map[KEY_TEXT]) ? map[KEY_TEXT] : DEFAULT_TEXT_MODEL,
       imageModel: IMAGE_MODELS[map[KEY_IMAGE]] ? map[KEY_IMAGE] : DEFAULT_IMAGE_MODEL,
       imageQuality: map[KEY_QUALITY] === 'alta' ? 'alta' : DEFAULT_IMAGE_QUALITY,
+      tomLanding: map[KEY_TOM_LANDING] || '',
+      tomEmail: map[KEY_TOM_EMAIL] || '',
       textModels: TEXT_MODELS,
       imageModels: Object.keys(IMAGE_MODELS),
     };
   }
 
-  async setConfig(dto: { textModel?: string; imageModel?: string; imageQuality?: string }) {
+  /**
+   * `autorId` existe porque o campo de tom entra no prompt de sistema: é a única
+   * configuração daqui que muda o texto que chega ao cliente. Alteração sem
+   * rastro de autor só se descobre investigando depois.
+   */
+  async setConfig(
+    dto: {
+      textModel?: string;
+      imageModel?: string;
+      imageQuality?: string;
+      tomLanding?: string;
+      tomEmail?: string;
+    },
+    autorId?: string,
+  ) {
     const pares: [string, string][] = [];
     if (dto.textModel && TEXT_MODELS.includes(dto.textModel)) {
       pares.push([KEY_TEXT, dto.textModel]);
@@ -98,11 +106,31 @@ export class AiAssistantService {
       pares.push([KEY_QUALITY, dto.imageQuality]);
     }
 
-    for (const [key, value] of pares) {
+    const anterior = await this.getConfig();
+    const tons: [string, string, string][] = [];
+    if (dto.tomLanding !== undefined) {
+      tons.push([KEY_TOM_LANDING, dto.tomLanding.slice(0, TOM_MAX), anterior.tomLanding]);
+    }
+    if (dto.tomEmail !== undefined) {
+      tons.push([KEY_TOM_EMAIL, dto.tomEmail.slice(0, TOM_MAX), anterior.tomEmail]);
+    }
+
+    for (const [key, value] of [...pares, ...tons.map(([k, v]) => [k, v] as [string, string])]) {
       await this.prisma.clubSettings.upsert({
         where: { key },
         update: { value },
         create: { key, value },
+      });
+    }
+
+    for (const [key, depois, antes] of tons) {
+      if (depois === antes) continue;
+      await this.auditLogs.log({
+        userId: autorId,
+        action: 'UPDATE',
+        entity: 'AiPrompt',
+        entityId: key,
+        metadata: { antes, depois },
       });
     }
 
@@ -125,22 +153,53 @@ export class AiAssistantService {
     }
 
     const cfg = await this.getConfig();
+    const ehEmail = destino === 'EMAIL';
     this.logger.log(`Gerando página [${cfg.textModel}, destino ${destino}]: ${tema}`);
 
-    const completion = await this.openai.chat.completions.create({
-      model: cfg.textModel,
+    const fatos = await this.clubSettings.getSettings();
+    const sistema = montarSistema(destino, fatos, ehEmail ? cfg.tomEmail : cfg.tomLanding);
+    const briefing = contexto
+      ? `Tema da campanha: ${tema}\n\nContexto adicional: ${contexto}`
+      : `Tema da campanha: ${tema}`;
+
+    const rascunho = await this.completar(cfg.textModel, sistema, briefing, schemaDe(ehEmail, false));
+
+    // Segunda passada. Um prompt melhor não pega erro de atribuição de benefício
+    // ao plano errado — checklist contra o rascunho pronto pega. Se ela falhar,
+    // o rascunho vale: página revisada é melhor, página nenhuma não é opção.
+    let bruta = rascunho;
+    try {
+      bruta = await this.completar(
+        cfg.textModel,
+        sistema,
+        `${briefing}\n\n${CHECKLIST}\n\nRascunho:\n${JSON.stringify(rascunho)}`,
+        schemaDe(ehEmail, true),
+      );
+    } catch (err: any) {
+      this.logger.warn(`Revisão falhou, seguindo com o rascunho: ${err.message}`);
+    }
+
+    const pagina = sanitizePagina(paginaDeResposta(bruta));
+    pagina.imagemUrl = await this.gerarImagem(tema, pagina, destino, cfg);
+    return pagina;
+  }
+
+  /** Uma chamada de texto presa a um schema. As duas passadas usam esta. */
+  private async completar(
+    model: string,
+    sistema: string,
+    usuario: string,
+    schema: object,
+  ): Promise<RespostaModelo> {
+    const completion = await this.openai!.chat.completions.create({
+      model,
       messages: [
-        { role: 'system', content: SISTEMA },
-        {
-          role: 'user',
-          content: contexto
-            ? `Tema da campanha: ${tema}\n\nContexto adicional: ${contexto}`
-            : `Tema da campanha: ${tema}`,
-        },
+        { role: 'system', content: sistema },
+        { role: 'user', content: usuario },
       ],
       response_format: {
         type: 'json_schema',
-        json_schema: { name: 'pagina', strict: true, schema: PAGINA_SCHEMA },
+        json_schema: { name: 'pagina', strict: true, schema },
       },
     } as any);
 
@@ -148,10 +207,7 @@ export class AiAssistantService {
     if (!texto) {
       throw new ServiceUnavailableException('Resposta do modelo veio sem conteúdo.');
     }
-
-    const pagina = sanitizePagina(paginaDeResposta(JSON.parse(texto) as RespostaModelo));
-    pagina.imagemUrl = await this.gerarImagem(tema, pagina, destino, cfg);
-    return pagina;
+    return JSON.parse(texto) as RespostaModelo;
   }
 
   /**

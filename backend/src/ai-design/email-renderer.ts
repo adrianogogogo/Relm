@@ -52,6 +52,33 @@ function renderBloco(bloco: Bloco, p: PaginaGerada): string {
     .join('\n  ')}
 </td></tr>`;
 
+    // Sem <details> aqui: cliente de e-mail não abre acordeão. Vira pergunta em
+    // negrito com a resposta abaixo. O schema de e-mail nem gera faq — este
+    // caso existe para o template salvo a partir de uma landing.
+    case 'faq':
+      return `<tr><td style="padding:16px 32px;">
+  <h2 style="${base}font-size:21px;margin:0 0 12px 0;">${esc(bloco.titulo)}</h2>
+  ${bloco.itens
+    .map(
+      (item) => `<p style="${base}font-size:15px;line-height:1.55;margin:0 0 12px 0;">
+    <strong>${esc(item.pergunta)}</strong><br/>
+    <span style="opacity:0.85;">${esc(item.resposta)}</span>
+  </p>`,
+    )
+    .join('\n  ')}
+</td></tr>`;
+
+    case 'prova':
+      return `<tr><td style="padding:20px 32px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+    <tr><td style="border-left:4px solid ${corPrimaria};padding:6px 0 6px 16px;">
+      <p style="${base}font-size:17px;line-height:1.55;font-style:italic;margin:0 0 10px 0;">“${esc(bloco.citacao)}”</p>
+      <strong style="${base}font-size:14px;">${esc(bloco.autor)}</strong>
+      <span style="${base}font-size:14px;opacity:0.7;"> — ${esc(bloco.papel)}</span>
+    </td></tr>
+  </table>
+</td></tr>`;
+
     case 'cta':
       return `<tr><td style="padding:24px 32px 40px 32px;text-align:center;">
   <p style="${base}font-size:18px;line-height:1.5;margin:0;">${esc(bloco.texto)}</p>

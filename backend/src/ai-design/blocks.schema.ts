@@ -18,6 +18,15 @@ export type Bloco =
   | { tipo: 'hero'; titulo: string; subtitulo: string; ctaTexto: string; ctaUrl: string }
   | { tipo: 'texto'; titulo: string; corpo: string }
   | { tipo: 'lista'; titulo: string; itens: { titulo: string; descricao: string }[] }
+  | { tipo: 'faq'; titulo: string; itens: { pergunta: string; resposta: string }[] }
+  /**
+   * `inventado` NÃO vem do modelo — é marcado pelo backend em paginaDeResposta.
+   * Depoimento gerado é uma pessoa que não existe dizendo o que não disse; a
+   * tarja no Preview do admin existe para que aprovar isso seja escolha, não
+   * descuido. Editar a citação na tela zera a marca. Nenhum renderizador lê
+   * este campo: ele não vai para a página pública.
+   */
+  | { tipo: 'prova'; citacao: string; autor: string; papel: string; inventado?: boolean }
   | { tipo: 'cta'; texto: string; ctaTexto: string; ctaUrl: string };
 
 export type PaginaGerada = {
@@ -25,6 +34,14 @@ export type PaginaGerada = {
   subtitulo: string;
   paleta: Paleta;
   blocos: Bloco[];
+  /**
+   * Só existe quando destino = EMAIL. Assunto e preheader são o que decide
+   * abertura, e nada disso cabe num bloco — não são conteúdo da página, são
+   * metadados do envio. Landing ignora.
+   */
+  email?: { assuntos: string[]; preheader: string };
+  /** Notas da segunda passada. Vão para a tela, não para o banco. */
+  notas?: string[];
   /**
    * Preenchido pelo código depois da geração, NUNCA pelo modelo — por isso não
    * aparece em PAGINA_SCHEMA. Pedir URL de imagem a um modelo de texto só
@@ -80,6 +97,41 @@ const BLOCO_LISTA = {
   additionalProperties: false,
 };
 
+const BLOCO_FAQ = {
+  type: 'object',
+  properties: {
+    tipo: { type: 'string', enum: ['faq'] },
+    titulo: { type: 'string' },
+    itens: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          pergunta: { type: 'string' },
+          resposta: { type: 'string' },
+        },
+        required: ['pergunta', 'resposta'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['tipo', 'titulo', 'itens'],
+  additionalProperties: false,
+};
+
+// Sem `inventado` aqui de propósito: quem marca é o backend, não o modelo.
+const BLOCO_PROVA = {
+  type: 'object',
+  properties: {
+    tipo: { type: 'string', enum: ['prova'] },
+    citacao: { type: 'string' },
+    autor: { type: 'string' },
+    papel: { type: 'string' },
+  },
+  required: ['tipo', 'citacao', 'autor', 'papel'],
+  additionalProperties: false,
+};
+
 const BLOCO_CTA = {
   type: 'object',
   properties: {
@@ -101,33 +153,80 @@ const BLOCO_CTA = {
  * obrigatório em `required` é garantia. `meio` só aceita os blocos que podem
  * mesmo repetir.
  */
-export const PAGINA_SCHEMA = {
+const PALETA_SCHEMA = {
   type: 'object',
   properties: {
-    titulo: { type: 'string' },
-    subtitulo: { type: 'string' },
-    paleta: {
-      type: 'object',
-      properties: {
-        corPrimaria: { type: 'string' },
-        corFundo: { type: 'string' },
-        corTexto: { type: 'string' },
-      },
-      required: ['corPrimaria', 'corFundo', 'corTexto'],
-      additionalProperties: false,
-    },
-    hero: BLOCO_HERO,
-    meio: {
-      type: 'array',
-      items: { anyOf: [BLOCO_TEXTO, BLOCO_LISTA] },
-    },
-    cta: BLOCO_CTA,
+    corPrimaria: { type: 'string' },
+    corFundo: { type: 'string' },
+    corTexto: { type: 'string' },
   },
-  required: ['titulo', 'subtitulo', 'paleta', 'hero', 'meio', 'cta'],
+  required: ['corPrimaria', 'corFundo', 'corTexto'],
   additionalProperties: false,
 };
 
-/** Resposta crua do modelo (a forma de PAGINA_SCHEMA), antes de virar blocos. */
+/**
+ * `strict: true` exige que TODA propriedade esteja em `required` — não existe
+ * campo opcional em structured output. Por isso o schema é montado por destino
+ * em vez de um só com `email` opcional: o tipo `PaginaGerada` continua um, os
+ * schemas é que divergem.
+ *
+ * `faq` só na landing: quebrar objeção é trabalho de página, e-mail existe para
+ * ganhar o clique, não para responder cinco perguntas na caixa de entrada.
+ */
+function montarSchema(opcoes: { email: boolean; notas: boolean }) {
+  const meio = opcoes.email
+    ? [BLOCO_TEXTO, BLOCO_LISTA, BLOCO_PROVA]
+    : [BLOCO_TEXTO, BLOCO_LISTA, BLOCO_PROVA, BLOCO_FAQ];
+
+  const properties: Record<string, unknown> = {
+    titulo: { type: 'string' },
+    subtitulo: { type: 'string' },
+    paleta: PALETA_SCHEMA,
+    hero: BLOCO_HERO,
+    meio: { type: 'array', items: { anyOf: meio } },
+    cta: BLOCO_CTA,
+  };
+
+  if (opcoes.email) {
+    properties.email = {
+      type: 'object',
+      properties: {
+        // Quatro para o operador escolher: escolher entre alternativas é onde
+        // a pessoa agrega; escrever assunto do zero, não.
+        assuntos: { type: 'array', items: { type: 'string' } },
+        preheader: { type: 'string' },
+      },
+      required: ['assuntos', 'preheader'],
+      additionalProperties: false,
+    };
+  }
+
+  if (opcoes.notas) {
+    properties.notas = { type: 'array', items: { type: 'string' } };
+  }
+
+  return {
+    type: 'object',
+    properties,
+    required: Object.keys(properties),
+    additionalProperties: false,
+  };
+}
+
+/** Primeira passada. */
+export const PAGINA_SCHEMA = montarSchema({ email: false, notas: false });
+export const EMAIL_SCHEMA = montarSchema({ email: true, notas: false });
+
+/** Segunda passada: mesma forma, mais o que foi corrigido. */
+export const PAGINA_REVISAO_SCHEMA = montarSchema({ email: false, notas: true });
+export const EMAIL_REVISAO_SCHEMA = montarSchema({ email: true, notas: true });
+
+export function schemaDe(destinoEmail: boolean, revisao: boolean) {
+  if (revisao) return destinoEmail ? EMAIL_REVISAO_SCHEMA : PAGINA_REVISAO_SCHEMA;
+  return destinoEmail ? EMAIL_SCHEMA : PAGINA_SCHEMA;
+}
+
+/** Resposta crua do modelo (a forma de montarSchema), antes de virar blocos. */
 export type RespostaModelo = Omit<PaginaGerada, 'blocos' | 'imagemUrl'> & {
   hero: Extract<Bloco, { tipo: 'hero' }>;
   meio: Bloco[];
@@ -138,10 +237,17 @@ export type RespostaModelo = Omit<PaginaGerada, 'blocos' | 'imagemUrl'> & {
  * Achata a resposta no `blocos` que os dois renderizadores já consomem. Mora
  * aqui, colado ao schema, porque é a outra metade dele: quem mudar um tem o
  * outro à vista.
+ *
+ * É também onde todo depoimento nasce marcado como inventado — este é o único
+ * ponto por onde texto de modelo entra no contrato, então marcar aqui não tem
+ * como ser esquecido num caminho alternativo.
  */
 export function paginaDeResposta(bruta: RespostaModelo): PaginaGerada {
   const { hero, meio, cta, ...resto } = bruta;
-  return { ...resto, blocos: [hero, ...(meio || []), cta] };
+  const blocos = [hero, ...(meio || []), cta].map((bloco) =>
+    bloco.tipo === 'prova' ? { ...bloco, inventado: true } : bloco,
+  );
+  return { ...resto, blocos };
 }
 
 /**

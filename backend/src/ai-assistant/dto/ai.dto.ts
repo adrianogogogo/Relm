@@ -1,4 +1,4 @@
-import { IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class GerarPaginaDto {
   @IsString()
@@ -28,4 +28,20 @@ export class AiConfigDto {
   @IsIn(['padrao', 'alta'])
   @IsOptional()
   imageQuality?: 'padrao' | 'alta';
+
+  /**
+   * Camada editável do prompt. O núcleo (idioma, vocabulário dos planos, URL,
+   * contrato de saída) fica no código e não é alcançável por aqui. O teto de
+   * 2000 também é aplicado no service: o DTO protege a API, o service protege
+   * qualquer outro caminho de escrita.
+   */
+  @IsString()
+  @IsOptional()
+  @MaxLength(2000)
+  tomLanding?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(2000)
+  tomEmail?: string;
 }
