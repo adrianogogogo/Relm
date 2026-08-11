@@ -22,6 +22,7 @@ import {
   Destino,
   IMAGE_MODELS,
   TEXT_MODELS,
+  getImageModelConfig,
 } from './models';
 
 const KEY_TEXT = 'ai_text_model';
@@ -59,9 +60,8 @@ export class AiAssistantService {
   }
 
   /**
-   * Valida na LEITURA, não só na escrita: um modelo pode sair do catálogo num
-   * commit futuro e a linha antiga continuaria no banco, quebrando toda geração
-   * com 400 até alguém abrir a tela.
+   * Consulta dinamicamente a API da OpenAI para trazer todos os modelos
+   * de texto e imagem disponíveis na conta.
    */
   async getConfig() {
     const rows = await this.prisma.clubSettings.findMany({
@@ -69,21 +69,63 @@ export class AiAssistantService {
     });
     const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
 
+    let availableTextModels = [...TEXT_MODELS];
+    let availableImageModels = Object.keys(IMAGE_MODELS);
+
+    if (this.openai) {
+      try {
+        const resList = await this.openai.models.list();
+        const apiIds = resList.data.map((m) => m.id);
+
+        const dynamicText = apiIds.filter(
+          (id) =>
+            /^(gpt-|o1|o3|chatgpt)/.test(id) &&
+            !id.includes('realtime') &&
+            !id.includes('audio') &&
+            !id.includes('transcribe') &&
+            !id.includes('moderation') &&
+            !id.includes('embedding') &&
+            !id.includes('instruct') &&
+            !id.includes('tts') &&
+            !id.includes('whisper'),
+        );
+        const dynamicImage = apiIds.filter((id) => /^(dall-e|gpt-image)/.test(id));
+
+        if (dynamicText.length > 0) {
+          availableTextModels = Array.from(new Set([...dynamicText, ...availableTextModels])).sort();
+        }
+        if (dynamicImage.length > 0) {
+          availableImageModels = Array.from(new Set([...dynamicImage, ...availableImageModels])).sort();
+        }
+      } catch (err: any) {
+        this.logger.warn(`Não foi possível listar modelos dinâmicos da OpenAI: ${err.message}`);
+      }
+    }
+
+    const textModel = map[KEY_TEXT] || DEFAULT_TEXT_MODEL;
+    const imageModel = map[KEY_IMAGE] || DEFAULT_IMAGE_MODEL;
+
+    // Garantir que o modelo atualmente salvo no DB apareça nas opções
+    if (textModel && !availableTextModels.includes(textModel)) {
+      availableTextModels.unshift(textModel);
+    }
+    if (imageModel && !availableImageModels.includes(imageModel)) {
+      availableImageModels.unshift(imageModel);
+    }
+
     return {
-      textModel: TEXT_MODELS.includes(map[KEY_TEXT]) ? map[KEY_TEXT] : DEFAULT_TEXT_MODEL,
-      imageModel: IMAGE_MODELS[map[KEY_IMAGE]] ? map[KEY_IMAGE] : DEFAULT_IMAGE_MODEL,
+      textModel,
+      imageModel,
       imageQuality: map[KEY_QUALITY] === 'alta' ? 'alta' : DEFAULT_IMAGE_QUALITY,
       tomLanding: map[KEY_TOM_LANDING] || '',
       tomEmail: map[KEY_TOM_EMAIL] || '',
-      textModels: TEXT_MODELS,
-      imageModels: Object.keys(IMAGE_MODELS),
+      textModels: availableTextModels,
+      imageModels: availableImageModels,
     };
   }
 
   /**
-   * `autorId` existe porque o campo de tom entra no prompt de sistema: é a única
-   * configuração daqui que muda o texto que chega ao cliente. Alteração sem
-   * rastro de autor só se descobre investigando depois.
+   * Atualiza as configurações de IA no banco de dados.
    */
   async setConfig(
     dto: {
@@ -96,11 +138,11 @@ export class AiAssistantService {
     autorId?: string,
   ) {
     const pares: [string, string][] = [];
-    if (dto.textModel && TEXT_MODELS.includes(dto.textModel)) {
-      pares.push([KEY_TEXT, dto.textModel]);
+    if (dto.textModel && dto.textModel.trim()) {
+      pares.push([KEY_TEXT, dto.textModel.trim()]);
     }
-    if (dto.imageModel && IMAGE_MODELS[dto.imageModel]) {
-      pares.push([KEY_IMAGE, dto.imageModel]);
+    if (dto.imageModel && dto.imageModel.trim()) {
+      pares.push([KEY_IMAGE, dto.imageModel.trim()]);
     }
     if (dto.imageQuality === 'alta' || dto.imageQuality === 'padrao') {
       pares.push([KEY_QUALITY, dto.imageQuality]);
@@ -224,14 +266,14 @@ export class AiAssistantService {
     destino: Destino,
     cfg: { imageModel: string; imageQuality: string },
   ): Promise<string | undefined> {
-    const modelo = IMAGE_MODELS[cfg.imageModel];
+    const modelo = getImageModelConfig(cfg.imageModel);
 
     try {
       const resposta = await this.openai!.images.generate({
         model: cfg.imageModel,
         prompt: `Fotografia realista de alta qualidade sobre ciclismo para a campanha "${tema}". ${pagina.subtitulo}. Luz natural, sem texto na imagem, sem logotipo.`,
         n: 1,
-        size: modelo.tamanho[destino],
+        size: modelo.tamanho[destino] || '1024x1024',
         ...(modelo.quality ? { quality: modelo.quality[cfg.imageQuality] } : {}),
       } as any);
 

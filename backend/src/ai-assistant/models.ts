@@ -12,28 +12,42 @@
  * também torna impossível salvar uma combinação que só falha na hora de gerar.
  */
 
-export const TEXT_MODELS = ['gpt-4o-mini', 'gpt-4o'];
+export const TEXT_MODELS = [
+  'gpt-4o-mini',
+  'gpt-4o',
+  'gpt-4o-2024-08-06',
+  'gpt-4o-2024-11-20',
+  'gpt-4-turbo',
+  'gpt-4',
+  'gpt-3.5-turbo',
+  'o3-mini',
+  'o1-mini',
+  'o1',
+];
 export const DEFAULT_TEXT_MODEL = 'gpt-4o-mini';
 
 export type Destino = 'LANDING' | 'EMAIL';
 
-type ImageModel = {
+export type ImageModel = {
   /** Tamanho por destino — só valores que o próprio modelo aceita. */
   tamanho: Record<Destino, string>;
   /** null = o modelo não aceita o parâmetro `quality`; nem enviamos. */
   quality: { padrao: string; alta: string } | null;
 };
 
-// Sem dall-e: a API não serve mais nenhum `dall-e-*` — pedir devolve
-// 400 "model does not exist", e como falha de imagem é não-fatal, a página saía
-// sem imagem em silêncio. Catálogo errado aqui é invisível em produção; só
-// entra modelo confirmado em `models.list()`.
 export const IMAGE_MODELS: Record<string, ImageModel> = {
+  'dall-e-3': {
+    tamanho: { LANDING: '1024x1024', EMAIL: '1024x1024' },
+    quality: { padrao: 'standard', alta: 'hd' },
+  },
+  'dall-e-2': {
+    tamanho: { LANDING: '1024x1024', EMAIL: '1024x1024' },
+    quality: null,
+  },
   'gpt-image-1': {
     tamanho: { LANDING: '1536x1024', EMAIL: '1024x1024' },
     quality: { padrao: 'medium', alta: 'high' },
   },
-  // Mesmos parâmetros do irmão maior, mais barato. Opção de rascunho.
   'gpt-image-1-mini': {
     tamanho: { LANDING: '1536x1024', EMAIL: '1024x1024' },
     quality: { padrao: 'medium', alta: 'high' },
@@ -42,3 +56,15 @@ export const IMAGE_MODELS: Record<string, ImageModel> = {
 
 export const DEFAULT_IMAGE_MODEL = 'gpt-image-1';
 export const DEFAULT_IMAGE_QUALITY = 'padrao';
+
+/**
+ * Retorna a configuração de tamanho e qualidade para qualquer modelo de imagem,
+ * mesmo se for retornado dinamicamente da API OpenAI.
+ */
+export function getImageModelConfig(name: string): ImageModel {
+  if (IMAGE_MODELS[name]) return IMAGE_MODELS[name];
+  if (name && name.includes('dall-e-3')) {
+    return { tamanho: { LANDING: '1024x1024', EMAIL: '1024x1024' }, quality: { padrao: 'standard', alta: 'hd' } };
+  }
+  return { tamanho: { LANDING: '1024x1024', EMAIL: '1024x1024' }, quality: null };
+}
