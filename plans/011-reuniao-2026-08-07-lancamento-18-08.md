@@ -311,3 +311,57 @@ reaproveitando a segmentação que o broadcast de WhatsApp já implementa.
 **Fora de escopo desta rodada:** gateway de pagamento (`PaymentMethod.GATEWAY` segue
 reservado), integração de apólice com a Police [10:05], geração de banner/imagem por IA
 [36:40].
+
+---
+
+## Steps 6 e 8 — como ficou (11/08/2026)
+
+Decisões fechadas em duas rodadas de grilling e executadas nos commits `65f98c2`
+(backend) e `7f16444` (frontend).
+
+### O que mudou em relação ao que existia
+
+| | Antes | Agora |
+|---|---|---|
+| Vocabulário de blocos | Dois (`HERO/FEATURES/PRICING/CTA_BANNER` no React, `hero/texto/lista/cta` órfão) | Um só: `hero`/`texto`/`lista`/`cta` + paleta, validado por `PAGINA_SCHEMA` |
+| Landing pública | Rota React `/lp/:slug`, sem OG tags | HTML do backend, com `og:title`/`og:description`/`og:image` |
+| Escolha de modelo | `<select>` chumbado no JSX, duplicado em duas telas | Configurações > Inteligência Artificial, lista servida pelo backend |
+| Imagem | URL do DALL-E (expira ~1h) ou 6 links do Unsplash duplicados | Gerada pela OpenAI e **baixada** para `uploads/marketing/` |
+| Tamanho da imagem | Fixo 512x512 | Vem do destino: landing horizontal, e-mail cabe em 600px |
+| Envio de e-mail | Laço disparando `sendPasswordResetEmail` para a base inteira | **Removido.** Exporta HTML para a ferramenta de disparo |
+
+### Por que o envio saiu de vez
+
+O transporte é nodemailer sobre `smtp.gmail.com` — teto de ~500 destinatários/dia
+e política que proíbe marketing em massa. É a **mesma conta** que manda
+redefinição de senha e aprovação de loja. Não faltava só descadastro: nunca teve
+como funcionar, e teria derrubado o transacional junto.
+
+### O que a IA decide, de fato
+
+Texto, quais blocos usar, em que ordem, e as 3 cores da paleta. Tipografia,
+espaçamento e layout de cada bloco são CSS escrito à mão. É o que garante que
+nenhuma página gerada saia quebrada no celular nem no Outlook.
+
+Custo dessa escolha: cada tipo de bloco novo é escrito **duas vezes** — uma no
+`landing-renderer` (CSS moderno) e uma no `email-renderer` (tabela, Outlook).
+
+### Pendências que dependem do servidor, não de código
+
+1. **Três migrations não aplicadas:** `20260810190000_add_audit_actor`,
+   `20260810210000_add_marketing_and_email_crm`, `20260811120000_email_crm_sem_envio`.
+   Sem a segunda, `marketing/` e `email-crm/` dão 500 em produção.
+2. **Nginx:** `location /lp/ { proxy_pass ...; }` e `location /uploads/marketing/`
+   apontando para o backend. Sem isso o link cai no SPA e a imagem dá 404.
+3. **`PUBLIC_BASE_URL`** no `.env` do backend — sem ela o `og:image` e a imagem
+   do e-mail saem com caminho relativo, que nenhum crawler nem cliente de e-mail
+   resolve.
+4. **`OPENAI_API_KEY`** no `.env` (decisão: não vai para o banco, tem cobrança
+   atrelada).
+
+### Não entregue
+
+**Botão de trocar a imagem gerada por upload.** Não existe endpoint de upload
+para `uploads/marketing/`. Enquanto isso, se a imagem sair errada (bike com
+geometria impossível é o risco conhecido), a saída é regerar. É o único item do
+escopo acordado que ficou de fora.
