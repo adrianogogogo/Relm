@@ -183,11 +183,23 @@ function renderBloco(bloco: Bloco, indice: number, primeiroTexto: boolean): stri
  * `baseUrl` precisa ser absoluto: og:image relativo é ignorado por todo
  * crawler, e o card sai sem imagem mesmo com a imagem existindo.
  */
-export function renderLanding(pagina: PaginaGerada, baseUrl = ''): string {
+/**
+ * A loja parceira que compartilha a página. Só o que a moldura de marca usa —
+ * a página é material da Relm assinado pela loja, não o contrário.
+ */
+export type LojaMarca = { tradeName: string; logoUrl?: string | null };
+
+export function renderLanding(
+  pagina: PaginaGerada,
+  baseUrl = '',
+  loja?: LojaMarca | null,
+): string {
   const t = derivarTema(pagina.paleta);
-  const imagemAbsoluta = pagina.imagemUrl?.startsWith('/')
-    ? `${baseUrl}${pagina.imagemUrl}`
-    : pagina.imagemUrl;
+  // Caminho relativo vira absoluto: crawler de WhatsApp/Facebook ignora relativo,
+  // e o logo da loja pode ter sido gravado como caminho local.
+  const absoluta = (u?: string | null) => (u?.startsWith('/') ? `${baseUrl}${u}` : u);
+  const imagemAbsoluta = absoluta(pagina.imagemUrl);
+  const logoLoja = absoluta(loja?.logoUrl);
 
   const hero = pagina.blocos.find((b) => b.tipo === 'hero') as
     | Extract<Bloco, { tipo: 'hero' }>
@@ -263,9 +275,16 @@ body::after{
   display:flex;align-items:center;justify-content:space-between;gap:16px;
   padding:22px clamp(20px,5vw,48px);color:#fff;
 }
+.marcas{display:flex;align-items:center;gap:14px;min-width:0}
 .marca{
   font-family:var(--display);font-weight:900;font-stretch:118%;
-  font-size:15px;letter-spacing:.22em;text-transform:uppercase;
+  font-size:15px;letter-spacing:.22em;text-transform:uppercase;white-space:nowrap;
+}
+/* Divisor e logo da loja: a página é material da Relm que a loja assina. */
+.marcas .risco{width:1px;height:22px;background:rgba(255,255,255,.45);flex:none}
+.logo-loja{
+  max-height:30px;max-width:132px;width:auto;object-fit:contain;
+  filter:brightness(0) invert(1);opacity:.92;
 }
 .selo{
   font-family:var(--display);font-weight:700;font-size:11px;letter-spacing:.18em;
@@ -457,33 +476,76 @@ body::after{
 @media(min-width:861px){.barra{display:none}}
 
 /* ---------- rodapé ---------- */
+/* Navy da marca, não a cor do tema: o rodapé é assinatura da Relm, e assinatura
+   não muda de cor a cada campanha. Ver .claude/skills/relm-landing-design. */
 footer{
-  border-top:1px solid var(--linha);padding:44px 0;text-align:center;
-  font-size:14px;color:var(--suave);
+  background:#0E1F40;padding:clamp(44px,6vw,64px) 0;text-align:center;
+  font-size:14px;color:rgba(255,255,255,.66);
 }
 footer strong{
   display:block;font-family:var(--display);font-weight:900;font-stretch:118%;
-  font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--tinta);margin-bottom:8px;
+  font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:#fff;margin-bottom:8px;
+}
+footer .loja-assina{
+  display:block;margin-top:18px;padding-top:18px;font-size:13px;
+  border-top:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.52);
 }
 
 /* ---------- entrada ---------- */
+/* No herói o relógio é o gatilho certo: ele já está na tela quando a página abre. */
 @keyframes surge{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
-.faixa,.fechamento{animation:surge .7s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--atraso,0ms)}
-.cartoes li{animation:surge .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--atraso,0ms)}
 .heroi .chapeu,.heroi h1,.heroi .isca,.heroi .acoes{animation:surge .85s cubic-bezier(.2,.8,.2,1) both}
 .heroi h1{animation-delay:.08s}
 .heroi .isca{animation-delay:.18s}
 .heroi .acoes{animation-delay:.28s}
 
+/* Abaixo da dobra o gatilho é o scroll. Com animation-delay, as seções
+   terminavam de animar antes de o visitante chegar nelas — ninguém via a
+   entrada. A classe js-revelar só existe se o script rodar: sem JS o conteúdo
+   nasce visível e continua visível. */
+.js-revelar .faixa,.js-revelar .fechamento,.js-revelar .cartoes li{
+  opacity:0;transform:translateY(22px);
+  transition:opacity .7s cubic-bezier(.2,.8,.2,1),transform .7s cubic-bezier(.2,.8,.2,1);
+  transition-delay:var(--atraso,0ms);
+}
+.js-revelar .visivel{opacity:1;transform:none}
+
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto}
+  .js-revelar .faixa,.js-revelar .fechamento,.js-revelar .cartoes li{opacity:1;transform:none}
 }
 </style>
+<script>
+/* Orçamento de movimento da landing: isto, e nada além. Sem biblioteca, sem
+   request externo. Roda no head para marcar o html antes da primeira pintura —
+   marcar depois faria a seção aparecer e sumir. */
+(function(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  if(!('IntersectionObserver' in window))return;
+  document.documentElement.className+=' js-revelar';
+  addEventListener('DOMContentLoaded',function(){
+    var o=new IntersectionObserver(function(itens){
+      itens.forEach(function(i){
+        if(i.isIntersecting){i.target.classList.add('visivel');o.unobserve(i.target)}
+      });
+    },{rootMargin:'0px 0px -12% 0px'});
+    document.querySelectorAll('.faixa,.fechamento,.cartoes li').forEach(function(el){o.observe(el)});
+  });
+})();
+</script>
 </head>
 <body>
 
 <header class="topo">
-  <span class="marca">Relm Care+</span>
+  <div class="marcas">
+    <span class="marca">Relm Care+</span>
+    ${
+      logoLoja
+        ? `<span class="risco" aria-hidden="true"></span>
+    <img class="logo-loja" src="${esc(logoLoja)}" alt="${esc(loja!.tradeName)}" loading="lazy" />`
+        : ''
+    }
+  </div>
   <span class="selo">Campanha por tempo limitado</span>
 </header>
 
@@ -517,6 +579,7 @@ footer strong{
 <footer>
   <strong>Relm Care+</strong>
   Clube de assinatura e garantias para ciclistas — Relm Bikes.
+  ${loja ? `<span class="loja-assina">Campanha compartilhada por ${esc(loja.tradeName)}</span>` : ''}
 </footer>
 
 ${

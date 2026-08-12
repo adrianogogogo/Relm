@@ -41,7 +41,11 @@ coverage/
 # IDE
 .idea/
 .vscode/
-.claude/
+.claude/*
+# As skills do projeto sao regra compartilhada do time, nao config de maquina:
+# precisam viajar com o repo para qualquer sessao ou IDE aplicar o mesmo
+# criterio. O resto de .claude/ (settings.local, plan, worktrees) segue fora.
+!.claude/skills/
 *.swp
 *.swo
 *~

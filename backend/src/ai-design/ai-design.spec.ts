@@ -1,6 +1,7 @@
 import { PaginaGerada, paginaDeResposta, sanitizePagina, schemaDe } from './blocks.schema';
 import { montarSistema, textoDosFatos } from '../ai-assistant/campanha-prompts';
 import { renderEmail } from './email-renderer';
+import { renderLanding } from './landing-renderer';
 
 function pagina(overrides: Partial<PaginaGerada> = {}): PaginaGerada {
   return {
@@ -184,5 +185,57 @@ describe('especialista de campanhas', () => {
 
     expect(email).toContain('quatro alternativas');
     expect(landing).not.toContain('quatro alternativas');
+  });
+});
+
+describe('renderLanding — moldura de marca e movimento', () => {
+  const loja = { tradeName: 'Bike Tri', logoUrl: '/uploads/lojas/tri.png' };
+
+  it('sem loja não inventa assinatura nem logo', () => {
+    const html = renderLanding(pagina(), 'https://relm.test');
+
+    // A classe existe sempre no <style>; o que é condicional é a marcação.
+    expect(html).not.toContain('<img class="logo-loja"');
+    expect(html).not.toContain('Campanha compartilhada por');
+  });
+
+  it('com loja assina o topo e o rodapé, com URL absoluta', () => {
+    const html = renderLanding(pagina(), 'https://relm.test', loja);
+
+    expect(html).toContain('src="https://relm.test/uploads/lojas/tri.png"');
+    expect(html).toContain('alt="Bike Tri"');
+    expect(html).toContain('Campanha compartilhada por Bike Tri');
+  });
+
+  it('rodapé usa o navy da marca, não a cor do tema', () => {
+    const html = renderLanding(
+      pagina({ paleta: { corPrimaria: '#B23A48', corFundo: '#FFF8F0', corTexto: '#2B1B17' } }),
+      '',
+    );
+
+    expect(html).toMatch(/footer\{[^}]*background:#0E1F40/);
+  });
+
+  it('conteúdo abaixo da dobra não depende de JavaScript', () => {
+    const html = renderLanding(pagina(), '');
+
+    // Todo estado escondido vive atrás de .js-revelar, classe que só o script
+    // aplica. Sem script, nada nasce invisível — regra 4 da skill de design.
+    const estilo = html.slice(html.indexOf('<style>'), html.indexOf('</style>'));
+    // @keyframes não conta: é quadro de animação, não estado base do elemento.
+    const regras = estilo.replace(/@keyframes[^}]*\}[^}]*\}/g, '').split('}');
+    const escondem = regras.filter((regra) => regra.includes('opacity:0'));
+
+    expect(escondem.length).toBeGreaterThan(0);
+    escondem.forEach((regra) => expect(regra).toContain('js-revelar'));
+  });
+
+  it('respeita prefers-reduced-motion antes de marcar o html', () => {
+    const html = renderLanding(pagina(), '');
+
+    const script = html.slice(html.indexOf('<script>'), html.indexOf('</script>'));
+    expect(script.indexOf('prefers-reduced-motion')).toBeLessThan(
+      script.indexOf('js-revelar'),
+    );
   });
 });

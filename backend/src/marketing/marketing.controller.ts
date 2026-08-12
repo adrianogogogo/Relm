@@ -26,7 +26,8 @@ export class LandingPublicController {
     const page = await this.marketingService.findBySlugPublic(slug);
     // og:image e src da imagem precisam ser absolutos: crawler ignora relativo.
     const baseUrl = this.config.get<string>('PUBLIC_BASE_URL') || '';
-    return renderLanding(page.blocksJson as unknown as PaginaGerada, baseUrl);
+    // A loja assina a moldura de marca — `findBySlugPublic` já carrega o store.
+    return renderLanding(page.blocksJson as unknown as PaginaGerada, baseUrl, page.store);
   }
 }
 
