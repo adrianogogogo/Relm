@@ -18,6 +18,16 @@ async function bootstrap() {
     prefix: '/uploads/marketing',
   });
 
+  // Fontes da landing pública, servidas daqui em vez do Google — ver o @font-face
+  // em ai-design/landing-renderer.ts. Servimos direto do pacote: copiar o .woff2
+  // para uploads/ criaria uma segunda cópia para esquecer de atualizar.
+  for (const familia of ['archivo', 'newsreader']) {
+    app.useStaticAssets(
+      join(process.cwd(), 'node_modules', '@fontsource-variable', familia, 'files'),
+      { prefix: '/fonts', maxAge: '365d', immutable: true },
+    );
+  }
+
   // Logos enviados pelo usuário chegam como data URI base64 no campo logoUrl.
   // O default do body-parser (~100kb) estoura, então elevamos para 5mb.
   // O frontend já redimensiona/comprime antes de enviar (ver utils/imageUpload).

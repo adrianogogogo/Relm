@@ -230,6 +230,16 @@ describe('renderLanding — moldura de marca e movimento', () => {
     escondem.forEach((regra) => expect(regra).toContain('js-revelar'));
   });
 
+  it('não busca fonte em CDN de terceiro', () => {
+    const html = renderLanding(pagina(), 'https://relm.test');
+
+    // Regra 3 da skill de design: página pública não entrega o IP do visitante
+    // ao Google só para carregar tipografia.
+    expect(html).not.toContain('fonts.googleapis.com');
+    expect(html).not.toContain('fonts.gstatic.com');
+    expect(html).toContain("url('https://relm.test/fonts/archivo-latin-wght-normal.woff2')");
+  });
+
   it('respeita prefers-reduced-motion antes de marcar o html', () => {
     const html = renderLanding(pagina(), '');
 

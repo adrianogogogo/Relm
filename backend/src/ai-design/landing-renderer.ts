@@ -236,10 +236,21 @@ export function renderLanding(
 <meta property="og:site_name" content="Relm Care+" />
 ${imagemAbsoluta ? `<meta property="og:image" content="${esc(imagemAbsoluta)}" />` : ''}
 <meta name="twitter:card" content="${imagemAbsoluta ? 'summary_large_image' : 'summary'}" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..900&family=Newsreader:opsz,wght@6..72,300..600&display=swap" rel="stylesheet" />
 <style>
+/* Fontes servidas por nos, nunca por CDN de terceiro: a landing e publica, e
+   carregar tipografia de fora entrega o IP de cada visitante numa plataforma
+   que controla consentimento — alem de deixar a pagina refem da rede alheia.
+   O preco do auto-hospedado e o eixo de largura: o fontsource publica um eixo
+   variavel por arquivo, entao fica o peso (usado na pagina inteira) e sai o
+   font-stretch. */
+@font-face{
+  font-family:'Archivo';font-style:normal;font-weight:400 900;font-display:swap;
+  src:url('${baseUrl}/fonts/archivo-latin-wght-normal.woff2') format('woff2-variations');
+}
+@font-face{
+  font-family:'Newsreader';font-style:normal;font-weight:300 600;font-display:swap;
+  src:url('${baseUrl}/fonts/newsreader-latin-wght-normal.woff2') format('woff2-variations');
+}
 :root{
   --fundo:${t.fundo}; --tinta:${t.tinta}; --suave:${t.suave};
   --acento:${t.acento}; --sobre-acento:${t.sobreAcento};
@@ -277,7 +288,7 @@ body::after{
 }
 .marcas{display:flex;align-items:center;gap:14px;min-width:0}
 .marca{
-  font-family:var(--display);font-weight:900;font-stretch:118%;
+  font-family:var(--display);font-weight:900;
   font-size:15px;letter-spacing:.22em;text-transform:uppercase;white-space:nowrap;
 }
 /* Divisor e logo da loja: a página é material da Relm que a loja assina. */
@@ -395,7 +406,7 @@ body::after{
 }
 .cartoes li::before{
   content:counter(c,decimal-leading-zero);position:absolute;top:-14px;right:8px;z-index:-1;
-  font-family:var(--display);font-weight:900;font-stretch:118%;font-size:6.4rem;
+  font-family:var(--display);font-weight:900;font-size:6.4rem;
   line-height:1;color:var(--acento);opacity:.14;
 }
 .cartoes li:hover{transform:translateY(-6px);border-color:var(--acento)}
@@ -483,7 +494,7 @@ footer{
   font-size:14px;color:rgba(255,255,255,.66);
 }
 footer strong{
-  display:block;font-family:var(--display);font-weight:900;font-stretch:118%;
+  display:block;font-family:var(--display);font-weight:900;
   font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:#fff;margin-bottom:8px;
 }
 footer .loja-assina{
