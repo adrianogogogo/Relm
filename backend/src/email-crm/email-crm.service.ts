@@ -94,6 +94,45 @@ export class EmailCrmService {
    * paleta ou o texto, o export sai atualizado sem depender de alguém lembrar
    * de regravar o HTML.
    */
+  /**
+   * A outra metade do export: a ferramenta de disparo precisa de LISTA, não só
+   * de HTML. Sem isto, montar o público no dia do envio é trabalho manual e
+   * silenciosamente errado.
+   *
+   * `marketingConsent` não é filtro opcional — é a fronteira de consentimento.
+   * O default da coluna é `false`, então quem nunca aceitou nunca entra; cliente
+   * inativo também não.
+   *
+   * ponytail: CSV montado à mão, com escape de aspas. Vira biblioteca no dia em
+   * que sair campo com quebra de linha — hoje só saem e-mail, nome e plano.
+   */
+  async exportRecipients(target: 'ALL' | 'CARE' | 'PLUS') {
+    const clientes = await this.prisma.customer.findMany({
+      where: {
+        active: true,
+        marketingConsent: true,
+        ...(target === 'ALL' ? {} : { subscription: { tier: target } }),
+      },
+      select: {
+        email: true,
+        fullName: true,
+        subscription: { select: { tier: true } },
+      },
+      orderBy: { fullName: 'asc' },
+    });
+
+    const campo = (valor: string) => `"${String(valor ?? '').replace(/"/g, '""')}"`;
+    const linhas = clientes.map((c) =>
+      [campo(c.email), campo(c.fullName), campo(c.subscription?.tier || 'CARE')].join(','),
+    );
+
+    return {
+      target,
+      total: clientes.length,
+      csv: ['email,nome,plano', ...linhas].join('\n'),
+    };
+  }
+
   async exportHtml(campaignId: string) {
     const campaign = await this.prisma.emailCampaign.findUnique({
       where: { id: campaignId },

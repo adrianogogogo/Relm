@@ -27,6 +27,7 @@ describe('EmailCrmService', () => {
   const mockPrisma = {
     emailTemplate: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn() },
     emailCampaign: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn() },
+    customer: { findMany: jest.fn() },
   };
 
   beforeEach(async () => {
@@ -81,5 +82,44 @@ describe('EmailCrmService', () => {
     });
 
     await expect(service.exportHtml('camp-2')).rejects.toThrow(NotFoundException);
+  });
+
+  describe('exportRecipients — lista para a ferramenta de disparo', () => {
+    it('só pede quem consentiu e está ativo', async () => {
+      mockPrisma.customer.findMany.mockResolvedValue([]);
+
+      await service.exportRecipients('ALL');
+
+      const where = mockPrisma.customer.findMany.mock.calls[0][0].where;
+      expect(where.marketingConsent).toBe(true);
+      expect(where.active).toBe(true);
+      // ALL não filtra tier — mas nunca dispensa o consentimento.
+      expect(where.subscription).toBeUndefined();
+    });
+
+    it('filtra por tier quando o alvo é um plano', async () => {
+      mockPrisma.customer.findMany.mockResolvedValue([]);
+
+      await service.exportRecipients('PLUS');
+
+      const where = mockPrisma.customer.findMany.mock.calls[0][0].where;
+      expect(where.subscription).toEqual({ tier: 'PLUS' });
+      expect(where.marketingConsent).toBe(true);
+    });
+
+    it('monta CSV com cabeçalho e escapa aspas do nome', async () => {
+      mockPrisma.customer.findMany.mockResolvedValue([
+        { email: 'maria@exemplo.test', fullName: 'Maria "Bike" Silva', subscription: { tier: 'PLUS' } },
+        { email: 'joao@exemplo.test', fullName: 'João Souza', subscription: null },
+      ]);
+
+      const { csv, total } = await service.exportRecipients('ALL');
+
+      expect(total).toBe(2);
+      expect(csv.split('\n')[0]).toBe('email,nome,plano');
+      expect(csv).toContain('"Maria ""Bike"" Silva"');
+      // Sem assinatura o cliente é CARE — a coluna nunca sai vazia.
+      expect(csv).toContain('"joao@exemplo.test","João Souza","CARE"');
+    });
   });
 });

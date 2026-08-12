@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { EmailCrmService } from './email-crm.service';
 import { CreateEmailTemplateDto, CreateEmailCampaignDto } from './dto/create-email-crm.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -35,5 +35,16 @@ export class EmailCrmController {
   @Get('campaigns/:id/export')
   exportHtml(@Param('id') id: string) {
     return this.emailCrmService.exportHtml(id);
+  }
+
+  /**
+   * Lista do público, em CSV, para subir na mesma ferramenta. Alvo inválido cai
+   * em ALL de propósito: uma base maior que a esperada salta aos olhos na
+   * conferência, enquanto uma lista vazia passa por envio bem-sucedido.
+   */
+  @Get('recipients')
+  exportRecipients(@Query('target') target?: string) {
+    const alvo = target === 'CARE' || target === 'PLUS' ? target : 'ALL';
+    return this.emailCrmService.exportRecipients(alvo);
   }
 }
