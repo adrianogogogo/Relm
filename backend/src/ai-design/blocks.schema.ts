@@ -194,14 +194,19 @@ const PALETA_SCHEMA = {
  */
 function montarSchema(opcoes: { email: boolean; notas: boolean }) {
   const meio = opcoes.email
-    ? [BLOCO_TEXTO, BLOCO_LISTA, BLOCO_PROVA, BLOCO_IMAGEM]
-    : [BLOCO_TEXTO, BLOCO_LISTA, BLOCO_PROVA, BLOCO_FAQ, BLOCO_IMAGEM];
+    ? [BLOCO_TEXTO, BLOCO_LISTA, BLOCO_PROVA]
+    : [BLOCO_TEXTO, BLOCO_LISTA, BLOCO_PROVA, BLOCO_FAQ];
 
   const properties: Record<string, unknown> = {
     titulo: { type: 'string' },
     subtitulo: { type: 'string' },
     paleta: PALETA_SCHEMA,
     hero: BLOCO_HERO,
+    // Campo próprio e obrigatório, pelo mesmo motivo de `hero` e `cta`: pedir
+    // imagem no prompt é sugestão, e o modelo devolvia página que era só texto.
+    // "Toda landing tem imagem" é regra de produto — regra de produto mora no
+    // `required`, não no pedido.
+    imagem: BLOCO_IMAGEM,
     meio: { type: 'array', items: { anyOf: meio } },
     cta: BLOCO_CTA,
   };
@@ -248,6 +253,7 @@ export function schemaDe(destinoEmail: boolean, revisao: boolean) {
 /** Resposta crua do modelo (a forma de montarSchema), antes de virar blocos. */
 export type RespostaModelo = Omit<PaginaGerada, 'blocos' | 'imagemUrl'> & {
   hero: Extract<Bloco, { tipo: 'hero' }>;
+  imagem: Extract<Bloco, { tipo: 'imagem' }>;
   meio: Bloco[];
   cta: Extract<Bloco, { tipo: 'cta' }>;
 };
@@ -262,8 +268,17 @@ export type RespostaModelo = Omit<PaginaGerada, 'blocos' | 'imagemUrl'> & {
  * como ser esquecido num caminho alternativo.
  */
 export function paginaDeResposta(bruta: RespostaModelo): PaginaGerada {
-  const { hero, meio, cta, ...resto } = bruta;
-  const blocos = [hero, ...(meio || []), cta].map((bloco) =>
+  const { hero, imagem, meio, cta, ...resto } = bruta;
+  const doMeio = meio || [];
+
+  // A imagem entra DEPOIS do primeiro bloco de meio, não antes: quem acabou de
+  // ler o hero precisa de um argumento, não de outra foto. Com meio vazio ela
+  // fica entre hero e cta, que continua sendo melhor que página só de texto.
+  const ordenados = imagem
+    ? [hero, ...doMeio.slice(0, 1), imagem, ...doMeio.slice(1), cta]
+    : [hero, ...doMeio, cta];
+
+  const blocos = ordenados.map((bloco) =>
     bloco.tipo === 'prova' ? { ...bloco, inventado: true } : bloco,
   );
   return { ...resto, blocos };

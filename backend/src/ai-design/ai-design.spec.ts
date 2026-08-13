@@ -132,6 +132,7 @@ describe('especialista de campanhas', () => {
     subtitulo: 'S',
     paleta: { corPrimaria: '#1B4965', corFundo: '#FFFFFF', corTexto: '#0A1929' },
     hero: { tipo: 'hero' as const, titulo: 'H', subtitulo: 'h', ctaTexto: 'Ir', ctaUrl: '/clube' },
+    imagem: { tipo: 'imagem' as const, descricao: 'ciclista na serra ao amanhecer', legenda: 'L' },
     meio: [],
     cta: { tipo: 'cta' as const, texto: 'C', ctaTexto: 'Ir', ctaUrl: '/clube' },
   };
@@ -153,6 +154,21 @@ describe('especialista de campanhas', () => {
 
     const gerado = pagina.blocos.find((b) => b.tipo === 'prova') as any;
     expect(gerado.inventado).toBe(true);
+  });
+
+  it('toda peça sai com imagem — é campo obrigatório, não pedido no prompt', () => {
+    for (const email of [false, true]) {
+      const props: any = schemaDe(email, false).properties;
+      expect(props.imagem).toBeDefined();
+      expect(schemaDe(email, false).required).toContain('imagem');
+    }
+
+    // E ela entra no meio da página, depois do primeiro argumento — não colada
+    // no hero, que já tem a sua própria foto.
+    const texto = { tipo: 'texto' as const, titulo: 'T', corpo: 'c' };
+    const blocos = paginaDeResposta({ ...bruta, meio: [texto] }).blocos;
+
+    expect(blocos.map((b) => b.tipo)).toEqual(['hero', 'texto', 'imagem', 'cta']);
   });
 
   it('não deixa o hero nem o cta faltarem — são campos, não itens de array', () => {
@@ -214,12 +230,8 @@ describe('bloco de imagem', () => {
     });
 
   it('o modelo não escolhe a URL — ela não existe no schema', () => {
-    const props: any = schemaDe(false, false).properties;
-    const imagem = props.meio.items.anyOf.find(
-      (b: any) => b.properties.tipo.enum[0] === 'imagem',
-    );
+    const imagem: any = (schemaDe(false, false).properties as any).imagem;
 
-    expect(imagem).toBeDefined();
     expect(Object.keys(imagem.properties)).toEqual(['tipo', 'descricao', 'legenda']);
     expect(imagem.properties.url).toBeUndefined();
   });

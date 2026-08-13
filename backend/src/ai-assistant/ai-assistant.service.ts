@@ -329,21 +329,47 @@ export class AiAssistantService {
   ): Promise<string | undefined> {
     const modelo = getImageModelConfig(cfg.imageModel);
 
-    try {
-      const resposta = await this.openai!.images.generate({
+    // Ciclismo é fixo no prompt, não sugestão: é a única categoria de imagem que
+    // faz sentido numa peça da Relm, e deixar isso a cargo do tema já rendeu
+    // foto genérica de banco de imagem.
+    const prompt = `Fotografia realista de alta qualidade sobre ciclismo para a campanha "${tema}". ${cena} Luz natural, sem texto na imagem, sem logotipo.`;
+
+    const chamar = (webp: boolean) =>
+      this.openai!.images.generate({
         model: cfg.imageModel,
-        // Ciclismo é fixo no prompt, não sugestão: é a única categoria de imagem
-        // que faz sentido numa peça da Relm, e deixar isso a cargo do tema já
-        // rendeu foto genérica de banco de imagem.
-        prompt: `Fotografia realista de alta qualidade sobre ciclismo para a campanha "${tema}". ${cena} Luz natural, sem texto na imagem, sem logotipo.`,
+        prompt,
         n: 1,
         size: modelo.tamanho[destino] || '1024x1024',
         ...(modelo.quality ? { quality: modelo.quality[cfg.imageQuality] } : {}),
         // Quem sabe comprimir é a própria API — pedir WebP aqui evita instalar
         // um processador de imagem para fazer o que um parâmetro já faz.
-        ...(modelo.webp ? { output_format: 'webp', output_compression: 80 } : {}),
+        ...(webp ? { output_format: 'webp', output_compression: 80 } : {}),
       } as any);
 
+    let webp = !!modelo.webp;
+    let resposta;
+    try {
+      resposta = await chamar(webp);
+    } catch (err: any) {
+      // WebP é otimização de peso — não pode custar a imagem. A OpenAI declara
+      // output_format só para gpt-image-1, e a lista de modelos vem da API em
+      // tempo de execução: acertar quem aceita o quê não é coisa que este código
+      // consiga garantir. Então tenta sem, uma vez, antes de desistir.
+      if (!webp) {
+        this.logger.error(`Imagem NÃO gerada para "${tema}": ${err.message}`);
+        return undefined;
+      }
+      this.logger.warn(`Modelo recusou WebP, repetindo em PNG: ${err.message}`);
+      webp = false;
+      try {
+        resposta = await chamar(false);
+      } catch (erroFinal: any) {
+        this.logger.error(`Imagem NÃO gerada para "${tema}": ${erroFinal.message}`);
+        return undefined;
+      }
+    }
+
+    try {
       const item = resposta.data?.[0];
       if (!item) return undefined;
 
@@ -352,12 +378,12 @@ export class AiAssistantService {
         ? Buffer.from(item.b64_json, 'base64')
         : Buffer.from(await (await fetch(item.url!)).arrayBuffer());
 
-      const nome = `${randomUUID()}.${modelo.webp ? 'webp' : 'png'}`;
+      const nome = `${randomUUID()}.${webp ? 'webp' : 'png'}`;
       await mkdir(IMAGE_DIR, { recursive: true });
       await writeFile(join(IMAGE_DIR, nome), bytes);
       return `/uploads/marketing/${nome}`;
     } catch (err: any) {
-      this.logger.warn(`Imagem não gerada (a página segue sem ela): ${err.message}`);
+      this.logger.error(`Imagem gerada mas não gravada para "${tema}": ${err.message}`);
       return undefined;
     }
   }
