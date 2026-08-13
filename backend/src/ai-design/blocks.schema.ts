@@ -27,6 +27,13 @@ export type Bloco =
    * este campo: ele não vai para a página pública.
    */
   | { tipo: 'prova'; citacao: string; autor: string; papel: string; inventado?: boolean }
+  /**
+   * O modelo diz ONDE cabe uma imagem e O QUE ela mostra; nunca a URL — pedir
+   * URL a um modelo de texto só produz link inventado, mesmo motivo que mantém
+   * `imagemUrl` fora do schema. `url` é preenchida pelo backend depois, pela
+   * geração ou pelo acervo.
+   */
+  | { tipo: 'imagem'; descricao: string; legenda: string; url?: string }
   | { tipo: 'cta'; texto: string; ctaTexto: string; ctaUrl: string };
 
 export type PaginaGerada = {
@@ -132,6 +139,18 @@ const BLOCO_PROVA = {
   additionalProperties: false,
 };
 
+// Sem `url` aqui de propósito: quem preenche é o backend, não o modelo.
+const BLOCO_IMAGEM = {
+  type: 'object',
+  properties: {
+    tipo: { type: 'string', enum: ['imagem'] },
+    descricao: { type: 'string' },
+    legenda: { type: 'string' },
+  },
+  required: ['tipo', 'descricao', 'legenda'],
+  additionalProperties: false,
+};
+
 const BLOCO_CTA = {
   type: 'object',
   properties: {
@@ -175,8 +194,8 @@ const PALETA_SCHEMA = {
  */
 function montarSchema(opcoes: { email: boolean; notas: boolean }) {
   const meio = opcoes.email
-    ? [BLOCO_TEXTO, BLOCO_LISTA, BLOCO_PROVA]
-    : [BLOCO_TEXTO, BLOCO_LISTA, BLOCO_PROVA, BLOCO_FAQ];
+    ? [BLOCO_TEXTO, BLOCO_LISTA, BLOCO_PROVA, BLOCO_IMAGEM]
+    : [BLOCO_TEXTO, BLOCO_LISTA, BLOCO_PROVA, BLOCO_FAQ, BLOCO_IMAGEM];
 
   const properties: Record<string, unknown> = {
     titulo: { type: 'string' },

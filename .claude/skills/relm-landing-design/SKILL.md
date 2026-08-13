@@ -73,6 +73,26 @@ Nunca interpole cor de modelo direto em CSS.
 - No **e-mail**, webfont não vale: use a pilha de sistema. Cliente de e-mail
   ignora `@font-face` com frequência suficiente para não valer o risco.
 
+## 3.1 Imagens — obrigatórias, de ciclismo, ligadas ao tema
+
+Nenhuma peça sai sem imagem. Não é preferência: é requisito do produto.
+
+- **Herói:** sempre. É a primeira coisa que a pessoa vê.
+- **Miolo:** um a dois blocos `imagem`, separando blocos de texto. Página só de
+  letra não é landing, é documento.
+- **O que a foto mostra:** cena real de ciclismo ligada ao tema da campanha, com
+  sujeito, ação e ambiente. "Ciclismo" é fixo no prompt de geração — não fica a
+  cargo do tema, porque assim já saiu foto genérica de banco de imagem.
+- **Quem escolhe a URL:** o backend, nunca o modelo. O modelo só diz *onde* cabe
+  a imagem e *o que* ela mostra (`descricao`), mais a `legenda`. Pedir URL a
+  modelo de texto produz link inventado.
+- **Quando a geração falha:** cai no acervo em `uploads/marketing/acervo/`. Se o
+  acervo estiver vazio, isso é ERRO no log, não warn — peça sem imagem chegando
+  ao cliente não pode ser descoberta pelo cliente.
+- **Bloco sem `url` não renderiza.** Some, em vez de virar moldura cinza. Buraco
+  na página é pior que uma seção a menos.
+- **`legenda`** acrescenta informação; não repete o óbvio da foto.
+
 ## 4. Movimento
 
 Orçamento: **~15 linhas de JavaScript inline**, sem biblioteca, sem request

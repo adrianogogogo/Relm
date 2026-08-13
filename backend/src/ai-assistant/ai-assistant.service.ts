@@ -2,10 +2,12 @@ import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 import { mkdir, writeFile } from 'fs/promises';
+import { readdirSync } from 'fs';
 import { join } from 'path';
 import OpenAI from 'openai';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  Bloco,
   PaginaGerada,
   RespostaModelo,
   paginaDeResposta,
@@ -36,6 +38,13 @@ const TOM_MAX = 2000;
 
 /** Onde a imagem gerada é gravada. Servido estaticamente em /uploads/marketing. */
 const IMAGE_DIR = join(process.cwd(), 'uploads', 'marketing');
+
+/**
+ * Acervo de fotos reais de ciclismo, alimentado pela equipe. É a rede de
+ * segurança para quando a geração falha — sem ela, "toda peça tem imagem" seria
+ * promessa dependente de uma API de terceiro estar de pé.
+ */
+const ACERVO_DIR = join(IMAGE_DIR, 'acervo');
 
 @Injectable()
 export class AiAssistantService {
@@ -222,8 +231,60 @@ export class AiAssistantService {
     }
 
     const pagina = sanitizePagina(paginaDeResposta(bruta));
-    pagina.imagemUrl = await this.gerarImagem(tema, pagina, destino, cfg);
+    await this.preencherImagens(tema, pagina, destino, cfg);
     return pagina;
+  }
+
+  /**
+   * Toda peça sai com imagem de ciclismo ligada ao tema — o herói e os blocos de
+   * imagem que o modelo posicionou. Em paralelo porque são chamadas
+   * independentes: em série, três imagens triplicariam a espera da tela.
+   *
+   * Quando a geração falha, cai no acervo em vez de sair sem imagem. Se o acervo
+   * também estiver vazio, isso vira ERRO no log — antes era um warn que ninguém
+   * lia, e a peça seguia para o cliente sem ninguém saber.
+   */
+  private async preencherImagens(
+    tema: string,
+    pagina: PaginaGerada,
+    destino: Destino,
+    cfg: { imageModel: string; imageQuality: string },
+  ): Promise<void> {
+    const blocosImagem = pagina.blocos.filter(
+      (b): b is Extract<Bloco, { tipo: 'imagem' }> => b.tipo === 'imagem',
+    );
+
+    const [heroi, ...doMeio] = await Promise.all([
+      this.gerarImagem(tema, `${pagina.subtitulo}. Cena de abertura, plano aberto.`, destino, cfg),
+      ...blocosImagem.map((b) => this.gerarImagem(tema, b.descricao, destino, cfg)),
+    ]);
+
+    pagina.imagemUrl = heroi || this.doAcervo();
+    blocosImagem.forEach((bloco, i) => {
+      bloco.url = doMeio[i] || this.doAcervo();
+    });
+
+    if (!pagina.imagemUrl) {
+      this.logger.error(
+        `Peça "${tema}" sai SEM imagem: geração falhou e o acervo em ${ACERVO_DIR} está vazio.`,
+      );
+    }
+  }
+
+  /**
+   * Rede de segurança para quando a geração falha. A equipe alimenta a pasta com
+   * fotos reais de ciclismo; a escolha aqui é aleatória de propósito — casar
+   * foto com tema exigiria tags, e tag que ninguém preenche mente mais do que
+   * ajuda. Pasta vazia devolve undefined e quem chamou registra o erro.
+   */
+  private doAcervo(): string | undefined {
+    try {
+      const arquivos = readdirSync(ACERVO_DIR).filter((f) => /\.(png|jpe?g|webp)$/i.test(f));
+      if (!arquivos.length) return undefined;
+      return `/uploads/marketing/acervo/${arquivos[Math.floor(Math.random() * arquivos.length)]}`;
+    } catch {
+      return undefined;
+    }
   }
 
   /** Uma chamada de texto presa a um schema. As duas passadas usam esta. */
@@ -262,7 +323,7 @@ export class AiAssistantService {
    */
   private async gerarImagem(
     tema: string,
-    pagina: PaginaGerada,
+    cena: string,
     destino: Destino,
     cfg: { imageModel: string; imageQuality: string },
   ): Promise<string | undefined> {
@@ -271,7 +332,10 @@ export class AiAssistantService {
     try {
       const resposta = await this.openai!.images.generate({
         model: cfg.imageModel,
-        prompt: `Fotografia realista de alta qualidade sobre ciclismo para a campanha "${tema}". ${pagina.subtitulo}. Luz natural, sem texto na imagem, sem logotipo.`,
+        // Ciclismo é fixo no prompt, não sugestão: é a única categoria de imagem
+        // que faz sentido numa peça da Relm, e deixar isso a cargo do tema já
+        // rendeu foto genérica de banco de imagem.
+        prompt: `Fotografia realista de alta qualidade sobre ciclismo para a campanha "${tema}". ${cena} Luz natural, sem texto na imagem, sem logotipo.`,
         n: 1,
         size: modelo.tamanho[destino] || '1024x1024',
         ...(modelo.quality ? { quality: modelo.quality[cfg.imageQuality] } : {}),

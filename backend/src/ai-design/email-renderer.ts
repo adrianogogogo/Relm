@@ -79,6 +79,15 @@ function renderBloco(bloco: Bloco, p: PaginaGerada): string {
   </table>
 </td></tr>`;
 
+    // Imagem em e-mail é <img> com width fixo e height:auto — cliente de e-mail
+    // ignora aspect-ratio e object-fit. Sem url o bloco some, igual à landing.
+    case 'imagem':
+      if (!bloco.url) return '';
+      return `<tr><td style="padding:8px 32px 20px 32px;">
+  <img src="${esc(bloco.url)}" alt="${esc(bloco.descricao)}" width="536" style="display:block;width:100%;max-width:536px;height:auto;border:0;border-radius:10px;" />
+  <p style="${base}font-size:13px;line-height:1.5;font-style:italic;opacity:0.7;margin:10px 0 0 0;text-align:center;">${esc(bloco.legenda)}</p>
+</td></tr>`;
+
     case 'cta':
       return `<tr><td style="padding:24px 32px 40px 32px;text-align:center;">
   <p style="${base}font-size:18px;line-height:1.5;margin:0;">${esc(bloco.texto)}</p>

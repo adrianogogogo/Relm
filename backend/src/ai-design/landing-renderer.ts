@@ -169,6 +169,17 @@ function renderBloco(bloco: Bloco, indice: number, primeiroTexto: boolean): stri
     </figure>
   </section>`;
 
+    // Sem `url` o bloco não vira uma moldura vazia — some. Página com buraco
+    // cinza é pior que página com uma seção a menos.
+    case 'imagem':
+      if (!bloco.url) return '';
+      return `<section class="faixa figura"${atraso}>
+    <figure class="miolo">
+      <img src="${esc(bloco.url)}" alt="${esc(bloco.descricao)}" loading="lazy" />
+      <figcaption>${esc(bloco.legenda)}</figcaption>
+    </figure>
+  </section>`;
+
     case 'cta':
       return `<section class="fechamento"${atraso}>
     <div class="miolo centro">
@@ -302,6 +313,10 @@ body::after{
   text-transform:uppercase;padding:7px 14px;border:1px solid rgba(255,255,255,.55);
   border-radius:999px;backdrop-filter:blur(6px);white-space:nowrap;
 }
+/* No celular o selo espremia a marca ate sobrar "RELM" — e a pagina circula por
+   WhatsApp, entao essa e a tela da maioria. Entre dizer de quem e a pagina e
+   dizer que a campanha tem prazo, a marca ganha: o prazo o texto repete. */
+@media(max-width:600px){.selo{display:none}}
 
 /* ---------- herói ---------- */
 .heroi{
@@ -485,6 +500,17 @@ body::after{
 .barra .resumo span{display:block;font-size:12.5px;color:var(--suave);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .barra .btn{padding:14px 20px;font-size:13px;white-space:nowrap}
 @media(min-width:861px){.barra{display:none}}
+
+/* ---------- figura ---------- */
+.figura figure{margin:0}
+.figura img{
+  display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;
+  border-radius:18px;background:var(--superficie);
+}
+.figura figcaption{
+  margin-top:14px;font-size:14.5px;line-height:1.5;color:var(--suave);
+  text-align:center;font-style:italic;
+}
 
 /* ---------- rodapé ---------- */
 /* Navy da marca, não a cor do tema: o rodapé é assinatura da Relm, e assinatura

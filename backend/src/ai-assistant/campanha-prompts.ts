@@ -51,7 +51,15 @@ Use "faq" quando houver objeção previsível ("posso usar em qualquer loja?",
 
 Use "prova" no máximo uma vez, e escreva um depoimento plausível de cliente real:
 uma pessoa concreta, um ganho específico, sem superlativo. O operador confirma ou
-substitui antes de publicar.`;
+substitui antes de publicar.
+
+Use "imagem" uma ou duas vezes, sempre separando blocos de texto — a página não
+pode ser uma parede de letra. Em "descricao" descreva uma cena REAL de ciclismo
+ligada ao tema desta campanha, com sujeito, ação e ambiente ("mecânica ajustando
+o câmbio traseiro numa bancada de oficina"), porque é ela que vira o prompt da
+foto; nunca escreva ali o nome da marca nem peça texto dentro da imagem. Em
+"legenda" escreva uma linha curta que acrescente informação, não que repita o
+óbvio da foto.`;
 
 const EMAIL = `Você escreve e-mails de campanha para a Relm Bikes, uma marca de
 bicicletas com clube de assinatura vendido por lojas parceiras no Brasil.

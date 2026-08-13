@@ -200,6 +200,50 @@ describe('especialista de campanhas', () => {
   });
 });
 
+describe('bloco de imagem', () => {
+  const comImagem = (url?: string) =>
+    pagina({
+      blocos: [
+        {
+          tipo: 'imagem',
+          descricao: 'mecânica ajustando o câmbio traseiro na bancada da oficina',
+          legenda: 'Dez minutos de bancada, uma temporada sem barulho.',
+          ...(url ? { url } : {}),
+        },
+      ],
+    });
+
+  it('o modelo não escolhe a URL — ela não existe no schema', () => {
+    const props: any = schemaDe(false, false).properties;
+    const imagem = props.meio.items.anyOf.find(
+      (b: any) => b.properties.tipo.enum[0] === 'imagem',
+    );
+
+    expect(imagem).toBeDefined();
+    expect(Object.keys(imagem.properties)).toEqual(['tipo', 'descricao', 'legenda']);
+    expect(imagem.properties.url).toBeUndefined();
+  });
+
+  it('landing e e-mail renderizam a foto com a descrição no alt', () => {
+    const landing = renderLanding(comImagem('/uploads/marketing/a.png'), 'https://relm.test');
+    const email = renderEmail(comImagem('/uploads/marketing/a.png'), 'https://relm.test');
+
+    for (const html of [landing, email]) {
+      expect(html).toContain('alt="mecânica ajustando o câmbio traseiro na bancada da oficina"');
+      expect(html).toContain('Dez minutos de bancada');
+    }
+  });
+
+  it('sem URL o bloco some em vez de virar moldura vazia', () => {
+    const landing = renderLanding(comImagem(), 'https://relm.test');
+    const email = renderEmail(comImagem(), 'https://relm.test');
+
+    expect(landing).not.toContain('<figure');
+    expect(landing).not.toContain('Dez minutos de bancada');
+    expect(email).not.toContain('Dez minutos de bancada');
+  });
+});
+
 describe('renderLanding — moldura de marca e movimento', () => {
   const loja = { tradeName: 'Bike Tri', logoUrl: '/uploads/lojas/tri.png' };
 
