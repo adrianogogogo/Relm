@@ -33,6 +33,15 @@ export type ImageModel = {
   tamanho: Record<Destino, string>;
   /** null = o modelo não aceita o parâmetro `quality`; nem enviamos. */
   quality: { padrao: string; alta: string } | null;
+  /**
+   * O modelo aceita `output_format`/`output_compression`. Só a família
+   * gpt-image aceita — dall-e devolve PNG e ponto.
+   *
+   * Importa porque o PNG que sai daqui tem ~2 MB, e uma landing com três
+   * imagens vira 7 MB no 4G de dentro da loja. Em WebP a mesma peça cai para a
+   * casa das centenas de KB.
+   */
+  webp?: boolean;
 };
 
 export const IMAGE_MODELS: Record<string, ImageModel> = {
@@ -47,10 +56,12 @@ export const IMAGE_MODELS: Record<string, ImageModel> = {
   'gpt-image-1': {
     tamanho: { LANDING: '1536x1024', EMAIL: '1024x1024' },
     quality: { padrao: 'medium', alta: 'high' },
+    webp: true,
   },
   'gpt-image-1-mini': {
     tamanho: { LANDING: '1536x1024', EMAIL: '1024x1024' },
     quality: { padrao: 'medium', alta: 'high' },
+    webp: true,
   },
 };
 
@@ -66,5 +77,11 @@ export function getImageModelConfig(name: string): ImageModel {
   if (name && name.includes('dall-e-3')) {
     return { tamanho: { LANDING: '1024x1024', EMAIL: '1024x1024' }, quality: { padrao: 'standard', alta: 'hd' } };
   }
-  return { tamanho: { LANDING: '1024x1024', EMAIL: '1024x1024' }, quality: null };
+  // Modelo novo da familia gpt-image herda o WebP: o formato acompanha a
+  // familia, e presumir PNG num modelo que aceita WebP so custa peso na pagina.
+  return {
+    tamanho: { LANDING: '1024x1024', EMAIL: '1024x1024' },
+    quality: null,
+    webp: name?.startsWith('gpt-image') || false,
+  };
 }

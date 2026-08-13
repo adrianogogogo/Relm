@@ -339,6 +339,9 @@ export class AiAssistantService {
         n: 1,
         size: modelo.tamanho[destino] || '1024x1024',
         ...(modelo.quality ? { quality: modelo.quality[cfg.imageQuality] } : {}),
+        // Quem sabe comprimir é a própria API — pedir WebP aqui evita instalar
+        // um processador de imagem para fazer o que um parâmetro já faz.
+        ...(modelo.webp ? { output_format: 'webp', output_compression: 80 } : {}),
       } as any);
 
       const item = resposta.data?.[0];
@@ -349,7 +352,7 @@ export class AiAssistantService {
         ? Buffer.from(item.b64_json, 'base64')
         : Buffer.from(await (await fetch(item.url!)).arrayBuffer());
 
-      const nome = `${randomUUID()}.png`;
+      const nome = `${randomUUID()}.${modelo.webp ? 'webp' : 'png'}`;
       await mkdir(IMAGE_DIR, { recursive: true });
       await writeFile(join(IMAGE_DIR, nome), bytes);
       return `/uploads/marketing/${nome}`;
