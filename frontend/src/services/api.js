@@ -478,6 +478,10 @@ export const emailCrmAPI = {
   // Sem envio: a plataforma gera o HTML, o disparo acontece na ferramenta de
   // e-mail marketing, que tem lista, consentimento e descadastro.
   exportHtml: (id) => api.get(`/email-crm/campaigns/${id}/export`).then((res) => res.data),
+  // A outra metade do export: a ferramenta precisa da lista, não só da peça.
+  // Só sai quem consentiu — o filtro é do backend, não desta chamada.
+  getRecipients: (target = 'ALL') =>
+    api.get('/email-crm/recipients', { params: { target } }).then((res) => res.data),
 };
 
 export const aiAssistantAPI = {

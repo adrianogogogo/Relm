@@ -154,6 +154,15 @@ export default function AdminEmailCampaignsPage() {
     onError: (err) => setErro(err?.response?.data?.message || 'Falha ao exportar.'),
   });
 
+  // A peça sozinha não dispara nada: a ferramenta de e-mail precisa da lista
+  // junto. Só entra quem aceitou receber — o recorte é feito no backend.
+  const baixarLista = useMutation({
+    mutationFn: emailCrmAPI.getRecipients,
+    onSuccess: (res) =>
+      baixar(`destinatarios-${String(res.target).toLowerCase()}.csv`, res.csv),
+    onError: (err) => setErro(err?.response?.data?.message || 'Falha ao baixar a lista.'),
+  });
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -161,6 +170,28 @@ export default function AdminEmailCampaignsPage() {
         subtitle="Gere o conteúdo aqui e dispare na sua ferramenta de e-mail marketing"
         icon={MdMail}
       />
+
+      {/* A peça e a lista sobem juntas na ferramenta de disparo. Ficam no topo,
+          e não dentro de cada campanha, porque o público é do envio, não do
+          conteúdo — a mesma lista serve a qualquer peça do dia. */}
+      <Card className="p-4 flex flex-wrap items-center gap-3">
+        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+          Baixar lista de destinatários
+        </span>
+        {['ALL', 'CARE', 'PLUS'].map((alvo) => (
+          <Button
+            key={alvo}
+            variant="secondary"
+            onClick={() => baixarLista.mutate(alvo)}
+            disabled={baixarLista.isPending}
+          >
+            {alvo === 'ALL' ? 'Todos' : alvo === 'CARE' ? 'Care' : 'Care Plus'}
+          </Button>
+        ))}
+        <span className="text-xs text-slate-500 dark:text-slate-400">
+          Só entra quem aceitou receber comunicações.
+        </span>
+      </Card>
 
       <Card className="p-6 space-y-4">
         <textarea
