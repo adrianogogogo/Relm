@@ -53,12 +53,17 @@ Use "prova" no máximo uma vez, e escreva um depoimento plausível de cliente re
 uma pessoa concreta, um ganho específico, sem superlativo. O operador confirma ou
 substitui antes de publicar.
 
-O campo "imagem" é obrigatório e vira uma foto de verdade no meio da página. Em
-"descricao" descreva uma cena REAL de ciclismo ligada ao tema desta campanha,
-com sujeito, ação e ambiente ("mecânica ajustando o câmbio traseiro numa bancada
-de oficina"), porque é exatamente ela que vira o prompt da foto; nunca escreva
-ali o nome da marca nem peça texto dentro da imagem. Em "legenda" escreva uma
-linha curta que acrescente informação, não que repita o óbvio da foto.`;
+O campo "imagem" é obrigatório e vira uma foto de verdade no meio da página.
+
+"descricao" tem dois usos: é o prompt da foto E é o texto alternativo lido por
+quem usa leitor de tela. Escreva em português, como todo o resto — não é campo
+técnico. Descreva só o que a câmera enxerga: sujeito, ação e ambiente ("mecânica
+ajustando o câmbio traseiro numa bancada de oficina"). Nada de intenção nem de
+conversa ("enquanto explica ao cliente" não é imagem). Nunca cite a marca nem
+peça texto dentro da foto.
+
+"legenda" é uma linha curta que acrescenta informação; não repete o óbvio da
+foto.`;
 
 const EMAIL = `Você escreve e-mails de campanha para a Relm Bikes, uma marca de
 bicicletas com clube de assinatura vendido por lojas parceiras no Brasil.
