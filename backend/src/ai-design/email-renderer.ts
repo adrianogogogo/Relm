@@ -117,6 +117,13 @@ export function renderEmail(entrada: PaginaGerada, baseUrl = ''): string {
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f4f4f4;">
     <tr><td align="center" style="padding:24px 12px;">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;max-width:100%;background-color:${corFundo};border-radius:12px;overflow:hidden;color:${corTexto};">
+<!-- Faixa da marca, sempre no navy Relm e nunca na cor do tema: na caixa de
+     entrada a peca disputa atencao com dezenas de outras, e quem identifica o
+     remetente e a marca, nao a paleta da campanha do mes. Ver a skill
+     .claude/skills/relm-landing-design, secao 1. -->
+<tr><td style="background-color:#0E1F40;padding:18px 32px;">
+  <span style="font-family:Arial,Helvetica,sans-serif;font-weight:bold;font-size:14px;letter-spacing:2.5px;text-transform:uppercase;color:#ffffff;">Relm Care+</span>
+</td></tr>
 ${pagina.blocos.map((bloco) => renderBloco(bloco, pagina)).join('\n')}
       </table>
       <p style="font-family:Arial,sans-serif;font-size:12px;color:#888888;margin:16px 0 0 0;">

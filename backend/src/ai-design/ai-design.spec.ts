@@ -108,6 +108,18 @@ describe('renderEmail', () => {
     }
   });
 
+  it('assina com a faixa da marca, fora da paleta do tema', () => {
+    const html = renderEmail(
+      pagina({ paleta: { corPrimaria: '#B23A48', corFundo: '#FFF8F0', corTexto: '#2B1B17' } }),
+      'https://relm.test',
+    );
+
+    // Na caixa de entrada quem identifica o remetente é a marca, não a cor da
+    // campanha do mês — regra 1 da skill de design.
+    expect(html).toContain('background-color:#0E1F40');
+    expect(html.indexOf('#0E1F40')).toBeLessThan(html.indexOf('#B23A48'));
+  });
+
   it('aplica a paleta gerada, não uma cor fixa', () => {
     const html = renderEmail(pagina());
     expect(html).toContain('#1B4965');
