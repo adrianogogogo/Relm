@@ -75,6 +75,7 @@ upload_dir(sftp, os.path.join(ROOT, 'backend', 'scripts'), BE + '/scripts')
 upload_dir(sftp, os.path.join(ROOT, 'backend', 'test'), BE + '/test')
 acervo_local = os.path.join(ROOT, 'backend', 'uploads', 'marketing', 'acervo')
 if os.path.isdir(acervo_local):
+    run(c, 'mkdir -p %s/uploads/marketing/acervo' % BE)
     upload_dir(sftp, acervo_local, BE + '/uploads/marketing/acervo')
 sftp.put(os.path.join(ROOT, 'backend', 'package.json'), BE + '/package.json')
 
