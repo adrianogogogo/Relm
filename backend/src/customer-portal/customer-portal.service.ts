@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateCustomerProfileDto } from './dto/update-profile.dto';
 import { UpdateCustomerPasswordDto } from './dto/update-password.dto';
@@ -173,12 +174,36 @@ export class CustomerPortalService {
   }
 
   async getEvents(customerId: string) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { id: true, email: true },
+    });
+
+    const email = customer?.email?.trim().toLowerCase();
+
     return this.prisma.eventRegistration.findMany({
-      where: { customerId },
+      where: {
+        OR: [
+          { customerId },
+          ...(email
+            ? [
+                {
+                  customer: {
+                    email: {
+                      equals: email,
+                      mode: Prisma.QueryMode.insensitive,
+                    },
+                  },
+                },
+              ]
+            : []),
+        ],
+      },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         createdAt: true,
+        attended: true,
         event: {
           select: {
             id: true,
@@ -187,10 +212,63 @@ export class CustomerPortalService {
             location: true,
             startAt: true,
             endAt: true,
+            active: true,
           },
         },
       },
     });
+  }
+
+  async registerEvent(customerId: string, eventId: string) {
+    const event = await this.prisma.event.findUnique({
+      where: { id: eventId },
+      include: { _count: { select: { registrations: true } } },
+    });
+
+    if (!event) throw new BadRequestException('Evento não encontrado');
+    if (!event.active) throw new BadRequestException('Inscrições encerradas para este evento');
+
+    if (event.maxParticipants && event._count.registrations >= event.maxParticipants) {
+      throw new BadRequestException('Evento sem vagas disponíveis');
+    }
+
+    const customer = await this.prisma.customer.findUniqueOrThrow({
+      where: { id: customerId },
+    });
+
+    const email = customer.email.trim().toLowerCase();
+
+    const existing = await this.prisma.eventRegistration.findFirst({
+      where: {
+        eventId,
+        OR: [
+          { customerId },
+          {
+            customer: {
+              email: {
+                equals: email,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    if (existing) {
+      throw new BadRequestException('Você já está inscrito neste evento');
+    }
+
+    const reg = await this.prisma.eventRegistration.create({
+      data: { eventId, customerId },
+    });
+
+    return {
+      success: true,
+      message: 'Inscrição realizada com sucesso!',
+      registrationId: reg.id,
+      event: { id: event.id, title: event.title, startAt: event.startAt },
+    };
   }
 
   async getBenefits() {

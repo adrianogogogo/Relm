@@ -1,4 +1,15 @@
-import { Controller, Get, Put, UseGuards, Request, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Param,
+  UseGuards,
+  Request,
+  Body,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CustomerPortalService } from './customer-portal.service';
 import { CustomerJwtGuard } from '../customer-auth/customer-jwt.guard';
@@ -49,6 +60,12 @@ export class CustomerPortalController {
   @Get('events')
   getEvents(@Request() req: any) {
     return this.customerPortalService.getEvents(req.user.customerId);
+  }
+
+  @Post('events/:id/register')
+  @HttpCode(HttpStatus.CREATED)
+  registerEvent(@Request() req: any, @Param('id') eventId: string) {
+    return this.customerPortalService.registerEvent(req.user.customerId, eventId);
   }
 
   @Get('benefits')

@@ -22,12 +22,16 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { FeedAudienceGuard } from '../common/guards/feed-audience.guard';
 
+import { ConfigService } from '@nestjs/config';
+import * as jwt from 'jsonwebtoken';
+
 @ApiTags('events')
 @Controller()
 export class EventsController {
   constructor(
     private eventsService: EventsService,
     private engagementService: EngagementService,
+    private config: ConfigService,
   ) {}
 
   // ── Public ───────────────────────────────────────────────────────────────
@@ -38,8 +42,21 @@ export class EventsController {
 
   @Post('public/events/:id/register')
   @HttpCode(HttpStatus.CREATED)
-  register(@Param('id') id: string, @Body() body: RegisterEventDto) {
-    return this.eventsService.register(id, body);
+  register(@Param('id') id: string, @Body() body: RegisterEventDto, @Req() req: any) {
+    let authCustomerId: string | undefined = undefined;
+    const auth: string | undefined = req.headers?.authorization;
+    if (auth && auth.startsWith('Bearer ')) {
+      const token = auth.slice('Bearer '.length).trim();
+      const customerSecret = this.config.get<string>('CUSTOMER_JWT_SECRET') || this.config.get<string>('JWT_SECRET');
+      const defaultSecret = this.config.get<string>('JWT_SECRET');
+      try {
+        const payload: any = jwt.verify(token, customerSecret as string) || jwt.verify(token, defaultSecret as string);
+        if (payload?.type === 'CUSTOMER' || payload?.customerId) {
+          authCustomerId = payload.customerId || payload.sub;
+        }
+      } catch {}
+    }
+    return this.eventsService.register(id, body, authCustomerId);
   }
 
   // ── Feed segmentado por perfil (autenticado: CLIENTE/LOJA/DISTRIBUIDOR) ────

@@ -317,6 +317,7 @@ export const customerPortalAPI = {
   declineInsuranceQuote: (id) =>
     api.patch(`/customer-portal/insurance-quotes/${id}/decline`).then((res) => res.data),
   getEvents: () => api.get('/customer-portal/events').then((res) => res.data),
+  registerEvent: (id) => api.post(`/customer-portal/events/${id}/register`).then((res) => res.data),
   getBenefits: () => api.get('/customer-portal/benefits').then((res) => res.data),
   getPointsBalance: () => api.get('/v1/points/balance').then((res) => res.data),
   // Wave 3 — Indicação

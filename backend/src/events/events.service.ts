@@ -4,6 +4,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { RegisterEventDto } from './dto/register-event.dto';
@@ -105,7 +106,7 @@ export class EventsService {
     return this.prisma.event.update({ where: { id }, data: { active: false } });
   }
 
-  async register(eventId: string, body: RegisterEventDto) {
+  async register(eventId: string, body: RegisterEventDto, authCustomerId?: string) {
     const event = await this.prisma.event.findUnique({
       where: { id: eventId },
       include: { _count: { select: { registrations: true } } },
@@ -118,29 +119,63 @@ export class EventsService {
       throw new BadRequestException('Evento sem vagas disponíveis');
     }
 
-    // Upsert customer by email.
-    // SEGURANÇA: dados públicos não são confiáveis. O update é vazio de
-    // propósito, para nunca sobrescrever nome/telefone de um cliente já
-    // existente caso o atacante informe o email de outra pessoa.
-    const customer = await this.prisma.customer.upsert({
-      where: { email: body.email },
-      create: {
-        email: body.email,
-        fullName: body.fullName,
-        phone: body.phone ?? '',
-      },
-      update: {},
-    });
+    const emailNorm = (body?.email || '').trim().toLowerCase();
 
-    // Check if already registered
-    const existing = await this.prisma.eventRegistration.findUnique({
-      where: { eventId_customerId: { eventId, customerId: customer.id } },
-    });
-    if (existing) {
-      throw new ConflictException('E-mail já inscrito neste evento');
+    let customer = null;
+    if (authCustomerId) {
+      customer = await this.prisma.customer.findUnique({
+        where: { id: authCustomerId },
+      });
     }
 
-    await this.prisma.eventRegistration.create({
+    if (!customer && emailNorm) {
+      customer = await this.prisma.customer.findFirst({
+        where: {
+          email: {
+            equals: emailNorm,
+            mode: 'insensitive',
+          },
+        },
+      });
+    }
+
+    if (!customer) {
+      customer = await this.prisma.customer.create({
+        data: {
+          email: emailNorm,
+          fullName: (body.fullName || '').trim(),
+          phone: (body.phone || '').trim(),
+        },
+      });
+    }
+
+    // Check if already registered (por ID do cliente ou por email case-insensitive)
+    const existing = await this.prisma.eventRegistration.findFirst({
+      where: {
+        eventId,
+        OR: [
+          { customerId: customer.id },
+          ...(emailNorm
+            ? [
+                {
+                  customer: {
+                    email: {
+                      equals: emailNorm,
+                      mode: Prisma.QueryMode.insensitive,
+                    },
+                  },
+                },
+              ]
+            : []),
+        ],
+      },
+    });
+
+    if (existing) {
+      throw new ConflictException('Você ou este e-mail já está inscrito neste evento');
+    }
+
+    const reg = await this.prisma.eventRegistration.create({
       data: { eventId, customerId: customer.id },
     });
 
@@ -148,13 +183,14 @@ export class EventsService {
     await this.notificationsService.notifyTeam({
       type: 'EVENT_REGISTRATION',
       title: 'Nova inscrição em evento',
-      message: `${customer.fullName} se inscreveu em "${event.title}".`,
+      message: `${customer.fullName || body.fullName} se inscreveu em "${event.title}".`,
       link: `/admin/events`,
     });
 
     return {
       success: true,
       message: 'Inscrição realizada com sucesso!',
+      registrationId: reg.id,
       event: { id: event.id, title: event.title, startAt: event.startAt },
     };
   }
