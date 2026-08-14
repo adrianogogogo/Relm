@@ -216,7 +216,7 @@ export default function CustomerWorkshopPage() {
                   <option value="">Selecione uma loja...</option>
                   {stores.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} - {s.city}/{s.state}
+                      {s.tradeName || s.name || s.legalName || 'Loja Autorizada'} — {s.city}/{s.state}
                     </option>
                   ))}
                 </select>
