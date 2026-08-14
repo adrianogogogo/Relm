@@ -302,7 +302,12 @@ export class CustomerPortalService {
     });
 
     if (!event) throw new BadRequestException('Evento não encontrado');
-    if (!event.active) throw new BadRequestException('Inscrições encerradas para este evento');
+    if (!event.active || (event.endAt && new Date(event.endAt) < new Date())) {
+      if (event.active) {
+        await this.prisma.event.update({ where: { id: eventId }, data: { active: false } });
+      }
+      throw new BadRequestException('Inscrições encerradas para este evento (evento já realizado)');
+    }
 
     if (event.maxParticipants && event._count.registrations >= event.maxParticipants) {
       throw new BadRequestException('Evento sem vagas disponíveis');

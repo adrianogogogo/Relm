@@ -1,22 +1,66 @@
 import {
   Injectable,
+  Logger,
+  OnModuleInit,
   NotFoundException,
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { RegisterEventDto } from './dto/register-event.dto';
 
 @Injectable()
-export class EventsService {
+export class EventsService implements OnModuleInit {
+  private readonly logger = new Logger(EventsService.name);
+
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
   ) {}
 
+  async onModuleInit() {
+    await this.inactivateExpiredEvents();
+  }
+
+  /**
+   * Cron job executado a cada hora para inativar automaticamente eventos cuja data de término já passou.
+   */
+  @Cron('0 * * * *')
+  async handleExpiredEventsCron() {
+    return this.inactivateExpiredEvents();
+  }
+
+  /**
+   * Inativa todos os eventos ativos cujo término (endAt) é anterior ao momento atual.
+   */
+  async inactivateExpiredEvents() {
+    const now = new Date();
+    try {
+      const result = await this.prisma.event.updateMany({
+        where: {
+          active: true,
+          endAt: { lt: now },
+        },
+        data: {
+          active: false,
+        },
+      });
+
+      if (result.count > 0) {
+        this.logger.log(`Inativados automaticamente ${result.count} eventos vencidos (endAt < ${now.toISOString()}).`);
+      }
+      return result;
+    } catch (err: any) {
+      this.logger.error(`Erro ao inativar eventos vencidos: ${err?.message}`, err?.stack);
+      return { count: 0 };
+    }
+  }
+
   async findAll() {
+    await this.inactivateExpiredEvents();
     return this.prisma.event.findMany({
       where: { active: true },
       include: { _count: { select: { registrations: true } } },
@@ -29,6 +73,7 @@ export class EventsService {
    * (targetRoles vazio = todos OU contém o audience). Ordenado por data.
    */
   async findFeed(audience: string) {
+    await this.inactivateExpiredEvents();
     return this.prisma.event.findMany({
       where: {
         active: true,
@@ -113,7 +158,12 @@ export class EventsService {
     });
 
     if (!event) throw new NotFoundException('Evento não encontrado');
-    if (!event.active) throw new BadRequestException('Inscrições encerradas para este evento');
+    if (!event.active || (event.endAt && new Date(event.endAt) < new Date())) {
+      if (event.active) {
+        await this.prisma.event.update({ where: { id: eventId }, data: { active: false } });
+      }
+      throw new BadRequestException('Inscrições encerradas para este evento (evento já realizado)');
+    }
 
     if (event.maxParticipants && event._count.registrations >= event.maxParticipants) {
       throw new BadRequestException('Evento sem vagas disponíveis');
