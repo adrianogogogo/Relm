@@ -25,7 +25,11 @@ export class LandingPublicController {
   async render(@Param('slug') slug: string) {
     const page = await this.marketingService.findBySlugPublic(slug);
     // og:image e src da imagem precisam ser absolutos: crawler ignora relativo.
-    const baseUrl = this.config.get<string>('PUBLIC_BASE_URL') || '';
+    const baseUrl =
+      this.config.get<string>('PUBLIC_BASE_URL') ||
+      this.config.get<string>('APP_URL') ||
+      this.config.get<string>('API_URL') ||
+      '';
     // A loja assina a moldura de marca — `findBySlugPublic` já carrega o store.
     return renderLanding(page.blocksJson as unknown as PaginaGerada, baseUrl, page.store);
   }
@@ -47,7 +51,11 @@ export class MarketingController {
   @Roles('ADMIN_RELM', 'GERENTE_RELM')
   @Post('preview-html')
   previewHtml(@Body() body: { blocksJson: PaginaGerada }) {
-    const baseUrl = this.config.get<string>('PUBLIC_BASE_URL') || '';
+    const baseUrl =
+      this.config.get<string>('PUBLIC_BASE_URL') ||
+      this.config.get<string>('APP_URL') ||
+      this.config.get<string>('API_URL') ||
+      '';
     const html = renderLanding(body.blocksJson, baseUrl);
     return { html };
   }

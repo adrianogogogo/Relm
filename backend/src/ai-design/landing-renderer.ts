@@ -107,7 +107,12 @@ function botao(texto: string, url: string, classe: string): string {
     </a>`;
 }
 
-function renderBloco(bloco: Bloco, indice: number, primeiroTexto: boolean): string {
+function renderBloco(
+  bloco: Bloco,
+  indice: number,
+  primeiroTexto: boolean,
+  absoluta: (u?: string | null) => string | undefined,
+): string {
   const atraso = ` style="--atraso:${indice * 90}ms"`;
 
   switch (bloco.tipo) {
@@ -173,9 +178,10 @@ function renderBloco(bloco: Bloco, indice: number, primeiroTexto: boolean): stri
     // cinza é pior que página com uma seção a menos.
     case 'imagem':
       if (!bloco.url) return '';
+      const urlFinal = absoluta(bloco.url) || bloco.url;
       return `<section class="faixa figura"${atraso}>
     <figure class="miolo">
-      <img src="${esc(bloco.url)}" alt="${esc(bloco.descricao)}" loading="lazy" />
+      <img src="${esc(urlFinal)}" alt="${esc(bloco.descricao)}" loading="lazy" />
       <figcaption>${esc(bloco.legenda)}</figcaption>
     </figure>
   </section>`;
@@ -225,7 +231,7 @@ export function renderLanding(
     .map((bloco, i) => {
       const primeiro = bloco.tipo === 'texto' && !jaTeveTexto;
       if (primeiro) jaTeveTexto = true;
-      return renderBloco(bloco, i, primeiro);
+      return renderBloco(bloco, i, primeiro, absoluta);
     })
     .join('\n  ');
 
