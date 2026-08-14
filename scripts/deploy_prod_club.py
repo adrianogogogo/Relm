@@ -3,6 +3,19 @@
 # Uso: RELM_VPS_PASS=... py -3 scripts/deploy_prod_club.py
 import paramiko, os, sys, time
 
+def _load_env_file(path):
+    if not os.path.exists(path):
+        return
+    with open(path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            k, v = line.split('=', 1)
+            os.environ.setdefault(k.strip(), v.strip())
+
+_load_env_file(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
+
 HOST = '177.153.62.248'; PORT = 22; USER = 'root'
 PASS = os.environ.get('RELM_VPS_PASS') or sys.exit('defina RELM_VPS_PASS')
 ROOT = r'c:\Users\BOSS\Desktop\Relm\Relm-Care'
@@ -55,14 +68,20 @@ say('1) backup -> %s\n%s %s' % (bak, out.strip(), err.strip()[-300:]))
 if 'BACKUP_OK' not in out or ' 0 Aug ' in out:
     sys.exit('ABORTADO: backup falhou ou ficou vazio — nada foi alterado.')
 
-# 2) Upload backend (src, prisma, scripts, test, package.json)
 sftp = c.open_sftp()
 upload_dir(sftp, os.path.join(ROOT, 'backend', 'src'), BE + '/src')
 upload_dir(sftp, os.path.join(ROOT, 'backend', 'prisma'), BE + '/prisma')
 upload_dir(sftp, os.path.join(ROOT, 'backend', 'scripts'), BE + '/scripts')
 upload_dir(sftp, os.path.join(ROOT, 'backend', 'test'), BE + '/test')
 sftp.put(os.path.join(ROOT, 'backend', 'package.json'), BE + '/package.json')
-say('2) upload backend OK')
+
+# Garantir OPENAI_API_KEY no .env do VPS de producao
+openai_key = os.environ.get('OPENAI_API_KEY')
+if openai_key:
+    run(c, 'grep -q "OPENAI_API_KEY=" %s/.env && sed -i "s|OPENAI_API_KEY=.*|OPENAI_API_KEY=\\"%s\\"|" %s/.env || echo \'OPENAI_API_KEY="%s"\' >> %s/.env' % (BE, openai_key, BE, openai_key, BE))
+    say('2) upload backend + OPENAI_API_KEY OK')
+else:
+    say('2) upload backend OK (OPENAI_API_KEY nao encontrada no .env local)')
 
 # 3) Status do historico + migrate deploy (Cenario A)
 out, err = run(c, 'cd %s && npx prisma migrate status 2>&1 | tail -8' % BE)
