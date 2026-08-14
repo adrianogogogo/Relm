@@ -6,6 +6,7 @@ import ConvenienceDetailModal from '../components/ConvenienceDetailModal';
 import {
   MdAdd, MdEdit, MdDelete, MdBuild, MdAccessTime, MdCategory, MdInfoOutline,
   MdChecklist, MdWaterDrop, MdDonutLarge, MdCompress, MdAccessibilityNew, MdElectricBike, MdShower,
+  MdCheckCircle, MdDoNotDisturb,
 } from 'react-icons/md';
 
 const CATEGORY_OPTIONS = [
@@ -292,10 +293,11 @@ function MasterServiceModal({ service, onClose }) {
 export default function AdminMasterServicesPage() {
   const queryClient = useQueryClient();
   const [selectedService, setSelectedService] = useState(null);
+  const [selectedConvenienceDetail, setSelectedConvenienceDetail] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('TODAS');
-  const [selectedConvenienceDetail, setSelectedConvenienceDetail] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
   const { data: masterServices = [], isLoading } = useQuery({
     queryKey: ['admin-master-services'],
@@ -307,7 +309,15 @@ export default function AdminMasterServicesPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-master-services'] }),
   });
 
+  const reactivateMutation = useMutation({
+    mutationFn: (id) => masterServicesAPI.update(id, { active: true }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-master-services'] }),
+  });
+
   const categories = ['TODAS', ...CATEGORY_OPTIONS];
+
+  const totalActive = masterServices.filter((s) => s.active).length;
+  const totalInactive = masterServices.filter((s) => !s.active).length;
 
   const filteredServices = masterServices.filter((s) => {
     const matchesSearch =
@@ -318,7 +328,14 @@ export default function AdminMasterServicesPage() {
     const matchesCategory =
       selectedCategory === 'TODAS' || s.category === selectedCategory;
 
-    return matchesSearch && matchesCategory;
+    const matchesStatus =
+      statusFilter === 'ALL'
+        ? true
+        : statusFilter === 'ACTIVE'
+        ? s.active
+        : !s.active;
+
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
   return (
@@ -349,9 +366,40 @@ export default function AdminMasterServicesPage() {
             placeholder="🔍 Buscar por nome, palavra-chave ou descrição..."
             className="w-full max-w-md rounded-xl border border-slate-300 bg-slate-50 p-2.5 text-sm focus:border-cyan-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
           />
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-            Exibindo <span className="text-cyan-600 dark:text-cyan-400 font-bold">{filteredServices.length}</span> de {masterServices.length} serviços
-          </span>
+
+          {/* Status Filter Toggle */}
+          <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600 text-xs">
+            <button
+              onClick={() => setStatusFilter('ALL')}
+              className={`rounded-lg px-3 py-1.5 font-bold transition-all ${
+                statusFilter === 'ALL'
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+              }`}
+            >
+              Todos ({masterServices.length})
+            </button>
+            <button
+              onClick={() => setStatusFilter('ACTIVE')}
+              className={`rounded-lg px-3 py-1.5 font-bold transition-all ${
+                statusFilter === 'ACTIVE'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-emerald-700 hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-white'
+              }`}
+            >
+              🟢 Ativos ({totalActive})
+            </button>
+            <button
+              onClick={() => setStatusFilter('INACTIVE')}
+              className={`rounded-lg px-3 py-1.5 font-bold transition-all ${
+                statusFilter === 'INACTIVE'
+                  ? 'bg-rose-600 text-white shadow-sm'
+                  : 'text-rose-700 hover:text-rose-800 dark:text-rose-300 dark:hover:text-white'
+              }`}
+            >
+              ⛔ Desativados ({totalInactive})
+            </button>
+          </div>
         </div>
 
         {/* Category Pills */}
@@ -404,7 +452,7 @@ export default function AdminMasterServicesPage() {
         <div className="py-12 text-center text-slate-500">Carregando catálogo...</div>
       ) : filteredServices.length === 0 ? (
         <Card className="py-12 text-center text-slate-500">
-          Nenhum serviço mestre encontrado no catálogo.
+          Nenhum serviço mestre encontrado no catálogo com os filtros selecionados.
         </Card>
       ) : (
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -414,19 +462,31 @@ export default function AdminMasterServicesPage() {
               service.category?.toLowerCase().includes('conveni') ||
               service.category?.toLowerCase().includes('hub');
             const CategoryIcon = categoryIcon(service.category);
+            const isInactive = !service.active;
 
             return (
               <div
                 key={service.id}
-                className={`relative flex flex-col justify-between rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5 ${
-                  isConvenience
-                    ? 'border-2 border-purple-400/70 dark:border-purple-500/50 bg-gradient-to-br from-purple-50/80 via-white to-amber-50/60 dark:from-purple-950/30 dark:via-slate-800 dark:to-amber-950/20 shadow-lg shadow-purple-500/10 ring-1 ring-purple-400/30'
-                    : 'border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md'
-                } ${!service.active ? 'opacity-60' : ''}`}
+                className={`relative flex flex-col justify-between rounded-2xl p-5 transition-all duration-200 ${
+                  isInactive
+                    ? 'border-2 border-dashed border-rose-300 dark:border-rose-900/60 bg-slate-100/90 dark:bg-slate-900/90 grayscale-[85%] contrast-90 hover:grayscale-0 hover:contrast-100 hover:border-solid hover:border-slate-400 dark:hover:border-slate-600 shadow-none'
+                    : isConvenience
+                    ? 'border-2 border-purple-400/70 dark:border-purple-500/50 bg-gradient-to-br from-purple-50/80 via-white to-amber-50/60 dark:from-purple-950/30 dark:via-slate-800 dark:to-amber-950/20 shadow-lg shadow-purple-500/10 ring-1 ring-purple-400/30 hover:-translate-y-0.5'
+                    : 'border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md hover:-translate-y-0.5'
+                }`}
               >
                 <div className="space-y-3">
-                  {/* Top highlight bar for conveniences */}
-                  {isConvenience && (
+                  {/* Top highlight bar */}
+                  {isInactive ? (
+                    <div className="flex items-center justify-between gap-2 pb-1 border-b border-rose-200 dark:border-rose-900/50">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 dark:bg-rose-950/70 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 px-3 py-0.5 text-[10px] font-black uppercase tracking-wider shadow-sm">
+                        ⛔ Desativado do Catálogo
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                        Oculto para Lojas
+                      </span>
+                    </div>
+                  ) : isConvenience ? (
                     <div className="flex items-center justify-between gap-2 pb-1">
                       <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-600 px-3 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm shadow-purple-500/25">
                         ✨ Hub & Conveniência
@@ -435,13 +495,15 @@ export default function AdminMasterServicesPage() {
                         Amenidade Exclusiva
                       </span>
                     </div>
-                  )}
+                  ) : null}
 
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3">
                       <div
                         className={`flex h-11 w-11 items-center justify-center rounded-xl font-bold transition-transform group-hover:scale-105 ${
-                          isConvenience
+                          isInactive
+                            ? 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                            : isConvenience
                             ? 'bg-gradient-to-br from-purple-600 to-amber-500 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-300/60 dark:ring-purple-800'
                             : 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300'
                         }`}
@@ -449,12 +511,20 @@ export default function AdminMasterServicesPage() {
                         <CategoryIcon className="h-6 w-6" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-slate-900 dark:text-white text-base leading-tight">
+                        <h4
+                          className={`font-bold text-base leading-tight ${
+                            isInactive
+                              ? 'text-slate-500 line-through dark:text-slate-400'
+                              : 'text-slate-900 dark:text-white'
+                          }`}
+                        >
                           {service.name}
                         </h4>
                         <span
                           className={`inline-flex items-center gap-1 text-xs font-semibold ${
-                            isConvenience
+                            isInactive
+                              ? 'text-slate-400'
+                              : isConvenience
                               ? 'text-purple-700 dark:text-purple-300'
                               : 'text-slate-500 dark:text-slate-400'
                           }`}
@@ -466,17 +536,23 @@ export default function AdminMasterServicesPage() {
                     </div>
 
                     <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold shrink-0 ${
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-bold shrink-0 ${
                         service.active
                           ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
-                          : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
+                          : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
                       }`}
                     >
-                      {service.active ? 'Ativo' : 'Inativo'}
+                      {service.active ? '🟢 Ativo' : '⛔ Inativo'}
                     </span>
                   </div>
 
-                  <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3">
+                  <p
+                    className={`text-sm line-clamp-3 ${
+                      isInactive
+                        ? 'text-slate-400 dark:text-slate-500 italic'
+                        : 'text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
                     {service.description || 'Sem descrição cadastrada.'}
                   </p>
 
@@ -488,20 +564,22 @@ export default function AdminMasterServicesPage() {
                   {/* Points & Price Summary Badge */}
                   <div
                     className={`p-3 rounded-xl border text-xs space-y-1.5 ${
-                      isConvenience
+                      isInactive
+                        ? 'bg-slate-200/50 dark:bg-slate-900/40 border-slate-300 dark:border-slate-800 text-slate-500'
+                        : isConvenience
                         ? 'bg-purple-50/60 dark:bg-purple-950/30 border-purple-200/80 dark:border-purple-800/50'
                         : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-slate-500 dark:text-slate-400 font-medium">💰 Valor Tabela:</span>
-                      <strong className="text-slate-900 dark:text-white">
+                      <strong className={isInactive ? 'text-slate-600 dark:text-slate-400' : 'text-slate-900 dark:text-white'}>
                         R$ {Number(service.defaultPrice || 50).toFixed(2)}
                       </strong>
                     </div>
                     <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-bold">
                       <span>🎯 Resgate:</span>
-                      <span>
+                      <span className={isInactive ? 'text-slate-500' : ''}>
                         {service.defaultPointsCost ||
                           Math.floor(Number(service.defaultPrice || 50) / 0.05)}{' '}
                         pts
@@ -509,7 +587,7 @@ export default function AdminMasterServicesPage() {
                     </div>
                     <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 font-bold">
                       <span>🛍️ Pontos Compra:</span>
-                      <span>+{Math.floor(Number(service.defaultPrice || 50))} pts</span>
+                      <span className={isInactive ? 'text-slate-500' : ''}>+{Math.floor(Number(service.defaultPrice || 50))} pts</span>
                     </div>
                   </div>
                 </div>
@@ -533,16 +611,29 @@ export default function AdminMasterServicesPage() {
                       <MdEdit className="h-4 w-4" /> Editar
                     </button>
 
-                    <button
-                      onClick={() => {
-                        if (confirm(`Deseja desativar o serviço "${service.name}"?`)) {
-                          deleteMutation.mutate(service.id);
-                        }
-                      }}
-                      className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-700 transition-colors"
-                    >
-                      <MdDelete className="h-4 w-4" /> Desativar
-                    </button>
+                    {isInactive ? (
+                      <button
+                        onClick={() => {
+                          if (confirm(`Deseja reativar o serviço "${service.name}" no catálogo?`)) {
+                            reactivateMutation.mutate(service.id);
+                          }
+                        }}
+                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all"
+                      >
+                        <MdCheckCircle className="h-4 w-4" /> Reativar
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          if (confirm(`Deseja desativar o serviço "${service.name}"?`)) {
+                            deleteMutation.mutate(service.id);
+                          }
+                        }}
+                        className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-700 transition-colors"
+                      >
+                        <MdDelete className="h-4 w-4" /> Desativar
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

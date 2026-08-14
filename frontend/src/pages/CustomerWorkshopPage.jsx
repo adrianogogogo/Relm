@@ -214,11 +214,18 @@ export default function CustomerWorkshopPage() {
                   disabled={loadingStores}
                 >
                   <option value="">Selecione uma loja...</option>
-                  {stores.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.tradeName || s.name || s.legalName || 'Loja Autorizada'} — {s.city}/{s.state}
-                    </option>
-                  ))}
+                  {stores.map((s) => {
+                    const storeName =
+                      (s.tradeName && s.tradeName.trim()) ||
+                      (s.name && s.name.trim()) ||
+                      (s.legalName && s.legalName.trim()) ||
+                      'Loja Autorizada Relm';
+                    return (
+                      <option key={s.id} value={s.id}>
+                        {storeName} — {s.city || 'São Paulo'}/{s.state || 'SP'}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
