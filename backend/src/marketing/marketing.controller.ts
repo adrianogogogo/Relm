@@ -33,11 +33,23 @@ export class LandingPublicController {
 
 @Controller('marketing/landing-pages')
 export class MarketingController {
-  constructor(private readonly marketingService: MarketingService) {}
+  constructor(
+    private readonly marketingService: MarketingService,
+    private readonly config: ConfigService,
+  ) {}
 
   @Get('public/:slug')
   getPublicPage(@Param('slug') slug: string) {
     return this.marketingService.findBySlugPublic(slug);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @Post('preview-html')
+  previewHtml(@Body() body: { blocksJson: PaginaGerada }) {
+    const baseUrl = this.config.get<string>('PUBLIC_BASE_URL') || '';
+    const html = renderLanding(body.blocksJson, baseUrl);
+    return { html };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

@@ -45,14 +45,6 @@ export type ImageModel = {
 };
 
 export const IMAGE_MODELS: Record<string, ImageModel> = {
-  'dall-e-3': {
-    tamanho: { LANDING: '1024x1024', EMAIL: '1024x1024' },
-    quality: { padrao: 'standard', alta: 'hd' },
-  },
-  'dall-e-2': {
-    tamanho: { LANDING: '1024x1024', EMAIL: '1024x1024' },
-    quality: null,
-  },
   'gpt-image-1': {
     tamanho: { LANDING: '1536x1024', EMAIL: '1024x1024' },
     quality: { padrao: 'medium', alta: 'high' },
@@ -62,6 +54,10 @@ export const IMAGE_MODELS: Record<string, ImageModel> = {
     tamanho: { LANDING: '1536x1024', EMAIL: '1024x1024' },
     quality: { padrao: 'medium', alta: 'high' },
     webp: true,
+  },
+  'dall-e-3': {
+    tamanho: { LANDING: '1024x1024', EMAIL: '1024x1024' },
+    quality: { padrao: 'standard', alta: 'hd' },
   },
 };
 

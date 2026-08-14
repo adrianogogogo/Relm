@@ -246,14 +246,11 @@ export function renderLanding(
 <meta property="og:description" content="${esc(pagina.subtitulo)}" />
 <meta property="og:site_name" content="Relm Care+" />
 ${imagemAbsoluta ? `<meta property="og:image" content="${esc(imagemAbsoluta)}" />` : ''}
-<meta name="twitter:card" content="${imagemAbsoluta ? 'summary_large_image' : 'summary'}" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,400&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet" />
 <style>
-/* Fontes servidas por nos, nunca por CDN de terceiro: a landing e publica, e
-   carregar tipografia de fora entrega o IP de cada visitante numa plataforma
-   que controla consentimento — alem de deixar a pagina refem da rede alheia.
-   O preco do auto-hospedado e o eixo de largura: o fontsource publica um eixo
-   variavel por arquivo, entao fica o peso (usado na pagina inteira) e sai o
-   font-stretch. */
+/* Fontes locais com fallback robusto no Google Fonts */
 @font-face{
   font-family:'Archivo';font-style:normal;font-weight:400 900;font-display:swap;
   src:url('${baseUrl}/fonts/archivo-latin-wght-normal.woff2') format('woff2-variations');
@@ -267,7 +264,7 @@ ${imagemAbsoluta ? `<meta property="og:image" content="${esc(imagemAbsoluta)}" /
   --acento:${t.acento}; --sobre-acento:${t.sobreAcento};
   --superficie:${t.superficie}; --linha:${t.linha};
   --inverso:${t.inverso}; --sobre-inverso:${t.sobreInverso};
-  --display:'Archivo','Archivo Black',Helvetica,sans-serif;
+  --display:'Archivo','Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;
   --leitura:'Newsreader',Georgia,serif;
   --miolo:1180px;
 }

@@ -1,6 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MdCampaign, MdAutoAwesome, MdOpenInNew, MdDelete, MdSave } from 'react-icons/md';
+import {
+  MdCampaign,
+  MdAutoAwesome,
+  MdOpenInNew,
+  MdDelete,
+  MdSave,
+  MdDesktopWindows,
+  MdTabletMac,
+  MdPhoneIphone,
+  MdFullscreen,
+  MdFullscreenExit,
+  MdImage,
+} from 'react-icons/md';
 import { marketingAPI, aiAssistantAPI } from '../services/api';
 import { Card, PageHeader, Button } from '../components/ui';
 import DepoimentosPendentes from '../components/DepoimentosPendentes';
@@ -19,85 +31,131 @@ function slugify(texto) {
     .slice(0, 60);
 }
 
-function Preview({ pagina }) {
-  const { paleta } = pagina;
+function IframePreview({ pagina }) {
+  const [device, setDevice] = useState('desktop'); // 'desktop' | 'tablet' | 'mobile'
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [html, setHtml] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    marketingAPI
+      .previewHtml(pagina)
+      .then((res) => {
+        if (active) setHtml(res.html);
+      })
+      .catch((err) => {
+        console.error('Erro ao renderizar preview:', err);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [pagina]);
+
+  const deviceWidths = {
+    desktop: '100%',
+    tablet: '768px',
+    mobile: '390px',
+  };
+
   return (
     <div
-      className="rounded-xl overflow-hidden border border-slate-700"
-      style={{ background: paleta.corFundo, color: paleta.corTexto }}
+      className={`space-y-3 ${
+        isFullscreen
+          ? 'fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md p-6 flex flex-col'
+          : ''
+      }`}
     >
-      {pagina.imagemUrl && (
-        <img src={pagina.imagemUrl} alt="" className="w-full h-48 object-cover" />
-      )}
-      <div className="p-6 space-y-4">
-        {pagina.blocos.map((bloco, i) => (
-          <div key={i}>
-            {bloco.tipo === 'hero' && (
-              <>
-                <h2 className="text-2xl font-bold">{bloco.titulo}</h2>
-                <p className="opacity-80">{bloco.subtitulo}</p>
-              </>
-            )}
-            {bloco.tipo === 'texto' && (
-              <>
-                <h3 className="font-semibold">{bloco.titulo}</h3>
-                <p className="opacity-80 text-sm">{bloco.corpo}</p>
-              </>
-            )}
-            {bloco.tipo === 'lista' && (
-              <>
-                <h3 className="font-semibold">{bloco.titulo}</h3>
-                <ul className="text-sm space-y-1 mt-1">
-                  {bloco.itens.map((item, j) => (
-                    <li
-                      key={j}
-                      style={{ borderLeft: `3px solid ${paleta.corPrimaria}` }}
-                      className="pl-2"
-                    >
-                      <strong>{item.titulo}</strong>{' '}
-                      <span className="opacity-75">{item.descricao}</span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-            {bloco.tipo === 'faq' && (
-              <>
-                <h3 className="font-semibold">{bloco.titulo}</h3>
-                <dl className="text-sm space-y-2 mt-1">
-                  {bloco.itens.map((item, j) => (
-                    <div key={j}>
-                      <dt className="font-semibold">{item.pergunta}</dt>
-                      <dd className="opacity-75">{item.resposta}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </>
-            )}
-            {bloco.tipo === 'prova' && (
-              <figure
-                className="text-sm"
-                style={{ borderLeft: `3px solid ${paleta.corPrimaria}`, paddingLeft: 12 }}
-              >
-                <blockquote className="italic">“{bloco.citacao}”</blockquote>
-                <figcaption className="opacity-75 mt-1">
-                  {bloco.autor} — {bloco.papel}
-                </figcaption>
-              </figure>
-            )}
-            {bloco.tipo === 'cta' && (
-              <div className="text-center pt-2">
-                <p className="mb-2">{bloco.texto}</p>
-                <span
-                  className="inline-block px-5 py-2 rounded-lg font-semibold"
-                  style={{ background: paleta.corPrimaria, color: paleta.corFundo }}
-                >
-                  {bloco.ctaTexto}
-                </span>
-              </div>
-            )}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-xl p-2.5 px-4 text-white shadow-lg">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+            Dispositivo:
+          </span>
+          <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
+            <button
+              type="button"
+              onClick={() => setDevice('desktop')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition ${
+                device === 'desktop'
+                  ? 'bg-cyan-600 text-white shadow'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <MdDesktopWindows className="w-4 h-4" /> Desktop
+            </button>
+            <button
+              type="button"
+              onClick={() => setDevice('tablet')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition ${
+                device === 'tablet'
+                  ? 'bg-cyan-600 text-white shadow'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <MdTabletMac className="w-4 h-4" /> Tablet
+            </button>
+            <button
+              type="button"
+              onClick={() => setDevice('mobile')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition ${
+                device === 'mobile'
+                  ? 'bg-cyan-600 text-white shadow'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <MdPhoneIphone className="w-4 h-4" /> Mobile
+            </button>
           </div>
-        ))}
+        </div>
+
+        <div className="flex items-center gap-3">
+          {pagina?.imagemUrl && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              <MdImage className="w-3.5 h-3.5" /> Foto inclusa
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="flex items-center gap-1 text-xs font-bold text-slate-300 hover:text-white p-1.5 hover:bg-slate-800 rounded-lg transition"
+            title={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
+          >
+            {isFullscreen ? (
+              <MdFullscreenExit className="w-5 h-5" />
+            ) : (
+              <MdFullscreen className="w-5 h-5" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      <div
+        className={`w-full flex justify-center items-center overflow-hidden rounded-xl bg-slate-950 border border-slate-800 transition-all p-3 shadow-inner ${
+          isFullscreen ? 'flex-1 h-full' : 'h-[620px]'
+        }`}
+      >
+        {loading ? (
+          <div className="flex flex-col items-center justify-center gap-2 text-slate-400 text-sm font-medium">
+            <div className="w-7 h-7 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+            <span>Renderizando Landing Page em alta fidelidade...</span>
+          </div>
+        ) : (
+          <div
+            className="h-full transition-all duration-300 ease-out shadow-2xl rounded-lg overflow-hidden border border-slate-800 bg-white"
+            style={{ width: deviceWidths[device], maxWidth: '100%' }}
+          >
+            <iframe
+              title="Landing Page Preview"
+              srcDoc={html}
+              className="w-full h-full border-0"
+              sandbox="allow-scripts allow-same-origin"
+            />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -189,7 +247,7 @@ export default function AdminLandingPagesPage() {
 
           <DepoimentosPendentes pagina={pagina} onChange={setPagina} />
 
-          <Preview pagina={pagina} />
+          <IframePreview pagina={pagina} />
           <div>
             <label className="block text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">Endereço da página</label>
             <div className="flex items-center gap-2">

@@ -73,6 +73,9 @@ upload_dir(sftp, os.path.join(ROOT, 'backend', 'src'), BE + '/src')
 upload_dir(sftp, os.path.join(ROOT, 'backend', 'prisma'), BE + '/prisma')
 upload_dir(sftp, os.path.join(ROOT, 'backend', 'scripts'), BE + '/scripts')
 upload_dir(sftp, os.path.join(ROOT, 'backend', 'test'), BE + '/test')
+acervo_local = os.path.join(ROOT, 'backend', 'uploads', 'marketing', 'acervo')
+if os.path.isdir(acervo_local):
+    upload_dir(sftp, acervo_local, BE + '/uploads/marketing/acervo')
 sftp.put(os.path.join(ROOT, 'backend', 'package.json'), BE + '/package.json')
 
 # Garantir OPENAI_API_KEY no .env do VPS de producao

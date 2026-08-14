@@ -112,7 +112,10 @@ export class AiAssistantService {
     }
 
     const textModel = map[KEY_TEXT] || DEFAULT_TEXT_MODEL;
-    const imageModel = map[KEY_IMAGE] || DEFAULT_IMAGE_MODEL;
+    let imageModel = map[KEY_IMAGE] || DEFAULT_IMAGE_MODEL;
+    if (imageModel === 'dall-e-2') {
+      imageModel = DEFAULT_IMAGE_MODEL;
+    }
 
     // Garantir que o modelo atualmente salvo no DB apareça nas opções
     if (textModel && !availableTextModels.includes(textModel)) {

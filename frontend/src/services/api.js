@@ -468,6 +468,7 @@ export const marketingAPI = {
   create: (data) => api.post('/marketing/landing-pages', data).then((res) => res.data),
   update: (id, data) => api.patch(`/marketing/landing-pages/${id}`, data).then((res) => res.data),
   delete: (id) => api.delete(`/marketing/landing-pages/${id}`).then((res) => res.data),
+  previewHtml: (blocksJson) => api.post('/marketing/landing-pages/preview-html', { blocksJson }).then((res) => res.data),
 };
 
 export const emailCrmAPI = {
