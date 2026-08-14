@@ -103,3 +103,6 @@ backend/scratch/
 .loopx/
 .mcp.json
 
+# Saida gerada pelo graphify (cache AST + grafo). Reconstroi com /graphify.
+graphify-out/
+
