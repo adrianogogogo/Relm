@@ -4,6 +4,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateCustomerDto } from './dto/create-customer.dto';
@@ -395,14 +396,16 @@ export class CustomersService {
     state?: string;
     zipCode?: string;
   }) {
-    // Normalizar CPF se fornecido
-    let cpfNormalized = customerData.cpf;
-    if (cpfNormalized) {
-      cpfNormalized = cpfNormalized.replace(/\D/g, '');
-    }
+    const emailNorm = (customerData.email || '').trim().toLowerCase();
+    let cpfNormalized = customerData.cpf ? customerData.cpf.replace(/\D/g, '') : undefined;
 
-    const existing = await this.prisma.customer.findUnique({
-      where: { email: customerData.email },
+    const existing = await this.prisma.customer.findFirst({
+      where: {
+        OR: [
+          ...(emailNorm ? [{ email: { equals: emailNorm, mode: Prisma.QueryMode.insensitive } }] : []),
+          ...(cpfNormalized ? [{ cpf: cpfNormalized }] : []),
+        ],
+      },
     });
 
     if (existing) {
@@ -426,7 +429,7 @@ export class CustomersService {
 
     const created = await this.prisma.customer.create({
       data: {
-        email: customerData.email,
+        email: emailNorm,
         fullName: customerData.fullName,
         phone: customerData.phone,
         cpf: cpfNormalized,

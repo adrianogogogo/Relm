@@ -1,11 +1,13 @@
-import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import {
   MdVerifiedUser, MdAttachMoney, MdBolt, MdCheckCircle, MdCancel,
-  MdShield, MdLocalShipping, MdBuild, MdPublic,
+  MdShield, MdLocalShipping, MdBuild, MdPublic, MdPerson,
 } from 'react-icons/md';
 import { PageHeader } from '../components/ui';
 import { insuranceAPI } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 // Apólice genérica RELM Bike Protect — resumo exibido ao cliente.
 // Baseada nas coberturas padrão do mercado BR de seguro para bikes de
@@ -31,17 +33,51 @@ export const POLICY_SUMMARY = {
   ],
 };
 
-const initialForm = { fullName: '', email: '', phone: '', bikeValue: '', city: '', state: '' };
-
 export default function InsurancePage() {
-  const [form, setForm] = useState(initialForm);
+  const queryClient = useQueryClient();
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isCustomer = user?.userType === 'CUSTOMER' || user?.role === 'CUSTOMER';
+
+  const [form, setForm] = useState({
+    fullName: user?.fullName || user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    bikeValue: '',
+    city: user?.city || '',
+    state: user?.state || '',
+  });
+
+  useEffect(() => {
+    if (user) {
+      setForm((f) => ({
+        ...f,
+        fullName: f.fullName || user.fullName || user.name || '',
+        email: f.email || user.email || '',
+        phone: f.phone || user.phone || '',
+        city: f.city || user.city || '',
+        state: f.state || user.state || '',
+      }));
+    }
+  }, [user]);
+
   const [protocol, setProtocol] = useState(null);
 
   const quoteMutation = useMutation({
     mutationFn: (data) => insuranceAPI.createQuote(data),
     onSuccess: (res) => {
       setProtocol(res.data?.protocolNumber || res.protocolNumber);
-      setForm(initialForm);
+      queryClient.invalidateQueries({ queryKey: ['customer-quotes'] });
+      queryClient.invalidateQueries({ queryKey: ['customer-policies'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      setForm({
+        fullName: user?.fullName || user?.name || '',
+        email: user?.email || '',
+        phone: user?.phone || '',
+        bikeValue: '',
+        city: user?.city || '',
+        state: user?.state || '',
+      });
     },
   });
 
@@ -50,12 +86,12 @@ export default function InsurancePage() {
   const submit = (e) => {
     e.preventDefault();
     quoteMutation.mutate({
-      fullName: form.fullName,
-      email: form.email,
-      phone: form.phone,
+      fullName: form.fullName.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
       bikeValue: form.bikeValue ? Number(form.bikeValue) : undefined,
-      city: form.city || undefined,
-      state: form.state || undefined,
+      city: form.city ? form.city.trim() : undefined,
+      state: form.state ? form.state.trim().toUpperCase() : undefined,
     });
   };
 
@@ -141,13 +177,33 @@ export default function InsurancePage() {
                     Seu protocolo é <span className="font-mono font-bold">{protocol}</span>.
                     A equipe RELM entrará em contato pelo e-mail informado.
                   </p>
-                  <button className="btn btn-outline btn-sm mt-4" onClick={() => setProtocol(null)}>
-                    Fazer outra cotação
-                  </button>
+                  {isCustomer && (
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 p-2 rounded mt-2">
+                      ✓ Esta cotação já está disponível na sua área <strong>Minhas Cotações</strong>.
+                    </p>
+                  )}
+                  <div className="flex gap-3 mt-4">
+                    {isCustomer && (
+                      <Link to="/cliente/seguros" className="btn btn-primary btn-sm">
+                        Ver Minhas Cotações
+                      </Link>
+                    )}
+                    <button className="btn btn-outline btn-sm" onClick={() => setProtocol(null)}>
+                      Fazer outra cotação
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
               <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {isCustomer && user?.email && (
+                  <div className="md:col-span-2 bg-primary/10 border border-primary/20 text-primary dark:text-primary-300 rounded-lg p-3 text-xs flex items-center gap-2">
+                    <MdPerson size={18} className="shrink-0" />
+                    <span>
+                      Conectado como <strong>{user.email}</strong>. A cotação ficará vinculada automaticamente à sua conta.
+                    </span>
+                  </div>
+                )}
                 <div className="md:col-span-2">
                   <label className="label">Nome completo *</label>
                   <input className="input w-full" required maxLength={150} value={form.fullName} onChange={set('fullName')} />

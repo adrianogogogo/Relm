@@ -103,10 +103,12 @@ export class EngagementService {
     referralCode: string | undefined,
     tx: any,
   ): Promise<boolean> {
-    if (!referralCode) return false;
+    if (!referralCode || !referralCode.trim()) return false;
+
+    const normalizedCode = referralCode.trim().toUpperCase();
 
     const referrer = await tx.customer.findUnique({
-      where: { referralCode },
+      where: { referralCode: normalizedCode },
       select: { id: true },
     });
 

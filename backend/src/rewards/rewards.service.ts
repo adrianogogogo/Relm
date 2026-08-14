@@ -341,8 +341,25 @@ export class RewardsService {
   }
 
   async getVouchers(customerId: string) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { id: true, email: true, cpf: true },
+    });
+
+    if (!customer) return [];
+
+    const emailNorm = customer.email ? customer.email.trim().toLowerCase() : '';
+
     return this.prisma.voucher.findMany({
-      where: { customerId },
+      where: {
+        OR: [
+          { customerId: customer.id },
+          ...(emailNorm
+            ? [{ customer: { email: { equals: emailNorm, mode: Prisma.QueryMode.insensitive } } }]
+            : []),
+          ...(customer.cpf ? [{ customer: { cpf: customer.cpf } }] : []),
+        ],
+      },
       include: {
         catalogItem: true,
         // Sem isto, voucher de serviço aparecia na lista do cliente sem nome

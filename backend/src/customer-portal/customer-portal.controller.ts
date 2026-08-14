@@ -57,6 +57,11 @@ export class CustomerPortalController {
     return this.customerPortalService.getInsuranceQuotes(req.user.customerId);
   }
 
+  @Get('insurance-policies')
+  getInsurancePolicies(@Request() req: any) {
+    return this.customerPortalService.getInsurancePolicies(req.user.customerId);
+  }
+
   @Get('events')
   getEvents(@Request() req: any) {
     return this.customerPortalService.getEvents(req.user.customerId);

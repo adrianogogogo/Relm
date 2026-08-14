@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
 import {
+  Prisma,
   ServiceType,
   PriorityLevel,
   ServiceStatus,
@@ -290,8 +291,25 @@ export class WorkshopService {
   }
 
   async getCustomerOrders(customerId: string) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { id: true, email: true, cpf: true },
+    });
+
+    if (!customer) return [];
+
+    const emailNorm = customer.email ? customer.email.trim().toLowerCase() : '';
+
     return this.prisma.serviceOrder.findMany({
-      where: { customerId },
+      where: {
+        OR: [
+          { customerId: customer.id },
+          ...(emailNorm
+            ? [{ customer: { email: { equals: emailNorm, mode: Prisma.QueryMode.insensitive } } }]
+            : []),
+          ...(customer.cpf ? [{ customer: { cpf: customer.cpf } }] : []),
+        ],
+      },
       include: {
         store: true,
         storeService: {

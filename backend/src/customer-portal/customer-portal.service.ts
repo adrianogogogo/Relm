@@ -73,8 +73,25 @@ export class CustomerPortalService {
   }
 
   async getWarranties(customerId: string) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { id: true, email: true, cpf: true },
+    });
+
+    if (!customer) return [];
+
+    const emailNorm = customer.email ? customer.email.trim().toLowerCase() : '';
+
     return this.prisma.warrantyClaim.findMany({
-      where: { customerId },
+      where: {
+        OR: [
+          { customerId: customer.id },
+          ...(emailNorm
+            ? [{ customer: { email: { equals: emailNorm, mode: Prisma.QueryMode.insensitive } } }]
+            : []),
+          ...(customer.cpf ? [{ customer: { cpf: customer.cpf } }] : []),
+        ],
+      },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -122,11 +139,15 @@ export class CustomerPortalService {
       return [];
     }
 
+    const emailNorm = customer.email ? customer.email.trim().toLowerCase() : '';
+
     return this.prisma.sale.findMany({
       where: {
         OR: [
           { customerId: customer.id },
-          ...(customer.email ? [{ customer: { email: { equals: customer.email, mode: 'insensitive' as const } } }] : []),
+          ...(emailNorm
+            ? [{ customer: { email: { equals: emailNorm, mode: Prisma.QueryMode.insensitive } } }]
+            : []),
           ...(customer.cpf ? [{ customer: { cpf: customer.cpf } }] : []),
         ],
       },
@@ -153,8 +174,25 @@ export class CustomerPortalService {
   }
 
   async getInsuranceQuotes(customerId: string) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { id: true, email: true, cpf: true },
+    });
+
+    if (!customer) return [];
+
+    const emailNorm = customer.email ? customer.email.trim().toLowerCase() : '';
+
     return this.prisma.insuranceQuote.findMany({
-      where: { customerId },
+      where: {
+        OR: [
+          { customerId: customer.id },
+          ...(emailNorm
+            ? [{ customer: { email: { equals: emailNorm, mode: Prisma.QueryMode.insensitive } } }]
+            : []),
+          ...(customer.cpf ? [{ customer: { cpf: customer.cpf } }] : []),
+        ],
+      },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -165,6 +203,44 @@ export class CustomerPortalService {
         state: true,
         quoteValue: true,
         insuranceCompany: true,
+        createdAt: true,
+        product: {
+          select: { model: true, productType: true, serialNumber: true },
+        },
+      },
+    });
+  }
+
+  async getInsurancePolicies(customerId: string) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { id: true, email: true, cpf: true },
+    });
+
+    if (!customer) return [];
+
+    const emailNorm = customer.email ? customer.email.trim().toLowerCase() : '';
+
+    return this.prisma.insurancePolicy.findMany({
+      where: {
+        OR: [
+          { customerId: customer.id },
+          ...(emailNorm
+            ? [{ customer: { email: { equals: emailNorm, mode: Prisma.QueryMode.insensitive } } }]
+            : []),
+          ...(customer.cpf ? [{ customer: { cpf: customer.cpf } }] : []),
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        policyNumber: true,
+        insurer: true,
+        coverage: true,
+        premium: true,
+        status: true,
+        startsAt: true,
+        expiresAt: true,
         createdAt: true,
         product: {
           select: { model: true, productType: true, serialNumber: true },
