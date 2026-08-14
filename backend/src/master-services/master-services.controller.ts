@@ -37,21 +37,21 @@ export class MasterServicesController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR')
   findOne(@Param('id') id: string) {
     return this.masterServicesService.findOne(id);
   }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR')
   create(@Body() dto: CreateMasterServiceDto) {
     return this.masterServicesService.create(dto);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR')
   update(
     @Param('id') id: string,
     @Body() dto: UpdateMasterServiceDto,
@@ -61,7 +61,7 @@ export class MasterServicesController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR')
   remove(@Param('id') id: string) {
     return this.masterServicesService.remove(id);
   }

@@ -67,7 +67,7 @@ export class StoreServicesController {
 
   @Delete('stores/services/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR')
   removeStoreService(@Param('id') id: string) {
     return this.storeServicesService.remove(id);
   }
