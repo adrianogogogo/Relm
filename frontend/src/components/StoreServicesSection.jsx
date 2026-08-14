@@ -499,6 +499,10 @@ export default function StoreServicesSection({ storeId, isAdmin = false }) {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {filteredStoreServices.map((service) => {
+            const isConvenience =
+              service.masterService?.category === 'Conveniências & Hub do Ciclista' ||
+              service.masterService?.category?.toLowerCase().includes('conveni') ||
+              service.masterService?.category?.toLowerCase().includes('hub');
             const name = service.displayName || service.masterService?.name || 'Serviço';
             const desc =
               service.displayDescription ||
@@ -510,20 +514,24 @@ export default function StoreServicesSection({ storeId, isAdmin = false }) {
             return (
               <div
                 key={service.id}
-                className={`relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-800/80 ${
-                  !service.active ? 'opacity-60' : ''
-                }`}
+                className={`relative flex flex-col justify-between rounded-xl p-4 transition-all hover:shadow-md ${
+                  isConvenience
+                    ? 'border-2 border-purple-400/70 dark:border-purple-500/50 bg-gradient-to-br from-purple-50/70 via-white to-amber-50/50 dark:from-purple-950/30 dark:via-slate-800 dark:to-amber-950/20 shadow-md shadow-purple-500/10'
+                    : 'border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800/80'
+                } ${!service.active ? 'opacity-60' : ''}`}
               >
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <span className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider mb-1 ${
-                        service.masterService?.category === 'Conveniências & Hub do Ciclista'
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
-                          : 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-300'
-                      }`}>
-                        {service.masterService?.category === 'Conveniências & Hub do Ciclista' ? '🌟 Conveniência & Hub' : (service.masterService?.category || 'Oficina')}
-                      </span>
+                      {isConvenience ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-600 to-amber-600 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm shadow-purple-500/25 mb-1.5">
+                          ✨ Hub & Conveniência
+                        </span>
+                      ) : (
+                        <span className="inline-block rounded-md bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-300 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider mb-1">
+                          {service.masterService?.category || 'Oficina'}
+                        </span>
+                      )}
                       <h4 className="font-bold text-slate-900 dark:text-white">{name}</h4>
                     </div>
                     <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-300 shrink-0">

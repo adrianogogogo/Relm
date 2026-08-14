@@ -363,21 +363,32 @@ export default function AdminMasterServicesPage() {
                 : masterServices.filter((s) => s.category === cat).length;
             const isSelected = selectedCategory === cat;
 
+            const isConveniencePill =
+              cat === 'Conveniências & Hub do Ciclista' ||
+              cat.toLowerCase().includes('conveni') ||
+              cat.toLowerCase().includes('hub');
+
             return (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-all ${
                   isSelected
-                    ? 'bg-cyan-600 text-white shadow-sm'
+                    ? isConveniencePill
+                      ? 'bg-gradient-to-r from-purple-600 to-amber-600 text-white shadow-md shadow-purple-500/25 ring-2 ring-purple-400/40'
+                      : 'bg-cyan-600 text-white shadow-sm'
+                    : isConveniencePill
+                    ? 'border-2 border-purple-400/60 bg-purple-50 text-purple-800 hover:bg-purple-100 dark:border-purple-600/50 dark:bg-purple-950/40 dark:text-purple-300 font-bold'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
                 }`}
               >
-                <span>{cat === 'TODAS' ? 'Todas as Categorias' : cat}</span>
+                <span>{isConveniencePill && !isSelected ? '✨ ' : ''}{cat === 'TODAS' ? 'Todas as Categorias' : cat}</span>
                 <span
                   className={`rounded-full px-1.5 py-0.2 text-[10px] ${
                     isSelected
-                      ? 'bg-white/20 text-white'
+                      ? 'bg-white/20 text-white font-bold'
+                      : isConveniencePill
+                      ? 'bg-purple-200 text-purple-900 dark:bg-purple-900/60 dark:text-purple-200 font-bold'
                       : 'bg-slate-200 text-slate-600 dark:bg-slate-600 dark:text-slate-300'
                   }`}
                 >
@@ -396,101 +407,145 @@ export default function AdminMasterServicesPage() {
           Nenhum serviço mestre encontrado no catálogo.
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {filteredServices.map((service) => {
+            const isConvenience =
+              service.category === 'Conveniências & Hub do Ciclista' ||
+              service.category?.toLowerCase().includes('conveni') ||
+              service.category?.toLowerCase().includes('hub');
             const CategoryIcon = categoryIcon(service.category);
+
             return (
-            <Card
-              key={service.id}
-              className={`relative flex flex-col justify-between transition-all ${
-                !service.active ? 'opacity-60' : ''
-              }`}
-            >
-              <div className="space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300">
-                      <CategoryIcon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 dark:text-white">
-                        {service.name}
-                      </h4>
-                      <span className="inline-flex items-center gap-1 text-xs text-slate-500">
-                        <MdCategory className="h-3.5 w-3.5" />
-                        {service.category || 'Geral'}
+              <div
+                key={service.id}
+                className={`relative flex flex-col justify-between rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5 ${
+                  isConvenience
+                    ? 'border-2 border-purple-400/70 dark:border-purple-500/50 bg-gradient-to-br from-purple-50/80 via-white to-amber-50/60 dark:from-purple-950/30 dark:via-slate-800 dark:to-amber-950/20 shadow-lg shadow-purple-500/10 ring-1 ring-purple-400/30'
+                    : 'border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 shadow-sm hover:shadow-md'
+                } ${!service.active ? 'opacity-60' : ''}`}
+              >
+                <div className="space-y-3">
+                  {/* Top highlight bar for conveniences */}
+                  {isConvenience && (
+                    <div className="flex items-center justify-between gap-2 pb-1">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-600 px-3 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm shadow-purple-500/25">
+                        ✨ Hub & Conveniência
+                      </span>
+                      <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300">
+                        Amenidade Exclusiva
                       </span>
                     </div>
+                  )}
+
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`flex h-11 w-11 items-center justify-center rounded-xl font-bold transition-transform group-hover:scale-105 ${
+                          isConvenience
+                            ? 'bg-gradient-to-br from-purple-600 to-amber-500 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-300/60 dark:ring-purple-800'
+                            : 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300'
+                        }`}
+                      >
+                        <CategoryIcon className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 dark:text-white text-base leading-tight">
+                          {service.name}
+                        </h4>
+                        <span
+                          className={`inline-flex items-center gap-1 text-xs font-semibold ${
+                            isConvenience
+                              ? 'text-purple-700 dark:text-purple-300'
+                              : 'text-slate-500 dark:text-slate-400'
+                          }`}
+                        >
+                          <MdCategory className="h-3.5 w-3.5" />
+                          {service.category || 'Geral'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold shrink-0 ${
+                        service.active
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                          : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
+                      }`}
+                    >
+                      {service.active ? 'Ativo' : 'Inativo'}
+                    </span>
                   </div>
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                      service.active
-                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
-                        : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
+
+                  <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3">
+                    {service.description || 'Sem descrição cadastrada.'}
+                  </p>
+
+                  <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    <MdAccessTime className="h-4 w-4" />
+                    <span>Duração padrão: {service.defaultEstimatedMinutes} minutos</span>
+                  </div>
+
+                  {/* Points & Price Summary Badge */}
+                  <div
+                    className={`p-3 rounded-xl border text-xs space-y-1.5 ${
+                      isConvenience
+                        ? 'bg-purple-50/60 dark:bg-purple-950/30 border-purple-200/80 dark:border-purple-800/50'
+                        : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800'
                     }`}
                   >
-                    {service.active ? 'Ativo' : 'Inativo'}
-                  </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium">💰 Valor Tabela:</span>
+                      <strong className="text-slate-900 dark:text-white">
+                        R$ {Number(service.defaultPrice || 50).toFixed(2)}
+                      </strong>
+                    </div>
+                    <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-bold">
+                      <span>🎯 Resgate:</span>
+                      <span>
+                        {service.defaultPointsCost ||
+                          Math.floor(Number(service.defaultPrice || 50) / 0.05)}{' '}
+                        pts
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 font-bold">
+                      <span>🛍️ Pontos Compra:</span>
+                      <span>+{Math.floor(Number(service.defaultPrice || 50))} pts</span>
+                    </div>
+                  </div>
                 </div>
 
-                <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3">
-                  {service.description || 'Sem descrição cadastrada.'}
-                </p>
+                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-700/80">
+                  <button
+                    onClick={() => setSelectedConvenienceDetail(service)}
+                    className="flex items-center gap-1 text-xs font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400 transition-colors"
+                  >
+                    <MdInfoOutline className="h-4 w-4" /> Ficha Técnica
+                  </button>
 
-                <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                  <MdAccessTime className="h-4 w-4" />
-                  <span>Duração padrão: {service.defaultEstimatedMinutes} minutos</span>
-                </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedService(service);
+                        setIsModalOpen(true);
+                      }}
+                      className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-cyan-600 hover:bg-cyan-50 dark:text-cyan-400 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      <MdEdit className="h-4 w-4" /> Editar
+                    </button>
 
-                {/* Points & Price Summary Badge */}
-                <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 text-xs space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 dark:text-slate-400 font-medium">💰 Valor Tabela:</span>
-                    <strong className="text-slate-900 dark:text-white">R$ {Number(service.defaultPrice || 50).toFixed(2)}</strong>
-                  </div>
-                  <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400 font-bold">
-                    <span>🎯 Resgate:</span>
-                    <span>{service.defaultPointsCost || Math.floor(Number(service.defaultPrice || 50) / 0.05)} pts</span>
-                  </div>
-                  <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 font-bold">
-                    <span>🛍️ Pontos Compra:</span>
-                    <span>+{Math.floor(Number(service.defaultPrice || 50))} pts</span>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Deseja desativar o serviço "${service.name}"?`)) {
+                          deleteMutation.mutate(service.id);
+                        }
+                      }}
+                      className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      <MdDelete className="h-4 w-4" /> Desativar
+                    </button>
                   </div>
                 </div>
               </div>
-
-              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-700">
-                <button
-                  onClick={() => setSelectedConvenienceDetail(service)}
-                  className="flex items-center gap-1 text-xs font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400"
-                >
-                  <MdInfoOutline className="h-4 w-4" /> Ficha Técnica
-                </button>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      setSelectedService(service);
-                      setIsModalOpen(true);
-                    }}
-                    className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-cyan-600 hover:bg-cyan-50 dark:text-cyan-400 dark:hover:bg-slate-700"
-                  >
-                    <MdEdit className="h-4 w-4" /> Editar
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      if (confirm(`Deseja desativar o serviço "${service.name}"?`)) {
-                        deleteMutation.mutate(service.id);
-                      }
-                    }}
-                    className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-700"
-                  >
-                    <MdDelete className="h-4 w-4" /> Desativar
-                  </button>
-                </div>
-              </div>
-            </Card>
             );
           })}
         </div>

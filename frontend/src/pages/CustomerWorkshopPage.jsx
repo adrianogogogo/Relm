@@ -297,43 +297,64 @@ export default function CustomerWorkshopPage() {
                 </div>
               )}
 
-              {selectedStoreService && (
-                <div className="rounded-xl border border-cyan-200 bg-cyan-50/50 p-4 text-xs dark:border-cyan-900/50 dark:bg-cyan-950/20 space-y-2">
-                  <div className="flex items-center justify-between font-bold text-slate-900 dark:text-white">
-                    <span className="text-sm">{selectedStoreService.displayName}</span>
-                    <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
-                      <MdAccessTime className="h-4 w-4" /> {selectedStoreService.estimatedMinutes} minutos
-                    </span>
-                  </div>
+              {selectedStoreService && (() => {
+                const isConvenience =
+                  selectedStoreService.masterService?.category === 'Conveniências & Hub do Ciclista' ||
+                  selectedStoreService.masterService?.category?.toLowerCase().includes('conveni') ||
+                  selectedStoreService.masterService?.category?.toLowerCase().includes('hub');
 
-                  <p className="text-slate-600 dark:text-slate-300">
-                    {selectedStoreService.displayDescription}
-                  </p>
-
-                  {(() => {
-                    const info = getServicePlusInfo(selectedStoreService);
-                    return (
-                      <div className="flex items-center justify-between font-medium pt-1">
-                        <span className="text-slate-700 dark:text-slate-300">
-                          Valor Care: R$ {info.priceCare.toFixed(2)}
-                        </span>
-                        <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
-                          <MdStar className="h-4 w-4" />
-                          {info.badgeText} {info.savingsText}
+                return (
+                  <div
+                    className={`rounded-xl p-4 text-xs space-y-2 transition-all ${
+                      isConvenience
+                        ? 'border-2 border-purple-400/70 bg-gradient-to-br from-purple-50/80 via-white to-amber-50/60 dark:border-purple-500/50 dark:from-purple-950/30 dark:via-slate-800 dark:to-amber-950/20 shadow-md shadow-purple-500/10'
+                        : 'border border-cyan-200 bg-cyan-50/50 dark:border-cyan-900/50 dark:bg-cyan-950/20'
+                    }`}
+                  >
+                    {isConvenience && (
+                      <div className="flex items-center justify-between pb-1">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-600 to-amber-600 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm">
+                          ✨ Hub & Conveniência
                         </span>
                       </div>
-                    );
-                  })()}
+                    )}
 
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDetailModalService(selectedStoreService)}
-                    className="mt-2 flex items-center gap-1 font-bold text-cyan-700 dark:text-cyan-400 hover:underline text-xs"
-                  >
-                    <MdInfoOutline className="h-4 w-4" /> ℹ️ Ver Ficha Técnica & Etapas Executadas
-                  </button>
-                </div>
-              )}
+                    <div className="flex items-center justify-between font-bold text-slate-900 dark:text-white">
+                      <span className="text-sm">{selectedStoreService.displayName}</span>
+                      <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
+                        <MdAccessTime className="h-4 w-4" /> {selectedStoreService.estimatedMinutes} minutos
+                      </span>
+                    </div>
+
+                    <p className="text-slate-600 dark:text-slate-300">
+                      {selectedStoreService.displayDescription}
+                    </p>
+
+                    {(() => {
+                      const info = getServicePlusInfo(selectedStoreService);
+                      return (
+                        <div className="flex items-center justify-between font-medium pt-1">
+                          <span className="text-slate-700 dark:text-slate-300">
+                            Valor Care: R$ {info.priceCare.toFixed(2)}
+                          </span>
+                          <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                            <MdStar className="h-4 w-4" />
+                            {info.badgeText} {info.savingsText}
+                          </span>
+                        </div>
+                      );
+                    })()}
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDetailModalService(selectedStoreService)}
+                      className="mt-2 flex items-center gap-1 font-bold text-cyan-700 dark:text-cyan-400 hover:underline text-xs"
+                    >
+                      <MdInfoOutline className="h-4 w-4" /> ℹ️ Ver Ficha Técnica & Etapas Executadas
+                    </button>
+                  </div>
+                );
+              })()}
 
               <div>
                 <label className="label">Modelo da Bicicleta *</label>
