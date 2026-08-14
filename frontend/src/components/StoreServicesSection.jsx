@@ -77,18 +77,32 @@ function AddEditStoreServiceModal({ storeId, storeService, masterServices, onClo
       ? Math.floor((Number(price) || 0) / 0.05)
       : pointsCost.trim() === '' ? null : Number(pointsCost);
 
-    upsertMutation.mutate({
-      masterServiceId,
-      customName: customName.trim() || undefined,
-      customDescription: customDescription.trim() || undefined,
-      price: Number(price),
-      plusRule,
-      plusDiscountPercent: plusRule === 'DISCOUNT_PERCENT' ? Number(plusDiscountPercent) : null,
-      plusPrice: plusRule === 'FIXED_PRICE' ? Number(plusPrice) : null,
-      estimatedMinutes: Number(estimatedMinutes) || 60,
-      pointsCost: calculatedPointsCost,
-      active,
-    });
+    const payload = isEdit
+      ? {
+          customName: customName.trim() || undefined,
+          customDescription: customDescription.trim() || undefined,
+          price: Number(price),
+          plusRule,
+          plusDiscountPercent: plusRule === 'DISCOUNT_PERCENT' ? Number(plusDiscountPercent) : null,
+          plusPrice: plusRule === 'FIXED_PRICE' ? Number(plusPrice) : null,
+          estimatedMinutes: Number(estimatedMinutes) || 60,
+          pointsCost: calculatedPointsCost,
+          active,
+        }
+      : {
+          masterServiceId,
+          customName: customName.trim() || undefined,
+          customDescription: customDescription.trim() || undefined,
+          price: Number(price),
+          plusRule,
+          plusDiscountPercent: plusRule === 'DISCOUNT_PERCENT' ? Number(plusDiscountPercent) : null,
+          plusPrice: plusRule === 'FIXED_PRICE' ? Number(plusPrice) : null,
+          estimatedMinutes: Number(estimatedMinutes) || 60,
+          pointsCost: calculatedPointsCost,
+          active,
+        };
+
+    upsertMutation.mutate(payload);
   };
 
   return (
@@ -347,6 +361,13 @@ export default function StoreServicesSection({ storeId, isAdmin = false }) {
   const deleteMutation = useMutation({
     mutationFn: (id) => storeServicesAPI.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['store-services', storeId] }),
+    onError: (err) => alert(err.response?.data?.message || 'Erro ao desativar serviço da loja.'),
+  });
+
+  const reactivateMutation = useMutation({
+    mutationFn: (id) => storeServicesAPI.update(id, { active: true }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['store-services', storeId] }),
+    onError: (err) => alert(err.response?.data?.message || 'Erro ao reativar serviço na loja.'),
   });
 
   // Extract unique categories from store's services
@@ -589,16 +610,29 @@ export default function StoreServicesSection({ storeId, isAdmin = false }) {
                       >
                         <MdEdit className="h-4 w-4" /> Editar
                       </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(`Remover "${name}" desta loja?`)) {
-                            deleteMutation.mutate(service.id);
-                          }
-                        }}
-                        className="flex items-center gap-1 text-xs font-semibold text-red-600 hover:underline dark:text-red-400"
-                      >
-                        <MdDelete className="h-4 w-4" /> Remover
-                      </button>
+                      {!service.active ? (
+                        <button
+                          onClick={() => {
+                            if (confirm(`Reativar "${name}" nesta loja?`)) {
+                              reactivateMutation.mutate(service.id);
+                            }
+                          }}
+                          className="flex items-center gap-1 text-xs font-bold text-emerald-600 hover:underline dark:text-emerald-400"
+                        >
+                          <MdCheckCircle className="h-4 w-4" /> Reativar
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            if (confirm(`Desativar "${name}" desta loja?`)) {
+                              deleteMutation.mutate(service.id);
+                            }
+                          }}
+                          className="flex items-center gap-1 text-xs font-semibold text-red-600 hover:underline dark:text-red-400"
+                        >
+                          <MdDelete className="h-4 w-4" /> Desativar
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <button

@@ -150,7 +150,17 @@ export class StoreServicesService {
 
     const updated = await this.prisma.storeService.update({
       where: { id },
-      data: dto,
+      data: {
+        ...(dto.customName !== undefined && { customName: dto.customName }),
+        ...(dto.customDescription !== undefined && { customDescription: dto.customDescription }),
+        ...(dto.price !== undefined && { price: dto.price }),
+        ...(dto.plusRule !== undefined && { plusRule: dto.plusRule }),
+        ...(dto.plusDiscountPercent !== undefined && { plusDiscountPercent: dto.plusDiscountPercent }),
+        ...(dto.plusPrice !== undefined && { plusPrice: dto.plusPrice }),
+        ...(dto.estimatedMinutes !== undefined && { estimatedMinutes: dto.estimatedMinutes }),
+        ...(dto.pointsCost !== undefined && { pointsCost: dto.pointsCost }),
+        ...(dto.active !== undefined && { active: dto.active }),
+      },
       include: { masterService: true },
     });
 

@@ -86,7 +86,18 @@ export class MasterServicesService {
 
     return this.prisma.masterService.update({
       where: { id },
-      data: dto,
+      data: {
+        ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.description !== undefined && { description: dto.description }),
+        ...(dto.category !== undefined && { category: dto.category }),
+        ...(dto.defaultEstimatedMinutes !== undefined && { defaultEstimatedMinutes: dto.defaultEstimatedMinutes }),
+        ...(dto.defaultPrice !== undefined && { defaultPrice: dto.defaultPrice != null ? dto.defaultPrice : null }),
+        ...(dto.defaultPointsCost !== undefined && { defaultPointsCost: dto.defaultPointsCost != null ? dto.defaultPointsCost : null }),
+        ...(dto.defaultPlusRule !== undefined && { defaultPlusRule: dto.defaultPlusRule }),
+        ...(dto.defaultPlusPrice !== undefined && { defaultPlusPrice: dto.defaultPlusPrice != null ? dto.defaultPlusPrice : null }),
+        ...(dto.defaultPlusDiscountPercent !== undefined && { defaultPlusDiscountPercent: dto.defaultPlusDiscountPercent != null ? dto.defaultPlusDiscountPercent : null }),
+        ...(dto.active !== undefined && { active: dto.active }),
+      },
     });
   }
 

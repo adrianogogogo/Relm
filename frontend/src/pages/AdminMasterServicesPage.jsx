@@ -307,11 +307,13 @@ export default function AdminMasterServicesPage() {
   const deleteMutation = useMutation({
     mutationFn: (id) => masterServicesAPI.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-master-services'] }),
+    onError: (err) => alert(err.response?.data?.message || 'Erro ao desativar serviço mestre.'),
   });
 
   const reactivateMutation = useMutation({
     mutationFn: (id) => masterServicesAPI.update(id, { active: true }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-master-services'] }),
+    onError: (err) => alert(err.response?.data?.message || 'Erro ao reativar serviço mestre.'),
   });
 
   const categories = ['TODAS', ...CATEGORY_OPTIONS];

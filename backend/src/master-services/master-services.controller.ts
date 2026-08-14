@@ -44,14 +44,14 @@ export class MasterServicesController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
   create(@Body() dto: CreateMasterServiceDto) {
     return this.masterServicesService.create(dto);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM', 'GERENTE_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
   update(
     @Param('id') id: string,
     @Body() dto: UpdateMasterServiceDto,
@@ -61,7 +61,7 @@ export class MasterServicesController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN_RELM')
+  @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM')
   remove(@Param('id') id: string) {
     return this.masterServicesService.remove(id);
   }
