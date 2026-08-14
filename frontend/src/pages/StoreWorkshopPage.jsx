@@ -31,7 +31,7 @@ const LOGISTICS_LABELS = {
 };
 
 import { useState } from 'react';
-import StoreServicesSection from '../components/StoreServicesSection';
+import ServicesCatalogSection from '../components/ServicesCatalogSection';
 import { rewardsAPI } from '../services/api';
 
 // Baixa do voucher no balcão. O backend só deixa a loja baixar voucher de
@@ -164,12 +164,12 @@ export default function StoreWorkshopPage() {
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
             }`}
           >
-            🛠️ Serviços & Conveniências Oferecidos
+            🛠️ Catálogo de Serviços & Conveniências
           </button>
         </div>
 
         {activeTab === 'services' ? (
-          <StoreServicesSection storeId={storeId} isAdmin={true} />
+          <ServicesCatalogSection storeId={storeId} canManageStore={true} />
         ) : isLoading ? (
           <div className="flex justify-center py-16">
             <span className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
