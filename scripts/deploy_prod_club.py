@@ -152,7 +152,7 @@ server {
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
     # Landing pages públicas servidas pelo NestJS
-    location /lp/ {
+    location ^~ /lp/ {
         proxy_pass http://backend_api;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -162,7 +162,7 @@ server {
     }
 
     # Uploads públicos de marketing servidos pelo NestJS
-    location /uploads/marketing/ {
+    location ^~ /uploads/marketing/ {
         proxy_pass http://backend_api;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -218,7 +218,7 @@ with sftp_nginx.file('/etc/nginx/sites-available/relm-careplus', 'w') as f:
     f.write(nginx_config)
 sftp_nginx.close()
 
-out_ng, err_ng = run(c, 'nginx -t && systemctl reload nginx 2>&1')
+out_ng, err_ng = run(c, 'nginx -t && systemctl restart nginx 2>&1')
 say('7) frontend dist + Nginx OK: %s %s' % (out_ng.strip(), err_ng.strip()[-200:]))
 
 # 8) Verificacao final
