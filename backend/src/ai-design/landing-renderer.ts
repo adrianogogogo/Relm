@@ -80,10 +80,10 @@ type Tema = {
   sobreInverso: string;
 };
 
-function derivarTema(paleta: PaginaGerada['paleta']): Tema {
-  const fundo = paleta.corFundo;
-  const tinta = paleta.corTexto;
-  const acento = realcar(paleta.corPrimaria, fundo);
+function derivarTema(paleta?: Partial<PaginaGerada['paleta']>): Tema {
+  const fundo = paleta?.corFundo || '#0B0F19';
+  const tinta = paleta?.corTexto || '#F8FAFC';
+  const acento = realcar(paleta?.corPrimaria || '#D97706', fundo);
   // Painel de fechamento: o extremo oposto do fundo, para o último CTA bater.
   const inverso = luminancia(fundo) > 0.179 ? misturar(tinta, '#000000', 0.35) : '#FFFFFF';
 
@@ -201,7 +201,10 @@ function renderBloco(
  * crawler, e o card sai sem imagem mesmo com a imagem existindo.
  */
 /**
- * A loja parceira que compartilha a página. Só o que a moldura de marca usa —
+ * Renderiza uma página gerada para HTML completo e auto-contido.
+ *
+ * Se passar `loja`, o cabeçalho ganha um "Relm Care+ em parceria com Loja X" e
+ * o rodapé assina a loja. O logo da Relm continua mandatório e em primeiro —
  * a página é material da Relm assinado pela loja, não o contrário.
  */
 export type LojaMarca = { tradeName: string; logoUrl?: string | null };
@@ -211,20 +214,34 @@ export function renderLanding(
   baseUrl = '',
   loja?: LojaMarca | null,
 ): string {
-  const t = derivarTema(pagina.paleta);
+  const t = derivarTema(pagina?.paleta);
   // Caminho relativo vira absoluto: crawler de WhatsApp/Facebook ignora relativo,
   // e o logo da loja pode ter sido gravado como caminho local.
   const absoluta = (u?: string | null) => (u?.startsWith('/') ? `${baseUrl}${u}` : u);
-  const imagemAbsoluta = absoluta(pagina.imagemUrl);
+  const imagemAbsoluta = absoluta(pagina?.imagemUrl);
   const logoLoja = absoluta(loja?.logoUrl);
 
-  const hero = pagina.blocos.find((b) => b.tipo === 'hero') as
+  const rawBlocos = Array.isArray(pagina?.blocos)
+    ? pagina.blocos
+    : Array.isArray((pagina as any)?.meio)
+      ? [
+          {
+            tipo: 'hero',
+            titulo: (pagina as any)?.hero?.titulo || pagina?.titulo || 'Relm Care+',
+            subtitulo: (pagina as any)?.hero?.subtitulo || pagina?.subtitulo || '',
+            ctaTexto: (pagina as any)?.hero?.ctaTexto || 'Quero o Care Plus',
+          },
+          ...(pagina as any).meio,
+        ]
+      : [];
+
+  const hero = rawBlocos.find((b) => b.tipo === 'hero') as
     | Extract<Bloco, { tipo: 'hero' }>
     | undefined;
-  const fecho = [...pagina.blocos].reverse().find((b) => b.tipo === 'cta') as
+  const fecho = [...rawBlocos].reverse().find((b) => b.tipo === 'cta') as
     | Extract<Bloco, { tipo: 'cta' }>
     | undefined;
-  const meio = pagina.blocos.filter((b) => b.tipo !== 'hero');
+  const meio = rawBlocos.filter((b) => b.tipo !== 'hero');
 
   let jaTeveTexto = false;
   const corpo = meio
@@ -252,11 +269,11 @@ export function renderLanding(
 <meta property="og:description" content="${esc(pagina.subtitulo)}" />
 <meta property="og:site_name" content="Relm Care+" />
 ${imagemAbsoluta ? `<meta property="og:image" content="${esc(imagemAbsoluta)}" />` : ''}
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,400&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet" />
+<meta name="twitter:card" content="${imagemAbsoluta ? 'summary_large_image' : 'summary'}" />
 <style>
-/* Fontes locais com fallback robusto no Google Fonts */
+/* Fontes servidas por nos, nunca por CDN de terceiro: a landing e publica, e
+   carregar tipografia de fora entrega o IP de cada visitante numa plataforma
+   que controla consentimento — alem de deixar a pagina refem da rede alheia. */
 @font-face{
   font-family:'Archivo';font-style:normal;font-weight:400 900;font-display:swap;
   src:url('${baseUrl}/fonts/archivo-latin-wght-normal.woff2') format('woff2-variations');

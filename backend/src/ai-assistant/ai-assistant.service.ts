@@ -111,19 +111,14 @@ export class AiAssistantService {
       }
     }
 
-    const textModel = map[KEY_TEXT] || DEFAULT_TEXT_MODEL;
-    let imageModel = map[KEY_IMAGE] || DEFAULT_IMAGE_MODEL;
-    if (imageModel === 'dall-e-2') {
-      imageModel = DEFAULT_IMAGE_MODEL;
-    }
-
-    // Garantir que o modelo atualmente salvo no DB apareça nas opções
-    if (textModel && !availableTextModels.includes(textModel)) {
-      availableTextModels.unshift(textModel);
-    }
-    if (imageModel && !availableImageModels.includes(imageModel)) {
-      availableImageModels.unshift(imageModel);
-    }
+    const textModel =
+      map[KEY_TEXT] && availableTextModels.includes(map[KEY_TEXT])
+        ? map[KEY_TEXT]
+        : DEFAULT_TEXT_MODEL;
+    const imageModel =
+      map[KEY_IMAGE] && availableImageModels.includes(map[KEY_IMAGE])
+        ? map[KEY_IMAGE]
+        : DEFAULT_IMAGE_MODEL;
 
     return {
       textModel,
@@ -149,18 +144,19 @@ export class AiAssistantService {
     },
     autorId?: string,
   ) {
+    const configAtual = await this.getConfig();
     const pares: [string, string][] = [];
-    if (dto.textModel && dto.textModel.trim()) {
+    if (dto.textModel && configAtual.textModels.includes(dto.textModel.trim())) {
       pares.push([KEY_TEXT, dto.textModel.trim()]);
     }
-    if (dto.imageModel && dto.imageModel.trim()) {
+    if (dto.imageModel && configAtual.imageModels.includes(dto.imageModel.trim())) {
       pares.push([KEY_IMAGE, dto.imageModel.trim()]);
     }
     if (dto.imageQuality === 'alta' || dto.imageQuality === 'padrao') {
       pares.push([KEY_QUALITY, dto.imageQuality]);
     }
 
-    const anterior = await this.getConfig();
+    const anterior = configAtual;
     const tons: [string, string, string][] = [];
     if (dto.tomLanding !== undefined) {
       tons.push([KEY_TOM_LANDING, dto.tomLanding.slice(0, TOM_MAX), anterior.tomLanding]);
