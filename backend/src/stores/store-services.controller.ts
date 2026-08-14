@@ -7,6 +7,8 @@ import {
   Param,
   Body,
   Query,
+  Req,
+  ForbiddenException,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -51,24 +53,44 @@ export class StoreServicesController {
   upsertStoreService(
     @Param('storeId') storeId: string,
     @Body() dto: UpsertStoreServiceDto,
+    @Req() req: any,
   ) {
+    if (req.user?.role === 'LOJA' && req.user?.storeId && req.user.storeId !== storeId) {
+      throw new ForbiddenException('A loja só pode gerenciar serviços do seu próprio perfil');
+    }
     return this.storeServicesService.upsert(storeId, dto);
   }
 
   @Patch('stores/services/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR')
-  updateStoreService(
+  async updateStoreService(
     @Param('id') id: string,
     @Body() dto: UpdateStoreServiceDto,
+    @Req() req: any,
   ) {
+    if (req.user?.role === 'LOJA' && req.user?.storeId) {
+      const existing = await this.storeServicesService.findOne(id);
+      if (existing.storeId !== req.user.storeId) {
+        throw new ForbiddenException('A loja só pode alterar serviços do seu próprio perfil');
+      }
+    }
     return this.storeServicesService.update(id, dto);
   }
 
   @Delete('stores/services/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM', 'LOJA', 'DISTRIBUIDOR')
-  removeStoreService(@Param('id') id: string) {
+  async removeStoreService(
+    @Param('id') id: string,
+    @Req() req: any,
+  ) {
+    if (req.user?.role === 'LOJA' && req.user?.storeId) {
+      const existing = await this.storeServicesService.findOne(id);
+      if (existing.storeId !== req.user.storeId) {
+        throw new ForbiddenException('A loja só pode desativar serviços do seu próprio perfil');
+      }
+    }
     return this.storeServicesService.remove(id);
   }
 }

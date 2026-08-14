@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { masterServicesAPI } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 import { Card, PageHeader, Button } from '../components/ui';
 import ConvenienceDetailModal from '../components/ConvenienceDetailModal';
 import {
@@ -292,6 +294,12 @@ function MasterServiceModal({ service, onClose }) {
 
 export default function AdminMasterServicesPage() {
   const queryClient = useQueryClient();
+  const user = useAuthStore((state) => state.user);
+  const canManageMaster =
+    user?.role === 'ADMIN_RELM' ||
+    user?.role === 'GERENTE_RELM' ||
+    user?.role === 'SUPORTE_RELM';
+
   const [selectedService, setSelectedService] = useState(null);
   const [selectedConvenienceDetail, setSelectedConvenienceDetail] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -343,20 +351,43 @@ export default function AdminMasterServicesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Catálogo Mestre de Serviços"
-        subtitle="Gerencie os modelos de serviços padrões oferecidos pela rede de lojas Relm."
+        title="Catálogo Mestre de Serviços & Conveniências"
+        subtitle={
+          canManageMaster
+            ? "Gerencie os modelos de serviços e diretrizes padrões oferecidos pela rede de lojas Relm."
+            : "Consulte as fichas técnicas e padrões oficiais da rede de lojas Relm."
+        }
         action={
-          <Button
-            onClick={() => {
-              setSelectedService(null);
-              setIsModalOpen(true);
-            }}
-            className="flex items-center gap-2"
-          >
-            <MdAdd className="h-5 w-5" /> Novo Serviço Mestre
-          </Button>
+          canManageMaster ? (
+            <Button
+              onClick={() => {
+                setSelectedService(null);
+                setIsModalOpen(true);
+              }}
+              className="flex items-center gap-2"
+            >
+              <MdAdd className="h-5 w-5" /> Novo Serviço Mestre
+            </Button>
+          ) : null
         }
       />
+
+      {!canManageMaster && (
+        <div className="rounded-2xl border border-cyan-200 bg-cyan-50/90 p-4 text-xs text-cyan-950 dark:border-cyan-900/50 dark:bg-cyan-950/40 dark:text-cyan-200 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">ℹ️</span>
+            <span>
+              <strong>Catálogo Geral da Rede Relm (Modo Consulta):</strong> As fichas técnicas e diretrizes abaixo servem de padrão para a rede. Para ativar, desativar ou personalizar os preços e regras dos serviços da sua loja, gerencie diretamente em <strong>Oficina & Conveniências</strong>.
+            </span>
+          </div>
+          <Link
+            to="/loja/oficina"
+            className="inline-flex items-center gap-1 rounded-xl bg-cyan-600 px-3 py-1.5 font-bold text-white shadow-sm hover:bg-cyan-700 transition"
+          >
+            Ir para Oficina & Conveniências da Loja →
+          </Link>
+        </div>
+      )}
 
       {/* Filter Bar */}
       <div className="space-y-3 rounded-2xl bg-white p-4 shadow-sm dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
@@ -602,41 +633,47 @@ export default function AdminMasterServicesPage() {
                     <MdInfoOutline className="h-4 w-4" /> Ficha Técnica
                   </button>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setSelectedService(service);
-                        setIsModalOpen(true);
-                      }}
-                      className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-cyan-600 hover:bg-cyan-50 dark:text-cyan-400 dark:hover:bg-slate-700 transition-colors"
-                    >
-                      <MdEdit className="h-4 w-4" /> Editar
-                    </button>
+                  {canManageMaster ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedService(service);
+                          setIsModalOpen(true);
+                        }}
+                        className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-cyan-600 hover:bg-cyan-50 dark:text-cyan-400 dark:hover:bg-slate-700 transition-colors"
+                      >
+                        <MdEdit className="h-4 w-4" /> Editar
+                      </button>
 
-                    {isInactive ? (
-                      <button
-                        onClick={() => {
-                          if (confirm(`Deseja reativar o serviço "${service.name}" no catálogo?`)) {
-                            reactivateMutation.mutate(service.id);
-                          }
-                        }}
-                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all"
-                      >
-                        <MdCheckCircle className="h-4 w-4" /> Reativar
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          if (confirm(`Deseja desativar o serviço "${service.name}"?`)) {
-                            deleteMutation.mutate(service.id);
-                          }
-                        }}
-                        className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-700 transition-colors"
-                      >
-                        <MdDelete className="h-4 w-4" /> Desativar
-                      </button>
-                    )}
-                  </div>
+                      {isInactive ? (
+                        <button
+                          onClick={() => {
+                            if (confirm(`Deseja reativar o serviço "${service.name}" no catálogo geral?`)) {
+                              reactivateMutation.mutate(service.id);
+                            }
+                          }}
+                          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all"
+                        >
+                          <MdCheckCircle className="h-4 w-4" /> Reativar
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            if (confirm(`Deseja desativar o serviço "${service.name}" do catálogo geral?`)) {
+                              deleteMutation.mutate(service.id);
+                            }
+                          }}
+                          className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-700 transition-colors"
+                        >
+                          <MdDelete className="h-4 w-4" /> Desativar
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-[11px] font-medium text-slate-400">
+                      Padrão Oficial Relm
+                    </span>
+                  )}
                 </div>
               </div>
             );
