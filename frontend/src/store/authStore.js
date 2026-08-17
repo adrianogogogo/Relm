@@ -30,6 +30,10 @@ function getDashboardPath(user) {
   switch (user.userType || user.role) {
     case 'CUSTOMER':
       return '/cliente/dashboard';
+    // Sem este caso o instrutor cairia no default '/admin' e levaria "Acesso
+    // Negado" logo após um login bem-sucedido.
+    case 'INSTRUTOR':
+      return '/instrutor';
     case 'DISTRIBUIDOR':
       return '/admin/stores';
     case 'ADMIN_RELM':

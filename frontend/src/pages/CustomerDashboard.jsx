@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MdVerifiedUser, MdDescription, MdEvent, MdPerson, MdLocationOn, MdCardGiftcard, MdShare, MdContentCopy, MdCheck, MdEmojiEvents, MdStorefront } from 'react-icons/md';
+import { MdVerifiedUser, MdDescription, MdEvent, MdPerson, MdLocationOn, MdCardGiftcard, MdShare, MdContentCopy, MdCheck, MdEmojiEvents, MdStorefront, MdDirectionsBike } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import { customerPortalAPI, gamificationAPI } from '../services/api';
 import { useEntitlements } from '../hooks/useEntitlements';
@@ -267,6 +267,10 @@ export default function CustomerDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Link to="/cliente/lojas" className="btn btn-outline justify-start border-cyan-500 text-cyan-700 dark:text-cyan-400">
                 <MdStorefront size={18} /> 📌 Lojas Próximas & Conveniências
+              </Link>
+              {/* Benefício que só converte se o cliente descobrir que existe. */}
+              <Link to="/cliente/instrutores" className="btn btn-outline justify-start border-amber-500 text-amber-700 dark:text-amber-400">
+                <MdDirectionsBike size={18} /> Instrutores com desconto
               </Link>
               <Link to="/seguro" className="btn btn-outline justify-start">
                 <MdDescription size={18} /> Cotação de seguro

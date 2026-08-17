@@ -23,6 +23,7 @@ import {
   MdReceipt,
   MdPayments,
   MdStorefront,
+  MdDirectionsBike,
   MdAnalytics,
   MdRule,
   MdAutoAwesome,
@@ -177,6 +178,12 @@ const CONFIG_ITEMS = [
     path: '/admin/parceiros',
     label: 'Parcerias',
     icon: MdStorefront,
+    roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
+  },
+  {
+    path: '/admin/instrutores',
+    label: 'Instrutores',
+    icon: MdDirectionsBike,
     roles: ['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM'],
   },
   {

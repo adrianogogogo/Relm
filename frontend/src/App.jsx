@@ -82,6 +82,9 @@ import AdminWhatsAppPage from './pages/AdminWhatsAppPage';
 import AdminPartnersPage from './pages/AdminPartnersPage';
 import AdminClubReportsPage from './pages/AdminClubReportsPage';
 import CustomerPartnersPage from './pages/CustomerPartnersPage';
+import CustomerInstructorsPage from './pages/CustomerInstructorsPage';
+import AdminInstructorsPage from './pages/AdminInstructorsPage';
+import InstructorPanelPage from './pages/InstructorPanelPage';
 import AdminClubSettingsPage from './pages/AdminClubSettingsPage';
 import AdminPointsRulesPage from './pages/AdminPointsRulesPage';
 import AdminMasterServicesPage from './pages/AdminMasterServicesPage';
@@ -164,6 +167,7 @@ export default function App() {
             <Route path="resgate" element={<CustomerCatalogPage />} />
             <Route path="ranking" element={<CustomerRankingPage />} />
             <Route path="parcerias" element={<CustomerPartnersPage />} />
+            <Route path="instrutores" element={<CustomerInstructorsPage />} />
           </Route>
 
           {/* ── Store portal (StoreLayout sidebar, no Header/Footer) ──────── */}
@@ -323,6 +327,11 @@ export default function App() {
                 <AdminPartnersPage />
               </ProtectedRoute>
             } />
+            <Route path="instrutores" element={
+              <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM', 'SUPORTE_RELM']}>
+                <AdminInstructorsPage />
+              </ProtectedRoute>
+            } />
             <Route path="relatorios-clube" element={
               <ProtectedRoute allowedRoles={['ADMIN_RELM', 'GERENTE_RELM']}>
                 <AdminClubReportsPage />
@@ -383,6 +392,19 @@ export default function App() {
                 antigos de notificações) redirecionam para /admin em vez de tela branca. */}
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Route>
+
+          {/* ── Painel do instrutor ───────────────────────────────────────────
+              Fora do AdminLayout de propósito: o instrutor é terceiro externo e
+              não pode ver o menu interno da Relm. Uma tela só — o aceite do
+              termo é um estado dela, não uma rota. */}
+          <Route
+            path="/instrutor"
+            element={
+              <ProtectedRoute allowedRoles={['INSTRUTOR']}>
+                <InstructorPanelPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* ── Catch-all global: qualquer outra URL desconhecida volta para a home ── */}
           <Route path="*" element={<Navigate to="/" replace />} />

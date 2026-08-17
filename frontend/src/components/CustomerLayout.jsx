@@ -21,6 +21,7 @@ import {
   MdEmojiEvents,
   MdStorefront,
   MdShoppingBag,
+  MdDirectionsBike,
 } from 'react-icons/md';
 
 const MENU = [
@@ -35,6 +36,7 @@ const MENU = [
   { path: '/cliente/seguros', label: 'Cotações de Seguro', icon: MdDescription },
   { path: '/cliente/ranking', label: 'Ranking', icon: MdEmojiEvents },
   { path: '/cliente/parcerias', label: 'Parcerias Exclusivas', icon: MdStorefront },
+  { path: '/cliente/instrutores', label: 'Instrutores', icon: MdDirectionsBike },
   { path: '/cliente/perfil', label: 'Meu Perfil', icon: MdPerson },
 ];
 

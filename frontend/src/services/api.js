@@ -380,6 +380,35 @@ export const rewardsAPI = {
 
 // ── Parcerias (Wave 5) ───────────────────────────────────────────────────────
 
+export const instructorsAPI = {
+  // Portal cliente — a listagem NÃO traz contato; ele só vem do createCredential.
+  getForCustomer: (params) =>
+    api.get('/instructors/for-customer', { params }).then((res) => res.data),
+  getSpecialtiesForCustomer: () =>
+    api.get('/instructors/for-customer/specialties').then((res) => res.data),
+  getMyCredentials: () => api.get('/instructors/credentials').then((res) => res.data),
+  createCredential: (id) =>
+    api.post(`/instructors/${id}/credential`).then((res) => res.data),
+
+  // Painel do instrutor
+  me: () => api.get('/instructors/me').then((res) => res.data),
+  acceptTerms: () => api.post('/instructors/me/accept-terms').then((res) => res.data),
+  getCredentials: () => api.get('/instructors/me/credentials').then((res) => res.data),
+  checkCredential: (code) =>
+    api.get(`/instructors/me/credentials/${code}`).then((res) => res.data),
+
+  // Admin CRUD
+  getAll: () => api.get('/instructors').then((res) => res.data),
+  create: (data) => api.post('/instructors', data).then((res) => res.data),
+  update: (id, data) => api.patch(`/instructors/${id}`, data).then((res) => res.data),
+  remove: (id) => api.delete(`/instructors/${id}`).then((res) => res.data),
+  getSpecialties: () => api.get('/instructors/specialties').then((res) => res.data),
+  createSpecialty: (name) =>
+    api.post('/instructors/specialties', { name }).then((res) => res.data),
+  updateSpecialty: (id, data) =>
+    api.patch(`/instructors/specialties/${id}`, data).then((res) => res.data),
+};
+
 export const partnersAPI = {
   // Portal cliente — parceiros ativos com flag eligible
   getForCustomer: () => api.get('/partners/for-customer').then((res) => res.data),
