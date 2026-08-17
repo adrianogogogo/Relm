@@ -15,55 +15,55 @@ datasource db {
 // ============================================
 
 model Customer {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  passwordHash String?   @map("password_hash") // Null para cadastros via garantia
-  fullName     String    @map("full_name")
-  phone        String
-  cpf          String? // Opcional, normalizado (11 dígitos)
-  birthDate    DateTime? @map("birth_date")
-  address      String?
-  city         String?
-  state        String?
-  country      String?   @default("Brasil")
-  zipCode      String?   @map("zip_code")
-
+  id       String    @id @default(uuid())
+  email    String    @unique
+  passwordHash String? @map("password_hash") // Null para cadastros via garantia
+  fullName String    @map("full_name")
+  phone    String
+  cpf      String?   // Opcional, normalizado (11 dígitos)
+  birthDate DateTime? @map("birth_date")
+  address  String?
+  city     String?
+  state    String?
+  country  String?   @default("Brasil")
+  zipCode  String?   @map("zip_code")
+  
   // Loja de compra
-  storeId String? @map("store_id")
-
+  storeId  String?   @map("store_id")
+  
   // Observações internas
-  notes String? @db.Text
-
+  notes    String?   @db.Text
+  
   // Status
-  active Boolean @default(true)
-
+  active   Boolean   @default(true)
+  
   // Marketing
   marketingConsent Boolean @default(false) @map("marketing_consent")
-
+  
   // HelmDesk integration
-  helmdeskUserId String? @map("helmdesk_user_id")
+  helmdeskUserId String?   @map("helmdesk_user_id")
 
   // Password reset
   resetPasswordToken   String?   @unique @map("reset_password_token")
   resetPasswordExpires DateTime? @map("reset_password_expires")
 
   // Tokens
-  refreshToken String? @map("refresh_token") @db.Text
+  refreshToken   String?   @map("refresh_token") @db.Text
 
   // Metadata
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // V2 Expansão
-  currentTier TierLevel @default(CARE) @map("current_tier")
+  currentTier            TierLevel               @default(CARE) @map("current_tier")
 
   // Referral (Wave 3)
-  referralCode String? @unique @map("referral_code")
-  referredById String? @map("referred_by_id")
+  referralCode           String?                 @unique @map("referral_code")
+  referredById           String?                 @map("referred_by_id")
 
   // Gamification (Wave 4)
-  leaderboardOptIn Boolean @default(false) @map("leaderboard_opt_in")
-  nickname         String?
+  leaderboardOptIn       Boolean                 @default(false) @map("leaderboard_opt_in")
+  nickname               String?
 
   // Relations
   store                  Store?                  @relation(fields: [storeId], references: [id])
@@ -98,30 +98,30 @@ model Product {
   // serialNumber é da UNIDADE (preenchido na garantia). Catálogo (cadastro
   // admin por modelo) não tem série — por isso é opcional.
   serialNumber          String?   @unique @map("serial_number")
-  name                  String? // Nome comercial do produto (catálogo)
-  sku                   String? // ponytail: SKU livre, não-único por ora
+  name                  String?   // Nome comercial do produto (catálogo)
+  sku                   String?   // ponytail: SKU livre, não-único por ora
   brand                 String    @default("Relm Bikes")
   productType           String?   @map("product_type") // Road, MTB, Gravel, E-bike, Acessórios
   model                 String?
-  year                  Int? // Ano do modelo
+  year                  Int?      // Ano do modelo
   description           String?   @db.Text
   purchaseDate          DateTime? @map("purchase_date")
   purchaseInvoiceNumber String?   @map("purchase_invoice_number")
   purchaseStoreName     String?   @map("purchase_store_name")
   storeId               String?   @map("store_id")
   price                 Decimal?  @map("price") @db.Decimal(10, 2)
-
+  
   // Metadata
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
+  
   // Relations
-  store             Store?            @relation(fields: [storeId], references: [id])
-  warrantyClaims    WarrantyClaim[]
-  insuranceQuotes   InsuranceQuote[]
+  store           Store?          @relation(fields: [storeId], references: [id])
+  warrantyClaims  WarrantyClaim[]
+  insuranceQuotes InsuranceQuote[]
   insurancePolicies InsurancePolicy[]
-  saleItems         SaleItem[]
-  pointsRule        PointsRule?
+  saleItems       SaleItem[]
+  pointsRule      PointsRule?
 
   @@index([serialNumber])
   @@index([storeId])
@@ -129,62 +129,62 @@ model Product {
 }
 
 model Store {
-  id        String   @id @default(uuid())
-  tradeName String   @map("trade_name")
-  legalName String   @map("legal_name")
-  cnpj      String?  @unique
-  aliases   String[] // Variações do nome
-  email     String?
-  phone     String?
-  address   String?
-  city      String
-  state     String
-  zipCode   String?  @map("zip_code")
-  latitude  String? // Coordenada geográfica
-  longitude String? // Coordenada geográfica
-  logoUrl   String?  @map("logo_url") // URL da logomarca da loja
-  active    Boolean  @default(true)
-
+  id         String   @id @default(uuid())
+  tradeName  String   @map("trade_name")
+  legalName  String   @map("legal_name")
+  cnpj       String?  @unique
+  aliases    String[] // Variações do nome
+  email      String?
+  phone      String?
+  address    String?
+  city       String
+  state      String
+  zipCode    String?  @map("zip_code")
+  latitude   String?  // Coordenada geográfica
+  longitude  String?  // Coordenada geográfica
+  logoUrl    String?  @map("logo_url") // URL da logomarca da loja
+  active     Boolean  @default(true)
+  
   // HelmDesk integration
   helmdeskStoreId String? @map("helmdesk_store_id")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  
   // Relations
-  products       Product[]
-  users          User[]
-  customers      Customer[]
-  warrantyClaims WarrantyClaim[]
-  storeUsers     StoreUser[]
-  serviceOrders  ServiceOrder[]
-  sales          Sale[]
-  storeServices  StoreService[]
-  landingPages   LandingPage[]
+  products        Product[]
+  users           User[]
+  customers       Customer[]
+  warrantyClaims  WarrantyClaim[]
+  storeUsers      StoreUser[]
+  serviceOrders   ServiceOrder[]
+  sales           Sale[]
+  storeServices   StoreService[]
+  landingPages    LandingPage[]
 
   @@index([city, state])
   @@map("stores")
 }
 
 model StoreUser {
-  id           String  @id @default(uuid())
-  storeId      String  @map("store_id")
-  email        String  @unique
-  passwordHash String  @map("password_hash")
+  id           String   @id @default(uuid())
+  storeId      String   @map("store_id")
+  email        String   @unique
+  passwordHash String   @map("password_hash")
   name         String
-  role         String  @default("STORE_ADMIN")
-  isActive     Boolean @default(true) @map("is_active")
+  role         String   @default("STORE_ADMIN")
+  isActive     Boolean  @default(true) @map("is_active")
 
   // Password reset
   resetPasswordToken   String?   @unique @map("reset_password_token")
   resetPasswordExpires DateTime? @map("reset_password_expires")
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  
   // Relations
   store Store @relation(fields: [storeId], references: [id])
-
+  
   @@index([storeId])
   @@index([email])
   @@map("store_users")
@@ -201,32 +201,32 @@ enum UserRole {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  name          String
-  email         String   @unique
-  passwordHash  String   @map("password_hash")
-  role          UserRole
-  storeId       String?  @map("store_id")
-  distributorId String?  @map("distributor_id")
+  id             String    @id @default(uuid())
+  name           String
+  email          String    @unique
+  passwordHash   String    @map("password_hash")
+  role           UserRole
+  storeId        String?   @map("store_id")
+  distributorId  String?   @map("distributor_id")
   // Vínculo do usuário INSTRUTOR com o seu registro. Mesmo padrão do storeId
   // acima: o token não carrega este id, o service busca no banco (plano 010).
-  instructorId  String?  @map("instructor_id")
-  active        Boolean  @default(true)
-
+  instructorId   String?   @map("instructor_id")
+  active         Boolean   @default(true)
+  
   // Tokens
-  refreshToken String? @map("refresh_token") @db.Text
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  refreshToken   String?   @map("refresh_token") @db.Text
+  
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  
   // Relations
-  store          Store?          @relation(fields: [storeId], references: [id])
-  distributor    Distributor?    @relation(fields: [distributorId], references: [id])
-  instructor     Instructor?     @relation(fields: [instructorId], references: [id])
+  store          Store?       @relation(fields: [storeId], references: [id])
+  distributor    Distributor? @relation(fields: [distributorId], references: [id])
+  instructor     Instructor?  @relation(fields: [instructorId], references: [id])
   // warrantyEvents WarrantyEvent[] // DEPRECATED (fase 4)
   assignedClaims WarrantyClaim[] @relation("ClaimAssignee")
   auditLogs      AuditLog[]
-  salesSold      Sale[]          @relation("SaleSeller")
+  salesSold      Sale[] @relation("SaleSeller")
 
   @@index([email])
   @@index([role])
@@ -234,18 +234,18 @@ model User {
 }
 
 model Distributor {
-  id        String  @id @default(uuid())
-  tradeName String  @map("trade_name")
-  legalName String  @map("legal_name")
-  cnpj      String? @unique
-  active    Boolean @default(true)
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  id         String   @id @default(uuid())
+  tradeName  String   @map("trade_name")
+  legalName  String   @map("legal_name")
+  cnpj       String?  @unique
+  active     Boolean  @default(true)
+  
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  
   // Relations
   users User[]
-
+  
   @@map("distributors")
 }
 
@@ -270,68 +270,68 @@ enum LinkStatus {
 }
 
 model WarrantyClaim {
-  id             String @id @default(uuid())
-  protocolNumber String @unique @map("protocol_number")
-
+  id                   String         @id @default(uuid())
+  protocolNumber       String         @unique @map("protocol_number")
+  
   // Relacionamentos
-  customerId String  @map("customer_id")
-  productId  String  @map("product_id")
-  storeId    String? @map("store_id")
-
+  customerId           String         @map("customer_id")
+  productId            String         @map("product_id")
+  storeId              String?        @map("store_id")
+  
   // Dados da nota fiscal
-  invoiceNumber        String  @map("invoice_number")
-  invoiceAttachmentUrl String? @map("invoice_attachment_url") // V2
-
+  invoiceNumber        String         @map("invoice_number")
+  invoiceAttachmentUrl String?        @map("invoice_attachment_url") // V2
+  
   // Dados da loja (informados pelo cliente)
-  purchaseStoreName  String  @map("purchase_store_name")
-  purchaseStoreCity  String? @map("purchase_store_city")
-  purchaseStoreState String? @map("purchase_store_state")
-
+  purchaseStoreName    String         @map("purchase_store_name")
+  purchaseStoreCity    String?        @map("purchase_store_city")
+  purchaseStoreState   String?        @map("purchase_store_state")
+  
   // Status
-  linkStatus LinkStatus @default(PENDING_REVIEW) @map("link_status")
+  linkStatus           LinkStatus     @default(PENDING_REVIEW) @map("link_status")
   // status → removido na fase 4. Agora o fluxo é controlado por statusId (FK warranty_statuses).
-  statusId   Int?       @map("status_id")
-
+  statusId             Int?           @map("status_id")
+  
   // Observações
-  customerNotes   String? @map("customer_notes") @db.Text
-  adminNotes      String? @map("admin_notes") @db.Text
-  rejectionReason String? @map("rejection_reason") @db.Text
-  resolution      String? @db.Text
-
+  customerNotes        String?        @map("customer_notes") @db.Text
+  adminNotes           String?        @map("admin_notes") @db.Text
+  rejectionReason      String?        @map("rejection_reason") @db.Text
+  resolution           String?        @db.Text
+  
   // Token de validação
-  validationToken  String?   @unique @map("validation_token")
-  tokenGeneratedAt DateTime? @map("token_generated_at")
-  validatedAt      DateTime? @map("validated_at")
-
+  validationToken      String?        @unique @map("validation_token")
+  tokenGeneratedAt     DateTime?      @map("token_generated_at")
+  validatedAt          DateTime?      @map("validated_at")
+  
   // Email de aprovação
-  approvalEmailSentAt DateTime? @map("approval_email_sent_at")
-  approvedByUserId    String?   @map("approved_by_user_id")
-  approvedAt          DateTime? @map("approved_at")
-
+  approvalEmailSentAt  DateTime?      @map("approval_email_sent_at")
+  approvedByUserId     String?        @map("approved_by_user_id")
+  approvedAt           DateTime?      @map("approved_at")
+  
   // Custo da garantia para a empresa (informado por admin/gerente)
-  cost Decimal? @map("cost") @db.Decimal(10, 2)
+  cost                 Decimal?       @db.Decimal(10, 2) @map("cost")
 
   // Responsavel atual + fechamento automatico (Onda 4)
-  assignedToUserId String?   @map("assigned_to_user_id")
-  autoCloseAt      DateTime? @map("auto_close_at")
+  assignedToUserId     String?        @map("assigned_to_user_id")
+  autoCloseAt          DateTime?      @map("auto_close_at")
 
   // HelmDesk integration
-  helmdeskTicketId String? @map("helmdesk_ticket_id")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  helmdeskTicketId     String?        @map("helmdesk_ticket_id")
+  
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+  
   // Relations
-  customer    Customer             @relation(fields: [customerId], references: [id])
-  product     Product              @relation(fields: [productId], references: [id])
-  store       Store?               @relation(fields: [storeId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  product  Product  @relation(fields: [productId], references: [id])
+  store    Store?   @relation(fields: [storeId], references: [id])
   // events   WarrantyEvent[] // DEPRECATED (fase 4)
-  tasks       WarrantyTask[]
+  tasks    WarrantyTask[]
   attachments WarrantyAttachment[]
-  assignedTo  User?                @relation("ClaimAssignee", fields: [assignedToUserId], references: [id])
-  statusDef   WarrantyStatusDef?   @relation(fields: [statusId], references: [id])
-  history     WarrantyHistory[]
-  solutions   WarrantySolution[]
+  assignedTo User? @relation("ClaimAssignee", fields: [assignedToUserId], references: [id])
+  statusDef  WarrantyStatusDef? @relation(fields: [statusId], references: [id])
+  history    WarrantyHistory[]
+  solutions  WarrantySolution[]
 
   @@index([protocolNumber])
   @@index([customerId])
@@ -347,12 +347,12 @@ model WarrantyClaim {
 
 // Status configuráveis do workflow (substitui o enum WarrantyStatus).
 model WarrantyStatusDef {
-  id          Int     @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String
-  slug        String  @unique
-  color       String  @default("#666666")
-  sortOrder   Int     @map("sort_order")
-  isActive    Boolean @default(true) @map("is_active")
+  slug        String   @unique
+  color       String   @default("#666666")
+  sortOrder   Int      @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
   description String?
 
   claims WarrantyClaim[]
@@ -390,7 +390,7 @@ model WarrantySolution {
   description             String    @db.Text
   solutionType            String    @default("outro") @map("solution_type") // reparo/troca/reembolso/cortesia/outro
   hasCost                 Boolean   @default(false) @map("has_cost")
-  costValue               Decimal?  @map("cost_value") @db.Decimal(10, 2)
+  costValue               Decimal?  @db.Decimal(10, 2) @map("cost_value")
   costNotes               String?   @map("cost_notes") @db.Text
   status                  String    @default("pendente") // pendente/aprovado/reprovado
   proposedBy              String?   @map("proposed_by")
@@ -425,13 +425,13 @@ model WarrantyTask {
   status          String    @default("pendente")
   assignee        String?
   assigneeRole    String?   @map("assignee_role")
-  stage           String? // etapa do fluxo (WarrantyStatus) que originou a tarefa
+  stage           String?   // etapa do fluxo (WarrantyStatus) que originou a tarefa
   dueDate         DateTime? @map("due_date")
   createdByUserId String?   @map("created_by_user_id")
   autoGenerated   Boolean   @default(false) @map("auto_generated")
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   claim WarrantyClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
 
@@ -442,15 +442,15 @@ model WarrantyTask {
 // Anexos de uma garantia. ponytail: armazenamento em disco do servidor
 // (storagePath). Upgrade path: S3/object storage se o volume crescer.
 model WarrantyAttachment {
-  id               String  @id @default(uuid())
-  claimId          String  @map("claim_id")
-  fileName         String  @map("file_name")
-  mimeType         String  @map("mime_type")
+  id               String   @id @default(uuid())
+  claimId          String   @map("claim_id")
+  fileName         String   @map("file_name")
+  mimeType         String   @map("mime_type")
   size             Int
-  storagePath      String  @map("storage_path")
-  uploadedByUserId String? @map("uploaded_by_user_id")
+  storagePath      String   @map("storage_path")
+  uploadedByUserId String?  @map("uploaded_by_user_id")
 
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt        DateTime @default(now()) @map("created_at")
 
   claim WarrantyClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
 
@@ -476,16 +476,16 @@ model BenefitMembership {
   id         String           @id @default(uuid())
   customerId String           @map("customer_id")
   status     MembershipStatus @default(ACTIVE)
-  tier       String? // V2: PRIME, VIP, etc.
+  tier       String?          // V2: PRIME, VIP, etc.
   joinedAt   DateTime         @default(now()) @map("joined_at")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+  
   // Relations
-  customer    Customer            @relation(fields: [customerId], references: [id])
+  customer    Customer @relation(fields: [customerId], references: [id])
   redemptions BenefitRedemption[]
-
+  
   @@unique([customerId])
   @@map("benefit_memberships")
 }
@@ -498,33 +498,33 @@ model Benefit {
   validFrom   DateTime @map("valid_from")
   validUntil  DateTime @map("valid_until")
   active      Boolean  @default(true)
-
+  
   // Segmentação
   targetRoles String[] @default([]) @map("target_roles") // CLIENTE, LOJA, DISTRIBUIDOR, vazio = todos
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
   // Relations
   redemptions BenefitRedemption[]
-
+  
   @@index([active, validFrom, validUntil])
   @@map("benefits")
 }
 
 model BenefitRedemption {
-  id           String  @id @default(uuid())
-  benefitId    String  @map("benefit_id")
-  customerId   String? @map("customer_id")
-  storeId      String? @map("store_id")
-  membershipId String  @map("membership_id")
-
-  redeemedAt DateTime @default(now()) @map("redeemed_at")
-
+  id           String   @id @default(uuid())
+  benefitId    String   @map("benefit_id")
+  customerId   String?  @map("customer_id")
+  storeId      String?  @map("store_id")
+  membershipId String   @map("membership_id")
+  
+  redeemedAt   DateTime @default(now()) @map("redeemed_at")
+  
   // Relations
   benefit    Benefit           @relation(fields: [benefitId], references: [id])
   membership BenefitMembership @relation(fields: [membershipId], references: [id])
-
+  
   @@index([redeemedAt])
   @@map("benefit_redemptions")
 }
@@ -534,28 +534,28 @@ model BenefitRedemption {
 // ============================================
 
 model InsuranceQuote {
-  id             String  @id @default(uuid())
-  protocolNumber String  @unique @map("protocol_number")
-  customerId     String  @map("customer_id")
-  productId      String? @map("product_id")
-
+  id              String   @id @default(uuid())
+  protocolNumber  String   @unique @map("protocol_number")
+  customerId      String   @map("customer_id")
+  productId       String?  @map("product_id")
+  
   // Dados do seguro
-  bikeValue Decimal? @map("bike_value") @db.Decimal(10, 2)
-  city      String?
-  state     String?
-
+  bikeValue       Decimal? @map("bike_value") @db.Decimal(10, 2)
+  city            String?
+  state           String?
+  
   // V2: campos de integração
-  quoteValue       Decimal?  @map("quote_value") @db.Decimal(10, 2)
-  insuranceCompany String?   @map("insurance_company")
-  status           String    @default("PENDING")
-  quotedAt         DateTime? @map("quoted_at")
+  quoteValue        Decimal? @map("quote_value") @db.Decimal(10, 2)
+  insuranceCompany  String?  @map("insurance_company")
+  status            String   @default("PENDING")
+  quotedAt          DateTime? @map("quoted_at")
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
   // Relations
-  customer Customer          @relation(fields: [customerId], references: [id])
-  product  Product?          @relation(fields: [productId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  product  Product? @relation(fields: [productId], references: [id])
   policies InsurancePolicy[]
 
   @@index([protocolNumber])
@@ -618,14 +618,14 @@ model Event {
   active          Boolean  @default(true)
 
   // Segmentação
-  targetRoles String[] @default([]) @map("target_roles") // CLIENTE, LOJA, DISTRIBUIDOR, vazio = todos
+  targetRoles     String[] @default([]) @map("target_roles") // CLIENTE, LOJA, DISTRIBUIDOR, vazio = todos
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   // Relations
   registrations EventRegistration[]
-
+  
   @@index([startAt])
   @@map("events")
 }
@@ -637,7 +637,7 @@ model EventRegistration {
   attended   Boolean   @default(false)
   attendedAt DateTime? @map("attended_at")
 
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
 
   // Relations
   event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -662,13 +662,13 @@ model NewsletterSubscription {
   email      String             @unique
   customerId String?            @unique @map("customer_id")
   status     SubscriptionStatus @default(ACTIVE)
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+  
   // Relations
   customer Customer? @relation(fields: [customerId], references: [id])
-
+  
   @@index([email])
   @@index([status])
   @@map("newsletter_subscriptions")
@@ -686,10 +686,10 @@ model ContentItem {
   targetRole  String?   @map("target_role") // LOJA, DISTRIBUIDOR, null = todos
   publishedAt DateTime? @map("published_at")
   active      Boolean   @default(true)
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
   @@index([active, publishedAt])
   @@index([targetRole])
   @@map("content_items")
@@ -702,19 +702,19 @@ model ContentItem {
 // `storeId` é coluna solta, sem FK: a página é da campanha, não da loja, e a
 // loja só entra no rodapé. Apagar uma loja não pode derrubar a campanha.
 model LandingPage {
-  id          String  @id @default(uuid())
-  slug        String  @unique
-  title       String  @default("")
-  description String? @db.Text
-  blocksJson  Json    @map("blocks_json")
-  active      Boolean @default(true)
-  viewCount   Int     @default(0) @map("view_count")
-  storeId     String? @map("store_id")
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  title       String   @default("")
+  description String?  @db.Text
+  blocksJson  Json     @map("blocks_json")
+  active      Boolean  @default(true)
+  viewCount   Int      @default(0) @map("view_count")
+  storeId     String?  @map("store_id")
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  store Store? @relation(fields: [storeId], references: [id])
+  store       Store?   @relation(fields: [storeId], references: [id])
 
   @@index([active])
   @@index([slug])
@@ -729,10 +729,10 @@ model Announcement {
   targetRole  String?  @map("target_role") // LOJA, DISTRIBUIDOR, null = todos
   publishedAt DateTime @default(now()) @map("published_at")
   active      Boolean  @default(true)
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
   @@index([active, publishedAt])
   @@map("announcements")
 }
@@ -742,16 +742,16 @@ model Announcement {
 // ============================================
 
 model PrivacyPolicyVersion {
-  id      String  @id @default(uuid())
-  version String  @unique
-  content String  @db.Text // Markdown
-  active  Boolean @default(false)
-
+  id      String   @id @default(uuid())
+  version String   @unique
+  content String   @db.Text // Markdown
+  active  Boolean  @default(false)
+  
   createdAt DateTime @default(now()) @map("created_at")
-
+  
   // Relations
   consents PrivacyConsent[]
-
+  
   @@map("privacy_policy_versions")
 }
 
@@ -762,11 +762,11 @@ model PrivacyConsent {
   acceptedAt      DateTime @default(now()) @map("accepted_at")
   ipAddress       String?  @map("ip_address")
   userAgent       String?  @map("user_agent") @db.Text
-
+  
   // Relations
   policyVersion PrivacyPolicyVersion @relation(fields: [policyVersionId], references: [id])
   customer      Customer             @relation(fields: [customerId], references: [id])
-
+  
   @@index([customerId])
   @@map("privacy_consents")
 }
@@ -778,15 +778,15 @@ model PrivacyConsent {
 // actorType+actorId, com o e-mail no metadata para leitura humana.
 //   actorType: "USER" | "STORE_USER" | "CUSTOMER" | "ANONIMO"
 model AuditLog {
-  id        String  @id @default(uuid())
-  userId    String? @map("user_id")
-  actorType String? @map("actor_type")
-  actorId   String? @map("actor_id")
-  action    String // EXPORT_DATA, VIEW_SENSITIVE, etc.
-  entity    String // customers, warranty_claims, etc.
-  entityId  String? @map("entity_id")
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  actorType String?  @map("actor_type")
+  actorId   String?  @map("actor_id")
+  action    String   // EXPORT_DATA, VIEW_SENSITIVE, etc.
+  entity    String   // customers, warranty_claims, etc.
+  entityId  String?  @map("entity_id")
   metadata  Json?
-  ipAddress String? @map("ip_address")
+  ipAddress String?  @map("ip_address")
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -812,7 +812,7 @@ model Notification {
   id            String    @id @default(uuid())
   recipientType String    @map("recipient_type") // USER | STORE_USER
   recipientId   String    @map("recipient_id")
-  type          String // WARRANTY_NEW | INSURANCE_NEW | EVENT_REGISTRATION | CUSTOMER_NEW
+  type          String    // WARRANTY_NEW | INSURANCE_NEW | EVENT_REGISTRATION | CUSTOMER_NEW
   title         String
   message       String    @db.Text
   link          String?
@@ -830,21 +830,21 @@ model Notification {
 // ============================================
 
 model Banner {
-  id           String  @id @default(uuid())
+  id           String   @id @default(uuid())
   title        String
   subtitle     String?
-  imageUrl     String  @map("image_url")
-  linkUrl      String? @map("link_url")
-  linkText     String? @map("link_text")
-  displayOrder Int     @default(0) @map("display_order")
-  active       Boolean @default(true)
+  imageUrl     String   @map("image_url")
+  linkUrl      String?  @map("link_url")
+  linkText     String?  @map("link_text")
+  displayOrder Int      @default(0) @map("display_order")
+  active       Boolean  @default(true)
 
   // Segmentação por público e página
-  audience String  @default("PUBLIC") // PUBLIC | CLIENTE | LOJA | ADMIN
-  page     String? // chave da página dentro do público (NULL = todas as páginas)
+  audience     String   @default("PUBLIC") // PUBLIC | CLIENTE | LOJA | ADMIN
+  page         String?  // chave da página dentro do público (NULL = todas as páginas)
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@index([active])
   @@index([displayOrder])
@@ -945,7 +945,7 @@ model Subscription {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   autoRenew   Boolean   @default(false) @map("auto_renew")
 
-  payments Payment[]
+  payments    Payment[]
 
   @@index([customerId, status])
   @@map("subscriptions")
@@ -970,22 +970,22 @@ enum PaymentStatus {
 // Pagamento da anuidade Plus. Registro manual hoje; pronto para gateway futuro
 // via `gatewayId` + method GATEWAY (PaymentGatewayService).
 model Payment {
-  id               String        @id @default(uuid())
-  subscriptionId   String        @map("subscription_id")
-  subscription     Subscription  @relation(fields: [subscriptionId], references: [id])
-  customerId       String        @map("customer_id")
-  customer         Customer      @relation(fields: [customerId], references: [id])
-  amount           Decimal       @db.Decimal(10, 2)
-  method           PaymentMethod
-  status           PaymentStatus @default(PENDING)
+  id             String        @id @default(uuid())
+  subscriptionId String        @map("subscription_id")
+  subscription   Subscription  @relation(fields: [subscriptionId], references: [id])
+  customerId     String        @map("customer_id")
+  customer       Customer      @relation(fields: [customerId], references: [id])
+  amount         Decimal       @db.Decimal(10, 2)
+  method         PaymentMethod
+  status         PaymentStatus @default(PENDING)
   // Quem registrou: id do User (equipe) ou do StoreUser (lojista).
-  registeredById   String        @map("registered_by_id")
-  registeredByType String        @map("registered_by_type") // "USER" | "STORE_USER"
-  gatewayId        String?       @map("gateway_id") // reservado p/ gateway futuro
-  paidAt           DateTime?     @map("paid_at")
-  notes            String?       @db.Text
-  createdAt        DateTime      @default(now()) @map("created_at")
-  updatedAt        DateTime      @updatedAt @map("updated_at")
+  registeredById   String  @map("registered_by_id")
+  registeredByType String  @map("registered_by_type") // "USER" | "STORE_USER"
+  gatewayId        String? @map("gateway_id") // reservado p/ gateway futuro
+  paidAt           DateTime? @map("paid_at")
+  notes            String? @db.Text
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
   @@index([customerId])
   @@index([subscriptionId])
@@ -1004,18 +1004,18 @@ model ClubSettings {
 }
 
 model PointsLedger {
-  id              String       @id @default(uuid())
-  customerId      String       @map("customer_id")
-  customer        Customer     @relation(fields: [customerId], references: [id])
-  transactionType PointTxType  @map("transaction_type")
+  id              String      @id @default(uuid())
+  customerId      String      @map("customer_id")
+  customer        Customer    @relation(fields: [customerId], references: [id])
+  transactionType PointTxType @map("transaction_type")
   // Linhas antigas são todas do saldo histórico — daí o default.
   bucket          PointsBucket @default(ACUMULAVEL)
   amount          Int
   description     String
-  referenceId     String?      @map("reference_id")
-  createdAt       DateTime     @default(now()) @map("created_at")
-  expiresAt       DateTime?    @map("expires_at")
-  isExpired       Boolean      @default(false) @map("is_expired")
+  referenceId     String?     @map("reference_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  expiresAt       DateTime?   @map("expires_at")
+  isExpired       Boolean     @default(false) @map("is_expired")
 
   @@index([customerId])
   @@map("points_ledger")
@@ -1043,22 +1043,22 @@ model PointsRule {
 }
 
 model ServiceOrder {
-  id               String        @id @default(uuid())
-  customerId       String        @map("customer_id")
-  customer         Customer      @relation(fields: [customerId], references: [id])
-  storeId          String        @map("store_id")
-  store            Store         @relation(fields: [storeId], references: [id])
-  storeServiceId   String?       @map("store_service_id")
-  storeService     StoreService? @relation(fields: [storeServiceId], references: [id])
-  bikeModel        String        @map("bike_model")
-  serviceType      ServiceType   @default(REVISION_BASIC) @map("service_type")
-  priceCharged     Decimal?      @map("price_charged") @db.Decimal(10, 2)
-  estimatedMinutes Int?          @map("estimated_minutes")
-  priority         PriorityLevel
-  deliveryRequest  Boolean       @default(false) @map("delivery_request")
-  scheduledFor     DateTime      @map("scheduled_for")
-  status           ServiceStatus
-  createdAt        DateTime      @default(now()) @map("created_at")
+  id              String        @id @default(uuid())
+  customerId      String        @map("customer_id")
+  customer        Customer      @relation(fields: [customerId], references: [id])
+  storeId         String        @map("store_id")
+  store           Store         @relation(fields: [storeId], references: [id])
+  storeServiceId  String?       @map("store_service_id")
+  storeService    StoreService? @relation(fields: [storeServiceId], references: [id])
+  bikeModel       String        @map("bike_model")
+  serviceType     ServiceType   @default(REVISION_BASIC) @map("service_type")
+  priceCharged    Decimal?      @map("price_charged") @db.Decimal(10, 2)
+  estimatedMinutes Int?         @map("estimated_minutes")
+  priority        PriorityLevel
+  deliveryRequest Boolean       @default(false) @map("delivery_request")
+  scheduledFor    DateTime      @map("scheduled_for")
+  status          ServiceStatus
+  createdAt       DateTime      @default(now()) @map("created_at")
 
   // Wave 6 — logística leva-e-traz (só quando serviceType=BUSCA_ENTREGA)
   pickupAddress   String?          @map("pickup_address")
@@ -1070,19 +1070,19 @@ model ServiceOrder {
 }
 
 model MasterService {
-  id                         String           @id @default(uuid())
-  name                       String
-  description                String?          @db.Text
-  category                   String?
-  defaultEstimatedMinutes    Int              @default(60) @map("default_estimated_minutes")
-  defaultPrice               Decimal?         @map("default_price") @db.Decimal(10, 2)
-  defaultPointsCost          Int?             @map("default_points_cost")
-  defaultPlusRule            PlusCoverageRule @default(FREE) @map("default_plus_rule")
-  defaultPlusPrice           Decimal?         @map("default_plus_price") @db.Decimal(10, 2)
-  defaultPlusDiscountPercent Int?             @map("default_plus_discount_percent")
-  active                     Boolean          @default(true)
-  createdAt                  DateTime         @default(now()) @map("created_at")
-  updatedAt                  DateTime         @updatedAt @map("updated_at")
+  id                      String   @id @default(uuid())
+  name                    String
+  description             String?  @db.Text
+  category                String?
+  defaultEstimatedMinutes Int      @default(60) @map("default_estimated_minutes")
+  defaultPrice            Decimal? @map("default_price") @db.Decimal(10, 2)
+  defaultPointsCost       Int?     @map("default_points_cost")
+  defaultPlusRule         PlusCoverageRule @default(FREE) @map("default_plus_rule")
+  defaultPlusPrice        Decimal? @map("default_plus_price") @db.Decimal(10, 2)
+  defaultPlusDiscountPercent Int?  @map("default_plus_discount_percent")
+  active                  Boolean  @default(true)
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
 
   storeServices StoreService[]
 
@@ -1127,13 +1127,13 @@ enum ReferralStatus {
 }
 
 model Referral {
-  id            String         @id @default(uuid())
-  referrerId    String         @map("referrer_id")
-  referredId    String         @unique @map("referred_id")
-  status        ReferralStatus @default(PENDING)
-  pointsAwarded Int?           @map("points_awarded")
-  completedAt   DateTime?      @map("completed_at")
-  createdAt     DateTime       @default(now()) @map("created_at")
+  id           String         @id @default(uuid())
+  referrerId   String         @map("referrer_id")
+  referredId   String         @unique @map("referred_id")
+  status       ReferralStatus @default(PENDING)
+  pointsAwarded Int?          @map("points_awarded")
+  completedAt  DateTime?      @map("completed_at")
+  createdAt    DateTime       @default(now()) @map("created_at")
 
   referrer Customer @relation("ReferrerReferrals", fields: [referrerId], references: [id])
   referred Customer @relation("ReferredReferrals", fields: [referredId], references: [id])
@@ -1155,7 +1155,7 @@ model CatalogItem {
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
 
-  vouchers Voucher[]
+  vouchers    Voucher[]
 
   @@map("catalog_items")
 }
@@ -1211,24 +1211,24 @@ model InstructorSpecialty {
 // o desconto é texto (`benefit`/`benefitPlus`), que sobrevive a reajuste e não
 // coloca a Relm de fiadora de tabela de terceiro.
 model Instructor {
-  id              String    @id @default(uuid())
-  name            String
-  description     String?   @db.Text
+  id          String  @id @default(uuid())
+  name        String
+  description String? @db.Text
   // Desconto válido para qualquer cliente do clube.
-  benefit         String
+  benefit     String
   // Desconto adicional do Plus. O Care VÊ este texto (é o argumento de venda),
   // por isso nada aqui é escondido por tier.
-  benefitPlus     String?   @map("benefit_plus")
+  benefitPlus String? @map("benefit_plus")
   // Só sai da API depois que o cliente gera a credencial — é o que garante que
   // todo contato passe pelo sistema.
-  phone           String
-  link            String?
-  logoUrl         String?   @map("logo_url")
-  city            String?
-  state           String? // UF
+  phone       String
+  link        String?
+  logoUrl     String? @map("logo_url")
+  city        String?
+  state       String? // UF
   // Atende online. Sem isso, cliente de cidade sem instrutor vê tela vazia.
-  remote          Boolean   @default(false)
-  active          Boolean   @default(true)
+  remote      Boolean @default(false)
+  active      Boolean @default(true)
   // Aceite do termo no primeiro login. Nulo = painel bloqueado.
   termsAcceptedAt DateTime? @map("terms_accepted_at")
 
@@ -1272,7 +1272,7 @@ model Voucher {
   instructor   Instructor?   @relation(fields: [instructorId], references: [id])
 
   @@index([storeServiceId])
-  // O vínculo ativo é procurado por (cliente, instrutor) antes de criar outro.
+  // O vínculo ativo é procurado por (instrutor, cliente, status) antes de criar outro.
   @@index([instructorId, customerId, status])
   @@map("vouchers")
 }
@@ -1296,10 +1296,10 @@ model Achievement {
 }
 
 model CustomerAchievement {
-  id            String   @id @default(uuid())
-  customerId    String   @map("customer_id")
-  achievementId String   @map("achievement_id")
-  earnedAt      DateTime @default(now()) @map("earned_at")
+  id            String      @id @default(uuid())
+  customerId    String      @map("customer_id")
+  achievementId String      @map("achievement_id")
+  earnedAt      DateTime    @default(now()) @map("earned_at")
 
   customer    Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
   achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
@@ -1314,10 +1314,10 @@ model CustomerAchievement {
 // ============================================
 
 model Sale {
-  id           String  @id @default(uuid())
-  customerId   String  @map("customer_id")
-  storeId      String? @map("store_id")
-  soldByUserId String? @map("sold_by_user_id")
+  id           String   @id @default(uuid())
+  customerId   String   @map("customer_id")
+  storeId      String?  @map("store_id")
+  soldByUserId String?  @map("sold_by_user_id")
 
   saleDate      DateTime @map("sale_date")
   invoiceNumber String?  @map("invoice_number")
@@ -1332,9 +1332,9 @@ model Sale {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  customer Customer   @relation(fields: [customerId], references: [id])
-  store    Store?     @relation(fields: [storeId], references: [id])
-  soldBy   User?      @relation("SaleSeller", fields: [soldByUserId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  store    Store?   @relation(fields: [storeId], references: [id])
+  soldBy   User?    @relation("SaleSeller", fields: [soldByUserId], references: [id])
   items    SaleItem[]
 
   @@index([customerId])
@@ -1376,38 +1376,39 @@ model SaleItem {
 }
 
 model EmailTemplate {
-  id         String  @id @default(uuid())
-  name       String
-  slug       String  @unique
-  subject    String
+  id            String   @id @default(uuid())
+  name          String
+  slug          String   @unique
+  subject       String
   /// Segundo texto que aparece na caixa de entrada, ao lado do assunto. Nasce
   /// da geração por IA; nullable porque template antigo não tem.
-  preheader  String?
-  bodyHtml   String  @map("body_html") @db.Text
+  preheader     String?
+  bodyHtml      String   @db.Text @map("body_html")
   /// PaginaGerada — fonte de verdade do conteúdo. bodyHtml é o render guardado.
-  blocksJson Json?   @map("blocks_json")
+  blocksJson    Json?    @map("blocks_json")
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  campaigns EmailCampaign[]
+  campaigns     EmailCampaign[]
 
   @@map("email_templates")
 }
 
 model EmailCampaign {
-  id         String @id @default(uuid())
+  id            String          @id @default(uuid())
   // Sem campos de envio: este módulo gera e exporta HTML, o disparo acontece na
   // ferramenta de e-mail marketing. Segmento, status e contadores eram colunas
   // que nunca seriam preenchidas.
-  title      String
-  templateId String @map("template_id")
+  title         String
+  templateId    String          @map("template_id")
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
 
-  template EmailTemplate @relation(fields: [templateId], references: [id])
+  template      EmailTemplate   @relation(fields: [templateId], references: [id])
 
   @@index([templateId])
   @@map("email_campaigns")
 }
+
