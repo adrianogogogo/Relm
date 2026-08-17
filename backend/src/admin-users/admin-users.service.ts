@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 
@@ -17,10 +22,25 @@ export class AdminUsersService {
         active: true,
         storeId: true,
         distributorId: true,
+        instructorId: true,
         createdAt: true,
         store: { select: { id: true, tradeName: true } },
         distributor: { select: { id: true, tradeName: true } },
+        instructor: { select: { id: true, name: true } },
       },
+    });
+  }
+
+  /**
+   * Instrutores para o select do formulário. Sem isto, criar o login de um
+   * instrutor exigia SQL manual: o CRUD de instrutores cria o `Instructor`, mas
+   * quem liga um `User` a ele é esta tela.
+   */
+  async findAllInstructors() {
+    return this.prisma.instructor.findMany({
+      where: { active: true },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true },
     });
   }
 
@@ -45,9 +65,12 @@ export class AdminUsersService {
     role: string;
     storeId?: string;
     distributorId?: string;
+    instructorId?: string;
   }) {
     const existing = await this.prisma.user.findUnique({ where: { email: data.email } });
     if (existing) throw new ConflictException('E-mail já cadastrado');
+
+    await this.assertInstructorLink(data.role, data.instructorId);
 
     const passwordHash = await bcrypt.hash(data.password, 10);
     return this.prisma.user.create({
@@ -58,6 +81,7 @@ export class AdminUsersService {
         role: data.role as any,
         storeId: data.storeId || null,
         distributorId: data.distributorId || null,
+        instructorId: data.instructorId || null,
         active: true,
       },
       select: {
@@ -72,6 +96,7 @@ export class AdminUsersService {
     role?: string;
     storeId?: string | null;
     distributorId?: string | null;
+    instructorId?: string | null;
     active?: boolean;
   }) {
     const user = await this.prisma.user.findUnique({ where: { id } });
@@ -82,6 +107,13 @@ export class AdminUsersService {
       if (conflict) throw new ConflictException('E-mail já cadastrado por outro usuário');
     }
 
+    // Vale tanto para quem chega como INSTRUTOR quanto para quem já era e está
+    // tendo o vínculo removido no mesmo PATCH.
+    const finalRole = data.role ?? user.role;
+    const finalInstructorId =
+      data.instructorId !== undefined ? data.instructorId : user.instructorId;
+    await this.assertInstructorLink(finalRole, finalInstructorId);
+
     return this.prisma.user.update({
       where: { id },
       data: {
@@ -90,15 +122,36 @@ export class AdminUsersService {
         ...(data.role !== undefined && { role: data.role as any }),
         ...(data.storeId !== undefined && { storeId: data.storeId }),
         ...(data.distributorId !== undefined && { distributorId: data.distributorId }),
+        ...(data.instructorId !== undefined && { instructorId: data.instructorId }),
         ...(data.active !== undefined && { active: data.active }),
       },
       select: {
         id: true, name: true, email: true, role: true, active: true,
-        storeId: true, distributorId: true,
+        storeId: true, distributorId: true, instructorId: true,
         store: { select: { id: true, tradeName: true } },
         distributor: { select: { id: true, tradeName: true } },
+        instructor: { select: { id: true, name: true } },
       },
     });
+  }
+
+  /**
+   * Usuário INSTRUTOR sem `instructorId` é uma conta morta: ele loga e todo
+   * endpoint do painel responde "Usuário instrutor sem instrutor vinculado".
+   * Barra na entrada em vez de deixar o suporte descobrir depois.
+   */
+  private async assertInstructorLink(role?: string, instructorId?: string | null) {
+    if (role !== 'INSTRUTOR') return;
+    if (!instructorId) {
+      throw new BadRequestException(
+        'Usuário com papel INSTRUTOR precisa estar vinculado a um instrutor cadastrado.',
+      );
+    }
+    const instructor = await this.prisma.instructor.findUnique({
+      where: { id: instructorId },
+      select: { id: true },
+    });
+    if (!instructor) throw new NotFoundException('Instrutor não encontrado');
   }
 
   async resetPassword(id: string, newPassword: string) {

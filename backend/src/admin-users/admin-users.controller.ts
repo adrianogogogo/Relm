@@ -28,6 +28,12 @@ export class AdminUsersController {
     return this.adminUsersService.findAllDistributors();
   }
 
+  /** Instrutores ativos para vincular ao usuário de papel INSTRUTOR. */
+  @Get('instructors')
+  findAllInstructors() {
+    return this.adminUsersService.findAllInstructors();
+  }
+
   @Post()
   create(@Body() body: {
     name: string;
@@ -36,6 +42,7 @@ export class AdminUsersController {
     role: string;
     storeId?: string;
     distributorId?: string;
+    instructorId?: string;
   }) {
     return this.adminUsersService.create(body);
   }
@@ -47,6 +54,7 @@ export class AdminUsersController {
     role?: string;
     storeId?: string | null;
     distributorId?: string | null;
+    instructorId?: string | null;
     active?: boolean;
   }) {
     return this.adminUsersService.update(id, body);

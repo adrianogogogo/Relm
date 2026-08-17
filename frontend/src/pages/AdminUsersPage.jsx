@@ -11,6 +11,7 @@ const ROLES = [
   { value: 'SUPORTE_RELM', label: 'Suporte Relm' },
   { value: 'LOJA', label: 'Loja' },
   { value: 'DISTRIBUIDOR', label: 'Distribuidor' },
+  { value: 'INSTRUTOR', label: 'Instrutor' },
 ];
 
 // Cor (hex) por perfil — usada no StatusChip (fundo a 12%, texto cheio)
@@ -20,9 +21,13 @@ const ROLE_HEX = {
   SUPORTE_RELM: '#FF9800',
   LOJA: '#4CAF50',
   DISTRIBUIDOR: '#2196F3',
+  INSTRUTOR: '#9C27B0',
 };
 
-const EMPTY = { name: '', email: '', password: '', role: 'SUPORTE_RELM', storeId: '', distributorId: '' };
+const EMPTY = {
+  name: '', email: '', password: '', role: 'SUPORTE_RELM',
+  storeId: '', distributorId: '', instructorId: '',
+};
 
 function useStores() {
   return useQuery({
@@ -38,12 +43,19 @@ function useDistributors() {
   });
 }
 
-function LinkFields({ form, setForm, stores = [], distributors = [] }) {
+function useInstructors() {
+  return useQuery({
+    queryKey: ['admin-users-instructors'],
+    queryFn: () => api.get('/admin-users/instructors').then((r) => r.data),
+  });
+}
+
+function LinkFields({ form, setForm, stores = [], distributors = [], instructors = [] }) {
   if (form.role === 'LOJA') {
     return (
       <div>
         <label className="label">Loja vinculada</label>
-        <select className="input" value={form.storeId || ''} onChange={(e) => setForm({ ...form, storeId: e.target.value, distributorId: '' })}>
+        <select className="input" value={form.storeId || ''} onChange={(e) => setForm({ ...form, storeId: e.target.value, distributorId: '', instructorId: '' })}>
           <option value="">— Nenhuma —</option>
           {stores.map((s) => <option key={s.id} value={s.id}>{s.tradeName}</option>)}
         </select>
@@ -54,10 +66,30 @@ function LinkFields({ form, setForm, stores = [], distributors = [] }) {
     return (
       <div>
         <label className="label">Distribuidor vinculado</label>
-        <select className="input" value={form.distributorId || ''} onChange={(e) => setForm({ ...form, distributorId: e.target.value, storeId: '' })}>
+        <select className="input" value={form.distributorId || ''} onChange={(e) => setForm({ ...form, distributorId: e.target.value, storeId: '', instructorId: '' })}>
           <option value="">— Nenhum —</option>
           {distributors.map((d) => <option key={d.id} value={d.id}>{d.tradeName}</option>)}
         </select>
+      </div>
+    );
+  }
+  if (form.role === 'INSTRUTOR') {
+    return (
+      <div>
+        <label className="label">Instrutor vinculado *</label>
+        <select className="input" value={form.instructorId || ''} onChange={(e) => setForm({ ...form, instructorId: e.target.value, storeId: '', distributorId: '' })}>
+          <option value="">— Selecione —</option>
+          {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+        </select>
+        {instructors.length === 0 ? (
+          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+            Nenhum instrutor ativo cadastrado. Cadastre em Instrutores antes de criar o login.
+          </p>
+        ) : (
+          <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+            Obrigatório: sem o vínculo o instrutor loga e não vê nenhuma credencial.
+          </p>
+        )}
       </div>
     );
   }
@@ -70,6 +102,7 @@ function NewUserModal({ onClose }) {
   const [error, setError] = useState('');
   const { data: stores = [] } = useStores();
   const { data: distributors = [] } = useDistributors();
+  const { data: instructors = [] } = useInstructors();
 
   const mutation = useMutation({
     mutationFn: (data) => api.post('/admin-users', data).then((r) => r.data),
@@ -84,10 +117,15 @@ function NewUserModal({ onClose }) {
     e.preventDefault();
     setError('');
     if (form.password.length < 6) { setError('Senha mínima de 6 caracteres.'); return; }
+    if (form.role === 'INSTRUTOR' && !form.instructorId) {
+      setError('Selecione o instrutor a vincular a este login.');
+      return;
+    }
     mutation.mutate({
       ...form,
       storeId: form.storeId || undefined,
       distributorId: form.distributorId || undefined,
+      instructorId: form.instructorId || undefined,
     });
   };
 
@@ -116,11 +154,11 @@ function NewUserModal({ onClose }) {
           </div>
           <div>
             <label className="label">Perfil</label>
-            <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, storeId: '', distributorId: '' })}>
+            <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, storeId: '', distributorId: '', instructorId: '' })}>
               {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
             </select>
           </div>
-          <LinkFields form={form} setForm={setForm} stores={stores} distributors={distributors} />
+          <LinkFields form={form} setForm={setForm} stores={stores} distributors={distributors} instructors={instructors} />
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="btn btn-outline flex-1">Cancelar</button>
             <button type="submit" disabled={mutation.isPending} className="btn btn-primary flex-1">
@@ -137,6 +175,7 @@ function EditUserModal({ user: target, onClose }) {
   const queryClient = useQueryClient();
   const { data: stores = [] } = useStores();
   const { data: distributors = [] } = useDistributors();
+  const { data: instructors = [] } = useInstructors();
 
   const [form, setForm] = useState({
     name: target.name,
@@ -144,6 +183,7 @@ function EditUserModal({ user: target, onClose }) {
     role: target.role,
     storeId: target.storeId || '',
     distributorId: target.distributorId || '',
+    instructorId: target.instructorId || '',
     active: target.active,
   });
   const [newPassword, setNewPassword] = useState('');
@@ -174,12 +214,17 @@ function EditUserModal({ user: target, onClose }) {
   const handleSave = (e) => {
     e.preventDefault();
     setError('');
+    if (form.role === 'INSTRUTOR' && !form.instructorId) {
+      setError('Selecione o instrutor a vincular a este login.');
+      return;
+    }
     updateMutation.mutate({
       name: form.name,
       email: form.email,
       role: form.role,
       storeId: form.storeId || null,
       distributorId: form.distributorId || null,
+      instructorId: form.instructorId || null,
       active: form.active,
     });
   };
@@ -236,7 +281,7 @@ function EditUserModal({ user: target, onClose }) {
                 {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
               </select>
             </div>
-            <LinkFields form={form} setForm={setForm} stores={stores} distributors={distributors} />
+            <LinkFields form={form} setForm={setForm} stores={stores} distributors={distributors} instructors={instructors} />
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
