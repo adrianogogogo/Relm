@@ -25,7 +25,27 @@ row when done.
 | 009  | Fechar `RewardsController` (9 rotas sem autenticação + IDOR) | **P0** | S | — | DONE (mergeado em `main`, `fc63420`) |
 | 010  | Escopar `GET /warranty/claims` por loja + mascarar PII | **P0** | S | — | DONE (mergeado em `main`, revisado) |
 | 011  | Reunião 07/08/2026 — ajustes para o lançamento de 18/08 (8 steps) | P1 | L | — | Step 1 DONE; steps 2–8 TODO |
+| 012  | Módulo de Instrutores — credenciamento com desconto por tier | P1 | L | — | DONE (branch `feat/012-instrutores`, 5 commits — não mergeado) |
 
+> **Execução 012 — 2026-08-17.** Plano escrito a partir de uma sessão de
+> interrogatório (19 decisões), executado inteiro na mesma sessão. Três coisas
+> do pedido original foram **derrubadas em decisão** e não devem ser
+> "corrigidas" de volta: (1) o módulo é visível a **todos** os clientes, com
+> descontos diferentes para Care e Plus, não uma área exclusiva do Plus;
+> (2) **não existe campo de preço** — o desconto é texto, porque a Relm não
+> controla o preço do terceiro nem tem contrato com ele; (3) o contato do
+> instrutor só sai da API **depois** que o cliente gera a credencial, e é isso
+> que faz a credencial e o painel existirem em vez de virarem código morto.
+> A credencial reaproveita o model `Voucher` com um terceiro alvo
+> (`instructorId`) e **ciclo de vida diferente**: nasce `UNUSED` e nunca vira
+> `USED` — é vínculo, não cupom (ver "Notas de manutenção" do plano).
+> Dois desvios deliberados do plano: o portal do instrutor é **uma** tela em vez
+> de três (o aceite do termo é estado, não rota), e o caso `INSTRUTOR` em
+> `getDashboardPath` não estava previsto — sem ele o instrutor levava "Acesso
+> Negado" após um login válido. Verificado ponta a ponta no backend local
+> (255 testes / 24 suites, build do frontend ok, fluxo completo por curl com os
+> dados de teste removidos depois).
+>
 > **Execução 010 — 2026-07-22.** Regressão introduzida pelo commit `8e83e5e`
 > (que liberou `GET /warranty/claims` para `LOJA` para corrigir um 403 real na
 > tela `/loja/garantias`): como `warrantyService.findAll` **ignorava** o
