@@ -1,7 +1,10 @@
 // Utilitários de mascaramento de PII (LGPD) — antigravity.md §9.4.
 // CPF é armazenado como 11 dígitos; telefone como dígitos (com ou sem DDD).
 
-const ROLES_THAT_SEE_MASKED = ['LOJA', 'DISTRIBUIDOR'];
+// INSTRUTOR entrou aqui (plano 012): é terceiro externo sem contrato, mesma
+// categoria de LOJA/DISTRIBUIDOR. Fonte única — quem consultar `shouldMaskFor`
+// já mascara para ele, sem precisar de guard novo em cada endpoint.
+const ROLES_THAT_SEE_MASKED = ['LOJA', 'DISTRIBUIDOR', 'INSTRUTOR'];
 
 export function shouldMaskFor(role?: string | null): boolean {
   return !!role && ROLES_THAT_SEE_MASKED.includes(role);

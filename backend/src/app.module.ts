@@ -33,6 +33,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { EngagementModule } from './engagement/engagement.module';
 import { GamificationModule } from './gamification/gamification.module';
 import { PartnersModule } from './partners/partners.module';
+import { InstructorsModule } from './instructors/instructors.module';
 import { ClubSettingsModule } from './club-settings/club-settings.module';
 import { HealthController } from './health.controller';
 import { CommonModule } from './common/common.module';
@@ -90,6 +91,7 @@ import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
     EngagementModule,
     GamificationModule,
     PartnersModule,
+    InstructorsModule,
     ClubSettingsModule,
     MarketingModule,
     EmailCrmModule,
