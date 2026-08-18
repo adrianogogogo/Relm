@@ -16,12 +16,15 @@ const prisma = new PrismaClient();
 
 const SENHA_TESTE = 'Instrutor@2026';
 
+// Nomes CANÔNICOS — os mesmos de prisma/seeds/instructor-specialties.sql.
+// Não invente variação aqui: `name` é único, então "Mountain bike" e "Mountain
+// bike (XCO)" viram duas especialidades e o filtro do cliente racha em duas.
 const ESPECIALIDADES = [
-  'Treino de estrada',
-  'Mountain bike',
+  'Ciclismo de estrada (speed)',
+  'Mountain bike (XCO)',
   'Triatlo',
   'Preparação para provas',
-  'Análise de potência',
+  'Treinamento por potência',
 ];
 
 async function main() {
@@ -56,7 +59,7 @@ async function main() {
       city: 'São Paulo',
       state: 'SP',
       remote: false,
-      specialties: ['Treino de estrada', 'Preparação para provas', 'Análise de potência'],
+      specialties: ['Ciclismo de estrada (speed)', 'Preparação para provas', 'Treinamento por potência'],
     },
     {
       name: 'Coach Trilha Livre (teste)',
@@ -70,7 +73,7 @@ async function main() {
       city: 'Belo Horizonte',
       state: 'MG',
       remote: true,
-      specialties: ['Mountain bike', 'Triatlo'],
+      specialties: ['Mountain bike (XCO)', 'Triatlo'],
     },
   ];
 
