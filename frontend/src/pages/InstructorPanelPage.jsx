@@ -12,6 +12,8 @@ import {
   MdGroups,
   MdKey,
   MdClose,
+  MdVisibility,
+  MdVisibilityOff,
 } from 'react-icons/md';
 
 const STATUS_META = {
@@ -49,6 +51,9 @@ function ChangePasswordModal({ onClose }) {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -117,42 +122,75 @@ function ChangePasswordModal({ onClose }) {
             <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
               Senha Atual
             </label>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="Digite sua senha atual"
-              className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showCurrent ? 'text' : 'password'}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Digite sua senha atual"
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 pr-10 text-sm"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrent(!showCurrent)}
+                tabIndex={-1}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                title={showCurrent ? 'Ocultar senha' : 'Ver senha'}
+              >
+                {showCurrent ? <MdVisibilityOff size={18} /> : <MdVisibility size={18} />}
+              </button>
+            </div>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
               Nova Senha
             </label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Mínimo 6 caracteres"
-              className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showNew ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 pr-10 text-sm"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowNew(!showNew)}
+                tabIndex={-1}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                title={showNew ? 'Ocultar senha' : 'Ver senha'}
+              >
+                {showNew ? <MdVisibilityOff size={18} /> : <MdVisibility size={18} />}
+              </button>
+            </div>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
               Confirmar Nova Senha
             </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Repita a nova senha"
-              className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showConfirm ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Repita a nova senha"
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 pr-10 text-sm"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                tabIndex={-1}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                title={showConfirm ? 'Ocultar senha' : 'Ver senha'}
+              >
+                {showConfirm ? <MdVisibilityOff size={18} /> : <MdVisibility size={18} />}
+              </button>
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">

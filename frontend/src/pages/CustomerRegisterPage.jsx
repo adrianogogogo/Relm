@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MdPedalBike } from 'react-icons/md';
+import { MdPedalBike, MdVisibility, MdVisibilityOff } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 import { customerAuthAPI } from '../services/api';
 
@@ -8,6 +8,8 @@ export default function CustomerRegisterPage() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
     fullName: '',
@@ -150,27 +152,49 @@ export default function CustomerRegisterPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">Senha</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="Mín. 6 caracteres"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    className="input pr-10"
+                    placeholder="Mín. 6 caracteres"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    title={showPassword ? 'Ocultar senha' : 'Ver senha'}
+                  >
+                    {showPassword ? <MdVisibilityOff size={18} /> : <MdVisibility size={18} />}
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="label">Confirmar senha</label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={form.confirmPassword}
-                  onChange={handleChange}
-                  className="input"
-                  placeholder="Repita a senha"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    value={form.confirmPassword}
+                    onChange={handleChange}
+                    className="input pr-10"
+                    placeholder="Repita a senha"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    tabIndex={-1}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    title={showConfirmPassword ? 'Ocultar senha' : 'Ver senha'}
+                  >
+                    {showConfirmPassword ? <MdVisibilityOff size={18} /> : <MdVisibility size={18} />}
+                  </button>
+                </div>
               </div>
             </div>
 

@@ -214,7 +214,9 @@ model User {
   active         Boolean   @default(true)
   
   // Tokens
-  refreshToken   String?   @map("refresh_token") @db.Text
+  refreshToken         String?   @map("refresh_token") @db.Text
+  resetPasswordToken   String?   @map("reset_password_token")
+  resetPasswordExpires DateTime? @map("reset_password_expires")
   
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
@@ -230,6 +232,7 @@ model User {
 
   @@index([email])
   @@index([role])
+  @@index([resetPasswordToken])
   @@map("users")
 }
 

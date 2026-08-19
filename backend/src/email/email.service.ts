@@ -269,7 +269,7 @@ export class EmailService {
     to: string;
     name: string;
     resetUrl: string;
-    portalName: 'Cliente' | 'Loja';
+    portalName?: string;
   }) {
     if (!this.isConfigured || !this.transporter) {
       this.logger.warn(
@@ -278,11 +278,12 @@ export class EmailService {
       return { success: false, error: 'SMTP não configurado', devUrl: data.resetUrl };
     }
 
+    const portalName = data.portalName || 'Painel';
     const mailOptions = {
       from: `"Relm Care+" <${this.configService.get('SMTP_USER')}>`,
       to: data.to,
-      subject: `🔐 Redefinição de senha - Relm Care+ ${data.portalName}`,
-      html: this.getPasswordResetTemplate(data),
+      subject: `🔐 Redefinição de senha - Relm Care+ ${portalName}`,
+      html: this.getPasswordResetTemplate({ name: data.name, resetUrl: data.resetUrl, portalName }),
     };
 
     try {

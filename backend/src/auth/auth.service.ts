@@ -277,17 +277,35 @@ export class AuthService {
   async unifiedForgotPassword(email: string) {
     const appUrl = this.config.get('APP_URL') || 'http://localhost:5173';
     const genericMessage = 'Se o e-mail estiver cadastrado, você receberá as instruções em breve.';
+    const cleanEmail = email?.trim().toLowerCase();
+    if (!cleanEmail) return { message: genericMessage };
 
-    // 1) Verifica na tabela User (equipe Relm não tinha forgot-password antes, agora tem)
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    // 1) Verifica na tabela User (Admin, Gerente, Suporte, Loja, Distribuidor, Instrutor)
+    const user = await this.prisma.user.findUnique({ where: { email: cleanEmail } });
     if (user && user.active) {
-      // User não tinha resetPasswordToken no schema, então apenas retornamos a mensagem genérica
-      // TODO: Adicionar campo resetPasswordToken no model User se necessário
+      const token = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { resetPasswordToken: tokenHash, resetPasswordExpires: expires },
+      });
+
+      const resetUrl = `${appUrl}/redefinir-senha?token=${token}`;
+
+      await this.emailService.sendPasswordResetEmail({
+        to: user.email,
+        name: user.name,
+        resetUrl,
+        portalName: 'Relm Care+',
+      });
+
       return { message: genericMessage };
     }
 
     // 2) Verifica na tabela Customer
-    const customer = await this.prisma.customer.findUnique({ where: { email } });
+    const customer = await this.prisma.customer.findUnique({ where: { email: cleanEmail } });
     if (customer && customer.active && customer.passwordHash) {
       const token = crypto.randomBytes(32).toString('hex');
       const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
@@ -312,7 +330,7 @@ export class AuthService {
 
     // 3) Verifica na tabela StoreUser
     const storeUser = await this.prisma.storeUser.findUnique({
-      where: { email },
+      where: { email: cleanEmail },
       include: { store: true },
     });
     if (storeUser && storeUser.isActive && storeUser.store.active) {
@@ -344,9 +362,28 @@ export class AuthService {
   // ── Reset Password Unificado ────────────────────────────────────────────────
 
   async unifiedResetPassword(token: string, newPassword: string) {
+    if (!newPassword || newPassword.length < 6) {
+      throw new BadRequestException('A senha deve ter no mínimo 6 caracteres.');
+    }
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
-    // 1) Procura na tabela Customer
+    // 1) Procura na tabela User
+    const user = await this.prisma.user.findFirst({
+      where: { resetPasswordToken: tokenHash },
+    });
+    if (user) {
+      if (!user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
+        throw new BadRequestException('Token inválido ou expirado.');
+      }
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash, resetPasswordToken: null, resetPasswordExpires: null },
+      });
+      return { message: 'Senha redefinida com sucesso.' };
+    }
+
+    // 2) Procura na tabela Customer
     const customer = await this.prisma.customer.findUnique({
       where: { resetPasswordToken: tokenHash },
     });
@@ -362,7 +399,7 @@ export class AuthService {
       return { message: 'Senha redefinida com sucesso.' };
     }
 
-    // 2) Procura na tabela StoreUser
+    // 3) Procura na tabela StoreUser
     const storeUser = await this.prisma.storeUser.findUnique({
       where: { resetPasswordToken: tokenHash },
     });
