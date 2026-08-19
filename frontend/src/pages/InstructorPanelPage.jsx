@@ -10,6 +10,8 @@ import {
   MdWarningAmber,
   MdPersonOutline,
   MdGroups,
+  MdKey,
+  MdClose,
 } from 'react-icons/md';
 
 const STATUS_META = {
@@ -40,6 +42,134 @@ function CredentialStatusChip({ status }) {
     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${meta.className}`}>
       {meta.label}
     </span>
+  );
+}
+
+function ChangePasswordModal({ onClose }) {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const mutation = useMutation({
+    mutationFn: instructorsAPI.changePassword,
+    onSuccess: (res) => {
+      setSuccess(res?.message || 'Senha alterada com sucesso!');
+      setError('');
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    },
+    onError: (err) => {
+      setError(err?.response?.data?.message || 'Erro ao alterar senha.');
+      setSuccess('');
+    },
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setError('Preencha todos os campos.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setError('A nova senha deve ter no mínimo 6 caracteres.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('A confirmação da senha não coincide.');
+      return;
+    }
+    mutation.mutate({ currentPassword, newPassword });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-xl p-6 max-w-md w-full shadow-2xl border border-gray-100 dark:border-slate-800 space-y-4 relative">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+          aria-label="Fechar"
+        >
+          <MdClose size={20} />
+        </button>
+
+        <h3 className="font-title font-bold text-base text-gray-900 dark:text-slate-100 flex items-center gap-2">
+          <MdKey className="text-primary" size={20} /> Alterar Minha Senha
+        </h3>
+
+        {error && (
+          <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-xs font-semibold text-red-700 dark:text-red-300">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+            ✓ {success}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-3 text-left">
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
+              Senha Atual
+            </label>
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              placeholder="Digite sua senha atual"
+              className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
+              Nova Senha
+            </label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Mínimo 6 caracteres"
+              className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 dark:text-slate-300 mb-1">
+              Confirmar Nova Senha
+            </label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Repita a nova senha"
+              className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm"
+              required
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-semibold text-gray-500"
+            >
+              Cancelar
+            </button>
+            <Button type="submit" disabled={mutation.isPending}>
+              {mutation.isPending ? 'Salvando...' : 'Salvar Nova Senha'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 
@@ -74,6 +204,7 @@ export default function InstructorPanelPage() {
   const [code, setCode] = useState('');
   const [lookup, setLookup] = useState(null);
   const [lookupError, setLookupError] = useState('');
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   const { data: me, isLoading: loadingMe } = useQuery({
     queryKey: ['instructor-me'],
@@ -132,13 +263,25 @@ export default function InstructorPanelPage() {
             title={data?.instructorName || me?.name || 'Painel do instrutor'}
             subtitle="Confira o status de quem apresentar uma credencial Relm"
           />
-          <button
-            onClick={logout}
-            className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-slate-400 hover:text-gray-700"
-          >
-            <MdLogout size={15} /> Sair
-          </button>
+          <div className="mt-1 flex items-center gap-3">
+            <button
+              onClick={() => setShowChangePassword(true)}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-gray-600 dark:text-slate-300 hover:text-primary transition-colors"
+            >
+              <MdKey size={16} /> Alterar Senha
+            </button>
+            <button
+              onClick={logout}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-slate-400 hover:text-gray-700"
+            >
+              <MdLogout size={15} /> Sair
+            </button>
+          </div>
         </div>
+
+        {showChangePassword && (
+          <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
+        )}
 
         {/* Consulta pontual — o caso de uso real: cliente na frente, código na mão. */}
         <Card className="mb-6">

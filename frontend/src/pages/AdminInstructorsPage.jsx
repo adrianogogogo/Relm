@@ -20,6 +20,8 @@ const UFS = [
 const EMPTY = {
   name: '',
   phone: '',
+  email: '',
+  initialPassword: 'Relm@2026',
   benefit: '',
   benefitPlus: '',
   description: '',
@@ -35,6 +37,7 @@ const EMPTY = {
 function InstructorForm({ instructor, specialties, onClose }) {
   const queryClient = useQueryClient();
   const isEdit = !!instructor;
+  const linkedUser = instructor?.users?.[0];
   const [form, setForm] = useState(
     isEdit
       ? {
@@ -51,6 +54,9 @@ function InstructorForm({ instructor, specialties, onClose }) {
       : EMPTY,
   );
   const [error, setError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState('');
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [newPassword, setNewPassword] = useState('Relm@2026');
 
   const mutation = useMutation({
     mutationFn: (payload) =>
@@ -62,6 +68,16 @@ function InstructorForm({ instructor, specialties, onClose }) {
     onError: (err) => setError(err?.response?.data?.message || 'Não foi possível salvar.'),
   });
 
+  const resetMutation = useMutation({
+    mutationFn: (password) =>
+      instructorsAPI.resetPassword(instructor.id, { newPassword: password }),
+    onSuccess: (res) => {
+      setResetSuccess(res?.message || 'Senha redefinida com sucesso!');
+      setShowResetModal(false);
+    },
+    onError: (err) => setError(err?.response?.data?.message || 'Erro ao redefinir senha.'),
+  });
+
   const field = (label, key, opts = {}) => (
     <label className="block">
       <span className="text-xs font-semibold text-gray-700 dark:text-slate-300">
@@ -69,13 +85,14 @@ function InstructorForm({ instructor, specialties, onClose }) {
         {opts.required && <span className="text-red-500"> *</span>}
       </span>
       <input
+        type={opts.type || 'text'}
         value={form[key]}
         onChange={(e) => setForm({ ...form, [key]: e.target.value })}
         placeholder={opts.placeholder}
         className="mt-1 w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm"
       />
       {opts.hint && (
-        <span className="text-[10px] text-gray-400 dark:text-slate-500">{opts.hint}</span>
+        <span className="text-[10px] text-gray-400 dark:text-slate-500 block mt-0.5">{opts.hint}</span>
       )}
     </label>
   );
@@ -92,8 +109,14 @@ function InstructorForm({ instructor, specialties, onClose }) {
         </button>
 
         <h3 className="font-title font-bold text-lg text-gray-900 dark:text-slate-100 pr-6">
-          {isEdit ? 'Editar instrutor' : 'Novo instrutor'}
+          {isEdit ? 'Editar instrutor' : 'Novo instrutor & Acesso'}
         </h3>
+
+        {resetSuccess && (
+          <div className="mt-3 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+            ✓ {resetSuccess}
+          </div>
+        )}
 
         <form
           onSubmit={(e) => {
@@ -101,6 +124,10 @@ function InstructorForm({ instructor, specialties, onClose }) {
             setError('');
             if (!form.name.trim() || !form.phone.trim() || !form.benefit.trim()) {
               setError('Nome, telefone e desconto para todos são obrigatórios.');
+              return;
+            }
+            if (!isEdit && !form.email.trim()) {
+              setError('E-mail de acesso é obrigatório para criar a conta do instrutor.');
               return;
             }
             mutation.mutate({
@@ -116,6 +143,8 @@ function InstructorForm({ instructor, specialties, onClose }) {
               remote: form.remote,
               active: form.active,
               specialtyIds: form.specialtyIds,
+              email: !isEdit ? form.email.trim().toLowerCase() : undefined,
+              initialPassword: !isEdit ? form.initialPassword.trim() : undefined,
             });
           }}
           className="mt-4 space-y-3"
@@ -124,9 +153,52 @@ function InstructorForm({ instructor, specialties, onClose }) {
             {field('Nome do instrutor / assessoria', 'name', { required: true })}
             {field('Telefone / WhatsApp', 'phone', {
               required: true,
-              hint: 'Só aparece ao cliente depois que ele gera a credencial.',
+              hint: 'Aparece ao cliente após gerar a credencial.',
             })}
           </div>
+
+          {!isEdit ? (
+            <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-slate-800/70 border border-blue-100 dark:border-slate-700 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#0A1929] dark:text-[#2196F3]">
+                  🔐 Conta de Acesso ao Sistema (Login)
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {field('E-mail de Acesso (Login)', 'email', {
+                  required: true,
+                  type: 'email',
+                  placeholder: 'contato@assessoria.com.br',
+                  hint: 'Login único para entrar em /login.',
+                })}
+                {field('Senha Inicial Padrão', 'initialPassword', {
+                  required: true,
+                  placeholder: 'Relm@2026',
+                  hint: 'O instrutor poderá alterá-la no painel.',
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="p-3.5 rounded-xl bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-semibold text-gray-500 dark:text-slate-400 block">
+                  Conta de Login Vinculada:
+                </span>
+                <span className="text-sm font-bold text-gray-900 dark:text-slate-100">
+                  {linkedUser?.email || 'Nenhum usuário vinculado'}
+                </span>
+              </div>
+              {linkedUser && (
+                <button
+                  type="button"
+                  onClick={() => setShowResetModal(true)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 hover:bg-amber-200 dark:hover:bg-amber-900 transition-colors inline-flex items-center gap-1.5 self-start sm:self-center"
+                >
+                  🔑 Redefinir Senha
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Sem campo de preço por decisão de produto: o desconto é texto. */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -245,6 +317,41 @@ function InstructorForm({ instructor, specialties, onClose }) {
             </Button>
           </div>
         </form>
+
+        {showResetModal && (
+          <div className="fixed inset-0 z-60 bg-black/60 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-xl p-5 max-w-sm w-full shadow-2xl border border-gray-100 dark:border-slate-800 space-y-4">
+              <h4 className="font-bold text-sm text-gray-900 dark:text-slate-100">
+                Redefinir Senha do Instrutor
+              </h4>
+              <p className="text-xs text-gray-600 dark:text-slate-400">
+                Defina uma nova senha temporária para <b>{linkedUser?.email}</b>:
+              </p>
+              <input
+                type="text"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm"
+              />
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowResetModal(false)}
+                  className="px-3 py-1.5 text-xs font-semibold text-gray-500"
+                >
+                  Cancelar
+                </button>
+                <Button
+                  onClick={() => resetMutation.mutate(newPassword)}
+                  disabled={resetMutation.isPending || newPassword.length < 6}
+                >
+                  {resetMutation.isPending ? 'Redefinindo...' : 'Confirmar'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );
@@ -421,6 +528,11 @@ export default function AdminInstructorsPage() {
                     <td className="p-4">
                       <p className="font-semibold text-gray-900 dark:text-slate-100">{i.name}</p>
                       <p className="text-[11px] text-gray-500 dark:text-slate-400">{i.phone}</p>
+                      {i.users?.[0]?.email && (
+                        <p className="text-[10px] font-mono text-blue-600 dark:text-blue-400 mt-0.5">
+                          ✉ {i.users[0].email}
+                        </p>
+                      )}
                     </td>
                     <td className="p-4 text-xs text-gray-600 dark:text-slate-400">
                       {i.remote ? (

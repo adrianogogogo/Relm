@@ -5,6 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { TierLevel, VoucherStatus } from '@prisma/client';
 import { tierAtLeast } from '../common/entitlements';
@@ -24,6 +25,8 @@ export interface CreateInstructorDto {
   name: string;
   benefit: string;
   phone: string;
+  email?: string;
+  initialPassword?: string;
   benefitPlus?: string;
   description?: string;
   link?: string;
@@ -47,20 +50,13 @@ export interface InstructorFilters {
 export class InstructorsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private generateCredentialCode() {
-    return (
-      'INS-' +
-      Array.from(randomBytes(5), (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join('')
-    );
-  }
-
-  // ── Portal do cliente ──────────────────────────────────────────────────────
+  // ── Portal do cliente ─────────────────────────────────────────────────────
 
   /**
-   * Lista instrutores ativos para o cliente. NÃO devolve `phone` nem `link`:
-   * o contato só sai em `createCredential`, e é isso que garante que todo
-   * contato passe pelo sistema (plano 012, decisão 6). O `select` é explícito
-   * de propósito — um `include` faria o contato vazar por descuido.
+   * Lista instrutores sem revelar contato (`phone`/`link`).
+   *
+   * O cliente recebe o catálogo e, se quiser o desconto, clica em "Gerar
+   * credencial" — é essa ação que devolve o WhatsApp e registra o interesse.
    */
   async findForCustomer(customerId: string, filters: InstructorFilters = {}) {
     const customer = await this.prisma.customer.findUnique({
@@ -89,14 +85,11 @@ export class InstructorsService {
         state: true,
         remote: true,
         specialties: { select: { id: true, name: true } },
-        // phone e link ficam FORA por decisão de produto — não adicione aqui.
       },
       orderBy: [{ remote: 'asc' }, { name: 'asc' }],
     });
 
     return {
-      // O front destaca a linha do tier do cliente e mostra a outra: o Care VÊ
-      // o desconto do Plus, é o argumento de venda da assinatura.
       customerTier,
       isPlus: tierAtLeast(customerTier, TierLevel.PLUS),
       customerState: customer?.state ?? null,
@@ -138,98 +131,125 @@ export class InstructorsService {
         data: {
           code: this.generateCredentialCode(),
           // Nasce UNUSED e permanece: credencial é vínculo, não cupom. Nada
-          // neste módulo grava USED — o instrutor consulta o status atual.
+          // chama markAsUsed nela.
           status: VoucherStatus.UNUSED,
           customerId,
           instructorId,
-          // Grátis: sem pontos gastos e sem valor congelado.
-          pointsSpent: null,
-          brlValue: null,
-          expiresAt: this.credentialExpiry(
+          expiresAt: this.computeCredentialExpiration(
             customer.currentTier,
             customer.subscription?.expiresAt ?? null,
           ),
         },
       }));
 
-    if (!existing) {
-      await this.prisma.auditLog.create({
-        data: {
-          userId: null,
-          action: 'CREATE',
-          entity: 'vouchers',
-          entityId: voucher.id,
-          metadata: { code: voucher.code, instructorId, kind: 'CREDENCIAL_INSTRUTOR' },
-        },
-      });
-    }
-
     return {
+      voucherId: voucher.id,
       code: voucher.code,
       expiresAt: voucher.expiresAt,
-      tier: customer.currentTier,
+      // Contato liberado agora que a credencial existe.
+      phone: instructor.phone,
+      link: instructor.link,
+      instructorName: instructor.name,
       benefit: instructor.benefit,
       benefitPlus: instructor.benefitPlus,
-      // O contato aparece só aqui.
-      contact: { phone: instructor.phone, link: instructor.link },
-      instructor: { id: instructor.id, name: instructor.name },
+      tier: customer.currentTier,
     };
   }
 
-  /** Credenciais do próprio cliente — ele precisa rever o código depois. */
+  /**
+   * Lista as credenciais do cliente com dados do instrutor para a aba "Minhas
+   * credenciais".
+   */
   async findMyCredentials(customerId: string) {
-    // Já gerou a credencial: o contato pode aparecer.
-    return this.prisma.voucher.findMany({
-      where: { customerId, instructorId: { not: null } },
-      select: {
-        code: true,
-        expiresAt: true,
-        createdAt: true,
+    const vouchers = await this.prisma.voucher.findMany({
+      where: {
+        customerId,
+        instructorId: { not: null },
+        status: VoucherStatus.UNUSED,
+      },
+      include: {
         instructor: {
-          select: { id: true, name: true, phone: true, link: true, city: true, state: true },
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            link: true,
+            benefit: true,
+            benefitPlus: true,
+            logoUrl: true,
+            active: true,
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    return vouchers.map((v) => ({
+      id: v.id,
+      code: v.code,
+      expiresAt: v.expiresAt,
+      createdAt: v.createdAt,
+      instructor: v.instructor,
+    }));
   }
 
-  /** Plus vale até o vencimento da assinatura; Care não tem vencimento. */
-  private credentialExpiry(tier: TierLevel, subscriptionExpiresAt: Date | null): Date {
-    if (tierAtLeast(tier, TierLevel.PLUS) && subscriptionExpiresAt) {
-      return subscriptionExpiresAt;
-    }
-    const expiry = new Date();
-    expiry.setFullYear(expiry.getFullYear() + CARE_CREDENTIAL_YEARS);
-    return expiry;
-  }
+  // ── Painel do instrutor ───────────────────────────────────────────────────
 
-  // ── Painel do instrutor ────────────────────────────────────────────────────
-
-  /**
-   * O token não carrega `instructorId` (jwt.strategy devolve só userId/email/
-   * role) — mesmo caso do `storeId` do LOJA. Busca no banco, nunca de query
-   * param: filtro de tenant vindo do cliente é o defeito do plano 010.
-   */
-  private async resolveInstructor(userId: string) {
+  private async getInstructorForUser(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { instructorId: true },
     });
     if (!user?.instructorId) {
-      throw new BadRequestException('Usuário instrutor sem instrutor vinculado.');
+      throw new ForbiddenException('Usuário não vinculado a um instrutor');
+    }
+    const instructor = await this.prisma.instructor.findUnique({
+      where: { id: user.instructorId },
+      include: { specialties: { select: { id: true, name: true } } },
+    });
+    if (!instructor) {
+      throw new NotFoundException('Instrutor vinculado não encontrado');
+    }
+    return instructor;
+  }
+
+  /**
+   * Identidade do instrutor logado + data do aceite do termo. Usado pelo front
+   * para decidir se mostra a tela normal ou o gate de aceite.
+   */
+  async me(userId: string) {
+    const instructor = await this.getInstructorForUser(userId);
+    return {
+      id: instructor.id,
+      name: instructor.name,
+      termsAcceptedAt: instructor.termsAcceptedAt,
+      benefit: instructor.benefit,
+      benefitPlus: instructor.benefitPlus,
+      active: instructor.active,
+      specialties: instructor.specialties,
+    };
+  }
+
+  /**
+   * Registra o aceite do termo. Idempotente: se já aceitou, não altera a data.
+   */
+  async acceptTerms(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { instructorId: true },
+    });
+    if (!user?.instructorId) {
+      throw new ForbiddenException('Usuário não vinculado a um instrutor');
     }
     const instructor = await this.prisma.instructor.findUnique({
       where: { id: user.instructorId },
       select: { id: true, name: true, termsAcceptedAt: true },
     });
-    if (!instructor) throw new NotFoundException('Instrutor não encontrado');
-    return instructor;
-  }
-
-  /** Aceite do termo de responsabilidade no primeiro acesso. */
-  async acceptTerms(userId: string) {
-    const instructor = await this.resolveInstructor(userId);
+    if (!instructor) {
+      throw new NotFoundException('Instrutor vinculado não encontrado');
+    }
     if (instructor.termsAcceptedAt) return instructor;
+
     return this.prisma.instructor.update({
       where: { id: instructor.id },
       data: { termsAcceptedAt: new Date() },
@@ -237,24 +257,22 @@ export class InstructorsService {
     });
   }
 
-  async me(userId: string) {
-    return this.resolveInstructor(userId);
-  }
-
   /**
-   * Clientes vinculados ao próprio instrutor. Tier e status são calculados
-   * AGORA (não no vínculo congelado): é isso que pega o cliente que virou Plus,
-   * travou o desconto e cancelou depois.
+   * Lista os clientes que geraram credencial para este instrutor. PII mascarada
+   * (decisão 11: LGPD sem expor CPF/telefone em lista aberta).
    */
   async listCredentials(userId: string) {
-    const instructor = await this.requireAcceptedTerms(userId);
+    const instructor = await this.getInstructorForUser(userId);
+    if (!instructor.termsAcceptedAt) {
+      throw new ForbiddenException('É necessário aceitar o termo antes de consultar credenciais.');
+    }
 
-    const credentials = await this.prisma.voucher.findMany({
-      where: { instructorId: instructor.id },
-      select: {
-        code: true,
-        expiresAt: true,
-        createdAt: true,
+    const vouchers = await this.prisma.voucher.findMany({
+      where: {
+        instructorId: instructor.id,
+        status: VoucherStatus.UNUSED,
+      },
+      include: {
         customer: {
           select: {
             fullName: true,
@@ -268,25 +286,44 @@ export class InstructorsService {
       orderBy: { createdAt: 'desc' },
     });
 
+    const now = new Date();
     return {
       instructorName: instructor.name,
-      // A prova de exposição prometida ao instrutor.
-      total: credentials.length,
-      credentials: credentials.map((c) => this.presentCredential(c)),
+      credentials: vouchers.map((v) => {
+        const isPlus = tierAtLeast(v.customer.currentTier, TierLevel.PLUS);
+        const subExpiresAt = v.customer.subscription?.expiresAt ?? null;
+        const plusVigente = isPlus && (!subExpiresAt || subExpiresAt > now);
+
+        return {
+          code: v.code,
+          customerName: v.customer.fullName,
+          customerCpf: maskCpf(v.customer.cpf),
+          customerPhone: maskPhone(v.customer.phone),
+          tier: v.customer.currentTier,
+          // Status calculado agora, não o do momento em que o vínculo nasceu:
+          // se o cliente deixou o Plus vencer, o instrutor vê PLUS_VENCIDO.
+          status: !isPlus ? 'CARE' : plusVigente ? 'PLUS_ATIVO' : 'PLUS_VENCIDO',
+          subscriptionExpiresAt: subExpiresAt,
+          credentialExpiresAt: v.expiresAt,
+          linkedAt: v.createdAt,
+        };
+      }),
     };
   }
 
-  /** Consulta pontual de um código. Escopada ao próprio instrutor. */
+  /**
+   * Consulta pontual de um código apresentado pelo cliente (busca rápida no
+   * topo do painel do instrutor).
+   */
   async checkCredential(userId: string, code: string) {
-    const instructor = await this.requireAcceptedTerms(userId);
+    const instructor = await this.getInstructorForUser(userId);
+    if (!instructor.termsAcceptedAt) {
+      throw new ForbiddenException('É necessário aceitar o termo antes de consultar credenciais.');
+    }
 
-    const voucher = await this.prisma.voucher.findUnique({
+    const c = await this.prisma.voucher.findUnique({
       where: { code },
-      select: {
-        code: true,
-        expiresAt: true,
-        createdAt: true,
-        instructorId: true,
+      include: {
         customer: {
           select: {
             fullName: true,
@@ -299,42 +336,10 @@ export class InstructorsService {
       },
     });
 
-    if (!voucher || !voucher.instructorId) {
-      throw new NotFoundException('Credencial não encontrada');
-    }
-    if (voucher.instructorId !== instructor.id) {
-      throw new ForbiddenException('Esta credencial não é sua.');
+    if (!c || c.instructorId !== instructor.id) {
+      throw new NotFoundException('Credencial não encontrada para este instrutor');
     }
 
-    return this.presentCredential(voucher);
-  }
-
-  private async requireAcceptedTerms(userId: string) {
-    const instructor = await this.resolveInstructor(userId);
-    if (!instructor.termsAcceptedAt) {
-      throw new ForbiddenException('TERMO_NAO_ACEITO');
-    }
-    return instructor;
-  }
-
-  /**
-   * PII mascarada para o instrutor — terceiro externo, mesma regra do
-   * LOJA/DISTRIBUIDOR (plano 002, LGPD). Ele precisa do nome para casar o
-   * código com a pessoa na frente dele; não precisa do telefone de ninguém,
-   * porque o fluxo é cliente → instrutor.
-   */
-  private presentCredential(c: {
-    code: string;
-    expiresAt: Date;
-    createdAt: Date;
-    customer: {
-      fullName: string;
-      cpf: string | null;
-      phone: string;
-      currentTier: TierLevel;
-      subscription: { expiresAt: Date | null } | null;
-    };
-  }) {
     const isPlus = tierAtLeast(c.customer.currentTier, TierLevel.PLUS);
     const subExpiresAt = c.customer.subscription?.expiresAt ?? null;
     const plusVigente = isPlus && (!subExpiresAt || subExpiresAt > new Date());
@@ -345,7 +350,6 @@ export class InstructorsService {
       customerCpf: maskCpf(c.customer.cpf),
       customerPhone: maskPhone(c.customer.phone),
       tier: c.customer.currentTier,
-      // Status calculado agora, não o do momento em que o vínculo nasceu.
       status: !isPlus ? 'CARE' : plusVigente ? 'PLUS_ATIVO' : 'PLUS_VENCIDO',
       subscriptionExpiresAt: subExpiresAt,
       credentialExpiresAt: c.expiresAt,
@@ -353,11 +357,43 @@ export class InstructorsService {
     };
   }
 
+  /**
+   * Permite que o instrutor logado altere sua própria senha.
+   */
+  async changeMyPassword(userId: string, currentPassword: string, newPassword: string) {
+    if (!currentPassword || !newPassword) {
+      throw new BadRequestException('Senha atual e nova senha são obrigatórias');
+    }
+    if (newPassword.length < 6) {
+      throw new BadRequestException('A nova senha deve ter no mínimo 6 caracteres');
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+
+    const match = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!match) {
+      throw new BadRequestException('Senha atual incorreta');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    return { message: 'Senha alterada com sucesso' };
+  }
+
   // ── Admin (ADMIN_RELM / GERENTE_RELM) ──────────────────────────────────────
 
   async findAll() {
     return this.prisma.instructor.findMany({
-      include: { specialties: { select: { id: true, name: true } } },
+      include: {
+        specialties: { select: { id: true, name: true } },
+        users: { select: { id: true, email: true, active: true } },
+      },
       orderBy: [{ active: 'desc' }, { name: 'asc' }],
     });
   }
@@ -365,28 +401,66 @@ export class InstructorsService {
   async findOne(id: string) {
     const instructor = await this.prisma.instructor.findUnique({
       where: { id },
-      include: { specialties: { select: { id: true, name: true } } },
+      include: {
+        specialties: { select: { id: true, name: true } },
+        users: { select: { id: true, email: true, active: true } },
+      },
     });
     if (!instructor) throw new NotFoundException('Instrutor não encontrado');
     return instructor;
   }
 
   async create(dto: CreateInstructorDto) {
-    const { specialtyIds, ...data } = dto;
-    return this.prisma.instructor.create({
-      data: {
-        ...data,
-        ...(specialtyIds?.length
-          ? { specialties: { connect: specialtyIds.map((id) => ({ id })) } }
-          : {}),
-      },
-      include: { specialties: { select: { id: true, name: true } } },
+    const { specialtyIds, email, initialPassword, ...data } = dto;
+    const cleanEmail = email?.trim().toLowerCase();
+    const cleanPassword = initialPassword?.trim() || 'Relm@2026';
+
+    if (cleanEmail) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: cleanEmail },
+      });
+      if (existingUser) {
+        throw new BadRequestException('E-mail de acesso já cadastrado para outro usuário.');
+      }
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const instructor = await tx.instructor.create({
+        data: {
+          ...data,
+          ...(specialtyIds?.length
+            ? { specialties: { connect: specialtyIds.map((id) => ({ id })) } }
+            : {}),
+        },
+        include: {
+          specialties: { select: { id: true, name: true } },
+          users: { select: { id: true, email: true, active: true } },
+        },
+      });
+
+      if (cleanEmail) {
+        const passwordHash = await bcrypt.hash(cleanPassword, 10);
+        const user = await tx.user.create({
+          data: {
+            name: dto.name.trim(),
+            email: cleanEmail,
+            passwordHash,
+            role: 'INSTRUTOR',
+            instructorId: instructor.id,
+            active: true,
+          },
+          select: { id: true, email: true, active: true },
+        });
+        instructor.users = [user];
+      }
+
+      return instructor;
     });
   }
 
   async update(id: string, dto: UpdateInstructorDto) {
     await this.findOne(id);
-    const { specialtyIds, ...data } = dto;
+    const { specialtyIds, email, initialPassword, ...data } = dto;
     return this.prisma.instructor.update({
       where: { id },
       data: {
@@ -396,8 +470,40 @@ export class InstructorsService {
           ? { specialties: { set: specialtyIds.map((sid) => ({ id: sid })) } }
           : {}),
       },
-      include: { specialties: { select: { id: true, name: true } } },
+      include: {
+        specialties: { select: { id: true, name: true } },
+        users: { select: { id: true, email: true, active: true } },
+      },
     });
+  }
+
+  /**
+   * Permite que o administrador redefina a senha do usuário vinculado ao instrutor.
+   */
+  async resetInstructorPassword(instructorId: string, newPassword?: string) {
+    const instructor = await this.prisma.instructor.findUnique({
+      where: { id: instructorId },
+      include: { users: true },
+    });
+    if (!instructor) throw new NotFoundException('Instrutor não encontrado');
+
+    const user = instructor.users.find((u) => u.role === 'INSTRUTOR') || instructor.users[0];
+    if (!user) {
+      throw new NotFoundException('Nenhum usuário de login vinculado encontrado para este instrutor.');
+    }
+
+    const cleanPassword = newPassword?.trim() || 'Relm@2026';
+    if (cleanPassword.length < 6) {
+      throw new BadRequestException('Senha deve ter no mínimo 6 caracteres');
+    }
+
+    const passwordHash = await bcrypt.hash(cleanPassword, 10);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    });
+
+    return { message: 'Senha redefinida com sucesso', email: user.email };
   }
 
   /** Inativa (não apaga) — mesmo padrão de parceiros e serviços. */
@@ -435,5 +541,29 @@ export class InstructorsService {
         ...(dto.active !== undefined ? { active: dto.active } : {}),
       },
     });
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  private generateCredentialCode(): string {
+    const bytes = randomBytes(6);
+    let out = 'INS-';
+    for (let i = 0; i < 6; i++) {
+      out += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
+    }
+    return out;
+  }
+
+  private computeCredentialExpiration(
+    tier: TierLevel,
+    subExpiresAt: Date | null,
+  ): Date {
+    const isPlus = tierAtLeast(tier, TierLevel.PLUS);
+    if (isPlus && subExpiresAt && subExpiresAt > new Date()) {
+      return subExpiresAt;
+    }
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + CARE_CREDENTIAL_YEARS);
+    return d;
   }
 }

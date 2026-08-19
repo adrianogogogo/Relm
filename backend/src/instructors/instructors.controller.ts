@@ -141,6 +141,22 @@ export class InstructorsController {
     return this.instructorsService.checkCredential(req.user.userId, code);
   }
 
+  @Post('me/change-password')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.INSTRUTOR)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Instrutor — alterar própria senha' })
+  changePassword(
+    @Request() req: any,
+    @Body() dto: { currentPassword: string; newPassword: string },
+  ) {
+    return this.instructorsService.changeMyPassword(
+      req.user.userId,
+      dto.currentPassword,
+      dto.newPassword,
+    );
+  }
+
   // ── Admin CRUD ────────────────────────────────────────────────────────────
   // Só a Relm cadastra e edita (decisão 10): o instrutor não edita o próprio
   // perfil. SUPORTE_RELM lê, ADMIN/GERENTE escrevem — padrão dos parceiros.
@@ -170,6 +186,15 @@ export class InstructorsController {
   @ApiOperation({ summary: 'Admin — criar instrutor' })
   create(@Body() dto: CreateInstructorDto) {
     return this.instructorsService.create(dto);
+  }
+
+  @Post(':id/reset-password')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN_RELM, UserRole.GERENTE_RELM)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Admin — redefinir senha do instrutor' })
+  resetPassword(@Param('id') id: string, @Body() dto: { newPassword?: string }) {
+    return this.instructorsService.resetInstructorPassword(id, dto?.newPassword);
   }
 
   @Patch(':id')

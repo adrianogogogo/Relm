@@ -393,6 +393,8 @@ export const instructorsAPI = {
   // Painel do instrutor
   me: () => api.get('/instructors/me').then((res) => res.data),
   acceptTerms: () => api.post('/instructors/me/accept-terms').then((res) => res.data),
+  changePassword: (data) =>
+    api.post('/instructors/me/change-password', data).then((res) => res.data),
   getCredentials: () => api.get('/instructors/me/credentials').then((res) => res.data),
   checkCredential: (code) =>
     api.get(`/instructors/me/credentials/${code}`).then((res) => res.data),
@@ -401,6 +403,8 @@ export const instructorsAPI = {
   getAll: () => api.get('/instructors').then((res) => res.data),
   create: (data) => api.post('/instructors', data).then((res) => res.data),
   update: (id, data) => api.patch(`/instructors/${id}`, data).then((res) => res.data),
+  resetPassword: (id, data) =>
+    api.post(`/instructors/${id}/reset-password`, data).then((res) => res.data),
   remove: (id) => api.delete(`/instructors/${id}`).then((res) => res.data),
   getSpecialties: () => api.get('/instructors/specialties').then((res) => res.data),
   createSpecialty: (name) =>
