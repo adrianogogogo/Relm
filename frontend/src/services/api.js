@@ -403,6 +403,7 @@ export const instructorsAPI = {
   getAll: () => api.get('/instructors').then((res) => res.data),
   create: (data) => api.post('/instructors', data).then((res) => res.data),
   update: (id, data) => api.patch(`/instructors/${id}`, data).then((res) => res.data),
+  toggleActive: (id) => api.patch(`/instructors/${id}/toggle-active`).then((res) => res.data),
   resetPassword: (id, data) =>
     api.post(`/instructors/${id}/reset-password`, data).then((res) => res.data),
   remove: (id) => api.delete(`/instructors/${id}`).then((res) => res.data),

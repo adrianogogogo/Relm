@@ -506,10 +506,36 @@ export class InstructorsService {
     return { message: 'Senha redefinida com sucesso', email: user.email };
   }
 
-  /** Inativa (não apaga) — mesmo padrão de parceiros e serviços. */
+  /**
+   * Exclui permanentemente o cadastro do instrutor, suas credenciais vinculadas
+   * e sua conta de login.
+   */
   async remove(id: string) {
-    await this.findOne(id);
-    return this.prisma.instructor.update({ where: { id }, data: { active: false } });
+    const instructor = await this.prisma.instructor.findUnique({
+      where: { id },
+      include: { users: true, vouchers: true },
+    });
+    if (!instructor) throw new NotFoundException('Instrutor não encontrado');
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.voucher.deleteMany({ where: { instructorId: id } });
+      await tx.user.deleteMany({ where: { instructorId: id } });
+      await tx.instructor.delete({ where: { id } });
+      return { message: 'Instrutor excluído com sucesso' };
+    });
+  }
+
+  /** Alterna entre ativo e inativo */
+  async toggleActive(id: string) {
+    const instructor = await this.findOne(id);
+    return this.prisma.instructor.update({
+      where: { id },
+      data: { active: !instructor.active },
+      include: {
+        specialties: { select: { id: true, name: true } },
+        users: { select: { id: true, email: true, active: true } },
+      },
+    });
   }
 
   // ── Especialidades ─────────────────────────────────────────────────────────

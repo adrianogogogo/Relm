@@ -197,6 +197,15 @@ export class InstructorsController {
     return this.instructorsService.resetInstructorPassword(id, dto?.newPassword);
   }
 
+  @Patch(':id/toggle-active')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN_RELM, UserRole.GERENTE_RELM)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Admin — alternar ativo/inativo' })
+  toggleActive(@Param('id') id: string) {
+    return this.instructorsService.toggleActive(id);
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN_RELM, UserRole.GERENTE_RELM)
@@ -210,7 +219,7 @@ export class InstructorsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN_RELM, UserRole.GERENTE_RELM)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Admin — inativar instrutor' })
+  @ApiOperation({ summary: 'Admin — excluir cadastro do instrutor' })
   remove(@Param('id') id: string) {
     return this.instructorsService.remove(id);
   }

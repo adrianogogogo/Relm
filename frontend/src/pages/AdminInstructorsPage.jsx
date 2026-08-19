@@ -5,11 +5,14 @@ import { Card, PageHeader, Button } from '../components/ui';
 import {
   MdAdd,
   MdEdit,
+  MdDelete,
   MdClose,
   MdPublic,
   MdLocationOn,
   MdCategory,
+  MdVisibility,
   MdVisibilityOff,
+  MdWarningAmber,
 } from 'react-icons/md';
 
 const UFS = [
@@ -452,6 +455,7 @@ export default function AdminInstructorsPage() {
   const [editing, setEditing] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showSpecialties, setShowSpecialties] = useState(false);
+  const [instructorToDelete, setInstructorToDelete] = useState(null);
 
   const { data: instructors = [], isLoading } = useQuery({
     queryKey: ['admin-instructors'],
@@ -463,9 +467,17 @@ export default function AdminInstructorsPage() {
     queryFn: instructorsAPI.getSpecialties,
   });
 
-  const removeMutation = useMutation({
-    mutationFn: (id) => instructorsAPI.remove(id),
+  const toggleActiveMutation = useMutation({
+    mutationFn: (id) => instructorsAPI.toggleActive(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-instructors'] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => instructorsAPI.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-instructors'] });
+      setInstructorToDelete(null);
+    },
   });
 
   return (
@@ -514,7 +526,7 @@ export default function AdminInstructorsPage() {
                   <th className="p-4">Descontos</th>
                   <th className="p-4">Especialidades</th>
                   <th className="p-4">Termo</th>
-                  <th className="p-4"></th>
+                  <th className="p-4 text-right pr-6">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -522,11 +534,18 @@ export default function AdminInstructorsPage() {
                   <tr
                     key={i.id}
                     className={`border-t border-gray-100 dark:border-slate-800 ${
-                      i.active ? '' : 'opacity-50'
+                      i.active ? '' : 'opacity-60 bg-gray-50/50 dark:bg-slate-900/20'
                     }`}
                   >
                     <td className="p-4">
-                      <p className="font-semibold text-gray-900 dark:text-slate-100">{i.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-gray-900 dark:text-slate-100">{i.name}</p>
+                        {!i.active && (
+                          <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                            Inativo
+                          </span>
+                        )}
+                      </div>
                       <p className="text-[11px] text-gray-500 dark:text-slate-400">{i.phone}</p>
                       {i.users?.[0]?.email && (
                         <p className="text-[10px] font-mono text-blue-600 dark:text-blue-400 mt-0.5">
@@ -571,27 +590,36 @@ export default function AdminInstructorsPage() {
                         ? new Date(i.termsAcceptedAt).toLocaleDateString('pt-BR')
                         : 'pendente'}
                     </td>
-                    <td className="p-4">
-                      <div className="flex gap-2">
+                    <td className="p-4 text-right pr-6">
+                      <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => {
                             setEditing(i);
                             setShowForm(true);
                           }}
-                          className="text-gray-400 hover:text-[#0A1929] dark:hover:text-[#2196F3]"
-                          title="Editar"
+                          className="p-1.5 rounded-lg text-gray-500 hover:text-[#0A1929] dark:hover:text-[#2196F3] hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                          title="Editar cadastro e senha"
                         >
                           <MdEdit size={18} />
                         </button>
-                        {i.active && (
-                          <button
-                            onClick={() => removeMutation.mutate(i.id)}
-                            className="text-gray-400 hover:text-red-600"
-                            title="Inativar"
-                          >
-                            <MdVisibilityOff size={18} />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => toggleActiveMutation.mutate(i.id)}
+                          className={`p-1.5 rounded-lg transition-colors ${
+                            i.active
+                              ? 'text-gray-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                              : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
+                          }`}
+                          title={i.active ? 'Inativar instrutor' : 'Reativar instrutor'}
+                        >
+                          {i.active ? <MdVisibilityOff size={18} /> : <MdVisibility size={18} />}
+                        </button>
+                        <button
+                          onClick={() => setInstructorToDelete(i)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                          title="Apagar cadastro do instrutor"
+                        >
+                          <MdDelete size={18} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -601,6 +629,40 @@ export default function AdminInstructorsPage() {
           </Card>
         )}
       </div>
+
+      {instructorToDelete && (
+        <div className="fixed inset-0 z-60 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-6 max-w-md w-full shadow-2xl border border-gray-100 dark:border-slate-800 space-y-4">
+            <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+              <MdWarningAmber size={28} />
+              <h4 className="font-bold text-base text-gray-900 dark:text-slate-100">
+                Apagar cadastro do instrutor?
+              </h4>
+            </div>
+            <p className="text-xs text-gray-600 dark:text-slate-300 leading-relaxed">
+              Tem certeza que deseja apagar o cadastro de <b>{instructorToDelete.name}</b>?
+              Esta ação removerá o perfil do instrutor, o vínculo de credenciais e a sua conta de login (<b>{instructorToDelete.users?.[0]?.email || 'sem usuário vinculado'}</b>).
+            </p>
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setInstructorToDelete(null)}
+                className="px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-700"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteMutation.mutate(instructorToDelete.id)}
+                disabled={deleteMutation.isPending}
+                className="px-4 py-2 text-xs font-bold rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? 'Apagando...' : 'Sim, Apagar Cadastro'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <InstructorForm
